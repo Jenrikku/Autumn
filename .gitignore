@@ -354,3 +354,6 @@ MigrationBackup/
 
 # Ignore folder
 .ignore/
+
+# ImGUI configuration
+imgui.ini
