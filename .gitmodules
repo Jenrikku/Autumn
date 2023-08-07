@@ -7,3 +7,6 @@
 [submodule "Libraries/SPICA"]
 	path = Libraries/SPICA
 	url = https://github.com/KillzXGaming/SPICA
+[submodule "Libraries/BYAMLSharp"]
+	path = Libraries/BYAMLSharp
+	url = https://github.com/Jenrikku/BYAMLSharp
