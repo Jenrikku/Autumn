@@ -357,3 +357,10 @@ MigrationBackup/
 
 # ImGUI configuration
 imgui.ini
+
+# tinyfiledialogs build files
+Libraries/tinyfiledialogs/build/
+
+# syncthing
+.stignore
+.stfolder
