@@ -364,3 +364,4 @@ Libraries/tinyfiledialogs/build/
 # syncthing
 .stignore
 .stfolder
+.stversions
