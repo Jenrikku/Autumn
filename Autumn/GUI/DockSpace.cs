@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 // Based on SceneGL.Testing: https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/DockSpace.cs
 
-namespace AutumnSceneGL.GUI {
+namespace Autumn.GUI {
     class DockLayout {
         [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint igDockBuilderGetNode(uint node_id);

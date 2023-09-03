@@ -1,65 +1,88 @@
 ﻿using Silk.NET.Core.Contexts;
-using Silk.NET.Windowing;
+
+namespace Autumn.GUI;
 
 // Based on SceneGL.Testing: https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/WindowManager.cs
+internal static class WindowManager {
+    public static IGLContext? SharedContext { get; private set; } = null;
 
-namespace AutumnSceneGL.GUI {    
-    internal static class WindowManager {
-        public static IGLContext? SharedContext { get; private set; } = null;
+    private static bool s_isRunning = false;
 
-        private static bool s_isRunning = false;
+    private static readonly List<WindowContext> s_contexts = new();
+    private static readonly List<WindowContext> s_pendingInits = new();
 
-        private static readonly List<IWindow> s_windows = new();
-        private static readonly List<IWindow> s_pendingInits = new();
+    public static void Add(WindowContext context) {
+        if(!s_contexts.Contains(context))
+            s_pendingInits.Add(context);
+    }
 
-        public static void Add(IWindow window) {
-            if(s_windows.Contains(window))
-                return;
+    public static void Run() {
+        if(s_isRunning)
+            return;
 
-            s_pendingInits.Add(window);
-        }
+        s_isRunning = true;
 
-        public static void Run() {
-            if(s_isRunning)
-                return;
+        do {
 
-            s_isRunning = true;
+            if(s_pendingInits.Count > 0) {
+                foreach(WindowContext context in s_pendingInits) {
+                    context.Window.Initialize();
+                    s_contexts.Add(context);
 
-            do {
-
-                if(s_pendingInits.Count > 0) {
-                    foreach(IWindow window in s_pendingInits) {
-                        window.Initialize();
-                        s_windows.Add(window);
-
-                        SharedContext ??= window.GLContext;
-                    }
-
-                    s_pendingInits.Clear();
+                    SharedContext ??= context.Window.GLContext;
                 }
 
+                s_pendingInits.Clear();
+            }
 
-                for(int i = 0; i < s_windows.Count; i++) {
-                    IWindow window = s_windows[i];
 
-                    window.DoEvents();
+            for(int i = 0; i < s_contexts.Count; i++) {
+                WindowContext context = s_contexts[i];
 
-                    if(!window.IsClosing) {
-                        window.DoUpdate();
-                        window.DoRender();
-                    } else {
-                        s_windows.RemoveAt(i);
+                context.Window.DoEvents();
 
-                        if(window.GLContext == SharedContext && s_windows.Count > 0) SharedContext = s_windows[0].GLContext;
+                if(!context.Window.IsClosing) {
+                    context.Window.DoUpdate();
+                    context.Window.DoRender();
+                } else {
+                    s_contexts.RemoveAt(i);
 
-                        window.DoEvents();
-                        window.Reset();
+                    if(context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+                        SharedContext = s_contexts[0].Window.GLContext;
 
-                        i--;
-                    }
+                    context.Window.DoEvents();
+                    context.Window.Reset();
+
+                    i--;
                 }
+            }
 
-            } while(s_windows.Count > 0);
+        } while(s_contexts.Count > 0);
+    }
+
+    public static void Stop() {
+        if(!s_isRunning)
+            return;
+
+        while(s_contexts.Count > 0) {
+            WindowContext context = s_contexts[0];
+
+            if(!context.Close())
+                break;
+
+            RemoveContextAt(0);
         }
+    }
+
+    private static void RemoveContextAt(int index) {
+        WindowContext context = s_contexts[index];
+
+        s_contexts.RemoveAt(index);
+
+        if(context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+            SharedContext = s_contexts[0].Window.GLContext;
+
+        context.Window.DoEvents();
+        context.Window.Reset();
     }
 }

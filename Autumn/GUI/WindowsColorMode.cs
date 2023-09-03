@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using System.Runtime.InteropServices;
 
-namespace AutumnSceneGL.GUI {
+namespace Autumn.GUI {
     public static class WindowsColorMode {
         [DllImport("dwmapi.dll", SetLastError = true)]
         private static extern bool DwmSetWindowAttribute(nint handle, int param, in int value, int size);

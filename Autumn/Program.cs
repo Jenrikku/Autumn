@@ -1,11 +1,16 @@
-﻿using AutumnSceneGL.GUI;
-using AutumnSceneGL.IO;
-using AutumnSceneGL.Storage;
-using ImGuiNET;
-using System.Diagnostics;
+using Autumn.GUI;
+using Autumn.IO;
+using Autumn.Storage;
 using System.Text;
 
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-new MainWindow().AddToWindowManager();
+#if DEBUG
+RomFSHandler.RomFSPath = ""; // Please, input your RomFS manually here.
+
+StageHandler.TryImportStage("FirstStage", 1, out Stage stage);
+ProjectHandler.ActiveProject.Stages.Add(stage);
+#endif
+
+WindowManager.Add(new MainWindowContext());
 WindowManager.Run();
