@@ -56,6 +56,10 @@ internal static class H3DRenderingGenerator
             H3DMaterial material = actorObj.Materials[mesh.MaterialIndex];
 
             PICAVertex[] picaVertices = mesh.GetVertices();
+
+            for (int j = 0; j < picaVertices.Length; j++)
+                picaVertices[j] = picaVertices[j] with { Color = picaVertices[j].Color * 255 };
+
             Span<Vertex> vertices;
 
             fixed (void* vertptr = picaVertices)
