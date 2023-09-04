@@ -63,11 +63,11 @@ internal class WindowContext
             };
 
             GL.ClearColor(0.059f, 0.059f, 0.059f, 1f);
-            GL.ClearDepth(0);
+            GL.ClearDepth(1);
 
             GL.Enable(EnableCap.CullFace);
             GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Gequal);
+            GL.DepthFunc(DepthFunction.Lequal);
         };
 
         Window.Update += (delta) => ImGuiController?.Update((float)delta);
