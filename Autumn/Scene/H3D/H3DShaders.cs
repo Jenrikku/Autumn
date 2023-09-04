@@ -14,6 +14,7 @@ internal class H3DShaders
                 //SPICA auto-generated code
                 //This code was translated from a MAESTRO Vertex Shader
                 //This file was also hand modified to improve compatibility
+                //Furthermore, it was modified in order to better fit Autumn's code
                 #version 330 core
 
                 layout(std140) uniform ubScene {
