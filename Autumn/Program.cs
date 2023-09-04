@@ -9,6 +9,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 RomFSHandler.RomFSPath = ""; // Please, input your RomFS manually here.
 
 StageHandler.TryImportStage("FirstStage", 1, out Stage stage);
+ProjectHandler.ActiveProject = new();
 ProjectHandler.ActiveProject.Stages.Add(stage);
 #endif
 
