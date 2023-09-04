@@ -270,11 +270,17 @@ internal class H3DRenderingMaterial
         {
             transforms[i] = Matrix3X4<float>.Identity;
 
-            if (subMesh.Skinning != H3DSubMeshSkinning.Smooth && i < modelTransforms.Length)
-                transforms[i] = modelTransforms[i];
+            if (
+                subMesh.Skinning != H3DSubMeshSkinning.Smooth
+                && i < modelTransforms.Length
+                && i < subMesh.BoneIndices.Length
+            )
+            {
+                ushort boneIndex = subMesh.BoneIndices[i];
+                boneTable[i].X = boneIndex;
 
-            if (i < subMesh.BoneIndices.Length)
-                boneTable[i].X = subMesh.BoneIndices[i];
+                transforms[i] = modelTransforms[boneIndex];
+            }
         }
 
         // Textures and LUTs ---------------------------------------------------------------------------
