@@ -35,16 +35,16 @@ internal class Scene
 
         foreach (SceneObj obj in SceneObjects)
         {
-#if DEBUG
-            if (obj.StageObj.Name == "FirstStepASideView")
-            {
-                obj.Transform = Matrix4x4.Identity;
-
-                ModelRenderer.Draw(gl, obj);
-            }
-#else
+            //#if DEBUG
+            //            if (obj.StageObj.Name == "FirstStepASideView")
+            //            {
+            //                obj.Transform = Matrix4x4.Identity;
+            //
+            //                ModelRenderer.Draw(gl, obj);
+            //            }
+            //#else
             ModelRenderer.Draw(gl, obj);
-#endif
+            //#endif
         }
     }
 }
