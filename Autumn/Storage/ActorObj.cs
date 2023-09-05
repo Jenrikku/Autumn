@@ -1,4 +1,5 @@
 using Autumn.Scene.H3D;
+using Autumn.Scene.H3D.Animation;
 using SceneGL;
 using Silk.NET.Maths;
 using SPICA.Formats.CtrH3D.Animation;
@@ -24,7 +25,8 @@ internal class ActorObj
     public RenderableModel[] RenderableModels { get; set; }
     public Dictionary<string, RGBATexture> RGBATextures { get; set; }
     public Dictionary<string, float[]> LUTSamplerTextures { get; set; }
-    public Dictionary<H3DModel, Matrix3X4<float>[]> SkeletalTransforms { get; set; }
+
+    public H3DSkeletalAnimatior? SkeletalAnimatior { get; set; }
 
     public string Name { get; set; }
     public bool IsNoModel { get; set; }
@@ -50,7 +52,6 @@ internal class ActorObj
         RenderableModels = Array.Empty<RenderableModel>();
         RGBATextures = new();
         LUTSamplerTextures = new();
-        SkeletalTransforms = new();
 
         Name = name;
         IsNoModel = isEmpty;

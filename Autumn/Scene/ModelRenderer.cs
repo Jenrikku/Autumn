@@ -19,8 +19,6 @@ internal static class ModelRenderer
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
 
-    private static Matrix4x4 s_h3DScale = Matrix4x4.CreateScale(0.01f);
-
     public static void Initialize(GL gl)
     {
         DefaultCubeRenderer.Initialize(gl);
@@ -89,11 +87,7 @@ internal static class ModelRenderer
                 RenderableModel model = actorObj.RenderableModels[i];
                 H3DRenderingMaterial material = actorObj.RenderingMaterials[i];
 
-                material.SetMatrices(
-                    s_projectionMatrix,
-                    s_h3DScale * sceneObj.Transform,
-                    s_viewMatrix
-                );
+                material.SetMatrices(s_projectionMatrix, sceneObj.Transform, s_viewMatrix);
 
                 material.TryUse(gl, out ProgramUniformScope scope);
 

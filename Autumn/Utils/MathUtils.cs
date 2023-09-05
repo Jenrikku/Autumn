@@ -102,16 +102,30 @@ internal static class MathUtils
         dest.M34 = transform.M43;
     }
 
-    /// <summary>
-    /// Packs the given transform matrix into a row_major 4x3 matrix for packing in a uniform buffer
-    /// <para>Will only work reliably if the uniform block has <code>layout (std140, row_major)</code></para>
-    /// </summary>
-    /// <param name="transform"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Pack3dTransformMatrix(
-        in Matrix4X4<float> transform,
-        ref Matrix3X4<float> dest
-    )
+    public static void Unpack3dTransformMatrix(in Matrix3X4<float> transform, ref Matrix4x4 dest)
+    {
+        dest.M11 = transform.M11;
+        dest.M12 = transform.M21;
+        dest.M13 = transform.M31;
+
+        dest.M21 = transform.M12;
+        dest.M22 = transform.M22;
+        dest.M23 = transform.M32;
+
+        dest.M31 = transform.M13;
+        dest.M32 = transform.M23;
+        dest.M33 = transform.M33;
+
+        dest.M41 = transform.M14;
+        dest.M42 = transform.M24;
+        dest.M43 = transform.M34;
+
+        dest.M44 = 1;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Unpack3dTransformMatrix(in Matrix4X3<float> transform, ref Matrix4x4 dest)
     {
         dest.M11 = transform.M11;
         dest.M21 = transform.M12;
@@ -128,6 +142,8 @@ internal static class MathUtils
         dest.M14 = transform.M41;
         dest.M24 = transform.M42;
         dest.M34 = transform.M43;
+
+        dest.M44 = 1;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -300,4 +316,7 @@ internal static class MathUtils
         matrix.M32 = row3.Y;
         matrix.M33 = row3.Z;
     }
+
+    public static unsafe Matrix4X3<float> ToSilkNetMtx(this SPICA.Math3D.Matrix3x4 spicaMtx) =>
+        *(Matrix4X3<float>*)&spicaMtx;
 }

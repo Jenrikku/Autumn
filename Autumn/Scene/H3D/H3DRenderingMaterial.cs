@@ -133,12 +133,11 @@ internal class H3DRenderingMaterial
             material.MaterialParams
         );
 
-        if(!s_shaderCache.TryGetValue(fragmentShader.Code, out _program))
+        if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program))
         {
             _program = new(vertexShader, fragmentShader);
             s_shaderCache[fragmentShader.Code] = _program;
         }
-        
 
         CullFaceMode = matParams.FaceCulling switch
         {
@@ -268,27 +267,37 @@ internal class H3DRenderingMaterial
 
         // Others (UnivReg and BoneTable) --------------------------------------------------------------
 
-        Matrix3X4<float>[] modelTransforms = actorObj.SkeletalTransforms[mesh.Parent];
-
-        Matrix3X4<float>[] transforms = new Matrix3X4<float>[20];
+        Matrix3X4<float>[] packedTransforms = new Matrix3X4<float>[20];
         Vector4D<int>[] boneTable = new Vector4D<int>[20];
 
-        for (int i = 0; i < transforms.Length; i++)
+        if (actorObj.SkeletalAnimatior is not null)
         {
-            transforms[i] = Matrix3X4<float>.Identity;
+            Matrix4x4[] transforms = actorObj.SkeletalAnimatior.GetSkeletonTransforms();
 
-            if (
-                subMesh.Skinning != H3DSubMeshSkinning.Smooth
-                && i < modelTransforms.Length
-                && i < subMesh.BoneIndices.Length
-            )
+            for (int i = 0; i < packedTransforms.Length; i++)
             {
-                ushort boneIndex = subMesh.BoneIndices[i];
-                boneTable[i].X = boneIndex;
+                packedTransforms[i] = Matrix3X4<float>.Identity;
 
-                transforms[i] = modelTransforms[boneIndex];
+                if (i < subMesh.BoneIndices.Length)
+                {
+                    ushort boneIndex = subMesh.BoneIndices[i];
+
+                    if (boneIndex < transforms.Length)
+                    {
+                        boneTable[i].X = boneIndex;
+
+                        if (subMesh.Skinning != H3DSubMeshSkinning.Smooth)
+                            MathUtils.Pack3dTransformMatrix(
+                                in transforms[boneIndex],
+                                ref packedTransforms[i]
+                            );
+                    }
+                }
             }
         }
+        else
+            for (int i = 0; i < packedTransforms.Length; i++)
+                packedTransforms[i] = Matrix3X4<float>.Identity;
 
         // Textures and LUTs ---------------------------------------------------------------------------
 
@@ -415,7 +424,7 @@ internal class H3DRenderingMaterial
         // ---------------------------------------------------------------------------------------------
 
         _sceneBuffer = new(sceneData, "ubSceneBuffer");
-        _univRegBuffer = new(transforms, "UnivRefBuffer");
+        _univRegBuffer = new(packedTransforms, "UnivRefBuffer");
         _boneTableBuffer = new(boneTable, "BoneTableBuffer");
 
         _sceneParams = new(
