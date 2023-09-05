@@ -118,6 +118,8 @@ internal class H3DRenderingMaterial
 
     public CullFaceMode CullFaceMode { get; }
 
+    private static readonly Dictionary<string, ShaderProgram> s_shaderCache = new();
+
     public H3DRenderingMaterial(GL gl, H3DMaterial material, H3DMesh mesh, ActorObj actorObj)
     {
         H3DMaterialParams matParams = material.MaterialParams;
@@ -131,7 +133,12 @@ internal class H3DRenderingMaterial
             material.MaterialParams
         );
 
-        _program = new(vertexShader, fragmentShader);
+        if(!s_shaderCache.TryGetValue(fragmentShader.Code, out _program))
+        {
+            _program = new(vertexShader, fragmentShader);
+            s_shaderCache[fragmentShader.Code] = _program;
+        }
+        
 
         CullFaceMode = matParams.FaceCulling switch
         {
