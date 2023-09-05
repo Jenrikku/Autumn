@@ -154,9 +154,9 @@ internal class SceneWindow
 
         context.SceneFramebuffer.Use(context.GL!);
         context.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        InfiniteGrid.Render(context.GL, viewMatrix * projectionMatrix);
-
+        
         context.CurrentScene?.Render(context.GL, viewMatrix, projectionMatrix);
+        
+        InfiniteGrid.Render(context.GL, viewMatrix * projectionMatrix);
     }
 }
