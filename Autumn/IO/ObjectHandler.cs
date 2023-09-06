@@ -88,7 +88,8 @@ internal static class ObjectHandler
             foreach (H3DBone bone in model.Skeleton)
                 obj.Skeleton.Add(bone);
 
-            CalculateSkeletalTransforms(obj, model);
+            if (model.Skeleton.Count > 0)
+                obj.SkeletalAnimatior = new(model.Skeleton);
         }
 
         foreach (H3DTexture texture in h3D.Textures)
@@ -200,24 +201,5 @@ internal static class ObjectHandler
         // TO-DO.
 
         return obj;
-    }
-
-    private static void CalculateSkeletalTransforms(ActorObj actorObj, H3DModel model)
-    {
-        int boneCount = model.Skeleton.Count;
-
-        Matrix3X4<float>[] transforms = new Matrix3X4<float>[boneCount];
-
-        for (int i = 0; i < boneCount; i++)
-        {
-            Matrix3X4<float> transform = new();
-
-            MathUtils.Pack3dTransformMatrix(model.Skeleton[i].Transform, ref transform);
-
-            transforms[i] = transform;
-        }
-
-        if (!actorObj.SkeletalTransforms.TryAdd(model, transforms))
-            actorObj.SkeletalTransforms[model] = transforms;
     }
 }
