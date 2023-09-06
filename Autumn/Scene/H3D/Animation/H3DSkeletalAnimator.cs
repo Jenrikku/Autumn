@@ -4,7 +4,6 @@ using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.Animation;
 using SPICA.Formats.CtrH3D.Model;
 using System.Diagnostics;
-using System.Drawing.Drawing2D;
 using System.Numerics;
 
 namespace Autumn.Scene.H3D.Animation;
@@ -51,11 +50,10 @@ internal class H3DSkeletalAnimatior : H3DAnimationControl
         }
     }
 
-    private H3DDict<H3DBone> _skeleton;
-
     public Bone[] FrameSkeleton;
 
-    private Matrix4x4[] _transforms;
+    private readonly Matrix4x4[] _transforms;
+    private readonly H3DDict<H3DBone> _skeleton;
 
     public H3DSkeletalAnimatior(H3DDict<H3DBone> skeleton)
     {
@@ -97,13 +95,13 @@ internal class H3DSkeletalAnimatior : H3DAnimationControl
 
     public Matrix4x4[] GetSkeletonTransforms()
     {
-        //if (State == H3DAnimationState.Stopped)
-        //    ResetTransforms();
+        if (State == H3DAnimationState.Stopped)
+            ResetTransforms();
 
         int elementCount = Elements.Count;
 
-        // if (State != H3DAnimationState.Playing || elementCount == 0)
-        //     return _transforms;
+        if (State != H3DAnimationState.Playing || elementCount == 0)
+            return _transforms;
 
         bool[] skips = new bool[_transforms.Length];
 
@@ -147,7 +145,7 @@ internal class H3DSkeletalAnimatior : H3DAnimationControl
 
             scaleCompensate &= bone.Parent != null;
 
-            _transforms[i] = Matrix4x4.CreateScale(bone.Scale * 0.01f);
+            _transforms[i] = Matrix4x4.CreateScale(bone.Scale);
             _transforms[i] *= Matrix4x4.CreateFromQuaternion(bone.Rotation);
             _transforms[i] *= Matrix4x4.CreateTranslation(
                 scaleCompensate ? bone.Translation * bone.Parent?.Scale ?? new(1) : bone.Translation
@@ -180,10 +178,7 @@ internal class H3DSkeletalAnimatior : H3DAnimationControl
             MathUtils.Unpack3dTransformMatrix(in mtx, ref inverseTranform);
 
             if (!Matrix4x4.Invert(inverseTranform, out _transforms[i]))
-            {
-                _transforms[i] = Matrix4x4.CreateScale(0.01f);
-                continue;
-            }
+                _transforms[i] = inverseTranform;
         }
     }
 
