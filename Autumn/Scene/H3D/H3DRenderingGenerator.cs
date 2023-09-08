@@ -5,6 +5,8 @@ using Silk.NET.OpenGL;
 using SPICA.PICA.Converters;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Model.Material;
+using Silk.NET.Maths;
+using System.Diagnostics;
 
 namespace Autumn.Scene.H3D;
 
@@ -33,11 +35,11 @@ internal static class H3DRenderingGenerator
         [VertexAttribute(AttributeShaderLoc.Loc6, 2, VertexAttribPointerType.Float, false)]
         public Vector4 TexCoord2;
 
-        [VertexAttribute(AttributeShaderLoc.Loc7, 4, VertexAttribPointerType.Int, false)]
+        [VertexAttribute(AttributeShaderLoc.Loc7, 2, VertexAttribPointerType.Int, false)]
         public BoneIndices Indices;
 
-        [VertexAttribute(AttributeShaderLoc.Loc8, 4, VertexAttribPointerType.Float, false)]
-        public BoneWeights Weights;
+        [VertexAttribute(AttributeShaderLoc.Loc8, 2, VertexAttribPointerType.Float, false)]
+        public Vector4 Weights;
     }
 
     public static unsafe void GenerateMaterialsAndModels(GL gl, ActorObj actorObj)
@@ -57,13 +59,17 @@ internal static class H3DRenderingGenerator
 
             PICAVertex[] picaVertices = mesh.GetVertices();
 
-            for (int j = 0; j < picaVertices.Length; j++)
-                picaVertices[j] = picaVertices[j] with { Color = picaVertices[j].Color * 255 };
-
             Span<Vertex> vertices;
 
             fixed (void* vertptr = picaVertices)
                 vertices = new((Vertex*)vertptr, picaVertices.Length);
+
+            for (int j = 0; j < vertices.Length; j++)
+                vertices[j] = vertices[j] with
+                {
+                    Color = vertices[j].Color * 255,
+                    Weights = vertices[j].Weights * 100
+                };
 
             renderingMaterials[i] = new(gl, material, mesh, actorObj);
             renderableModels[i] = RenderableModel.Create<ushort, Vertex>(
