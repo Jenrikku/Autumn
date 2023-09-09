@@ -156,7 +156,7 @@ internal static class MathUtils
         Matrix4x4 mRotationY = Matrix4x4.CreateRotationY(rotY);
         Matrix4x4 mRotationZ = Matrix4x4.CreateRotationZ(rotZ);
 
-        return mTranslation * mScale * (mRotationX * mRotationY * mRotationZ);
+        return mScale * (mRotationX * mRotationY * mRotationZ) * mTranslation;
 
         //return new() {
         //    M11 = (float) (scale.X * (Math.Cos(rotY) * Math.Cos(rotZ))),
