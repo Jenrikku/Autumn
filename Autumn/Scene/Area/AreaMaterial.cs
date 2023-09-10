@@ -60,7 +60,10 @@ internal static class AreaMaterial
 
                 float wa = fwidth(a);
 
-                float outline = smoothstep(0.5 - wa * 2, 0.5 - wa, a);
+                float outline = smoothstep(10 - wa * 2, 10 - wa, a);
+
+                if(outline == 0)
+                    discard;
 
                 oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
 
