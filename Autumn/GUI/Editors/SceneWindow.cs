@@ -23,6 +23,7 @@ internal class SceneWindow
         bool isSceneWindowFocused = false;
 
         Vector2 sceneImageRectMin = new();
+        int sceneImageHeight = 0;
 
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
@@ -36,6 +37,8 @@ internal class SceneWindow
 
         if (contentAvail.X > 0 && contentAvail.Y > 0)
         {
+            sceneImageHeight = (int)contentAvail.Y;
+
             context.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
             context.SceneFramebuffer.Create(context.GL!);
 
@@ -175,7 +178,7 @@ internal class SceneWindow
 
             context.GL.ReadPixels(
                 (int)pixelPos.X,
-                (int)pixelPos.Y,
+                sceneImageHeight - (int)pixelPos.Y,
                 1,
                 1,
                 PixelFormat.RedInteger,
