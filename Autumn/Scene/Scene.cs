@@ -50,6 +50,7 @@ internal class Scene
             //#else
             ModelRenderer.Draw(gl, obj);
             //#endif
+        }
     }
 
     /// <returns>Whether the object is now selected. It will be false as well whenever no object was found.</returns>
