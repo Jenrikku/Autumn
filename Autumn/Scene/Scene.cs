@@ -11,7 +11,11 @@ namespace Autumn.Scene;
 internal class Scene
 {
     public Stage Stage { get; set; }
-    public readonly List<SceneObj> SceneObjects = new();
+    public List<SceneObj> SceneObjects { get; } = new();
+    public List<SceneObj> SelectedObjects { get; } = new();
+
+    private uint _lastPickingId = 0;
+    private readonly Dictionary<uint, SceneObj> _pickableObjs = new();
 
     public Scene(Stage stage)
     {
@@ -22,9 +26,10 @@ internal class Scene
             {
                 ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
 
-                SceneObj sceneObj = new(stageObj, actorObj);
+                SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
 
                 SceneObjects.Add(sceneObj);
+                _pickableObjs.Add(_lastPickingId++, sceneObj);
             }
         );
     }
@@ -45,6 +50,27 @@ internal class Scene
             //#else
             ModelRenderer.Draw(gl, obj);
             //#endif
-        }
+    }
+
+    /// <returns>Whether the object is now selected. It will be false as well whenever no object was found.</returns>
+    public bool ToggleObjectSelection(uint id)
+    {
+        if (!_pickableObjs.TryGetValue(id, out SceneObj? sceneObj))
+            return false;
+
+        sceneObj.Selected |= true;
+
+        if (sceneObj.Selected)
+            SelectedObjects.Add(sceneObj);
+
+        return sceneObj.Selected;
+    }
+
+    public void UnselectAllObjects()
+    {
+        foreach (SceneObj sceneObj in SelectedObjects)
+            sceneObj.Selected = false;
+
+        SelectedObjects.Clear();
     }
 }

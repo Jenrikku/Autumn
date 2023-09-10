@@ -115,6 +115,8 @@ internal class FragmentShaderGenerator
         SB.AppendLine();
         SB.AppendLine($"uniform int {DebugModeUniform};");
         SB.AppendLine($"uniform int {DebugLUTModeUniform};");
+        SB.AppendLine();
+        SB.AppendLine("uniform uint uPickingId;");
 
         SB.AppendLine();
         SB.AppendLine($"in vec4 {ShaderOutputRegName.QuatNormal};");
@@ -125,10 +127,14 @@ internal class FragmentShaderGenerator
         SB.AppendLine($"in vec4 {ShaderOutputRegName.View};");
         SB.AppendLine();
         SB.AppendLine("out vec4 Output;");
+        SB.AppendLine("out uint oPickingId;");
         SB.AppendLine();
         SB.AppendLine("//SPICA auto-generated Fragment Shader");
         SB.AppendLine();
         SB.AppendLine("void main() {");
+        SB.AppendLine();
+        SB.AppendLine("    oPickingId = uPickingId;");
+
         SB.AppendLine("    vec4 Previous;");
         SB.AppendLine("    vec4 DebugDist0;");
         SB.AppendLine("    vec4 DebugDist1;");

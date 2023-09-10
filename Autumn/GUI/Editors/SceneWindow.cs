@@ -1,10 +1,12 @@
 ﻿using Autumn.Scene;
 using Autumn.Utils;
 using ImGuiNET;
+using SceneGL.GLHelpers;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Autumn.GUI.Editors;
 
@@ -13,12 +15,14 @@ internal class SceneWindow
     private static bool _persistentMouseDrag = false;
     private static Vector2 _previousMousePos = Vector2.Zero;
 
-    public static void Render(MainWindowContext context, double deltaSeconds)
+    public static unsafe void Render(MainWindowContext context, double deltaSeconds)
     {
         float aspectRatio = 1;
 
         bool isSceneHovered = false;
         bool isSceneWindowFocused = false;
+
+        Vector2 sceneImageRectMin = new();
 
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
@@ -44,6 +48,7 @@ internal class SceneWindow
 
             isSceneHovered = ImGui.IsItemHovered();
             isSceneWindowFocused = ImGui.IsWindowFocused();
+            sceneImageRectMin = ImGui.GetItemRectMin();
         }
 
         ImGui.End();
@@ -154,9 +159,39 @@ internal class SceneWindow
 
         context.SceneFramebuffer.Use(context.GL!);
         context.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        
+
         context.CurrentScene?.Render(context.GL, viewMatrix, projectionMatrix);
-        
+
+        if (
+            ImGui.IsMouseClicked(ImGuiMouseButton.Left)
+            && isSceneHovered
+            && context.CurrentScene is not null
+        )
+        {
+            Vector2 pixelPos = mousePos - sceneImageRectMin;
+
+            context.GL.BindBuffer(BufferTargetARB.PixelPackBuffer, 0);
+            context.GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
+
+            context.GL.ReadPixels(
+                (int)pixelPos.X,
+                (int)pixelPos.Y,
+                1,
+                1,
+                PixelFormat.RedInteger,
+                PixelType.UnsignedInt,
+                out uint pixel
+            );
+
+            if (
+                !(context.Keyboard?.IsKeyPressed(Key.ControlLeft) ?? false)
+                || !(context.Keyboard?.IsKeyPressed(Key.ControlRight) ?? false)
+            )
+                context.CurrentScene.UnselectAllObjects();
+
+            context.CurrentScene.ToggleObjectSelection(pixel);
+        }
+
         InfiniteGrid.Render(context.GL, viewMatrix * projectionMatrix);
     }
 }

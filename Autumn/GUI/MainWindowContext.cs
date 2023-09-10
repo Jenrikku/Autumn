@@ -24,7 +24,8 @@ internal class MainWindowContext : WindowContext
         SceneFramebuffer = new(
             null,
             SceneGL.PixelFormat.D24_UNorm_S8_UInt,
-            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm,
+            SceneGL.PixelFormat.R32_UInt
         );
         Camera = new(new Vector3(-10, 7, 10), Vector3.Zero);
 

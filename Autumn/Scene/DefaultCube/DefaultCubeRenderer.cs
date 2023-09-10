@@ -168,7 +168,12 @@ internal static class DefaultCubeRenderer
         return builder.GetModel(gl);
     }
 
-    public static void Render(GL gl, CommonSceneParameters scene, CommonMaterialParameters material)
+    public static void Render(
+        GL gl,
+        CommonSceneParameters scene,
+        CommonMaterialParameters material,
+        uint pickingId
+    )
     {
         if (!DefaultCubeMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
             return;
@@ -176,6 +181,9 @@ internal static class DefaultCubeRenderer
         using (scope)
         {
             gl.CullFace(CullFaceMode.Back);
+
+            DefaultCubeMaterial.Program.TryGetUniformLoc("uPickingId", out int location);
+            gl.Uniform1(location, pickingId);
 
             s_model!.Draw(gl);
         }

@@ -77,7 +77,12 @@ internal static class ModelRenderer
 
             gl.CullFace(CullFaceMode.Back);
 
-            DefaultCubeRenderer.Render(gl, s_commonSceneParams, s_defaultCubeMaterialParams);
+            DefaultCubeRenderer.Render(
+                gl,
+                s_commonSceneParams,
+                s_defaultCubeMaterialParams,
+                sceneObj.PickingId
+            );
         }
         else
         {
@@ -88,6 +93,8 @@ internal static class ModelRenderer
             {
                 RenderableModel model = actorObj.RenderableModels[i];
                 H3DRenderingMaterial material = actorObj.RenderingMaterials[i];
+
+                material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.6f : 0));
 
                 material.SetMatrices(
                     s_projectionMatrix,
@@ -103,6 +110,9 @@ internal static class ModelRenderer
                         gl.Disable(EnableCap.CullFace);
                     else
                         gl.CullFace(material.CullFaceMode);
+
+                    material.Program.TryGetUniformLoc("uPickingId", out int location);
+                    gl.Uniform1(location, sceneObj.PickingId);
 
                     model.Draw(gl);
 

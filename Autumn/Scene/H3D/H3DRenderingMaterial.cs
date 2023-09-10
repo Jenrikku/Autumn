@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Autumn.Storage;
 using Autumn.Utils;
+using ImGuiNET;
 using SceneGL;
 using SceneGL.GLHelpers;
 using SceneGL.GLWrappers;
@@ -118,6 +119,8 @@ internal class H3DRenderingMaterial
 
     public CullFaceMode CullFaceMode { get; }
 
+    public ShaderProgram Program => _program;
+
     private static readonly Dictionary<string, ShaderProgram> s_shaderCache = new();
 
     public H3DRenderingMaterial(GL gl, H3DMaterial material, H3DMesh mesh, ActorObj actorObj)
@@ -135,7 +138,11 @@ internal class H3DRenderingMaterial
 
         if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program))
         {
-            _program = new(vertexShader, fragmentShader);
+            _program = new(vertexShader, fragmentShader)
+            {
+                FragShaderOutputBindings = new (string, uint)[] { ("Output", 0), ("oPickingId", 1) }
+            };
+
             s_shaderCache[fragmentShader.Code] = _program;
         }
 

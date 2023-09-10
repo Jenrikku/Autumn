@@ -97,7 +97,7 @@ internal static class DefaultCubeMaterial
             """
         );
 
-    private static readonly ShaderProgram s_program = new(s_vertexShader, s_fragmentShader);
+    public static ShaderProgram Program { get; } = new(s_vertexShader, s_fragmentShader);
 
     public static bool TryUse(
         GL gl,
@@ -105,7 +105,7 @@ internal static class DefaultCubeMaterial
         CommonMaterialParameters material,
         out ProgramUniformScope scope
     ) =>
-        s_program.TryUse(
+        Program.TryUse(
             gl,
             null,
             new ShaderParams[] { scene.ShaderParameters, material.ShaderParameters },

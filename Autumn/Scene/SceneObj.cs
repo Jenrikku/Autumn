@@ -12,12 +12,14 @@ internal class SceneObj
 
     public Matrix4x4 Transform;
 
+    public uint PickingId { get; private set; }
     public bool Selected { get; set; }
 
-    public SceneObj(IStageObj stageObj, ActorObj actorObj)
+    public SceneObj(IStageObj stageObj, ActorObj actorObj, uint pickingId)
     {
         StageObj = stageObj;
         ActorObj = actorObj;
+        PickingId = pickingId;
 
         UpdateTransform();
     }
