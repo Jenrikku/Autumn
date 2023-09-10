@@ -67,9 +67,14 @@ internal static class DefaultCubeMaterial
                 vec4 uHighlightColor;
             };
 
+            uniform uint uPickingId;
+
             out vec4 oColor;
+            out uint oPickingId;
 
             void main() {
+                oPickingId = uPickingId;
+
                 vec3 absolute = abs(vPos);
 
                 float a = max3(

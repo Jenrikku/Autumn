@@ -72,7 +72,7 @@ internal sealed class CommonMaterialParameters
 
     public bool Selected
     {
-        get => _buffer.Data.HighlightAlpha == 0.8f;
+        get => _buffer.Data.HighlightAlpha > 0;
         set => _buffer.SetData(_buffer.Data with { HighlightAlpha = value ? 0.8f : 0 });
     }
 }

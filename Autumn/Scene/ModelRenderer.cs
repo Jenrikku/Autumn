@@ -98,7 +98,7 @@ internal static class ModelRenderer
                     if ((int)material.Layer != i)
                         continue;
 
-                    material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.6f : 0));
+                    material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.4f : 0));
 
                     material.SetMatrices(
                         s_projectionMatrix,
