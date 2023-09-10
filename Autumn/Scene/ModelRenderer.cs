@@ -7,6 +7,7 @@ using Autumn.Storage.StageObjs;
 using SceneGL;
 using Silk.NET.OpenGL;
 using System.Numerics;
+using System.Runtime.Serialization;
 
 namespace Autumn.Scene;
 
@@ -115,12 +116,16 @@ internal static class ModelRenderer
                         else
                             gl.CullFace(material.CullFaceMode);
 
+                        if (material.BlendingEnabled)
+                            gl.Enable(EnableCap.Blend);
+
                         material.Program.TryGetUniformLoc("uPickingId", out int location);
                         gl.Uniform1(location, sceneObj.PickingId);
 
                         model.Draw(gl);
 
                         gl.Enable(EnableCap.CullFace);
+                        gl.Disable(EnableCap.Blend);
                     }
                 }
         }

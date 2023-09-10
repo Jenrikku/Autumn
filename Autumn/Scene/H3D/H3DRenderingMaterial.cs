@@ -2,13 +2,13 @@ using System.Diagnostics;
 using System.Numerics;
 using Autumn.Storage;
 using Autumn.Utils;
-using ImGuiNET;
 using SceneGL;
 using SceneGL.GLHelpers;
 using SceneGL.GLWrappers;
 using SceneGL.Materials.Common;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
+using SPICA.Formats.CtrGfx.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.PICA.Commands;
@@ -101,7 +101,7 @@ internal class H3DRenderingMaterial
             public Silk.NET.OpenGL.Boolean DistAttEnbled;
             public Silk.NET.OpenGL.Boolean TwoSidedDiffuse;
             public Silk.NET.OpenGL.Boolean Directional;
-        };
+        }
     }
 
     private readonly ShaderProgram _program;
@@ -119,6 +119,8 @@ internal class H3DRenderingMaterial
 
     public CullFaceMode CullFaceMode { get; }
     public H3DRenderingLayer Layer { get; }
+
+    public bool BlendingEnabled { get; }
 
     public ShaderProgram Program => _program;
 
@@ -138,6 +140,8 @@ internal class H3DRenderingMaterial
         );
 
         Layer = (H3DRenderingLayer)mesh.Layer;
+
+        BlendingEnabled = matParams.BlendMode != GfxFragOpBlendMode.None;
 
         if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program!))
         {
