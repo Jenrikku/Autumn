@@ -187,8 +187,10 @@ internal class SceneWindow
             );
 
             if (
-                !(context.Keyboard?.IsKeyPressed(Key.ControlLeft) ?? false)
-                || !(context.Keyboard?.IsKeyPressed(Key.ControlRight) ?? false)
+                !(
+                    (context.Keyboard?.IsKeyPressed(Key.ControlLeft) ?? false)
+                    || (context.Keyboard?.IsKeyPressed(Key.ControlRight) ?? false)
+                )
             )
                 context.CurrentScene.UnselectAllObjects();
 
