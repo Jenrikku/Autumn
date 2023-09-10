@@ -89,36 +89,40 @@ internal static class ModelRenderer
             if (actorObj.RenderableModels.Length <= 0)
                 H3DRenderingGenerator.GenerateMaterialsAndModels(gl, actorObj);
 
-            for (int i = 0; i < actorObj.RenderingMaterials.Length; i++)
-            {
-                RenderableModel model = actorObj.RenderableModels[i];
-                H3DRenderingMaterial material = actorObj.RenderingMaterials[i];
-
-                material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.6f : 0));
-
-                material.SetMatrices(
-                    s_projectionMatrix,
-                    s_h3DScale * sceneObj.Transform,
-                    s_viewMatrix
-                );
-
-                material.TryUse(gl, out ProgramUniformScope scope);
-
-                using (scope)
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < actorObj.RenderingMaterials.Length; j++)
                 {
-                    if (material.CullFaceMode == 0)
-                        gl.Disable(EnableCap.CullFace);
-                    else
-                        gl.CullFace(material.CullFaceMode);
+                    RenderableModel model = actorObj.RenderableModels[j];
+                    H3DRenderingMaterial material = actorObj.RenderingMaterials[j];
 
-                    material.Program.TryGetUniformLoc("uPickingId", out int location);
-                    gl.Uniform1(location, sceneObj.PickingId);
+                    if ((int)material.Layer != i)
+                        continue;
 
-                    model.Draw(gl);
+                    material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.6f : 0));
 
-                    gl.Enable(EnableCap.CullFace);
+                    material.SetMatrices(
+                        s_projectionMatrix,
+                        s_h3DScale * sceneObj.Transform,
+                        s_viewMatrix
+                    );
+
+                    material.TryUse(gl, out ProgramUniformScope scope);
+
+                    using (scope)
+                    {
+                        if (material.CullFaceMode == 0)
+                            gl.Disable(EnableCap.CullFace);
+                        else
+                            gl.CullFace(material.CullFaceMode);
+
+                        material.Program.TryGetUniformLoc("uPickingId", out int location);
+                        gl.Uniform1(location, sceneObj.PickingId);
+
+                        model.Draw(gl);
+
+                        gl.Enable(EnableCap.CullFace);
+                    }
                 }
-            }
         }
 
         // if(!s_modelCache.TryGetValue(name, out var model)) {

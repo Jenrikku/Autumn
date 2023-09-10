@@ -118,6 +118,7 @@ internal class H3DRenderingMaterial
     private Matrix4x4 _lastTransform;
 
     public CullFaceMode CullFaceMode { get; }
+    public H3DRenderingLayer Layer { get; }
 
     public ShaderProgram Program => _program;
 
@@ -136,7 +137,9 @@ internal class H3DRenderingMaterial
             material.MaterialParams
         );
 
-        if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program))
+        Layer = (H3DRenderingLayer)mesh.Layer;
+
+        if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program!))
         {
             _program = new(vertexShader, fragmentShader)
             {
@@ -525,4 +528,12 @@ internal class H3DRenderingMaterial
             out scope,
             out _
         );
+}
+
+public enum H3DRenderingLayer
+{
+    Opaque = 0,
+    Translucent = 1,
+    Substractive = 2,
+    Addictive = 3
 }
