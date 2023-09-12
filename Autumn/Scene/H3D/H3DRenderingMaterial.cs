@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Numerics;
 using Autumn.Storage;
@@ -122,6 +123,17 @@ internal class H3DRenderingMaterial
 
     public bool BlendingEnabled { get; }
 
+    public Vector4 BlendingColor { get; }
+
+    public BlendEquationModeEXT ColorBlendEquation { get; }
+    public BlendEquationModeEXT AlphaBlendEquation { get; }
+
+    public BlendingFactor ColorSrcFact { get; }
+    public BlendingFactor ColorDstFact { get; }
+
+    public BlendingFactor AlphaSrcFact { get; }
+    public BlendingFactor AlphaDstFact { get; }
+
     public ShaderProgram Program => _program;
 
     private static readonly Dictionary<string, ShaderProgram> s_shaderCache = new();
@@ -141,7 +153,53 @@ internal class H3DRenderingMaterial
 
         Layer = (H3DRenderingLayer)mesh.Layer;
 
+        // Blending:
         BlendingEnabled = matParams.BlendMode != GfxFragOpBlendMode.None;
+
+        BlendingColor = new(
+            matParams.BlendColor.R / 255f,
+            matParams.BlendColor.G / 255f,
+            matParams.BlendColor.B / 255f,
+            matParams.BlendColor.A / 255f
+        );
+
+        ColorBlendEquation = FromPICABlendEquation(matParams.BlendFunction.ColorEquation);
+        AlphaBlendEquation = FromPICABlendEquation(matParams.BlendFunction.AlphaEquation);
+
+        ColorSrcFact = FromPICABlendFunc(matParams.BlendFunction.ColorSrcFunc);
+        ColorDstFact = FromPICABlendFunc(matParams.BlendFunction.ColorDstFunc);
+        AlphaSrcFact = FromPICABlendFunc(matParams.BlendFunction.AlphaSrcFunc);
+        AlphaDstFact = FromPICABlendFunc(matParams.BlendFunction.AlphaDstFunc);
+
+        BlendEquationModeEXT FromPICABlendEquation(PICABlendEquation equation) =>
+            equation switch
+            {
+                PICABlendEquation.FuncSubtract => BlendEquationModeEXT.FuncSubtract,
+                PICABlendEquation.FuncReverseSubtract => BlendEquationModeEXT.FuncReverseSubtract,
+                PICABlendEquation.Min => BlendEquationModeEXT.Min,
+                PICABlendEquation.Max => BlendEquationModeEXT.Max,
+                _ => BlendEquationModeEXT.FuncAdd
+            };
+
+        BlendingFactor FromPICABlendFunc(PICABlendFunc func) =>
+            func switch
+            {
+                PICABlendFunc.Zero => BlendingFactor.Zero,
+                PICABlendFunc.One => BlendingFactor.One,
+                PICABlendFunc.SourceColor => BlendingFactor.SrcColor,
+                PICABlendFunc.OneMinusSourceColor => BlendingFactor.OneMinusSrcColor,
+                PICABlendFunc.DestinationColor => BlendingFactor.DstColor,
+                PICABlendFunc.OneMinusDestinationColor => BlendingFactor.OneMinusDstColor,
+                PICABlendFunc.SourceAlpha => BlendingFactor.SrcAlpha,
+                PICABlendFunc.OneMinusSourceAlpha => BlendingFactor.OneMinusSrcAlpha,
+                PICABlendFunc.DestinationAlpha => BlendingFactor.DstAlpha,
+                PICABlendFunc.OneMinusDestinationAlpha => BlendingFactor.OneMinusDstAlpha,
+                PICABlendFunc.ConstantColor => BlendingFactor.ConstantColor,
+                PICABlendFunc.OneMinusConstantColor => BlendingFactor.OneMinusConstantColor,
+                PICABlendFunc.ConstantAlpha => BlendingFactor.ConstantAlpha,
+                PICABlendFunc.OneMinusConstantAlpha => BlendingFactor.OneMinusConstantAlpha,
+                PICABlendFunc.SourceAlphaSaturate => BlendingFactor.SrcAlphaSaturate
+            };
 
         if (!s_shaderCache.TryGetValue(fragmentShader.Code, out _program!))
         {

@@ -118,7 +118,28 @@ internal static class ModelRenderer
                             gl.CullFace(material.CullFaceMode);
 
                         if (material.BlendingEnabled)
+                        {
                             gl.Enable(EnableCap.Blend);
+
+                            gl.BlendColor(
+                                material.BlendingColor.X,
+                                material.BlendingColor.Y,
+                                material.BlendingColor.Z,
+                                material.BlendingColor.W
+                            );
+
+                            gl.BlendEquationSeparate(
+                                material.ColorBlendEquation,
+                                material.AlphaBlendEquation
+                            );
+
+                            gl.BlendFuncSeparate(
+                                material.ColorSrcFact,
+                                material.ColorDstFact,
+                                material.AlphaSrcFact,
+                                material.AlphaDstFact
+                            );
+                        }
 
                         material.Program.TryGetUniformLoc("uPickingId", out int location);
                         gl.Uniform1(location, sceneObj.PickingId);
