@@ -63,6 +63,7 @@ internal static class ModelRenderer
         {
             // TO-DO: Change color based on the name here.
 
+            s_commonSceneParams.Transform = sceneObj.Transform;
             s_areaMaterialParams.Selected = sceneObj.Selected;
 
             gl.CullFace(CullFaceMode.Back);
