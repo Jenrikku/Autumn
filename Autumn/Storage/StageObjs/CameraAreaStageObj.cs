@@ -15,9 +15,9 @@ internal struct CameraAreaStageObj : IStageObj
     public int ID { get; set; } = -1;
     public int CameraId { get; set; } = -1;
 
-    public Vector3 Translation { get; set; } = new(0);
-    public Vector3 Rotation { get; set; } = new(0);
-    public Vector3 Scale { get; set; } = new(0);
+    public Vector3 Translation { get; set; } = new();
+    public Vector3 Rotation { get; set; } = new();
+    public Vector3 Scale { get; set; } = new(1);
 
     public int SwitchAppear { get; set; }
     public int SwitchDeadOn { get; set; }
