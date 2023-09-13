@@ -75,8 +75,8 @@ internal static unsafe partial class Native
     public static partial string? tinyfd_colorChooser(
         string? aTitle, // NULL or ""
         string? aDefaultHexRGB, // NULL or "" or "#FF0000"
-        byte[] aDefaultRGB, // unsigned char lDefaultRGB[3] = { 0 , 128 , 255 };
-        byte[] aoResultRGB // unsigned char lResultRGB[3];
+        byte[]? aDefaultRGB, // unsigned char lDefaultRGB[3] = { 0 , 128 , 255 };
+        byte[]? aoResultRGB // unsigned char lResultRGB[3];
     );
 
     /* aDefaultRGB is used only if aDefaultHexRGB is absent

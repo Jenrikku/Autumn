@@ -1,6 +1,8 @@
 ﻿using static TinyFileDialogsSharp.Native;
 using static TinyFileDialogsSharp.Internal;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
+using System.Linq.Expressions;
 
 namespace TinyFileDialogsSharp;
 
@@ -109,7 +111,11 @@ public static class TinyFileDialogs
         else
             defaultInput ??= string.Empty;
 
-        output = tinyfd_inputBox(title, message, defaultInput);
+        if (OperatingSystem.IsWindows())
+            output = tinyfd_inputBoxW(title, message, defaultInput);
+        else
+            output = tinyfd_inputBox(title, message, defaultInput);
+
         return output is not null;
     }
 
@@ -121,13 +127,22 @@ public static class TinyFileDialogs
         string? filterDescription = null
     )
     {
-        output = tinyfd_saveFileDialog(
-            title,
-            defaultPath,
-            filterPatterns?.Length ?? 0,
-            filterPatterns,
-            filterDescription
-        );
+        if (OperatingSystem.IsWindows())
+            output = tinyfd_saveFileDialogW(
+                title,
+                defaultPath,
+                filterPatterns?.Length ?? 0,
+                filterPatterns,
+                filterDescription
+            );
+        else
+            output = tinyfd_saveFileDialog(
+                title,
+                defaultPath,
+                filterPatterns?.Length ?? 0,
+                filterPatterns,
+                filterDescription
+            );
 
         return output is not null;
     }
@@ -143,19 +158,62 @@ public static class TinyFileDialogs
     {
         output = null;
 
-        string? result = tinyfd_openFileDialog(
-            title,
-            defaultPath,
-            filterPatterns?.Length ?? 0,
-            filterPatterns,
-            filterDescription,
-            allowMultipleSelects ? 1 : 0
-        );
+        string? result;
+
+        if (OperatingSystem.IsWindows())
+            result = tinyfd_openFileDialogW(
+                title,
+                defaultPath,
+                filterPatterns?.Length ?? 0,
+                filterPatterns,
+                filterDescription,
+                allowMultipleSelects ? 1 : 0
+            );
+        else
+            result = tinyfd_openFileDialog(
+                title,
+                defaultPath,
+                filterPatterns?.Length ?? 0,
+                filterPatterns,
+                filterDescription,
+                allowMultipleSelects ? 1 : 0
+            );
 
         if (result is null)
             return false;
 
         output = result.Split('|');
         return true;
+    }
+
+    public static unsafe bool SelectFolderDialog(
+        [NotNullWhen(true)] out string? output,
+        string? title = null,
+        string? defaultPath = null
+    )
+    {
+        if (OperatingSystem.IsWindows())
+            output = tinyfd_selectFolderDialogW(title, defaultPath);
+        else
+            output = tinyfd_selectFolderDialog(title, defaultPath);
+
+        return output is not null;
+    }
+
+    public static unsafe bool ColorChooser(out byte[] output, string? title, byte[]? defaultColor)
+    {
+        output = new byte[3];
+
+        if (defaultColor?.Length < 3)
+            defaultColor = null;
+
+        string? result;
+
+        if (OperatingSystem.IsWindows())
+            result = tinyfd_colorChooserW(title, null, defaultColor, output);
+        else
+            result = tinyfd_colorChooser(title, null, defaultColor, output);
+
+        return result is null;
     }
 }
