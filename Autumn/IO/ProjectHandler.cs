@@ -8,14 +8,15 @@ internal static class ProjectHandler
 
     public static Project ActiveProject;
 
-    /// <param name="path">The path where the project file is.</param>
+    /// <param name="path">The path to the project file.</param>
     public static void LoadProject(string path)
     {
-        ActiveProject = YAMLWrapper.Desearialize<Project>(Path.Join(path, "autumnproj.yml"));
+        ActiveProject = YAMLWrapper.Desearialize<Project>(path);
 
-        ActiveProject.SavePath = path;
+        ActiveProject.SavePath =
+            Directory.GetParent(path)?.FullName ?? Directory.GetDirectoryRoot(path);
 
-        IEnumerable<Stage> stages = StageHandler.LoadProjectStages(ActiveProject.SavePath!);
+        IEnumerable<Stage> stages = StageHandler.LoadProjectStages(ActiveProject.SavePath);
         ActiveProject.Stages = new(stages);
 
         ActiveProject.Objects = new();

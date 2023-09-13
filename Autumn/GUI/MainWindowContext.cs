@@ -5,6 +5,7 @@ using Autumn.Storage;
 using ImGuiNET;
 using Silk.NET.OpenGL;
 using System.Numerics;
+using TinyFileDialogsSharp;
 
 namespace Autumn.GUI;
 
@@ -98,7 +99,23 @@ internal class MainWindowContext : WindowContext
                 //ProjectHandler.CreateNew()
             }
 
-            ImGui.MenuItem("Open");
+            if (ImGui.MenuItem("Open"))
+            {
+                bool success = TinyFileDialogs.OpenFileDialog(
+                    out string[]? output,
+                    title: "Select the Autumn project file...",
+                    filterPatterns: new string[] { "autumnproj.yml" },
+                    filterDescription: "Autumn project file"
+                );
+
+                if (success)
+                {
+                    string projectPath = output![0];
+
+                    ProjectHandler.LoadProject(projectPath);
+                }
+            }
+
             ImGui.MenuItem("Save");
             ImGui.MenuItem("Save as...");
 
