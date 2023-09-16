@@ -14,6 +14,9 @@ internal struct Project
     public string? SavePath { get; set; } // (Directory)
 
     [YamlIgnore]
+    public string ProjectFileName { get; set; } = "autumnproj.yml";
+
+    [YamlIgnore]
     public bool Saved { get; set; } = false;
 
     [YamlIgnore]

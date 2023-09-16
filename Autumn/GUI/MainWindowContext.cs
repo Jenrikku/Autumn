@@ -4,6 +4,7 @@ using Autumn.Scene;
 using Autumn.Storage;
 using ImGuiNET;
 using Silk.NET.OpenGL;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using TinyFileDialogsSharp;
 
@@ -94,18 +95,16 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            if (ImGui.MenuItem("New"))
-            {
-                //ProjectHandler.CreateNew()
-            }
+            if (ImGui.MenuItem("New") && SaveAsDialog(out string? createDir))
+                ProjectHandler.CreateNew(createDir);
 
             if (ImGui.MenuItem("Open"))
             {
                 bool success = TinyFileDialogs.OpenFileDialog(
                     out string[]? output,
-                    title: "Select the Autumn project file...",
+                    title: "Select the Autumn project file.",
                     filterPatterns: new string[] { "autumnproj.yml" },
-                    filterDescription: "Autumn project file"
+                    filterDescription: "Autumn project file (autumnproj.yml)"
                 );
 
                 if (success)
@@ -116,8 +115,30 @@ internal class MainWindowContext : WindowContext
                 }
             }
 
-            ImGui.MenuItem("Save");
-            ImGui.MenuItem("Save as...");
+            if (ImGui.MenuItem("Save"))
+            {
+                if (string.IsNullOrEmpty(ProjectHandler.ActiveProject.SavePath))
+                {
+                    if (SaveAsDialog(out string? saveDir))
+                        ProjectHandler.SaveProject(saveDir);
+                }
+                else
+                    ProjectHandler.SaveProject();
+            }
+
+            if (ImGui.MenuItem("Save as...") && SaveAsDialog(out string? saveAsDir))
+                ProjectHandler.SaveProject(saveAsDir);
+
+            static bool SaveAsDialog([NotNullWhen(true)] out string? output)
+            {
+                bool success = TinyFileDialogs.SelectFolderDialog(
+                    out output,
+                    title: "Select where to save the Autumn project."
+                );
+
+                output = Path.Join(output, "autumnproj.yml");
+                return success;
+            }
 
             ImGui.Separator();
 

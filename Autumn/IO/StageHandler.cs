@@ -7,6 +7,7 @@ namespace Autumn.IO;
 
 internal static class StageHandler
 {
+    /// <param name="path">The project's root path.</param>
     public static IEnumerable<Stage> LoadProjectStages(string path)
     {
         path = Path.Join(path, "stages");
@@ -25,6 +26,19 @@ internal static class StageHandler
 
         return stage;
     }
+
+    /// <param name="path">The project's root path.</param>
+    public static void SaveProjectStages(string path, IEnumerable<Stage> stages)
+    {
+        path = Path.Join(path, "stages");
+
+        Directory.CreateDirectory(path);
+
+        foreach (Stage stage in stages)
+            SaveStageTo(Path.Join(path, stage.Name + stage.Scenario + ".yml"), stage);
+    }
+
+    public static void SaveStageTo(string path, Stage stage) => YAMLWrapper.Serialize(path, stage);
 
     public static bool TryImportStage(string name, byte scenario, out Stage stage) =>
         TryImportStageFrom(
