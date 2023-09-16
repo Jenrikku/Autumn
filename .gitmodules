@@ -10,3 +10,6 @@
 [submodule "Libraries/BYAMLSharp"]
 	path = Libraries/BYAMLSharp
 	url = https://github.com/Jenrikku/BYAMLSharp
+[submodule "Libraries/tinyfiledialogs"]
+	path = Libraries/tinyfiledialogs
+	url = https://github.com/Jenrikku/TinyFileDialogsSharp
