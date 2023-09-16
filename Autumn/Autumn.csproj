@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
@@ -6,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.89.2" />
     <PackageReference Include="SharpYaml" Version="2.1.0" />
@@ -16,6 +18,7 @@
     <PackageReference Include="StirlingLabs.Assimp.Net" Version="23.4.1" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Libraries\NARCSharp\NARCSharp\NARCSharp.csproj" />
     <ProjectReference Include="..\Libraries\BYAMLSharp\BYAMLSharp\BYAMLSharp.csproj" />
@@ -23,4 +26,5 @@
     <ProjectReference Include="..\Libraries\SceneGL\SceneGL\SceneGL.csproj" />
     <ProjectReference Include="..\Libraries\tinyfiledialogs\cs\TinyFileDialogsSharp.csproj" />
   </ItemGroup>
+
 </Project>
