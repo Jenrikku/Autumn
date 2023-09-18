@@ -4,12 +4,12 @@ namespace Autumn.IO;
 
 internal partial class FileUtils
 {
-    public static List<(string name, byte scenario)> ListStages(string path)
+    public static IEnumerable<(string name, byte scenario)> EnumerateStages(string path)
     {
         List<(string name, byte scenario)> stages = new();
 
         if (!Directory.Exists(path))
-            return stages;
+            yield break;
 
         Regex regex = StageFileRegex();
 
@@ -24,10 +24,8 @@ internal partial class FileUtils
             byte scenario = byte.Parse(match.Groups[3].Value);
 
             if (!stages.Contains((name, scenario)))
-                stages.Add((name, scenario));
+                yield return (name, scenario);
         }
-
-        return stages;
     }
 
     [GeneratedRegex("(.*)(Design|Map|Sound)(\\d+\\b).szs")]

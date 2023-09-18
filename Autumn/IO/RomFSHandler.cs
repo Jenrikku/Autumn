@@ -25,6 +25,20 @@ internal static class RomFSHandler
         };
     }
 
+    public static IEnumerable<(string name, byte scenario)> EnumerateRomFSStages()
+    {
+        if (!RomFSAvailable)
+            yield break;
+
+        string stageDataPath = Path.Join(RomFSPath, "StageData");
+
+        if (!Directory.Exists(stageDataPath))
+            yield break;
+
+        foreach (var tuple in FileUtils.EnumerateStages(stageDataPath))
+            yield return tuple;
+    }
+
     // public static byte[] GetFile(string relPath, bool isSZS = true)
     // {
     //     if (isSZS)
