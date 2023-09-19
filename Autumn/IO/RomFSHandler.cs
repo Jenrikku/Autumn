@@ -6,6 +6,31 @@ internal static class RomFSHandler
 
     public static bool RomFSAvailable => RomFSPath is not null;
 
+    private static readonly List<(string, byte)> s_stageNames = new();
+    public static List<(string, byte)> StageNames
+    {
+        get
+        {
+            if (!RomFSAvailable)
+                return new();
+
+            if (s_stageNames.Count <= 0)
+            {
+                string stageDataPath = Path.Join(RomFSPath, "StageData");
+
+                if (!Directory.Exists(stageDataPath))
+                    return new();
+
+                s_stageNames.Clear();
+
+                foreach (var tuple in FileUtils.EnumerateStages(stageDataPath))
+                    s_stageNames.Add(tuple);
+            }
+
+            return s_stageNames;
+        }
+    }
+
     public static bool VerifyRomFS()
     {
         if (!RomFSAvailable)
@@ -23,20 +48,6 @@ internal static class RomFSHandler
             "", // Chinese         (0004000000089F00)
             ""
         };
-    }
-
-    public static IEnumerable<(string name, byte scenario)> EnumerateRomFSStages()
-    {
-        if (!RomFSAvailable)
-            yield break;
-
-        string stageDataPath = Path.Join(RomFSPath, "StageData");
-
-        if (!Directory.Exists(stageDataPath))
-            yield break;
-
-        foreach (var tuple in FileUtils.EnumerateStages(stageDataPath))
-            yield return tuple;
     }
 
     // public static byte[] GetFile(string relPath, bool isSZS = true)

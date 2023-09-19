@@ -81,6 +81,9 @@ internal class MainWindowContext : WindowContext
             else
                 RenderEditors(deltaSeconds);
 
+            if (_stageSelectOpen)
+                RenderStageSelectPopup();
+
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
             GL!.Viewport(Window.FramebufferSize);
@@ -152,7 +155,9 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Stage"))
         {
-            ImGui.MenuItem("Import from romfs");
+            if (ImGui.MenuItem("Import from romfs"))
+                _stageSelectOpen |= true;
+
             //ImGui.MenuItem("Import through world map selector");
 
             ImGui.EndMenu();
@@ -238,6 +243,88 @@ internal class MainWindowContext : WindowContext
         ImGui.TextDisabled("Please, open a project from the menu or drop a folder here.");
 
         ImGui.End();
+    }
+
+    private bool _stageSelectOpen = false;
+    private string _stageSearchInput = string.Empty;
+
+    private void RenderStageSelectPopup()
+    {
+        if (!RomFSHandler.RomFSAvailable)
+        {
+            _stageSelectOpen = false;
+            return;
+        }
+
+        ImGui.OpenPopup("Stage selector");
+
+        Vector2 dimensions = new Vector2(450, 185) + ImGui.GetStyle().ItemSpacing;
+        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
+
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Appearing,
+            new(0.5f, 0.5f)
+        );
+
+        if (
+            !ImGui.BeginPopupModal(
+                "Stage selector",
+                ref _stageSelectOpen,
+                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
+            )
+        )
+            return;
+
+        ImGui.Text("Search:");
+        ImGui.SameLine();
+
+        ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
+
+        ImGui.InputTextWithHint(
+            "",
+            "Insert the name of the stage here.",
+            ref _stageSearchInput,
+            128
+        );
+
+        ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
+
+        if (ImGui.BeginListBox(""))
+        {
+            foreach (var (name, scenario) in RomFSHandler.StageNames)
+            {
+                if (
+                    !string.IsNullOrEmpty(_stageSearchInput)
+                    && !name.Contains(
+                        _stageSearchInput,
+                        StringComparison.InvariantCultureIgnoreCase
+                    )
+                )
+                    continue;
+
+                // Does not show the stage if there is an already opened stage that matches the name:
+                // foreach (
+                //     var stage in ProjectHandler.ActiveProject.Stages.Where(
+                //         stage => stage.Name == name && stage.Scenario == scenario
+                //     )
+                // )
+                //     continue;
+
+                if (ImGui.Selectable(name + scenario, false, ImGuiSelectableFlags.AllowDoubleClick))
+                {
+                    // [!] This should be handled by the ProjectHandler in the future.
+
+                    StageHandler.TryImportStage(name, scenario, out Stage stage);
+                    ProjectHandler.ActiveProject.Stages.Add(stage);
+
+                    _stageSelectOpen = false;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+        }
+
+        ImGui.EndPopup();
     }
 
     //private void OpenProject() {

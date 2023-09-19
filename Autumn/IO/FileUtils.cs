@@ -24,7 +24,10 @@ internal partial class FileUtils
             byte scenario = byte.Parse(match.Groups[3].Value);
 
             if (!stages.Contains((name, scenario)))
+            {
+                stages.Add((name, scenario));
                 yield return (name, scenario);
+            }
         }
     }
 
