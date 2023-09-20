@@ -23,6 +23,8 @@ internal class MainWindowContext : WindowContext
     public MainWindowContext()
         : base()
     {
+        Window.Title = "Autumn: Stage Editor";
+
         SceneFramebuffer = new(
             null,
             SceneGL.PixelFormat.D24_UNorm_S8_UInt,
@@ -33,8 +35,6 @@ internal class MainWindowContext : WindowContext
 
         Window.Load += () =>
         {
-            Window.Title = "Autumn: Stage Editor";
-
             InfiniteGrid.Initialize(GL!);
             ModelRenderer.Initialize(GL!);
 
@@ -326,24 +326,4 @@ internal class MainWindowContext : WindowContext
 
         ImGui.EndPopup();
     }
-
-    //private void OpenProject() {
-    //    if(NFDEx.OpenDialogMultiple(out string[] paths) == NFDExResult.Ok)
-    //        // [!] To-Do
-    //}
-
-    //private bool SaveProject() {
-    //    if(string.IsNullOrEmpty(FileHolder.CurrentMetadata!.Value.Path))
-    //        return SaveProjectAs();
-
-    //    // [!] To-Do
-    //}
-
-    //private bool SaveProjectAs() {
-    //    // [!] To-Do
-    //}
-
-    //private bool CloseProjectAt(int index) {
-    //    // [!] To-Do
-    //}
 }
