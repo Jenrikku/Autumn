@@ -7,12 +7,12 @@ internal static class SettingsHandler
 {
     public static Dictionary<string, object> Settings { get; private set; } = new();
 
-    private static string? _settingsPath = null;
+    private static string? s_settingsPath = null;
     public static string SettingsPath
     {
         get
         {
-            if (string.IsNullOrEmpty(_settingsPath))
+            if (string.IsNullOrEmpty(s_settingsPath))
             {
                 string home = GetFolderPath(SpecialFolder.UserProfile);
                 string config = Path.Join(home, ".config");
@@ -20,15 +20,15 @@ internal static class SettingsHandler
                 if (!Directory.Exists(config))
                     Directory.CreateDirectory(config).Attributes |= FileAttributes.Hidden;
 
-                _settingsPath = Path.Join(config, "autumn");
-                Directory.CreateDirectory(_settingsPath);
+                s_settingsPath = Path.Join(config, "autumn");
+                Directory.CreateDirectory(s_settingsPath);
 
-                _settingsPath = Path.Join(_settingsPath, "config.yml");
+                s_settingsPath = Path.Join(s_settingsPath, "config.yml");
             }
 
-            return _settingsPath;
+            return s_settingsPath;
         }
-        set => _settingsPath = value;
+        set => s_settingsPath = value;
     }
 
     public static void LoadSettings() =>
