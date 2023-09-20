@@ -13,7 +13,7 @@ ProjectHandler.ActiveProject = new();
 ProjectHandler.ActiveProject.Stages.Add(stage);
 #endif
 
-if (SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
+if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());
 else
     WindowManager.Add(new MainWindowContext());
