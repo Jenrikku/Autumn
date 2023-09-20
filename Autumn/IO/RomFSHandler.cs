@@ -1,10 +1,26 @@
+using Autumn.GUI;
+
 namespace Autumn.IO;
 
 internal static class RomFSHandler
 {
-    public static string? RomFSPath { get; set; }
+    private static string? s_romfsPath = null;
+    public static string? RomFSPath
+    {
+        get => s_romfsPath;
+        set
+        {
+            s_romfsPath = value;
 
-    public static bool RomFSAvailable => RomFSPath is not null;
+            if (value is not null)
+                SettingsHandler.SetValue("RomFSPath", value);
+        }
+    }
+
+    public static bool RomFSAvailable => !string.IsNullOrEmpty(RomFSPath);
+
+    public static void LoadFromSettings() =>
+        s_romfsPath = SettingsHandler.GetValue<string>("RomFSPath");
 
     private static readonly List<(string, byte)> s_stageNames = new();
     public static List<(string, byte)> StageNames

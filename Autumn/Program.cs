@@ -15,6 +15,8 @@ ProjectHandler.ActiveProject.Stages.Add(stage);
 
 SettingsHandler.LoadSettings();
 
+RomFSHandler.LoadFromSettings();
+
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());
 else
