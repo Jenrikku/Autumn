@@ -13,6 +13,7 @@ internal static class WindowManager
     private static readonly List<WindowContext> s_pendingInits = new();
 
     public static bool IsEmpty => s_contexts.Count <= 0 && s_pendingInits.Count <= 0;
+    public static int Count => s_contexts.Count + s_pendingInits.Count;
 
     public static bool Add(WindowContext context)
     {
@@ -25,7 +26,29 @@ internal static class WindowManager
         return false;
     }
 
-    public static bool Remove(WindowContext context) => s_contexts.Remove(context);
+    public static void Remove(WindowContext context)
+    {
+        s_contexts.Remove(context);
+
+        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+            SharedContext = s_contexts[0].Window.GLContext;
+
+        context.Window.DoEvents();
+        context.Window.Reset();
+    }
+
+    public static void RemoveAt(int index)
+    {
+        WindowContext context = s_contexts[index];
+
+        s_contexts.RemoveAt(index);
+
+        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+            SharedContext = s_contexts[0].Window.GLContext;
+
+        context.Window.DoEvents();
+        context.Window.Reset();
+    }
 
     public static void Run()
     {
@@ -34,7 +57,7 @@ internal static class WindowManager
 
         s_isRunning = true;
 
-        while (s_contexts.Count > 0 || s_pendingInits.Count > 0)
+        while (Count > 0)
         {
             if (s_pendingInits.Count > 0)
             {
@@ -88,20 +111,7 @@ internal static class WindowManager
             if (!context.Close())
                 break;
 
-            RemoveContextAt(0);
+            RemoveAt(0);
         }
-    }
-
-    private static void RemoveContextAt(int index)
-    {
-        WindowContext context = s_contexts[index];
-
-        s_contexts.RemoveAt(index);
-
-        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
-            SharedContext = s_contexts[0].Window.GLContext;
-
-        context.Window.DoEvents();
-        context.Window.Reset();
     }
 }

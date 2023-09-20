@@ -148,9 +148,7 @@ internal class WelcomeWindowContext : WindowContext
                     break;
 
                 default:
-                    WindowManager.Remove(this);
-
-                    if (WindowManager.IsEmpty)
+                    if (WindowManager.Count <= 1)
                         WindowManager.Add(new MainWindowContext());
 
                     if (!string.IsNullOrEmpty(_romfsInput))
@@ -158,7 +156,8 @@ internal class WelcomeWindowContext : WindowContext
 
                     SettingsHandler.SetValue("SkipWelcomeWindow", true);
 
-                    break;
+                    Window.Close();
+                    return;
             }
 
             ImGui.End();
