@@ -3,7 +3,8 @@
 namespace Autumn.GUI;
 
 // Based on SceneGL.Testing: https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/WindowManager.cs
-internal static class WindowManager {
+internal static class WindowManager
+{
     public static IGLContext? SharedContext { get; private set; } = null;
 
     private static bool s_isRunning = false;
@@ -11,21 +12,34 @@ internal static class WindowManager {
     private static readonly List<WindowContext> s_contexts = new();
     private static readonly List<WindowContext> s_pendingInits = new();
 
-    public static void Add(WindowContext context) {
-        if(!s_contexts.Contains(context))
+    public static bool IsEmpty => s_contexts.Count <= 0 && s_pendingInits.Count <= 0;
+
+    public static bool Add(WindowContext context)
+    {
+        if (!s_contexts.Contains(context))
+        {
             s_pendingInits.Add(context);
+            return true;
+        }
+
+        return false;
     }
 
-    public static void Run() {
-        if(s_isRunning)
+    public static bool Remove(WindowContext context) => s_contexts.Remove(context);
+
+    public static void Run()
+    {
+        if (s_isRunning)
             return;
 
         s_isRunning = true;
 
-        do {
-
-            if(s_pendingInits.Count > 0) {
-                foreach(WindowContext context in s_pendingInits) {
+        while (s_contexts.Count > 0 || s_pendingInits.Count > 0)
+        {
+            if (s_pendingInits.Count > 0)
+            {
+                foreach (WindowContext context in s_pendingInits)
+                {
                     context.Window.Initialize();
                     s_contexts.Add(context);
 
@@ -35,19 +49,22 @@ internal static class WindowManager {
                 s_pendingInits.Clear();
             }
 
-
-            for(int i = 0; i < s_contexts.Count; i++) {
+            for (int i = 0; i < s_contexts.Count; i++)
+            {
                 WindowContext context = s_contexts[i];
 
                 context.Window.DoEvents();
 
-                if(!context.Window.IsClosing) {
+                if (!context.Window.IsClosing)
+                {
                     context.Window.DoUpdate();
                     context.Window.DoRender();
-                } else {
+                }
+                else
+                {
                     s_contexts.RemoveAt(i);
 
-                    if(context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+                    if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
                         SharedContext = s_contexts[0].Window.GLContext;
 
                     context.Window.DoEvents();
@@ -56,30 +73,32 @@ internal static class WindowManager {
                     i--;
                 }
             }
-
-        } while(s_contexts.Count > 0);
+        }
     }
 
-    public static void Stop() {
-        if(!s_isRunning)
+    public static void Stop()
+    {
+        if (!s_isRunning)
             return;
 
-        while(s_contexts.Count > 0) {
+        while (s_contexts.Count > 0)
+        {
             WindowContext context = s_contexts[0];
 
-            if(!context.Close())
+            if (!context.Close())
                 break;
 
             RemoveContextAt(0);
         }
     }
 
-    private static void RemoveContextAt(int index) {
+    private static void RemoveContextAt(int index)
+    {
         WindowContext context = s_contexts[index];
 
         s_contexts.RemoveAt(index);
 
-        if(context.Window.GLContext == SharedContext && s_contexts.Count > 0)
+        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
             SharedContext = s_contexts[0].Window.GLContext;
 
         context.Window.DoEvents();

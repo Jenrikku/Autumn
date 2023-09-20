@@ -13,5 +13,9 @@ ProjectHandler.ActiveProject = new();
 ProjectHandler.ActiveProject.Stages.Add(stage);
 #endif
 
-WindowManager.Add(new MainWindowContext());
+if (true)
+    WindowManager.Add(new WelcomeWindowContext());
+else
+    WindowManager.Add(new MainWindowContext());
+
 WindowManager.Run();
