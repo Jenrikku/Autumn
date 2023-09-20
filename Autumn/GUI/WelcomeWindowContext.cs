@@ -156,6 +156,8 @@ internal class WelcomeWindowContext : WindowContext
                     if (!string.IsNullOrEmpty(_romfsInput))
                         RomFSHandler.RomFSPath = _romfsInput;
 
+                    SettingsHandler.SetValue("SkipWelcomeWindow", true);
+
                     break;
             }
 
