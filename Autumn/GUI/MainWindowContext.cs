@@ -76,7 +76,7 @@ internal class MainWindowContext : WindowContext
 
             #endregion
 
-            if (ProjectHandler.ActiveProject.Stages.Count <= 0)
+            if (!ProjectHandler.ProjectLoaded)
                 RenderNoProjectScreen();
             else
                 RenderEditors(deltaSeconds);
