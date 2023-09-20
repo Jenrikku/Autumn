@@ -34,8 +34,19 @@ internal class YAMLWrapper
         if (dir is not null)
             Directory.CreateDirectory(dir);
 
-        using StreamWriter writer = new(path);
+        StreamWriter writer;
+
+        try
+        {
+            writer = new(path) { AutoFlush = true };
+        }
+        catch
+        {
+            return;
+        }
 
         serializer.Serialize(writer, obj, typeof(T));
+
+        writer.Dispose();
     }
 }
