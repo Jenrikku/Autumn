@@ -20,8 +20,10 @@ internal static class SettingsHandler
                 if (!Directory.Exists(config))
                     Directory.CreateDirectory(config).Attributes |= FileAttributes.Hidden;
 
-                _settingsPath = Path.Join(config, "autumn", "config.yml");
+                _settingsPath = Path.Join(config, "autumn");
                 Directory.CreateDirectory(_settingsPath);
+
+                _settingsPath = Path.Join(_settingsPath, "config.yml");
             }
 
             return _settingsPath;
@@ -29,7 +31,7 @@ internal static class SettingsHandler
         set => _settingsPath = value;
     }
 
-    public static void ReadSettings() =>
+    public static void LoadSettings() =>
         Settings = YAMLWrapper.Desearialize<Dictionary<string, object>>(SettingsPath) ?? new();
 
     public static void SaveSettings() => YAMLWrapper.Serialize(SettingsPath, Settings);
