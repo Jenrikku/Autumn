@@ -33,4 +33,18 @@ internal static class SettingsHandler
         Settings = YAMLWrapper.Desearialize<Dictionary<string, object>>(SettingsPath) ?? new();
 
     public static void SaveSettings() => YAMLWrapper.Serialize(SettingsPath, Settings);
+
+    public static T? GetValue<T>(string key, T? defaultValue = default)
+    {
+        if (Settings.TryGetValue(key, out object? obj) && obj is T result)
+            return result;
+
+        return defaultValue;
+    }
+
+    public static void SetValue(string key, object value)
+    {
+        if (!Settings.TryAdd(key, value))
+            Settings[key] = value;
+    }
 }
