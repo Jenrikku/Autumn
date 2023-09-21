@@ -11,14 +11,17 @@ internal class WelcomeWindowContext : WindowContext
 {
     private byte _currentPage = 0;
 
-    private string _romfsInput = string.Empty;
-    private bool _romfsIsValidPath = false;
+    private string _romfsInput;
+    private bool _romfsIsValidPath;
 
     public WelcomeWindowContext()
         : base()
     {
         Window.Size = new(540, 540);
         Window.Title = "Welcome to Autumn!";
+
+        _romfsInput = RomFSHandler.RomFSPath ?? string.Empty;
+        _romfsIsValidPath = Directory.Exists(_romfsInput);
 
         Window.Render += (deltaSeconds) =>
         {

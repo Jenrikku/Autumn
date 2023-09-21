@@ -163,6 +163,14 @@ internal class MainWindowContext : WindowContext
             ImGui.EndMenu();
         }
 
+        if (ImGui.BeginMenu("Help"))
+        {
+            if (ImGui.MenuItem("Show welcome window"))
+                WindowManager.Add(new WelcomeWindowContext());
+
+            ImGui.EndMenu();
+        }
+
         #region SceneTabs
 
         ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
