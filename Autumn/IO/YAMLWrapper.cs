@@ -5,14 +5,21 @@ namespace Autumn.IO;
 internal class YAMLWrapper
 {
     public static SerializerSettings settings =
-        new() { NamingConvention = new PascalNamingConvention(), IgnoreUnmatchedProperties = true };
+        new()
+        {
+            NamingConvention = new PascalNamingConvention(),
+            IgnoreUnmatchedProperties = true,
+            IgnoreNulls = true,
+        };
 
-    public static Serializer serializer = new(settings);
+    public static Serializer? serializer;
 
     public static T? Desearialize<T>(string path)
         where T : notnull
     {
         string text;
+
+        serializer = new(settings);
 
         try
         {
@@ -29,6 +36,8 @@ internal class YAMLWrapper
     public static void Serialize<T>(string path, T obj)
         where T : notnull
     {
+        serializer = new(settings);
+
         string? dir = Path.GetDirectoryName(path);
 
         if (dir is not null)
