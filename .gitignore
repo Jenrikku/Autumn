@@ -351,6 +351,7 @@ MigrationBackup/
 
 # VS Code
 .vscode/
+.config/
 
 # Ignore folder
 .ignore/
@@ -360,8 +361,3 @@ imgui.ini
 
 # tinyfiledialogs build files
 Libraries/tinyfiledialogs/build/
-
-# syncthing
-.stignore
-.stfolder
-.stversions
