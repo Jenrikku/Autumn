@@ -32,7 +32,7 @@ internal static class SettingsHandler
     }
 
     public static void LoadSettings() =>
-        Settings = YAMLWrapper.Desearialize<Dictionary<string, object>>(SettingsPath) ?? new();
+        Settings = YAMLWrapper.Deserialize<Dictionary<string, object>>(SettingsPath) ?? new();
 
     public static void SaveSettings() => YAMLWrapper.Serialize(SettingsPath, Settings);
 

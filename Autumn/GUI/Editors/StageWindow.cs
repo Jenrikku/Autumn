@@ -1,4 +1,5 @@
-﻿using Autumn.IO;
+﻿using System.Diagnostics;
+using Autumn.IO;
 using Autumn.Storage;
 using ImGuiNET;
 
@@ -29,6 +30,8 @@ internal class StageWindow
 
             foreach (Stage stage in ProjectHandler.ActiveProject.Stages)
             {
+                Debug.Assert(stage.Name is not null);
+
                 ImGui.TableNextRow();
 
                 ImGui.TableSetColumnIndex(0);

@@ -106,7 +106,8 @@ internal class MainWindowContext : WindowContext
                 bool success = TinyFileDialogs.OpenFileDialog(
                     out string[]? output,
                     title: "Select the Autumn project file.",
-                    filterPatterns: new string[] { "*.yml", ".yaml" }
+                    filterPatterns: new string[] { "*.yml", ".yaml" },
+                    filterDescription: "YAML file"
                 );
 
                 if (success)

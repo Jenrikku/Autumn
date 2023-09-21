@@ -1,3 +1,4 @@
+using System.Text;
 using Autumn.Storage;
 using Autumn.Storage.StageObjs;
 using BYAMLSharp;
@@ -7,6 +8,8 @@ namespace Autumn.IO;
 
 internal static class StageHandler
 {
+    private static Encoding s_encoding = Encoding.GetEncoding("Shift-JIS");
+
     /// <param name="path">The project's root path.</param>
     public static IEnumerable<Stage> LoadProjectStages(string path)
     {
@@ -21,8 +24,7 @@ internal static class StageHandler
 
     public static Stage LoadStageFrom(string path)
     {
-        string contents = File.ReadAllText(path);
-        Stage stage = YAMLWrapper.Desearialize<Stage>(contents);
+        Stage stage = YAMLWrapper.Deserialize<Stage>(path);
 
         return stage;
     }
@@ -108,7 +110,7 @@ internal static class StageHandler
             // StageData:
 
             data = design.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data);
+            byaml = BYAMLParser.Read(data, s_encoding);
 
             IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(
                 byaml,
@@ -127,7 +129,7 @@ internal static class StageHandler
             // StageData:
 
             data = map.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data);
+            byaml = BYAMLParser.Read(data, s_encoding);
 
             IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Map);
 
@@ -143,7 +145,7 @@ internal static class StageHandler
             // StageData:
 
             data = sound.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data);
+            byaml = BYAMLParser.Read(data, s_encoding);
 
             IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Sound);
 

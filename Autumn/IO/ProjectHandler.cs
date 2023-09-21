@@ -12,7 +12,7 @@ internal static class ProjectHandler
     /// <param name="path">The path to the project file.</param>
     public static void LoadProject(string path)
     {
-        ActiveProject = YAMLWrapper.Desearialize<Project>(path);
+        ActiveProject = YAMLWrapper.Deserialize<Project>(path);
 
         string dir = Path.GetDirectoryName(path) ?? Directory.GetDirectoryRoot(path);
 

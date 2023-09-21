@@ -10,11 +10,12 @@ internal class YAMLWrapper
             NamingConvention = new PascalNamingConvention(),
             IgnoreUnmatchedProperties = true,
             IgnoreNulls = true,
+            EmitAlias = false
         };
 
     public static Serializer? serializer;
 
-    public static T? Desearialize<T>(string path)
+    public static T? Deserialize<T>(string path)
         where T : notnull
     {
         string text;
