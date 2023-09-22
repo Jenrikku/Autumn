@@ -117,7 +117,7 @@ internal static class StageHandler
                 StageObjFileType.Design
             );
 
-            stage.StageData.AddRange(stageObjs);
+            stage.AddRange(stageObjs);
 
             // TO-DO: Other byamls.
         }
@@ -133,7 +133,7 @@ internal static class StageHandler
 
             IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Map);
 
-            stage.StageData.AddRange(stageObjs);
+            stage.AddRange(stageObjs);
 
             // TO-DO: Other byamls.
         }
@@ -149,7 +149,7 @@ internal static class StageHandler
 
             IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Sound);
 
-            stage.StageData.AddRange(stageObjs);
+            stage.AddRange(stageObjs);
 
             // TO-DO: Other byamls.
         }

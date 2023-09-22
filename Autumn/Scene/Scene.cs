@@ -1,5 +1,6 @@
 ﻿using Autumn.IO;
 using Autumn.Storage;
+using Autumn.Storage.StageObjs;
 using SceneGL;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -21,17 +22,15 @@ internal class Scene
     {
         Stage = stage;
 
-        stage.StageData.ForEach(
-            (stageObj) =>
-            {
-                ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
+        foreach (IStageObj stageObj in stage)
+        {
+            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
 
-                SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
+            SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
 
-                SceneObjects.Add(sceneObj);
-                _pickableObjs.Add(_lastPickingId++, sceneObj);
-            }
-        );
+            SceneObjects.Add(sceneObj);
+            _pickableObjs.Add(_lastPickingId++, sceneObj);
+        }
     }
 
     public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection)
@@ -39,18 +38,7 @@ internal class Scene
         ModelRenderer.UpdateMatrices(view, projection);
 
         foreach (SceneObj obj in SceneObjects)
-        {
-            //#if DEBUG
-            //            if (obj.StageObj.Name == "FirstStepASideView")
-            //            {
-            //                obj.Transform = Matrix4x4.Identity;
-            //
-            //                ModelRenderer.Draw(gl, obj);
-            //            }
-            //#else
             ModelRenderer.Draw(gl, obj);
-            //#endif
-        }
     }
 
     /// <returns>Whether the object is now selected. It will be false as well whenever no object was found.</returns>
