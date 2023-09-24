@@ -90,70 +90,50 @@ internal static class StageHandler
             sound = SZSWrapper.ReadFile(data);
         }
 
-        return TryImportStage(ref stage, design, map, sound);
+        if (design is null && map is null && sound is null)
+            return false;
+
+        ImportStage(ref stage, design, map, sound);
+        return true;
     }
 
-    private static bool TryImportStage(
+    private static void ImportStage(
         ref Stage stage,
         NARCFileSystem? design,
         NARCFileSystem? map,
         NARCFileSystem? sound
     )
     {
+        if (design is not null)
+            ParseStageFile(ref stage, design, StageObjFileType.Design);
+
+        if (map is not null)
+            ParseStageFile(ref stage, map, StageObjFileType.Map);
+
+        if (sound is not null)
+            ParseStageFile(ref stage, sound, StageObjFileType.Sound);
+    }
+
+    private static void ParseStageFile(
+        ref Stage stage,
+        NARCFileSystem narc,
+        StageObjFileType fileType
+    )
+    {
+        byte scenario = stage.Scenario;
+
         byte[] data;
         BYAML byaml;
 
-        // Design ----------------------
+        // StageData:
 
-        if (design is not null)
-        {
-            // StageData:
+        data = narc.GetFile("StageData.byml");
+        byaml = BYAMLParser.Read(data, s_encoding);
 
-            data = design.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data, s_encoding);
+        IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, fileType);
 
-            IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(
-                byaml,
-                StageObjFileType.Design
-            );
+        stage.AddRange(stageObjs);
 
-            stage.AddRange(stageObjs);
-
-            // TO-DO: Other byamls.
-        }
-
-        // Map ----------------------
-
-        if (map is not null)
-        {
-            // StageData:
-
-            data = map.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data, s_encoding);
-
-            IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Map);
-
-            stage.AddRange(stageObjs);
-
-            // TO-DO: Other byamls.
-        }
-
-        // Sound ----------------------
-
-        if (sound is not null)
-        {
-            // StageData:
-
-            data = sound.GetFile("StageData.byml");
-            byaml = BYAMLParser.Read(data, s_encoding);
-
-            IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, StageObjFileType.Sound);
-
-            stage.AddRange(stageObjs);
-
-            // TO-DO: Other byamls.
-        }
-
-        return true;
+        // TO-DO: Other byamls.
     }
 }
