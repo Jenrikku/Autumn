@@ -10,6 +10,8 @@ internal class BackgroundWorker
 
     public bool IsIdle { get; private set; } = true;
 
+    public bool IsStopping { get; private set; } = false;
+
     public BackgroundWorker() => _thread = new(new ThreadStart(BackgroundWork));
 
     public void Add(string message, Action action) => Add(new(message, action));
@@ -18,21 +20,33 @@ internal class BackgroundWorker
 
     public void Run() => _thread.Start();
 
-    public void Stop() => _thread.Interrupt();
+    public void Stop()
+    {
+        IsStopping = true;
+
+        _thread.Join();
+    }
 
     private void BackgroundWork()
     {
-        while (_tasks.Count <= 0)
+        while (!IsStopping)
         {
-            BackgroundTask task = _tasks[0];
-            IsIdle = false;
+            if (_tasks.Count > 0)
+            {
+                BackgroundTask task = _tasks[0];
+                IsIdle = false;
 
-            StatusMessage = task.Message;
-            task.Action.Invoke();
+                StatusMessage = task.Message;
+                task.Action.Invoke();
 
-            _tasks.RemoveAt(0);
+                _tasks.RemoveAt(0);
+            }
+            else
+            {
+                IsIdle = true;
+
+                StatusMessage = string.Empty;
+            }
         }
-
-        IsIdle = true;
     }
 }
