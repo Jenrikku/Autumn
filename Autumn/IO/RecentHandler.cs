@@ -30,17 +30,6 @@ internal static class RecentHandler
         }
     }
 
-    private static string _lastProjectCreatePath = string.Empty;
-    public static string LastProjectCreatePath
-    {
-        get => _lastProjectCreatePath;
-        set
-        {
-            _lastProjectCreatePath = value;
-            SettingsHandler.SetValue("LastProjectCreatePath", value);
-        }
-    }
-
     public static void LoadFromSettings()
     {
         string[] array = SettingsHandler.GetValue("RecentlyOpenedProjects", Array.Empty<string>())!;
@@ -56,7 +45,6 @@ internal static class RecentHandler
 
         _lastProjectOpenPath = SettingsHandler.GetValue("LastProjectOpenPath", string.Empty)!;
         _lastProjectSavePath = SettingsHandler.GetValue("LastProjectSavePath", string.Empty)!;
-        _lastProjectCreatePath = SettingsHandler.GetValue("LastProjectCreatePath", string.Empty)!;
     }
 
     private static void OnRecentPathsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
