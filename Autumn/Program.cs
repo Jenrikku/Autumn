@@ -8,6 +8,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 SettingsHandler.LoadSettings();
 
 RomFSHandler.LoadFromSettings();
+RecentHandler.LoadFromSettings();
 
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());
