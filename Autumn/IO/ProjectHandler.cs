@@ -25,7 +25,8 @@ internal static class ProjectHandler
         ActiveProject.Objects = new();
         // TO-DO: Objects.
 
-        RecentHandler.RecentOpenedPaths.Add(path);
+        if (!RecentHandler.RecentOpenedPaths.Contains(path))
+            RecentHandler.RecentOpenedPaths.Add(path);
 
         ProjectLoaded = true;
     }
@@ -89,7 +90,8 @@ internal static class ProjectHandler
 
         YAMLWrapper.Serialize(path, ActiveProject);
 
-        RecentHandler.RecentOpenedPaths.Add(path);
+        if (!RecentHandler.RecentOpenedPaths.Contains(path))
+            RecentHandler.RecentOpenedPaths.Add(path);
 
         ProjectLoaded = true;
     }
