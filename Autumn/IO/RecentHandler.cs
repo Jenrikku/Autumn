@@ -11,7 +11,13 @@ internal static class RecentHandler
     private static string _lastProjectOpenPath = string.Empty;
     public static string LastProjectOpenPath
     {
-        get => _lastProjectOpenPath;
+        get
+        {
+            if (string.IsNullOrEmpty(_lastProjectOpenPath))
+                return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            return _lastProjectOpenPath;
+        }
         set
         {
             _lastProjectOpenPath = value;
@@ -22,7 +28,13 @@ internal static class RecentHandler
     private static string _lastProjectSavePath = string.Empty;
     public static string LastProjectSavePath
     {
-        get => _lastProjectSavePath;
+        get
+        {
+            if (string.IsNullOrEmpty(_lastProjectSavePath))
+                return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            return _lastProjectSavePath;
+        }
         set
         {
             _lastProjectSavePath = value;
