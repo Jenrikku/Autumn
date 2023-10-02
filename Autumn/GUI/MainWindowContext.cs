@@ -122,6 +122,9 @@ internal class MainWindowContext : WindowContext
                 }
             }
 
+            if (!ProjectHandler.ProjectLoaded)
+                ImGui.BeginDisabled();
+
             if (ImGui.MenuItem("Save"))
             {
                 if (string.IsNullOrEmpty(ProjectHandler.ActiveProject.SavePath))
@@ -152,6 +155,8 @@ internal class MainWindowContext : WindowContext
 
                 return success;
             }
+
+            ImGui.EndDisabled();
 
             ImGui.Separator();
 
