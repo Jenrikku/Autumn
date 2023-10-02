@@ -44,13 +44,16 @@ internal static class RecentHandler
 
     public static void LoadFromSettings()
     {
-        string[] array = SettingsHandler.GetValue("RecentlyOpenedProjects", Array.Empty<string>())!;
+        ICollection<object> collection = SettingsHandler.GetValue<ICollection<object>>(
+            "RecentlyOpenedProjects",
+            Array.Empty<object>()
+        )!;
 
         RecentOpenedPaths.CollectionChanged -= OnRecentPathsChanged;
 
         RecentOpenedPaths.Clear();
 
-        foreach (string str in array)
+        foreach (string str in collection.Cast<string>())
             RecentOpenedPaths.Add(str);
 
         RecentOpenedPaths.CollectionChanged += OnRecentPathsChanged;
