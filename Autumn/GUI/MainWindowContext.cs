@@ -158,6 +158,20 @@ internal class MainWindowContext : WindowContext
 
             ImGui.EndDisabled();
 
+            if (ImGui.BeginMenu("Recent"))
+            {
+                if (RecentHandler.RecentOpenedPaths.Count <= 0)
+                    ImGui.TextDisabled("There are no recent entries.");
+                else
+                {
+                    foreach (string path in RecentHandler.RecentOpenedPaths)
+                        if (ImGui.Selectable(path))
+                            ProjectHandler.LoadProject(path);
+                }
+
+                ImGui.EndMenu();
+            }
+
             ImGui.Separator();
 
             if (
