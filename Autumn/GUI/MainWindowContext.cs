@@ -106,6 +106,7 @@ internal class MainWindowContext : WindowContext
                 bool success = TinyFileDialogs.OpenFileDialog(
                     out string[]? output,
                     title: "Select the Autumn project file.",
+                    defaultPath: RecentHandler.LastProjectOpenPath,
                     filterPatterns: new string[] { "*.yml", ".yaml" },
                     filterDescription: "YAML file"
                 );
@@ -113,6 +114,9 @@ internal class MainWindowContext : WindowContext
                 if (success)
                 {
                     string projectPath = output![0];
+                    RecentHandler.LastProjectOpenPath =
+                        Path.GetDirectoryName(projectPath)
+                        ?? Directory.GetDirectoryRoot(projectPath);
 
                     ProjectHandler.LoadProject(projectPath);
                 }
@@ -136,10 +140,16 @@ internal class MainWindowContext : WindowContext
             {
                 bool success = TinyFileDialogs.SelectFolderDialog(
                     out output,
-                    title: "Select where to save the Autumn project."
+                    title: "Select where to save the Autumn project.",
+                    defaultPath: RecentHandler.LastProjectSavePath
                 );
 
-                output = Path.Join(output, "autumnproj.yml");
+                if (success)
+                {
+                    RecentHandler.LastProjectSavePath = output!;
+                    output = Path.Join(output, "autumnproj.yml");
+                }
+
                 return success;
             }
 
