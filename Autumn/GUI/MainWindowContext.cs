@@ -166,7 +166,10 @@ internal class MainWindowContext : WindowContext
                 {
                     foreach (string path in RecentHandler.RecentOpenedPaths)
                         if (ImGui.Selectable(path))
+                        {
                             ProjectHandler.LoadProject(path);
+                            break;
+                        }
                 }
 
                 ImGui.EndMenu();
