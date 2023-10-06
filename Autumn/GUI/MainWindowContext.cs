@@ -20,6 +20,10 @@ internal class MainWindowContext : WindowContext
 
     private bool _isFirstFrame = false;
 
+#if DEBUG
+    private bool _showDemoWindow = false;
+#endif
+
     public MainWindowContext()
         : base()
     {
@@ -80,6 +84,11 @@ internal class MainWindowContext : WindowContext
                 RenderNoProjectScreen();
             else
                 RenderEditors(deltaSeconds);
+
+#if DEBUG
+            if (_showDemoWindow)
+                ImGui.ShowDemoWindow(ref _showDemoWindow);
+#endif
 
             if (_stageSelectOpen)
                 RenderStageSelectPopup();
@@ -199,6 +208,11 @@ internal class MainWindowContext : WindowContext
         {
             if (ImGui.MenuItem("Show welcome window"))
                 WindowManager.Add(new WelcomeWindowContext());
+
+#if DEBUG
+            if (ImGui.MenuItem("Show demo window"))
+                _showDemoWindow = true;
+#endif
 
             ImGui.EndMenu();
         }
