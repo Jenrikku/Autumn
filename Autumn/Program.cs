@@ -1,14 +1,17 @@
 using Autumn.GUI;
 using Autumn.IO;
-using Autumn.Storage;
 using System.Text;
 
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
 SettingsHandler.LoadSettings();
 
 RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
+
+if (!File.Exists("imgui.ini"))
+    File.Copy(Path.Join("Resources", "DefaultLayout.ini"), "imgui.ini");
 
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());
