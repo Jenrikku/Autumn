@@ -77,7 +77,9 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Begin(
                 "mainDockSpaceWindow",
-                ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBringToFrontOnFocus
+                ImGuiWindowFlags.NoDecoration
+                    | ImGuiWindowFlags.NoBringToFrontOnFocus
+                    | ImGuiWindowFlags.NoSavedSettings
             );
             ImGui.PopStyleVar(2);
 
