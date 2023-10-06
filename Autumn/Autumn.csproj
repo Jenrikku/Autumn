@@ -27,4 +27,12 @@
     <ProjectReference Include="..\Libraries\tinyfiledialogs\cs\TinyFileDialogsSharp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content 
+      Include="$(MSBuildProjectDirectory)\Resources\DefaultLayout.ini"
+      CopyToOutputDirectory="Always"
+      CopyToPublishDirectory="Always"
+    />
+  </ItemGroup>
+
 </Project>
