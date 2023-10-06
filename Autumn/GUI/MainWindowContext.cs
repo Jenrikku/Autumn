@@ -4,6 +4,7 @@ using Autumn.Scene;
 using Autumn.Storage;
 using ImGuiNET;
 using Silk.NET.OpenGL;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using TinyFileDialogsSharp;
@@ -18,7 +19,7 @@ internal class MainWindowContext : WindowContext
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
     public Camera Camera { get; }
 
-    private bool _isFirstFrame = false;
+    private bool _isFirstFrame = true;
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -55,28 +56,35 @@ internal class MainWindowContext : WindowContext
 
             ImGuiController.MakeCurrent();
 
-            float h = RenderMainMenuBar();
+            if (_isFirstFrame)
+            {
+                ImGui.LoadIniSettingsFromDisk("imgui.ini");
+                _isFirstFrame = false;
+            }
 
             #region DockSpace
 
+            float barHeight = 17;
+
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
-            Vector2 menuBar = new(0, h);
 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
 
-            ImGui.SetNextWindowPos(viewport.Pos + menuBar);
-            ImGui.SetNextWindowSize(viewport.Size - menuBar * 2);
+            ImGui.SetNextWindowPos(viewport.Pos + new Vector2(0, barHeight));
+            ImGui.SetNextWindowSize(viewport.Size - new Vector2(0, barHeight * 2));
             ImGui.SetNextWindowViewport(viewport.ID);
 
             ImGui.Begin(
                 "mainDockSpaceWindow",
                 ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBringToFrontOnFocus
             );
+            ImGui.PopStyleVar(2);
+
+            RenderMainMenuBar(barHeight);
 
             ImGui.DockSpace(ImGui.GetID("mainDockSpace"));
             ImGui.End();
-            ImGui.PopStyleVar(2);
 
             #endregion
 
@@ -100,10 +108,12 @@ internal class MainWindowContext : WindowContext
         };
     }
 
-    private float RenderMainMenuBar()
+    private void RenderMainMenuBar(float height)
     {
         if (!ImGui.BeginMainMenuBar())
-            return 0;
+            return;
+
+        Debug.Assert(height != ImGui.GetItemRectSize().Y);
 
         if (ImGui.BeginMenu("Project"))
         {
@@ -262,17 +272,16 @@ internal class MainWindowContext : WindowContext
 
         #endregion
 
-        float height = ImGui.GetItemRectSize().Y;
-
         ImGui.EndMainMenuBar();
 
-        return height;
+        return;
     }
 
     private void RenderEditors(double deltaSeconds)
     {
         StageWindow.Render(this);
         ObjectWindow.Render(this);
+        PropertiesWindow.Render(this);
         SceneWindow.Render(this, deltaSeconds);
     }
 
