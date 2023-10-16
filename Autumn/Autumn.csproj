@@ -24,7 +24,7 @@
     <ProjectReference Include="..\Libraries\BYAMLSharp\BYAMLSharp\BYAMLSharp.csproj" />
     <ProjectReference Include="..\Libraries\SPICA\SPICA\SPICA.csproj" />
     <ProjectReference Include="..\Libraries\SceneGL\SceneGL\SceneGL.csproj" />
-    <ProjectReference Include="..\Libraries\tinyfiledialogs\cs\TinyFileDialogsSharp.csproj" />
+    <ProjectReference Include="..\Libraries\tinyfiledialogs\src\TinyFileDialogsSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
