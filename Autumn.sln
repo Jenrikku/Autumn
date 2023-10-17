@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SPICA", "Libraries\SPICA\SP
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{CDA754E2-B57B-48C0-B4DB-AD5895743D6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyFileDialogs", "Libraries\tinyfiledialogs\cs\TinyFileDialogsSharp.csproj", "{FE127259-6C1B-44C5-8E2C-5858EEF799CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyFileDialogs", "Libraries\tinyfiledialogs\src\TinyFileDialogsSharp.csproj", "{FE127259-6C1B-44C5-8E2C-5858EEF799CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
