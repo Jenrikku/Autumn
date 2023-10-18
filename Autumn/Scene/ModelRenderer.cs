@@ -1,13 +1,10 @@
-﻿using Autumn.IO;
-using Autumn.Scene.Area;
+﻿using Autumn.Scene.Area;
 using Autumn.Scene.DefaultCube;
 using Autumn.Scene.H3D;
 using Autumn.Storage;
-using Autumn.Storage.StageObjs;
 using SceneGL;
 using Silk.NET.OpenGL;
 using System.Numerics;
-using System.Runtime.Serialization;
 
 namespace Autumn.Scene;
 
@@ -56,10 +53,10 @@ internal static class ModelRenderer
                 $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(Draw)}"
             );
 
-        IStageObj stageObj = sceneObj.StageObj;
+        StageObj stageObj = sceneObj.StageObj;
         ActorObj actorObj = sceneObj.ActorObj;
 
-        if (stageObj is AreaStageObj || stageObj is CameraAreaStageObj)
+        if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
         {
             // TO-DO: Change color based on the name here.
 

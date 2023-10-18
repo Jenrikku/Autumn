@@ -1,6 +1,5 @@
 using System.Text;
 using Autumn.Storage;
-using Autumn.Storage.StageObjs;
 using BYAMLSharp;
 using NARCSharp;
 
@@ -130,10 +129,91 @@ internal static class StageHandler
         data = narc.GetFile("StageData.byml");
         byaml = BYAMLParser.Read(data, s_encoding);
 
-        IStageObj[] stageObjs = StageObjHandler.ProcessStageObjs(byaml, fileType);
+        IEnumerable<StageObj> stageObjs = ProcessStageObjs(byaml, fileType);
 
-        stage.AddRange(stageObjs);
+        stage.StageObjs ??= new();
+        stage.StageObjs.AddRange(stageObjs);
 
         // TO-DO: Other byamls.
+    }
+
+    private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageObjFileType fileType)
+    {
+        if (byaml.RootNode.NodeType is not BYAMLNodeType.Dictionary)
+            throw new("The given BYAML was not formatted correctly.");
+
+        var rootDict = byaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+        BYAMLNode allInfosNode = rootDict["AllInfos"];
+        var allInfos = allInfosNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+        foreach (KeyValuePair<string, BYAMLNode> info in allInfos)
+        {
+            if (info.Value.NodeType != BYAMLNodeType.Array)
+                continue;
+
+            BYAMLNode[] array = info.Value.GetValueAs<BYAMLNode[]>()!;
+
+            foreach (BYAMLNode node in array)
+            {
+                if (node.NodeType != BYAMLNodeType.Dictionary)
+                    continue;
+
+                var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                dict.TryGetValue("l_id", out BYAMLNode? id);
+
+                yield return new()
+                {
+                    Type = info.Key switch
+                    {
+                        "AreaObjInfo" => StageObjType.Area,
+                        "CameraAreaInfo" => StageObjType.CameraArea,
+                        "GoalObjInfo" => StageObjType.Goal,
+                        "ObjInfo" => StageObjType.Regular,
+                        "StartEventObjInfo" => StageObjType.StartEvent,
+                        "StartInfo" => StageObjType.Start,
+                        _ => throw new NotSupportedException("Unknown stage obj type found.")
+
+                        // There may be more to be seen.
+                    },
+                    FileType = fileType,
+                    Translation = new(
+                        dict["pos_x"].GetValueAs<float>()!,
+                        dict["pos_y"].GetValueAs<float>()!,
+                        dict["pos_z"].GetValueAs<float>()!
+                    ),
+                    Rotation = new(
+                        dict["dir_x"].GetValueAs<float>()!,
+                        dict["dir_y"].GetValueAs<float>()!,
+                        dict["dir_z"].GetValueAs<float>()!
+                    ),
+                    Scale = new(
+                        dict["scale_x"].GetValueAs<float>()!,
+                        dict["scale_y"].GetValueAs<float>()!,
+                        dict["scale_z"].GetValueAs<float>()!
+                    ),
+                    Name = dict["name"].GetValueAs<string>()!,
+                    Layer = dict["LayerName"].GetValueAs<string>()!,
+                    ID = id?.GetValueAs<int>() ?? -1,
+                    Properties = dict.Where(
+                            i =>
+                                i.Key != "pos_x"
+                                && i.Key != "pos_y"
+                                && i.Key != "pos_z"
+                                && i.Key != "dir_x"
+                                && i.Key != "dir_y"
+                                && i.Key != "dir_z"
+                                && i.Key != "scale_x"
+                                && i.Key != "scale_y"
+                                && i.Key != "scale_z"
+                                && i.Key != "name"
+                                && i.Key != "LayerName"
+                                && i.Key != "l_id"
+                        )
+                        .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                };
+            }
+        }
     }
 }

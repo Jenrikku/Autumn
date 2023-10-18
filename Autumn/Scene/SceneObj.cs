@@ -1,5 +1,4 @@
 ﻿using Autumn.Storage;
-using Autumn.Storage.StageObjs;
 using Autumn.Utils;
 using System.Numerics;
 
@@ -7,7 +6,7 @@ namespace Autumn.Scene;
 
 internal class SceneObj
 {
-    public IStageObj StageObj { get; }
+    public StageObj StageObj { get; }
     public ActorObj ActorObj { get; }
 
     public Matrix4x4 Transform;
@@ -15,7 +14,7 @@ internal class SceneObj
     public uint PickingId { get; private set; }
     public bool Selected { get; set; }
 
-    public SceneObj(IStageObj stageObj, ActorObj actorObj, uint pickingId)
+    public SceneObj(StageObj stageObj, ActorObj actorObj, uint pickingId)
     {
         StageObj = stageObj;
         ActorObj = actorObj;

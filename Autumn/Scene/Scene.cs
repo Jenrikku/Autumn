@@ -1,11 +1,7 @@
 ﻿using Autumn.IO;
 using Autumn.Storage;
-using Autumn.Storage.StageObjs;
-using SceneGL;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace Autumn.Scene;
 
@@ -22,7 +18,10 @@ internal class Scene
     {
         Stage = stage;
 
-        foreach (IStageObj stageObj in stage)
+        if (stage.StageObjs is null)
+            return;
+
+        foreach (StageObj stageObj in stage.StageObjs)
         {
             ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
 

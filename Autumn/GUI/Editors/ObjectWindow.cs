@@ -1,5 +1,5 @@
 using Autumn.Scene;
-using Autumn.Storage.StageObjs;
+using Autumn.Storage;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
@@ -44,10 +44,9 @@ internal class ObjectWindow
 
             foreach (SceneObj obj in context.CurrentScene.SceneObjects)
             {
-                IStageObj stageObj = obj.StageObj;
-                var (index, typeName) = GetStageObjectType(stageObj);
+                StageObj stageObj = obj.StageObj;
 
-                if (_objectFilterCurrent != 0 && _objectFilterCurrent != index)
+                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type - 1)
                     continue;
 
                 ImGui.TableNextRow();
@@ -58,7 +57,7 @@ internal class ObjectWindow
 
                 ImGui.TableNextColumn();
 
-                ImGui.Text(typeName);
+                ImGui.Text(stageObj.Type.ToString());
             }
 
             ImGui.EndTable();
@@ -66,16 +65,4 @@ internal class ObjectWindow
 
         ImGui.End();
     }
-
-    private static (int index, string name) GetStageObjectType(IStageObj obj) =>
-        obj switch
-        {
-            IStageObj o when o is RegularStageObj => (1, "Regular Object"),
-            IStageObj o when o is AreaStageObj => (2, "Area"),
-            IStageObj o when o is CameraAreaStageObj => (3, "Camera Area"),
-            IStageObj o when o is GoalStageObj => (4, "Goal"),
-            IStageObj o when o is StartEventStageObj => (5, "Event Starter"),
-            IStageObj o when o is StartStageObj => (6, "Start Object"),
-            _ => (0, "Unknown")
-        };
 }
