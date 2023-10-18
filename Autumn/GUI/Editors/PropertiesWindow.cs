@@ -40,7 +40,8 @@ internal static class PropertiesWindow
             ImGui.InputText("Layer", ref stageObj.Layer, 30);
 
             if (stageObj.ID != -1)
-                ImGui.InputInt("ID", ref stageObj.ID);
+                if (ImGui.InputInt("ID", ref stageObj.ID) && stageObj.ID < 0)
+                    stageObj.ID = 0;
 
             if (ImGui.InputFloat3("Translation", ref stageObj.Translation))
                 sceneObj.UpdateTransform();
