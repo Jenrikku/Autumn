@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <Content 
-      Include="$(MSBuildProjectDirectory)\Resources\DefaultLayout.ini"
+      Include="$(MSBuildProjectDirectory)\Resources\**"
       CopyToOutputDirectory="Always"
       CopyToPublishDirectory="Always"
     />
