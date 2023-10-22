@@ -20,8 +20,8 @@ internal struct Project
     public bool Saved { get; set; } = false;
 
     [YamlIgnore]
-    public List<Stage> Stages { get; set; } = new();
+    public List<Stage> Stages { get; } = new();
 
     [YamlIgnore]
-    public Dictionary<string, ActorObj> Objects { get; set; } = new();
+    public Dictionary<string, ActorObj> Objects { get; } = new();
 }

@@ -7,39 +7,71 @@ namespace Autumn.IO;
 
 internal static class StageHandler
 {
-    private static Encoding s_encoding = Encoding.GetEncoding("Shift-JIS");
+    private static readonly Encoding s_encoding = Encoding.GetEncoding("Shift-JIS");
 
-    /// <param name="path">The project's root path.</param>
-    public static IEnumerable<Stage> LoadProjectStages(string path)
+    public static void LoadProjectStage(Stage stage)
     {
-        path = Path.Join(path, "stages");
+        if (!ProjectHandler.ProjectLoaded)
+            return;
 
-        if (!Directory.Exists(path))
-            yield break;
+        string stageDir = Path.Join(
+            ProjectHandler.ActiveProject.SavePath,
+            "stages",
+            stage.Name + stage.Scenario
+        );
 
-        foreach (string file in Directory.EnumerateFiles(path))
-            yield return LoadStageFrom(file);
+        LoadStageFrom(stage, stageDir);
     }
 
-    public static Stage LoadStageFrom(string path)
+    public static void LoadStageFrom(Stage stage, string path)
     {
-        Stage stage = YAMLWrapper.Deserialize<Stage>(path);
+        if (stage.Loaded)
+            return;
 
-        return stage;
+        string yamlPath;
+
+        yamlPath = Path.Join(path, "StageData.yml");
+
+        if (File.Exists(yamlPath))
+            stage.StageData = YAMLWrapper.Deserialize<List<StageObj>>(yamlPath);
+
+        // TO-DO: Other yamls.
+
+        stage.Loaded = true;
     }
 
-    /// <param name="path">The project's root path.</param>
-    public static void SaveProjectStages(string path, IEnumerable<Stage> stages)
+    public static void SaveProjectStage(Stage stage)
     {
-        path = Path.Join(path, "stages");
+        if (!ProjectHandler.ProjectLoaded)
+            return;
+
+        string stageDir = Path.Join(
+            ProjectHandler.ActiveProject.SavePath,
+            "stages",
+            stage.Name + stage.Scenario
+        );
+
+        SaveStageTo(stage, stageDir);
+        stage.Saved = true;
+    }
+
+    public static void SaveStageTo(Stage stage, string path)
+    {
+        if (!stage.Loaded)
+            return;
 
         Directory.CreateDirectory(path);
 
-        foreach (Stage stage in stages)
-            SaveStageTo(Path.Join(path, stage.Name + stage.Scenario + ".yml"), stage);
-    }
+        string yamlPath;
 
-    public static void SaveStageTo(string path, Stage stage) => YAMLWrapper.Serialize(path, stage);
+        if (stage.StageData is not null)
+        {
+            yamlPath = Path.Join(path, "StageData.yml");
+            YAMLWrapper.Serialize(yamlPath, stage.StageData);
+        }
+
+        // TO-DO: Other yamls.
+    }
 
     public static bool TryImportStage(string name, byte scenario, out Stage stage) =>
         TryImportStageFrom(
@@ -56,7 +88,7 @@ internal static class StageHandler
         out Stage stage
     )
     {
-        stage = new(name, scenario);
+        stage = new(name, scenario) { Loaded = true };
 
         string path;
         byte[] data;
@@ -92,32 +124,28 @@ internal static class StageHandler
         if (design is null && map is null && sound is null)
             return false;
 
-        ImportStage(ref stage, design, map, sound);
+        ImportStage(stage, design, map, sound);
         return true;
     }
 
     private static void ImportStage(
-        ref Stage stage,
+        Stage stage,
         NARCFileSystem? design,
         NARCFileSystem? map,
         NARCFileSystem? sound
     )
     {
         if (design is not null)
-            ParseStageFile(ref stage, design, StageObjFileType.Design);
+            ParseStageFile(stage, design, StageObjFileType.Design);
 
         if (map is not null)
-            ParseStageFile(ref stage, map, StageObjFileType.Map);
+            ParseStageFile(stage, map, StageObjFileType.Map);
 
         if (sound is not null)
-            ParseStageFile(ref stage, sound, StageObjFileType.Sound);
+            ParseStageFile(stage, sound, StageObjFileType.Sound);
     }
 
-    private static void ParseStageFile(
-        ref Stage stage,
-        NARCFileSystem narc,
-        StageObjFileType fileType
-    )
+    private static void ParseStageFile(Stage stage, NARCFileSystem narc, StageObjFileType fileType)
     {
         byte scenario = stage.Scenario;
 
@@ -131,8 +159,8 @@ internal static class StageHandler
 
         IEnumerable<StageObj> stageObjs = ProcessStageObjs(byaml, fileType);
 
-        stage.StageObjs ??= new();
-        stage.StageObjs.AddRange(stageObjs);
+        stage.StageData ??= new();
+        stage.StageData.AddRange(stageObjs);
 
         // TO-DO: Other byamls.
     }

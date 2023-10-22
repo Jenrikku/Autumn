@@ -1,9 +1,10 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Autumn.Storage;
 
 namespace Autumn.IO;
 
-internal static class ProjectHandler
+internal static partial class ProjectHandler
 {
     public static bool ProjectLoaded { get; private set; } = false;
 
@@ -19,11 +20,23 @@ internal static class ProjectHandler
         ActiveProject.SavePath = dir;
         ActiveProject.ProjectFileName = Path.GetFileName(path);
 
-        IEnumerable<Stage> stages = StageHandler.LoadProjectStages(dir);
-        ActiveProject.Stages = new(stages);
+        string stagesDir = Path.Join(dir, "stages");
+        Regex regex = StageFolderRegex();
 
-        ActiveProject.Objects = new();
-        // TO-DO: Objects.
+        foreach (string stageDir in Directory.EnumerateDirectories(stagesDir))
+        {
+            string stageDirName = Path.GetFileName(stageDir)!;
+
+            Match match = regex.Match(stageDirName);
+
+            if (!match.Success)
+                continue;
+
+            string name = match.Groups[1].Value;
+            byte scenario = byte.Parse(match.Groups[2].Value);
+
+            ActiveProject.Stages.Add(new(name, scenario));
+        }
 
         if (!RecentHandler.RecentOpenedPaths.Contains(path))
             RecentHandler.RecentOpenedPaths.Add(path);
@@ -56,20 +69,18 @@ internal static class ProjectHandler
         }
 
         YAMLWrapper.Serialize(Path.Join(savePath, projectFileName), ActiveProject);
-
-        if (ActiveProject.Stages.Count > 0)
-            StageHandler.SaveProjectStages(savePath, ActiveProject.Stages);
-
-        // TO-DO: Objects.
-
         return true;
     }
 
     /// <summary>
     /// Unloads the current project. The project should be saved before calling this method.
     /// </summary>
-    public static void UnloadProject()
+    /// <param name="force">When this parameter is set to true, any unsaved contents are ignored.</param>
+    public static void UnloadProject(bool force = false)
     {
+        // TO-DO: Check whether stages are saved (!Loaded) before closing the project.
+        // Suggestion: Handle stage saving somewhere else. Return false if project can't be unloaded because of stages.
+
         Debug.Assert(ActiveProject.Saved);
 
         ActiveProject = new();
@@ -111,4 +122,7 @@ internal static class ProjectHandler
 
         return Directory.Exists(Path.Join(ActiveProject.SavePath, path));
     }
+
+    [GeneratedRegex("(.*)(\\d+\\b)")]
+    private static partial Regex StageFolderRegex();
 }

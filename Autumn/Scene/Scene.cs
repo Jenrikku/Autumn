@@ -11,26 +11,15 @@ internal class Scene
     public List<SceneObj> SceneObjects { get; } = new();
     public List<SceneObj> SelectedObjects { get; } = new();
 
+    /// <summary>
+    /// Specifies whether the scene is ready to be rendered.
+    /// </summary>
+    public bool IsReady { get; set; } = false;
+
     private uint _lastPickingId = 0;
     private readonly Dictionary<uint, SceneObj> _pickableObjs = new();
 
-    public Scene(Stage stage)
-    {
-        Stage = stage;
-
-        if (stage.StageObjs is null)
-            return;
-
-        foreach (StageObj stageObj in stage.StageObjs)
-        {
-            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
-
-            SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
-
-            SceneObjects.Add(sceneObj);
-            _pickableObjs.Add(_lastPickingId++, sceneObj);
-        }
-    }
+    public Scene(Stage stage) => Stage = stage;
 
     public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection)
     {
@@ -60,5 +49,26 @@ internal class Scene
             sceneObj.Selected = false;
 
         SelectedObjects.Clear();
+    }
+
+    public void GenerateSceneObjects()
+    {
+        SceneObjects.Clear();
+        SelectedObjects.Clear();
+
+        if (Stage.StageData is null)
+            return;
+
+        foreach (StageObj stageObj in Stage.StageData)
+        {
+            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
+
+            SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
+
+            SceneObjects.Add(sceneObj);
+            _pickableObjs.Add(_lastPickingId++, sceneObj);
+        }
+
+        IsReady = true;
     }
 }

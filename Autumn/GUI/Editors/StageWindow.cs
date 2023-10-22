@@ -23,7 +23,7 @@ internal class StageWindow
         if (ImGui.BeginTable("stageTable", 2, _stageTableFlags))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-            //ImGui.TableSetupColumn("Position");
+            //ImGui.TableSetupColumn("Position"); // (Relative to world map)
             ImGui.TableSetupColumn("Stage");
             ImGui.TableSetupColumn("Scenario", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
@@ -41,9 +41,30 @@ internal class StageWindow
                     && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)
                 )
                 {
-                    //if(context.Scenes.Contains(...))
+                    Scene.Scene? scene;
+                    scene = context.Scenes.Find(scene => scene.Stage == stage);
 
-                    context.Scenes.Add(new(stage));
+                    if (scene is not null)
+                        context.CurrentScene = scene;
+                    else
+                    {
+                        scene = new(stage);
+
+                        if (!stage.Loaded)
+                            context.BackgroundManager.Add(
+                                $"Loading stage \"{stage.Name + stage.Scenario}\"...",
+                                () =>
+                                {
+                                    StageHandler.LoadProjectStage(stage);
+
+                                    scene.GenerateSceneObjects();
+                                }
+                            );
+
+                        stage.Saved = true;
+
+                        context.Scenes.Add(scene);
+                    }
 
                     ImGui.SetWindowFocus("Scene");
                 }

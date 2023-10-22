@@ -1,4 +1,5 @@
-﻿using Autumn.GUI.Editors;
+﻿using Autumn.Background;
+using Autumn.GUI.Editors;
 using Autumn.IO;
 using Autumn.Scene;
 using Autumn.Storage;
@@ -18,6 +19,8 @@ internal class MainWindowContext : WindowContext
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
     public Camera Camera { get; }
+
+    public BackgroundManager BackgroundManager { get; } = new();
 
     private bool _isFirstFrame = true;
 
@@ -146,6 +149,7 @@ internal class MainWindowContext : WindowContext
             if (!ProjectHandler.ProjectLoaded)
                 ImGui.BeginDisabled();
 
+            // To be removed.
             if (ImGui.MenuItem("Save"))
             {
                 if (string.IsNullOrEmpty(ProjectHandler.ActiveProject.SavePath))
@@ -157,6 +161,7 @@ internal class MainWindowContext : WindowContext
                     ProjectHandler.SaveProject();
             }
 
+            // To be removed.
             if (ImGui.MenuItem("Save as...") && SaveAsDialog(out string? saveAsDir))
                 ProjectHandler.SaveProject(saveAsDir);
 
@@ -208,7 +213,18 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Stage"))
         {
-            if (ImGui.MenuItem("Import from romfs"))
+            if (CurrentScene is null)
+                ImGui.BeginDisabled();
+
+            if (ImGui.MenuItem("Save"))
+                BackgroundManager.Add(
+                    $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
+                    () => StageHandler.SaveProjectStage(CurrentScene!.Stage)
+                );
+
+            ImGui.EndDisabled();
+
+            if (ImGui.MenuItem("Import from RomFS"))
                 _stageSelectOpen |= true;
 
             //ImGui.MenuItem("Import through world map selector");
@@ -242,31 +258,35 @@ internal class MainWindowContext : WindowContext
 
                 Scene.Scene scene = Scenes[i];
 
-                //if(!scene.Saved)
-                //    flags |= ImGuiTabItemFlags.UnsavedDocument;
+                if (!scene.Stage.Saved)
+                    flags |= ImGuiTabItemFlags.UnsavedDocument;
 
                 bool opened = true;
 
-                ImGui.PushID("Scene" + i);
+                ImGui.PushID(scene.Stage.Name + scene.Stage.Scenario);
 
                 if (
-                    ImGui.BeginTabItem(
-                        scene.Stage.Name + "Stage" + scene.Stage.Scenario ?? string.Empty,
-                        ref opened,
-                        flags
-                    )
+                    ImGui.BeginTabItem(scene.Stage.Name + scene.Stage.Scenario, ref opened, flags)
                     && CurrentScene != scene
                 )
-                {
                     CurrentScene = scene;
-                }
 
                 ImGui.EndTabItem();
 
                 ImGui.PopID();
 
-                //if(!opened && CloseSceneAt(i))
-                //    i--;
+                if (!opened && Scenes.Remove(scene))
+                {
+                    // TO-DO: Check whether the stage is not saved.
+
+                    i--;
+                    sceneCount = Scenes.Count;
+
+                    if (i < 0)
+                        CurrentScene = null;
+                    else
+                        CurrentScene = Scenes[i];
+                }
             }
 
             ImGui.EndTabBar();
@@ -368,22 +388,34 @@ internal class MainWindowContext : WindowContext
                 )
                     continue;
 
-                // Does not show the stage if there is an already opened stage that matches the name:
-                // foreach (
-                //     var stage in ProjectHandler.ActiveProject.Stages.Where(
-                //         stage => stage.Name == name && stage.Scenario == scenario
-                //     )
-                // )
-                //     continue;
+                // Does not show the stage if there is an already opened one with the same name and scenario:
+                if (
+                    Scenes.Find(
+                        scene => scene.Stage.Name == name && scene.Stage.Scenario == scenario
+                    )
+                    is not null
+                )
+                    continue;
 
                 if (ImGui.Selectable(name + scenario, false, ImGuiSelectableFlags.AllowDoubleClick))
                 {
-                    // [!] This should be handled by the ProjectHandler in the future.
-
-                    StageHandler.TryImportStage(name, scenario, out Stage stage);
-                    ProjectHandler.ActiveProject.Stages.Add(stage);
-
                     _stageSelectOpen = false;
+
+                    BackgroundManager.Add(
+                        $"Importing stage \"{name + scenario}\" from RomFS...",
+                        () =>
+                        {
+                            if (!StageHandler.TryImportStage(name, scenario, out Stage stage))
+                            {
+                                ImGui.CloseCurrentPopup();
+                                ImGui.EndPopup();
+                                return;
+                            }
+
+                            ProjectHandler.ActiveProject.Stages.Add(stage);
+                        }
+                    );
+
                     ImGui.CloseCurrentPopup();
                 }
             }

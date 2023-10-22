@@ -1,6 +1,6 @@
 namespace Autumn.Storage;
 
-internal struct Stage
+internal class Stage
 {
     public Stage()
         : this("NewStage", 1) { }
@@ -9,12 +9,17 @@ internal struct Stage
     {
         Name = name;
         Scenario = scenario;
+        Saved = false;
+        Loaded = false;
     }
 
     public string Name { get; set; }
     public byte Scenario { get; set; }
 
-    public List<StageObj>? StageObjs { get; set; }
+    public bool Saved { get; set; }
+    public bool Loaded { get; set; }
+
+    public List<StageObj>? StageData { get; set; }
 
     public List<string>? PreLoadFileList { get; set; }
 

@@ -25,12 +25,23 @@ internal class SceneWindow
         Vector2 sceneImageRectMin = new();
         int sceneImageHeight = 0;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
+        bool sceneNotReady =
+            (!context.CurrentScene?.Stage.Loaded ?? false)
+            || (!context.CurrentScene?.IsReady ?? false);
+
+        if (!sceneNotReady)
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
         if (
             !ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
         )
             return;
+
+        if (sceneNotReady)
+        {
+            ImGui.TextDisabled("The stage is being loaded, please wait...");
+            return;
+        }
 
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         aspectRatio = contentAvail.X / contentAvail.Y;
