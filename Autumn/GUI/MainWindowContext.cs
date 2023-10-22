@@ -213,18 +213,13 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Stage"))
         {
-            if (CurrentScene is null)
-                ImGui.BeginDisabled();
-
-            if (ImGui.MenuItem("Save"))
+            if (ImGui.MenuItem("Save", CurrentScene is not null))
                 BackgroundManager.Add(
                     $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
                     () => StageHandler.SaveProjectStage(CurrentScene!.Stage)
                 );
 
-            ImGui.EndDisabled();
-
-            if (ImGui.MenuItem("Import from RomFS"))
+            if (ImGui.MenuItem("Import from RomFS", ProjectHandler.ProjectLoaded))
                 _stageSelectOpen |= true;
 
             //ImGui.MenuItem("Import through world map selector");
