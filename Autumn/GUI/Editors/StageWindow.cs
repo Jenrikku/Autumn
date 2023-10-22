@@ -50,12 +50,13 @@ internal class StageWindow
                     {
                         scene = new(stage);
 
-                        if (!stage.Loaded)
+                        if (!scene.IsReady)
                             context.BackgroundManager.Add(
                                 $"Loading stage \"{stage.Name + stage.Scenario}\"...",
                                 () =>
                                 {
-                                    StageHandler.LoadProjectStage(stage);
+                                    if (!stage.Loaded)
+                                        StageHandler.LoadProjectStage(stage);
 
                                     scene.GenerateSceneObjects();
                                 }
