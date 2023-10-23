@@ -42,7 +42,17 @@ internal class ObjectWindow
             ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
 
-            foreach (SceneObj obj in context.CurrentScene.SceneObjects)
+            if (
+                (!context.CurrentScene?.Stage.Loaded ?? false)
+                || (!context.CurrentScene?.IsReady ?? false)
+            )
+            {
+                ImGui.EndTable();
+                ImGui.End();
+                return;
+            }
+
+            foreach (SceneObj obj in context.CurrentScene!.SceneObjects)
             {
                 StageObj stageObj = obj.StageObj;
 
