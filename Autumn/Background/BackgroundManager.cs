@@ -57,6 +57,14 @@ internal class BackgroundManager
         _resetEvent.WaitOne();
     }
 
+    public IEnumerable<BackgroundTask> GetRemainingTasks()
+    {
+        // This is done using a for loop because _tasks may be changed by the background worker.
+
+        for (int i = 0; i < _tasks.Count; i++)
+            yield return _tasks[i];
+    }
+
     private void BackgroundWork(object? sender, DoWorkEventArgs e)
     {
         while (_tasks.Count > 0)
