@@ -93,6 +93,8 @@ internal class MainWindowContext : WindowContext
 
             #endregion
 
+            RenderStatusBar(barHeight, viewport.Size);
+
             if (!ProjectHandler.ProjectLoaded)
                 RenderNoProjectScreen();
             else
@@ -292,6 +294,28 @@ internal class MainWindowContext : WindowContext
         ImGui.EndMainMenuBar();
 
         return;
+    }
+
+    private void RenderStatusBar(float height, Vector2 viewportSize)
+    {
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
+        ImGui.SetNextWindowPos(new(0, viewportSize.Y - height), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new(viewportSize.X, height));
+
+        if (
+            !ImGui.Begin(
+                "StatusBar",
+                ImGuiWindowFlags.NoSavedSettings
+                    | ImGuiWindowFlags.NoDecoration
+                    | ImGuiWindowFlags.NoInputs
+            )
+        )
+            return;
+
+        ImGui.Text(BackgroundManager.StatusMessage);
+
+        ImGui.End();
+        ImGui.PopStyleVar();
     }
 
     private void RenderEditors(double deltaSeconds)
