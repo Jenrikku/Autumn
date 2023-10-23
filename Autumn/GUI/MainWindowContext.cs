@@ -24,6 +24,11 @@ internal class MainWindowContext : WindowContext
 
     private bool _isFirstFrame = true;
 
+    private bool _closingDialogOpened = false;
+
+    private bool _stageSelectOpened = false;
+    private string _stageSearchInput = string.Empty;
+
 #if DEBUG
     private bool _showDemoWindow = false;
 #endif
@@ -50,6 +55,15 @@ internal class MainWindowContext : WindowContext
 
             io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
             io.ConfigWindowsMoveFromTitleBarOnly = true;
+        };
+
+        Window.Closing += () =>
+        {
+            if (BackgroundManager.IsBusy)
+            {
+                _closingDialogOpened = true;
+                Window.IsClosing = false;
+            }
         };
 
         Window.Render += (deltaSeconds) =>
@@ -105,8 +119,11 @@ internal class MainWindowContext : WindowContext
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
 
-            if (_stageSelectOpen)
+            if (_stageSelectOpened)
                 RenderStageSelectPopup();
+
+            if (_closingDialogOpened)
+                RenderClosingDialog();
 
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
@@ -222,7 +239,7 @@ internal class MainWindowContext : WindowContext
                 );
 
             if (ImGui.MenuItem("Import from RomFS", ProjectHandler.ProjectLoaded))
-                _stageSelectOpen |= true;
+                _stageSelectOpened |= true;
 
             //ImGui.MenuItem("Import through world map selector");
 
@@ -349,14 +366,11 @@ internal class MainWindowContext : WindowContext
         ImGui.End();
     }
 
-    private bool _stageSelectOpen = false;
-    private string _stageSearchInput = string.Empty;
-
     private void RenderStageSelectPopup()
     {
         if (!RomFSHandler.RomFSAvailable)
         {
-            _stageSelectOpen = false;
+            _stageSelectOpened = false;
             return;
         }
 
@@ -374,7 +388,7 @@ internal class MainWindowContext : WindowContext
         if (
             !ImGui.BeginPopupModal(
                 "Stage selector",
-                ref _stageSelectOpen,
+                ref _stageSelectOpened,
                 ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
             )
         )
@@ -418,7 +432,7 @@ internal class MainWindowContext : WindowContext
 
                 if (ImGui.Selectable(name + scenario, false, ImGuiSelectableFlags.AllowDoubleClick))
                 {
-                    _stageSelectOpen = false;
+                    _stageSelectOpened = false;
 
                     BackgroundManager.Add(
                         $"Importing stage \"{name + scenario}\" from RomFS...",
@@ -439,6 +453,49 @@ internal class MainWindowContext : WindowContext
                 }
             }
         }
+
+        ImGui.EndPopup();
+    }
+
+    // This dialog is shown when there are background tasks being executed.
+    private void RenderClosingDialog()
+    {
+        ImGui.OpenPopup("##ClosingDialog");
+
+        Vector2 dimensions = new Vector2(450, 185) + ImGui.GetStyle().ItemSpacing;
+        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
+
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Appearing,
+            new(0.5f, 0.5f)
+        );
+
+        if (
+            !ImGui.BeginPopupModal(
+                "##ClosingDialog",
+                ref _closingDialogOpened,
+                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
+            )
+        )
+            return;
+
+        ImGui.TextWrapped(
+            "Please wait for the following tasks to finish before exiting the program:"
+        );
+
+        ImGui.Spacing();
+
+        foreach (var (message, _) in BackgroundManager.GetRemainingTasks())
+        {
+            if (message is null)
+                ImGui.TextDisabled("BackgroundTask");
+            else
+                ImGui.Text(message);
+        }
+
+        if (!BackgroundManager.IsBusy)
+            Window.Close();
 
         ImGui.EndPopup();
     }
