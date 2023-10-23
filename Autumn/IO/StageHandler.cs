@@ -201,6 +201,7 @@ internal static class StageHandler
                         "ObjInfo" => StageObjType.Regular,
                         "StartEventObjInfo" => StageObjType.StartEvent,
                         "StartInfo" => StageObjType.Start,
+                        "DemoSceneObjInfo" => StageObjType.DemoScene,
                         _ => throw new NotSupportedException("Unknown stage obj type found.")
 
                         // There may be more to be seen.

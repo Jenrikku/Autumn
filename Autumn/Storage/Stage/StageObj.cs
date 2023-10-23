@@ -27,7 +27,8 @@ internal enum StageObjType : byte
     CameraArea,
     Goal,
     StartEvent,
-    Start
+    Start,
+    DemoScene
 
     // Note that more may exist. Further observation required.
 }
