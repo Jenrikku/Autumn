@@ -28,7 +28,8 @@ internal enum StageObjType : byte
     Goal,
     StartEvent,
     Start,
-    DemoScene
+    DemoScene,
+    Rail
 
     // Note that more may exist. Further observation required.
 }
