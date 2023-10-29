@@ -17,6 +17,10 @@ internal class StageObj
     // For object types that have no ID, the value should be -1.
     public int ID = -1;
 
+    public StageObj? Parent { get; set; }
+    public List<StageObj>? AreaChildren { get; set; }
+    public RailObj? Rail { get; set; }
+
     public Dictionary<string, StageObjProperty> Properties { get; init; } = new();
 }
 
