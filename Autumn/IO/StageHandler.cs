@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Autumn.Storage;
 using BYAMLSharp;
@@ -172,6 +173,156 @@ internal static class StageHandler
 
         var rootDict = byaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
+        // Rails:
+
+        Dictionary<BYAMLNode, RailObj> processedRails = new();
+
+        BYAMLNode allRailInfosNode = rootDict["AllRailInfos"];
+        var allRailInfos = allRailInfosNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+        Debug.Assert(allRailInfos.Count <= 1);
+
+        allRailInfos.TryGetValue("RailInfo", out BYAMLNode? railInfoNode);
+        var railInfos = railInfoNode?.GetValueAs<BYAMLNode[]>() ?? Array.Empty<BYAMLNode>();
+
+        foreach (BYAMLNode node in railInfos)
+        {
+            if (node.NodeType != BYAMLNodeType.Dictionary)
+                continue;
+
+            var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+            dict.TryGetValue("l_id", out BYAMLNode? id);
+            dict.TryGetValue("name", out BYAMLNode? name);
+            dict.TryGetValue("LayerName", out BYAMLNode? layerName);
+            dict.TryGetValue("no", out BYAMLNode? railNo);
+            dict.TryGetValue("closed", out BYAMLNode? railClosed);
+            dict.TryGetValue("type", out BYAMLNode? railType);
+
+            dict.TryGetValue("num_pnt", out BYAMLNode? pointCount);
+            dict.TryGetValue("Points", out BYAMLNode? railPointsNode);
+
+            RailPointType pointType = railType?.GetValueAs<string>() switch
+            {
+                "Bezier" => RailPointType.Bezier,
+                "Linear" => RailPointType.Linear,
+                _ => throw new NotImplementedException("Unknown rail point type.")
+            };
+
+            Debug.Assert(pointType == RailPointType.Bezier);
+
+            RailObj railObj =
+                new()
+                {
+                    PointType = pointType,
+                    Type = StageObjType.Rail,
+                    FileType = fileType,
+                    ID = id?.GetValueAs<int>() ?? -1,
+                    Name = name?.GetValueAs<string>() ?? "RailStageObj",
+                    Layer = layerName?.GetValueAs<string>() ?? "共通",
+                    RailNo = railNo?.GetValueAs<int>() ?? 0,
+                    Closed = railClosed?.GetValueAs<string>() == "CLOSE",
+                    Properties = dict.Where(
+                            i =>
+                                i.Key != "no"
+                                && i.Key != "closed"
+                                && i.Key != "type"
+                                && i.Key != "num_pnt"
+                                && i.Key != "Points"
+                                && i.Key != "name"
+                                && i.Key != "LayerName"
+                                && i.Key != "l_id"
+                        )
+                        .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                };
+
+            // Rail point reading:
+
+            BYAMLNode[] railPointNodes =
+                railPointsNode?.GetValueAs<BYAMLNode[]>() ?? Array.Empty<BYAMLNode>();
+
+            Debug.Assert(pointCount?.GetValueAs<int>() == railPointNodes.Length);
+
+            for (int i = 0; i < railPointNodes.Length; i++)
+            {
+                BYAMLNode railPointNode = railPointNodes[i];
+
+                if (railPointNode?.NodeType != BYAMLNodeType.Dictionary)
+                    continue;
+
+                var railPointDict = railPointNode?.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                railPointDict.TryGetValue("l_id", out BYAMLNode? pointID);
+
+                railPointDict.TryGetValue("pnt0_x", out BYAMLNode? pnt0X);
+                railPointDict.TryGetValue("pnt0_y", out BYAMLNode? pnt0Y);
+                railPointDict.TryGetValue("pnt0_z", out BYAMLNode? pnt0Z);
+
+                railPointDict.TryGetValue("pnt1_x", out BYAMLNode? pnt1X);
+                railPointDict.TryGetValue("pnt1_y", out BYAMLNode? pnt1Y);
+                railPointDict.TryGetValue("pnt1_z", out BYAMLNode? pnt1Z);
+
+                railPointDict.TryGetValue("pnt2_x", out BYAMLNode? pnt2X);
+                railPointDict.TryGetValue("pnt2_y", out BYAMLNode? pnt2Y);
+                railPointDict.TryGetValue("pnt2_z", out BYAMLNode? pnt2Z);
+
+                switch (pointType)
+                {
+                    case RailPointType.Bezier:
+                        railObj.Points.Add(
+                            new RailPointBezier()
+                            {
+                                ID = pointID?.GetValueAs<int>() ?? i,
+                                Point0Trans = new(
+                                    pnt0X?.GetValueAs<float>() ?? 0,
+                                    pnt0Y?.GetValueAs<float>() ?? 0,
+                                    pnt0Z?.GetValueAs<float>() ?? 0
+                                ),
+                                Point1Trans = new(
+                                    pnt1X?.GetValueAs<float>() ?? 0,
+                                    pnt1Y?.GetValueAs<float>() ?? 0,
+                                    pnt1Z?.GetValueAs<float>() ?? 0
+                                ),
+                                Point2Trans = new(
+                                    pnt2X?.GetValueAs<float>() ?? 0,
+                                    pnt2Y?.GetValueAs<float>() ?? 0,
+                                    pnt2Z?.GetValueAs<float>() ?? 0
+                                ),
+                                Properties = railPointDict
+                                    .Where(
+                                        i =>
+                                            i.Key != "pnt0_x"
+                                            && i.Key != "pnt0_y"
+                                            && i.Key != "pnt0_z"
+                                            && i.Key != "pnt1_x"
+                                            && i.Key != "pnt1_y"
+                                            && i.Key != "pnt1_z"
+                                            && i.Key != "pnt2_x"
+                                            && i.Key != "pnt2_y"
+                                            && i.Key != "pnt2_z"
+                                            && i.Key != "l_id"
+                                    )
+                                    .ToDictionary(
+                                        i => i.Key,
+                                        i => new StageObjProperty(i.Value.Value)
+                                    )
+                            }
+                        );
+                        break;
+
+                    default:
+                        throw new NotImplementedException(
+                            "The given rail point type is not supported."
+                        );
+                }
+            }
+
+            processedRails.Add(node, railObj);
+            yield return railObj;
+        }
+
+        // All others:
+
         BYAMLNode allInfosNode = rootDict["AllInfos"];
         var allInfos = allInfosNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
@@ -190,6 +341,27 @@ internal static class StageHandler
                 var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
                 dict.TryGetValue("l_id", out BYAMLNode? id);
+                dict.TryGetValue("name", out BYAMLNode? name);
+                dict.TryGetValue("LayerName", out BYAMLNode? layerName);
+
+                dict.TryGetValue("pos_x", out BYAMLNode? posX);
+                dict.TryGetValue("pos_y", out BYAMLNode? posY);
+                dict.TryGetValue("pos_z", out BYAMLNode? posZ);
+
+                dict.TryGetValue("dir_x", out BYAMLNode? dirX);
+                dict.TryGetValue("dir_y", out BYAMLNode? dirY);
+                dict.TryGetValue("dir_z", out BYAMLNode? dirZ);
+
+                dict.TryGetValue("scale_x", out BYAMLNode? scaleX);
+                dict.TryGetValue("scale_y", out BYAMLNode? scaleY);
+                dict.TryGetValue("scale_z", out BYAMLNode? scaleZ);
+
+                dict.TryGetValue("Rail", out BYAMLNode? rail);
+
+                RailObj? railObj = null;
+
+                if (rail is not null && rail.NodeType == BYAMLNodeType.Dictionary)
+                    processedRails.TryGetValue(rail, out railObj);
 
                 yield return new()
                 {
@@ -208,23 +380,24 @@ internal static class StageHandler
                     },
                     FileType = fileType,
                     Translation = new(
-                        dict["pos_x"].GetValueAs<float>()!,
-                        dict["pos_y"].GetValueAs<float>()!,
-                        dict["pos_z"].GetValueAs<float>()!
+                        posX?.GetValueAs<float>() ?? 0,
+                        posY?.GetValueAs<float>() ?? 0,
+                        posZ?.GetValueAs<float>() ?? 0
                     ),
                     Rotation = new(
-                        dict["dir_x"].GetValueAs<float>()!,
-                        dict["dir_y"].GetValueAs<float>()!,
-                        dict["dir_z"].GetValueAs<float>()!
+                        dirX?.GetValueAs<float>() ?? 0,
+                        dirY?.GetValueAs<float>() ?? 0,
+                        dirZ?.GetValueAs<float>() ?? 0
                     ),
                     Scale = new(
-                        dict["scale_x"].GetValueAs<float>()!,
-                        dict["scale_y"].GetValueAs<float>()!,
-                        dict["scale_z"].GetValueAs<float>()!
+                        scaleX?.GetValueAs<float>() ?? 0,
+                        scaleY?.GetValueAs<float>() ?? 0,
+                        scaleZ?.GetValueAs<float>() ?? 0
                     ),
-                    Name = dict["name"].GetValueAs<string>()!,
-                    Layer = dict["LayerName"].GetValueAs<string>()!,
+                    Name = name?.GetValueAs<string>() ?? "StageObj",
+                    Layer = layerName?.GetValueAs<string>() ?? "共通",
                     ID = id?.GetValueAs<int>() ?? -1,
+                    Rail = railObj,
                     Properties = dict.Where(
                             i =>
                                 i.Key != "pos_x"
@@ -239,6 +412,7 @@ internal static class StageHandler
                                 && i.Key != "name"
                                 && i.Key != "LayerName"
                                 && i.Key != "l_id"
+                                && i.Key != "Rail"
                         )
                         .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
                 };
