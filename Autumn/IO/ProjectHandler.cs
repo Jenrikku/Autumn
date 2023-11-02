@@ -6,6 +6,10 @@ namespace Autumn.IO;
 
 internal static partial class ProjectHandler
 {
+    public const ushort SupportedVersion = 0;
+
+    public static event Action? UnsupportedVersionEvent;
+
     public static bool ProjectLoaded { get; private set; } = false;
 
     public static Project ActiveProject;
@@ -14,6 +18,12 @@ internal static partial class ProjectHandler
     public static void LoadProject(string path)
     {
         ActiveProject = YAMLWrapper.Deserialize<Project>(path);
+
+        if (ActiveProject.Version != SupportedVersion)
+        {
+            UnsupportedVersionEvent?.Invoke();
+            return;
+        }
 
         string dir = Path.GetDirectoryName(path) ?? Directory.GetDirectoryRoot(path);
 
