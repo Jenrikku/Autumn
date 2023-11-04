@@ -31,8 +31,8 @@ internal class ObjectWindow
         ImGui.Combo(
             "",
             ref _objectFilterCurrent,
-            "All Objects\0Regular Objects\0Areas\0Camera Areas\0Goals\0Event Starts\0Start Objects",
-            7
+            "All Objects\0Regular Objects\0Areas\0Camera Areas\0Goals\0Event Starts\0Start Objects\0Demo Scene Objects\0Rail",
+            9
         );
 
         if (ImGui.BeginTable("objectTable", 2, _objectTableFlags))
@@ -56,7 +56,7 @@ internal class ObjectWindow
             {
                 StageObj stageObj = obj.StageObj;
 
-                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type - 1)
+                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1)
                     continue;
 
                 ImGui.TableNextRow();
