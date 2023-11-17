@@ -14,11 +14,7 @@ internal static class SettingsHandler
         {
             if (string.IsNullOrEmpty(s_settingsPath))
             {
-                string home = GetFolderPath(SpecialFolder.UserProfile);
-                string config = Path.Join(home, ".config");
-
-                if (!Directory.Exists(config))
-                    Directory.CreateDirectory(config).Attributes |= FileAttributes.Hidden;
+                string config = GetFolderPath(SpecialFolder.ApplicationData);
 
                 s_settingsPath = Path.Join(config, "autumn");
                 Directory.CreateDirectory(s_settingsPath);
