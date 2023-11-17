@@ -10,9 +10,6 @@ SettingsHandler.LoadSettings();
 RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
 
-if (!File.Exists("imgui.ini"))
-    File.Copy(Path.Join("Resources", "DefaultLayout.ini"), "imgui.ini");
-
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());
 else

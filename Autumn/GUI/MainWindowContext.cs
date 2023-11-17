@@ -75,7 +75,7 @@ internal class MainWindowContext : WindowContext
 
             if (_isFirstFrame)
             {
-                ImGui.LoadIniSettingsFromDisk("imgui.ini");
+                ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
                 _isFirstFrame = false;
             }
 

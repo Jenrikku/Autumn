@@ -1,4 +1,6 @@
-﻿using Silk.NET.Input;
+﻿using System.Runtime.InteropServices;
+using ImGuiNET;
+using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
@@ -14,6 +16,11 @@ internal class WindowContext
 
     public IInputContext? InputContext { get; protected set; }
     public IKeyboard? Keyboard { get; protected set; }
+
+    protected readonly string ImguiSettingsFile = Path.Join(
+        Path.GetDirectoryName(SettingsHandler.SettingsPath),
+        "imgui.ini"
+    );
 
     public WindowContext()
     {
@@ -61,6 +68,17 @@ internal class WindowContext
                 Window.DoUpdate();
                 Window.DoRender();
             };
+
+            if (!File.Exists(ImguiSettingsFile))
+            {
+                File.Copy(Path.Join("Resources", "DefaultLayout.ini"), ImguiSettingsFile);
+
+                unsafe
+                {
+                    ImGui.GetIO().NativePtr->IniFilename = (byte*)
+                        Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
+                }
+            }
 
             GL.ClearColor(0.059f, 0.059f, 0.059f, 1f);
             GL.ClearDepth(1);
