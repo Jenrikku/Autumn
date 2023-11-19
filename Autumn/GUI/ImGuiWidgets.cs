@@ -1,10 +1,11 @@
 using System.Numerics;
+using Autumn.Commands;
 using ImGuiNET;
 using TinyFileDialogsSharp;
 
 namespace Autumn.GUI;
 
-public static class ImGuiWidgets
+internal static class ImGuiWidgets
 {
     public static void DirectoryPathSelector(
         ref string input,
@@ -46,5 +47,16 @@ public static class ImGuiWidgets
                 "The path does not exist."
             );
         }
+    }
+
+    public static void CommandMenuItem(CommandID id)
+    {
+        Command? command = CommandHandler.GetCommand(id);
+
+        if (command is null)
+            return;
+
+        if (ImGui.MenuItem(command.DisplayName, command.DisplayShortcut, false, command.Enabled))
+            command.Action.Invoke();
     }
 }
