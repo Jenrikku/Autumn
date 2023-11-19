@@ -151,4 +151,68 @@ internal static class MathUtils
             spicaMtx.M42,
             spicaMtx.M43
         );
+
+    // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
+    public static bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+    {
+        float AP_x = p.X - a.X;
+        float AP_y = p.Y - a.Y;
+
+        float CP_x = p.X - b.X;
+        float CP_y = p.Y - b.Y;
+
+        bool s_ab = (b.X - a.X) * AP_y - (b.Y - a.Y) * AP_x > 0.0;
+
+        if ( /*s_ac*/
+            (c.X - a.X) * AP_y - (c.Y - a.Y) * AP_x > 0.0 == s_ab)
+            return false;
+
+        if ( /*s_cb*/
+            (c.X - b.X) * CP_y - (c.Y - b.Y) * CP_x > 0.0 != s_ab)
+            return false;
+
+        return true;
+    }
+
+    // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
+    public static bool IsPointInQuad(Vector2 p, Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+    {
+        float AP_x = p.X - a.X;
+        float AP_y = p.Y - a.Y;
+
+        float CP_x = p.X - c.X;
+        float CP_y = p.Y - c.Y;
+
+        bool s_ab = (b.X - a.X) * AP_y - (b.Y - a.Y) * AP_x > 0.0;
+
+        if ( /*s_ad*/
+            (d.X - a.X) * AP_y - (d.Y - a.Y) * AP_x > 0.0 == s_ab)
+            return false;
+
+        if ( /*s_cb*/
+            (b.X - c.X) * CP_y - (b.Y - c.Y) * CP_x > 0.0 == s_ab)
+            return false;
+
+        if ( /*s_cd*/
+            (d.X - c.X) * CP_y - (d.Y - c.Y) * CP_x > 0.0 != s_ab)
+            return false;
+
+        return true;
+    }
+
+    // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
+    public static Vector3 IntersectPoint(
+        Vector3 rayVector,
+        Vector3 rayPoint,
+        Vector3 planeNormal,
+        Vector3 planePoint
+    )
+    {
+        //code from: https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane
+        var diff = rayPoint - planePoint;
+        var prod1 = Vector3.Dot(diff, planeNormal);
+        var prod2 = Vector3.Dot(rayVector, planeNormal);
+        var prod3 = prod1 / prod2;
+        return rayPoint - rayVector * prod3;
+    }
 }
