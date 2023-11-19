@@ -1,3 +1,4 @@
+using Autumn.Commands;
 using Autumn.GUI;
 using Autumn.IO;
 using System.Text;
@@ -9,6 +10,8 @@ SettingsHandler.LoadSettings();
 
 RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
+
+CommandHandler.Initialize();
 
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
     WindowManager.Add(new WelcomeWindowContext());

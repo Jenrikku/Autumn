@@ -1,4 +1,5 @@
 ﻿using Autumn.Background;
+using Autumn.Commands;
 using Autumn.GUI.Editors;
 using Autumn.IO;
 using Autumn.Scene;
@@ -141,67 +142,8 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            if (ImGui.MenuItem("New") && SaveAsDialog(out string? createDir))
-                ProjectHandler.CreateNew(createDir);
-
-            if (ImGui.MenuItem("Open"))
-            {
-                bool success = TinyFileDialogs.OpenFileDialog(
-                    out string[]? output,
-                    title: "Select the Autumn project file.",
-                    defaultPath: RecentHandler.LastProjectOpenPath,
-                    filterPatterns: new string[] { "*.yml", ".yaml" },
-                    filterDescription: "YAML file"
-                );
-
-                if (success)
-                {
-                    string projectPath = output![0];
-                    RecentHandler.LastProjectOpenPath =
-                        Path.GetDirectoryName(projectPath)
-                        ?? Directory.GetDirectoryRoot(projectPath);
-
-                    ProjectHandler.LoadProject(projectPath);
-                }
-            }
-
-            if (!ProjectHandler.ProjectLoaded)
-                ImGui.BeginDisabled();
-
-            // To be removed.
-            if (ImGui.MenuItem("Save"))
-            {
-                if (string.IsNullOrEmpty(ProjectHandler.ActiveProject.SavePath))
-                {
-                    if (SaveAsDialog(out string? saveDir))
-                        ProjectHandler.SaveProject(saveDir);
-                }
-                else
-                    ProjectHandler.SaveProject();
-            }
-
-            // To be removed.
-            if (ImGui.MenuItem("Save as...") && SaveAsDialog(out string? saveAsDir))
-                ProjectHandler.SaveProject(saveAsDir);
-
-            static bool SaveAsDialog([NotNullWhen(true)] out string? output)
-            {
-                bool success = TinyFileDialogs.SelectFolderDialog(
-                    out output,
-                    title: "Select where to save the Autumn project.",
-                    defaultPath: RecentHandler.LastProjectSavePath
-                );
-
-                if (success)
-                {
-                    RecentHandler.LastProjectSavePath = output!;
-                    output = Path.Join(output, "autumnproj.yml");
-                }
-
-                return success;
-            }
-
-            ImGui.EndDisabled();
+            ImGuiWidgets.CommandMenuItem(CommandID.NewProject);
+            ImGuiWidgets.CommandMenuItem(CommandID.OpenProject);
 
             if (ImGui.BeginMenu("Recent"))
             {
