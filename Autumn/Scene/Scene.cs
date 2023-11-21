@@ -11,6 +11,8 @@ internal class Scene
     public List<SceneObj> SceneObjects { get; } = new();
     public List<SceneObj> SelectedObjects { get; } = new();
 
+    public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
+
     /// <summary>
     /// Specifies whether the scene is ready to be rendered.
     /// </summary>

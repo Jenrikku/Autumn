@@ -1,12 +1,8 @@
 ﻿using Autumn.Scene;
-using Autumn.Utils;
 using ImGuiNET;
-using SceneGL.GLHelpers;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace Autumn.GUI.Editors;
 
@@ -17,6 +13,9 @@ internal class SceneWindow
 
     public static unsafe void Render(MainWindowContext context, double deltaSeconds)
     {
+        if (context.CurrentScene is null)
+            return;
+
         float aspectRatio = 1;
 
         bool isSceneHovered = false;
@@ -69,6 +68,8 @@ internal class SceneWindow
 
         ImGui.PopStyleVar();
 
+        Camera camera = context.CurrentScene!.Camera;
+
         #region Input
 
         Vector2 mousePos = ImGui.GetMousePos();
@@ -80,13 +81,12 @@ internal class SceneWindow
         {
             Vector2 delta = mousePos - _previousMousePos;
 
-            Vector3 right = Vector3.Transform(Vector3.UnitX, context.Camera.Rotation);
-            context.Camera.Rotation =
-                Quaternion.CreateFromAxisAngle(right, -delta.Y * 0.002f) * context.Camera.Rotation;
+            Vector3 right = Vector3.Transform(Vector3.UnitX, camera.Rotation);
+            camera.Rotation =
+                Quaternion.CreateFromAxisAngle(right, -delta.Y * 0.002f) * camera.Rotation;
 
-            context.Camera.Rotation =
-                Quaternion.CreateFromAxisAngle(Vector3.UnitY, -delta.X * 0.002f)
-                * context.Camera.Rotation;
+            camera.Rotation =
+                Quaternion.CreateFromAxisAngle(Vector3.UnitY, -delta.X * 0.002f) * camera.Rotation;
 
             _persistentMouseDrag = true;
         }
@@ -101,75 +101,45 @@ internal class SceneWindow
             float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
 
             if (context.Keyboard?.IsKeyPressed(Key.W) ?? false)
-                context.Camera.Eye -= Vector3.Transform(
-                    Vector3.UnitZ * camMoveSpeed,
-                    context.Camera.Rotation
-                );
+                camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
             if (context.Keyboard?.IsKeyPressed(Key.S) ?? false)
-                context.Camera.Eye += Vector3.Transform(
-                    Vector3.UnitZ * camMoveSpeed,
-                    context.Camera.Rotation
-                );
+                camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
 
             if (context.Keyboard?.IsKeyPressed(Key.A) ?? false)
-                context.Camera.Eye -= Vector3.Transform(
-                    Vector3.UnitX * camMoveSpeed,
-                    context.Camera.Rotation
-                );
+                camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
             if (context.Keyboard?.IsKeyPressed(Key.D) ?? false)
-                context.Camera.Eye += Vector3.Transform(
-                    Vector3.UnitX * camMoveSpeed,
-                    context.Camera.Rotation
-                );
+                camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
 
             if (context.Keyboard?.IsKeyPressed(Key.Q) ?? false)
-                context.Camera.Eye -= Vector3.UnitY * camMoveSpeed;
+                camera.Eye -= Vector3.UnitY * camMoveSpeed;
             if (context.Keyboard?.IsKeyPressed(Key.E) ?? false)
-                context.Camera.Eye += Vector3.UnitY * camMoveSpeed;
+                camera.Eye += Vector3.UnitY * camMoveSpeed;
 
             if (context.Keyboard?.IsKeyPressed(Key.Keypad1) ?? false)
-                context.Camera.LookAt(
-                    context.Camera.Eye,
-                    context.Camera.Eye + new Vector3(0, 0, -1)
-                );
+                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, -1));
             if (context.Keyboard?.IsKeyPressed(Key.Keypad3) ?? false)
-                context.Camera.LookAt(
-                    context.Camera.Eye,
-                    context.Camera.Eye + new Vector3(1, 0, 0)
-                );
+                camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
             if (context.Keyboard?.IsKeyPressed(Key.Keypad7) ?? false)
-                context.Camera.LookAt(
-                    context.Camera.Eye,
-                    context.Camera.Eye + new Vector3(0, -1, 0)
-                );
+                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, -1, 0));
 
             if (context.Keyboard?.IsKeyPressed(Key.Pause) ?? false)
-                context.Camera.LookAt(new(0, 1, 5), context.Camera.Eye + new Vector3(0, 0, -1));
+                camera.LookAt(new(0, 1, 5), camera.Eye + new Vector3(0, 0, -1));
         }
 
         #endregion
 
-        context.Camera.Animate(deltaSeconds, out Vector3 eyeAnimated, out Quaternion rotAnimated);
+        camera.Animate(deltaSeconds, out Vector3 eyeAnimated, out Quaternion rotAnimated);
 
         Matrix4x4 viewMatrix =
             Matrix4x4.CreateTranslation(-eyeAnimated)
             * Matrix4x4.CreateFromQuaternion(Quaternion.Inverse(rotAnimated));
 
-        //Matrix4x4 projectionMatrix = MathUtils.CreatePerspectiveReversedDepth((float)(Math.PI * 0.25), aspectRatio, 1f);
         Matrix4x4 projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
             (float)(Math.PI * 0.25),
             aspectRatio,
             1,
             100000f
         );
-        //Matrix4x4 projectionMatrix = MathUtils.CreatePerspectiveFieldOfView((float)(Math.PI * 0.25), aspectRatio, 1f, 100000f);
-
-        //Vector3 dir = - MathUtils.MultiplyQuaternionAndVector3(rotAnimated, Vector3.UnitZ);
-        //Vector3 up = MathUtils.MultiplyQuartenionAndVector3(rotAnimated, Vector3.UnitY);
-
-        //Console.WriteLine(dir);
-
-        //Matrix3X4<float> lookAtMatrix = MathUtils.CreateLookAtMatrix(eyeAnimated, eyeAnimated + dir, Vector3.UnitY);
 
         context.SceneFramebuffer.Use(context.GL!);
         context.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
