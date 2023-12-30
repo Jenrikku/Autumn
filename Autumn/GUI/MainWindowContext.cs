@@ -7,9 +7,7 @@ using Autumn.Storage;
 using ImGuiNET;
 using Silk.NET.OpenGL;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using TinyFileDialogsSharp;
 
 namespace Autumn.GUI;
 
@@ -39,10 +37,10 @@ internal class MainWindowContext : WindowContext
         Window.Title = "Autumn: Stage Editor";
 
         SceneFramebuffer = new(
-            null,
-            SceneGL.PixelFormat.D24_UNorm_S8_UInt,
-            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm,
-            SceneGL.PixelFormat.R32_UInt
+            initialSize: null,
+            depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm, // Regular color.
+            SceneGL.PixelFormat.R32_UInt // Used for object selection.
         );
 
         Window.Load += () =>
@@ -56,15 +54,6 @@ internal class MainWindowContext : WindowContext
             io.ConfigWindowsMoveFromTitleBarOnly = true;
         };
 
-        Window.Closing += () =>
-        {
-            if (BackgroundManager.IsBusy)
-            {
-                _closingDialogOpened = true;
-                Window.IsClosing = false;
-            }
-        };
-
         Window.Render += (deltaSeconds) =>
         {
             if (ImGuiController is null)
@@ -72,18 +61,23 @@ internal class MainWindowContext : WindowContext
 
             ImGuiController.MakeCurrent();
 
+            // Fix docking settings not loading properly:
             if (_isFirstFrame)
             {
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
                 _isFirstFrame = false;
             }
 
-            #region DockSpace
-
             float barHeight = 17;
 
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
 
+            RenderMainMenuBar(barHeight);
+            RenderStatusBar(barHeight, viewport.Size);
+
+            #region DockSpace
+
+            // This style vars will only be applied to the window containing the dockspace.
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
 
@@ -91,22 +85,20 @@ internal class MainWindowContext : WindowContext
             ImGui.SetNextWindowSize(viewport.Size - new Vector2(0, barHeight * 2));
             ImGui.SetNextWindowViewport(viewport.ID);
 
+            // Window that contains the dockspace.
             ImGui.Begin(
                 "mainDockSpaceWindow",
                 ImGuiWindowFlags.NoDecoration
                     | ImGuiWindowFlags.NoBringToFrontOnFocus
                     | ImGuiWindowFlags.NoSavedSettings
             );
-            ImGui.PopStyleVar(2);
 
-            RenderMainMenuBar(barHeight);
+            ImGui.PopStyleVar(2);
 
             ImGui.DockSpace(ImGui.GetID("mainDockSpace"));
             ImGui.End();
 
             #endregion
-
-            RenderStatusBar(barHeight, viewport.Size);
 
             if (!ProjectHandler.ProjectLoaded)
                 RenderNoProjectScreen();
@@ -118,11 +110,16 @@ internal class MainWindowContext : WindowContext
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
 
+            #region Dialogs and popups
+            // These dialogs are only rendered when their corresponding variables are set to true.
+
             if (_stageSelectOpened)
                 RenderStageSelectPopup();
 
             if (_closingDialogOpened)
                 RenderClosingDialog();
+
+            #endregion
 
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
@@ -131,11 +128,30 @@ internal class MainWindowContext : WindowContext
         };
     }
 
+    public override bool Close()
+    {
+        if (BackgroundManager.IsBusy)
+        {
+            _closingDialogOpened = true;
+            return false;
+        }
+
+        // The window is only closed if all tasks have finished.
+        return true;
+    }
+
+    /// <summary>
+    /// Renders the main menu bar seen at the very top of the window.
+    /// </summary>
+    /// <seealso cref="ImGuiWidgets.CommandMenuItem"/>
+    /// <seealso cref="Commands"/>
     private void RenderMainMenuBar(float height)
     {
         if (!ImGui.BeginMainMenuBar())
             return;
 
+        // Checks if the size is correct.
+        // The parameter is not used anywhere else.
         Debug.Assert(height != ImGui.GetItemRectSize().Y);
 
         if (ImGui.BeginMenu("Project"))
@@ -143,6 +159,7 @@ internal class MainWindowContext : WindowContext
             ImGuiWidgets.CommandMenuItem(CommandID.NewProject);
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject);
 
+            // Menu that displays the recently opened projects' list.
             if (ImGui.BeginMenu("Recent"))
             {
                 if (RecentHandler.RecentOpenedPaths.Count <= 0)
@@ -162,9 +179,7 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (
-                ImGui.MenuItem("Exit") /* && Project.Unload() */
-            )
+            if (ImGui.MenuItem("Exit"))
                 Window.Close();
 
             ImGui.EndMenu();
@@ -180,8 +195,6 @@ internal class MainWindowContext : WindowContext
 
             if (ImGui.MenuItem("Import from RomFS", ProjectHandler.ProjectLoaded))
                 _stageSelectOpened |= true;
-
-            //ImGui.MenuItem("Import through world map selector");
 
             ImGui.EndMenu();
         }
@@ -200,6 +213,7 @@ internal class MainWindowContext : WindowContext
         }
 
         #region SceneTabs
+        // Opened stages are displayed in tabs in the main menu bar.
 
         ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
         int sceneCount = Scenes.Count;
@@ -216,19 +230,19 @@ internal class MainWindowContext : WindowContext
                     flags |= ImGuiTabItemFlags.UnsavedDocument;
 
                 bool opened = true;
+                string displayName = scene.Stage.Name + scene.Stage.Scenario;
 
-                ImGui.PushID(scene.Stage.Name + scene.Stage.Scenario);
+                ImGui.PushID(displayName);
 
-                if (
-                    ImGui.BeginTabItem(scene.Stage.Name + scene.Stage.Scenario, ref opened, flags)
-                    && CurrentScene != scene
-                )
+                if (ImGui.BeginTabItem(displayName, ref opened, flags) && CurrentScene != scene)
                     CurrentScene = scene;
 
                 ImGui.EndTabItem();
 
                 ImGui.PopID();
 
+                // Remove the tab when it is closed.
+                // This also closes the stage.
                 if (!opened && Scenes.Remove(scene))
                 {
                     // TO-DO: Check whether the stage is not saved.
@@ -236,6 +250,7 @@ internal class MainWindowContext : WindowContext
                     i--;
                     sceneCount = Scenes.Count;
 
+                    // Set the scene to the one before if possible.
                     if (i < 0)
                         CurrentScene = null;
                     else
@@ -253,20 +268,22 @@ internal class MainWindowContext : WindowContext
         return;
     }
 
+    /// <summary>
+    /// Renders the status bar which displays a message at the very bottom of the window.<br />
+    /// The message displayed is controlled by <see cref="BackgroundManager"/>.
+    /// </summary>
     private void RenderStatusBar(float height, Vector2 viewportSize)
     {
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
         ImGui.SetNextWindowPos(new(0, viewportSize.Y - height), ImGuiCond.Always);
         ImGui.SetNextWindowSize(new(viewportSize.X, height));
 
-        if (
-            !ImGui.Begin(
-                "StatusBar",
-                ImGuiWindowFlags.NoSavedSettings
-                    | ImGuiWindowFlags.NoDecoration
-                    | ImGuiWindowFlags.NoInputs
-            )
-        )
+        ImGuiWindowFlags flags =
+            ImGuiWindowFlags.NoSavedSettings
+            | ImGuiWindowFlags.NoDecoration
+            | ImGuiWindowFlags.NoInputs;
+
+        if (!ImGui.Begin("StatusBar", flags))
             return;
 
         ImGui.Text(BackgroundManager.StatusMessage);
@@ -283,6 +300,9 @@ internal class MainWindowContext : WindowContext
         SceneWindow.Render(this, deltaSeconds);
     }
 
+    /// <summary>
+    /// Renders the screen that appears when no project has been loaded.
+    /// </summary>
     private static void RenderNoProjectScreen()
     {
         ImGuiWindowFlags flags =
@@ -306,6 +326,9 @@ internal class MainWindowContext : WindowContext
         ImGui.End();
     }
 
+    /// <summary>
+    /// Renders a dialog that allows to the user to open a stage from the RomFS.
+    /// </summary>
     private void RenderStageSelectPopup()
     {
         if (!RomFSHandler.RomFSAvailable)
@@ -334,6 +357,8 @@ internal class MainWindowContext : WindowContext
         )
             return;
 
+        # region Search box
+
         ImGui.Text("Search:");
         ImGui.SameLine();
 
@@ -345,6 +370,8 @@ internal class MainWindowContext : WindowContext
             ref _stageSearchInput,
             128
         );
+
+        #endregion
 
         ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
 
@@ -397,7 +424,10 @@ internal class MainWindowContext : WindowContext
         ImGui.EndPopup();
     }
 
-    // This dialog is shown when there are background tasks being executed.
+    /// <summary>
+    /// Renders a dialog that prompts the user to wait for the background tasks to finish.
+    /// This dialog is only rendered when the window is waiting to close.
+    /// </summary>
     private void RenderClosingDialog()
     {
         ImGui.OpenPopup("##ClosingDialog");
