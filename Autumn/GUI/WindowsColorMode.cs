@@ -1,6 +1,8 @@
 ﻿using Microsoft.Win32;
 using System.Runtime.InteropServices;
 
+using Timer = System.Timers.Timer;
+
 namespace Autumn.GUI;
 
 /// <summary>
@@ -16,6 +18,11 @@ internal static class WindowsColorMode
         int size
     );
 
+    private static readonly Dictionary<nint, Timer> s_handleTimers = new();
+
+    /// <summary>
+    /// Starts to apply window color mode changes to the given handle.
+    /// </summary>
     public static void Init(nint handle)
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, build: 18282))
@@ -41,9 +48,26 @@ internal static class WindowsColorMode
         }
 
         // Use a timer to check color mode every second:
-        System.Timers.Timer timer = new(1000);
+        Timer timer = new(1000);
         timer.Elapsed += (o, e) => CheckColorMode();
 
         timer.Start();
+
+        s_handleTimers.Add(handle, timer);
+    }
+
+    /// <summary>
+    /// Stops applying window color mode changes to the given handle.
+    /// </summary>
+    /// <returns>Whether the operation was successful.</returns>
+    public static bool Stop(nint handle)
+    {
+        if (!s_handleTimers.TryGetValue(handle, out Timer? timer))
+            return false;
+
+        timer.Stop();
+        timer.Dispose();
+
+        return s_handleTimers.Remove(handle);
     }
 }

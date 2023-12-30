@@ -106,7 +106,20 @@ internal abstract class WindowContext
 
         Window.Update += (delta) => ImGuiController?.Update((float)delta);
 
-        Window.Closing += () => Window.IsClosing = Close();
+        Window.Closing += () =>
+        {
+            Window.IsClosing = Close();
+
+            if (!Window.IsClosing)
+                return;
+
+            // Stop windows color mode check:
+
+            var win32 = Window.Native?.Win32;
+
+            if (win32 is not null)
+                WindowsColorMode.Stop(win32.Value.Hwnd);
+        };
     }
 
     /// <summary>
