@@ -3,8 +3,10 @@ using Autumn.Commands;
 using Autumn.GUI.Editors;
 using Autumn.IO;
 using Autumn.Scene;
+using Autumn.Scene.Gizmo;
 using Autumn.Storage;
 using ImGuiNET;
+using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
 using System.Diagnostics;
 using System.Numerics;
@@ -47,6 +49,22 @@ internal class MainWindowContext : WindowContext
         {
             InfiniteGrid.Initialize(GL!);
             ModelRenderer.Initialize(GL!);
+
+            var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
+            var cubeTexPixels = new Rgba32[cubeTex.Width * cubeTex.Height];
+
+            cubeTex.CopyPixelDataTo(cubeTexPixels);
+
+            uint cubeTexName = TextureHelper.CreateTexture2D<Rgba32>(
+                GL!,
+                SceneGL.PixelFormat.R8_G8_B8_A8_UNorm,
+                (uint)cubeTex.Width,
+                (uint)cubeTex.Height,
+                cubeTexPixels,
+                true
+            );
+
+            GizmoDrawer.SetOrientationCubeTexture((nint)cubeTexName);
 
             ImGuiIOPtr io = ImGui.GetIO();
 

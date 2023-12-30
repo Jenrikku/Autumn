@@ -1,4 +1,5 @@
 ﻿using Autumn.Scene;
+using Autumn.Scene.Gizmo;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -22,6 +23,7 @@ internal class SceneWindow
         bool isSceneWindowFocused = false;
 
         Vector2 sceneImageRectMin = new();
+        Vector2 sceneImageRectMax = new();
         int sceneImageHeight = 0;
 
         bool sceneNotReady =
@@ -39,32 +41,38 @@ internal class SceneWindow
         if (sceneNotReady)
         {
             ImGui.TextDisabled("The stage is being loaded, please wait...");
+            ImGui.End();
             return;
         }
 
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         aspectRatio = contentAvail.X / contentAvail.Y;
 
-        if (contentAvail.X > 0 && contentAvail.Y > 0)
+        Vector2 sceneWindowRegionMin = ImGui.GetWindowContentRegionMin();
+        Vector2 sceneWindowRegionMax = ImGui.GetWindowContentRegionMax();
+
+        if (contentAvail.X < 0 || contentAvail.Y < 0)
         {
-            sceneImageHeight = (int)contentAvail.Y;
-
-            context.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
-            context.SceneFramebuffer.Create(context.GL!);
-
-            ImGui.Image(
-                new IntPtr(context.SceneFramebuffer.GetColorTexture(0)),
-                contentAvail,
-                new Vector2(0, 1),
-                new Vector2(1, 0)
-            );
-
-            isSceneHovered = ImGui.IsItemHovered();
-            isSceneWindowFocused = ImGui.IsWindowFocused();
-            sceneImageRectMin = ImGui.GetItemRectMin();
+            ImGui.End();
+            return;
         }
 
-        ImGui.End();
+        sceneImageHeight = (int)contentAvail.Y;
+
+        context.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
+        context.SceneFramebuffer.Create(context.GL!);
+
+        ImGui.Image(
+            new IntPtr(context.SceneFramebuffer.GetColorTexture(0)),
+            contentAvail,
+            new Vector2(0, 1),
+            new Vector2(1, 0)
+        );
+
+        isSceneHovered = ImGui.IsItemHovered();
+        isSceneWindowFocused = ImGui.IsWindowFocused();
+        sceneImageRectMin = ImGui.GetItemRectMin();
+        sceneImageRectMax = ImGui.GetItemRectMax();
 
         ImGui.PopStyleVar();
 
@@ -141,10 +149,57 @@ internal class SceneWindow
             100000f
         );
 
+        Matrix4x4 viewProjection = viewMatrix * projectionMatrix;
+
+        float yScale = 1.0f / (float)Math.Tan(0.5f);
+        float xScale = yScale / aspectRatio;
+
+        Vector2 ndcMousePos =
+            ((mousePos - sceneWindowRegionMin) / sceneImageHeight * 2 - Vector2.One)
+            * new Vector2(1, -1);
+
+        Vector3 mouseRayDirection = Vector3.Transform(
+            Vector3.Normalize(new(ndcMousePos.X / xScale, ndcMousePos.Y / yScale, -1)),
+            rotAnimated
+        );
+
         context.SceneFramebuffer.Use(context.GL!);
         context.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         context.CurrentScene?.Render(context.GL, viewMatrix, projectionMatrix);
+
+        InfiniteGrid.Render(context.GL, viewProjection);
+
+        CameraState cameraState =
+            new(
+                eyeAnimated,
+                Vector3.Transform(-Vector3.UnitZ, rotAnimated),
+                Vector3.Transform(Vector3.UnitY, rotAnimated),
+                rotAnimated
+            );
+
+        SceneViewState sceneViewState =
+            new(
+                cameraState,
+                viewProjection,
+                new Rect(sceneWindowRegionMin, sceneWindowRegionMax),
+                mousePos,
+                mouseRayDirection
+            );
+
+        GizmoDrawer.BeginGizmoDrawing(
+            "sceneWindowGizmos",
+            ImGui.GetWindowDrawList(),
+            in sceneViewState
+        );
+
+        Vector2 upperRightCorner = new(sceneImageRectMax.X, sceneImageRectMin.Y);
+
+        bool orientationCubeHovered = GizmoDrawer.OrientationCube(
+            upperRightCorner + new Vector2(-90, 80),
+            radius: 70,
+            out Vector3 facingDirection
+        );
 
         if (
             ImGui.IsMouseClicked(ImGuiMouseButton.Left)
@@ -152,6 +207,12 @@ internal class SceneWindow
             && context.CurrentScene is not null
         )
         {
+            if (orientationCubeHovered)
+            {
+                camera.LookAt(camera.Eye, camera.Eye - facingDirection);
+                return;
+            }
+
             Vector2 pixelPos = mousePos - sceneImageRectMin;
 
             context.GL.BindBuffer(BufferTargetARB.PixelPackBuffer, 0);
@@ -178,6 +239,7 @@ internal class SceneWindow
             context.CurrentScene.ToggleObjectSelection(pixel);
         }
 
-        InfiniteGrid.Render(context.GL, viewMatrix * projectionMatrix);
+        GizmoDrawer.EndGizmoDrawing();
+        ImGui.End();
     }
 }
