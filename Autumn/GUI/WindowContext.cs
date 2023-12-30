@@ -7,7 +7,12 @@ using Silk.NET.Windowing;
 
 namespace Autumn.GUI;
 
-internal class WindowContext
+/// <summary>
+/// This class serves as a base for all windows.<br />
+/// A window context contains all the necessary data related to the window.
+/// </summary>
+/// <seealso cref="WindowManager" />
+internal abstract class WindowContext
 {
     public IWindow Window { get; protected set; }
     public ImGuiController? ImGuiController { get; protected set; }
@@ -17,6 +22,10 @@ internal class WindowContext
     public IInputContext? InputContext { get; protected set; }
     public IKeyboard? Keyboard { get; protected set; }
 
+    /// <summary>
+    /// Specifies where the "imgui.ini" file is stored in.
+    /// By default, it will be stored within Autumn's settings path.
+    /// </summary>
     protected readonly string ImguiSettingsFile = Path.Join(
         Path.GetDirectoryName(SettingsHandler.SettingsPath),
         "imgui.ini"
@@ -29,14 +38,17 @@ internal class WindowContext
         options.VSync = true;
         options.SharedContext = WindowManager.SharedContext;
 
+        ContextFlags contextFlags = ContextFlags.ForwardCompatible;
+
+#if DEBUG
+        contextFlags |= ContextFlags.Debug;
+#endif
+
         options.API = new GraphicsAPI(
             ContextAPI.OpenGL,
             ContextProfile.Core,
-#if DEBUG
-            ContextFlags.Debug |
-#endif
-                ContextFlags.ForwardCompatible,
-            new APIVersion(3, 3)
+            contextFlags,
+            new APIVersion(3, 3) // OpenGL 3.3
         );
 
         Window = Silk.NET.Windowing.Window.Create(options);
@@ -69,17 +81,21 @@ internal class WindowContext
                 Window.DoRender();
             };
 
+            // If no imgui settings file exists,
             if (!File.Exists(ImguiSettingsFile))
             {
+                // Copy the default imgui settings file.
                 File.Copy(Path.Join("Resources", "DefaultLayout.ini"), ImguiSettingsFile);
 
                 unsafe
                 {
+                    // Set the settings file's path in imgui.
                     ImGui.GetIO().NativePtr->IniFilename = (byte*)
                         Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
                 }
             }
 
+            // Set the clear color and depth.
             GL.ClearColor(0.059f, 0.059f, 0.059f, 1f);
             GL.ClearDepth(1);
 
@@ -93,5 +109,10 @@ internal class WindowContext
         Window.Closing += () => Window.IsClosing = Close();
     }
 
+    /// <summary>
+    /// A method that is meant to be overriden in order to make any operations
+    /// before the window gets closed.
+    /// </summary>
+    /// <returns>Whether the window can be safely closed.</returns>
     public virtual bool Close() => true;
 }

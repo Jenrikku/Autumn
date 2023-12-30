@@ -1,34 +1,49 @@
 ﻿using Microsoft.Win32;
 using System.Runtime.InteropServices;
 
-namespace Autumn.GUI {
-    public static class WindowsColorMode {
-        [DllImport("dwmapi.dll", SetLastError = true)]
-        private static extern bool DwmSetWindowAttribute(nint handle, int param, in int value, int size);
+namespace Autumn.GUI;
 
-        public static void Init(nint handle) {
-            if(!OperatingSystem.IsWindowsVersionAtLeast(10, build: 18282))
-                return; // Only works on windows 10+
+/// <summary>
+/// A class that implements color mode changes to the title bar when running on Windows.
+/// </summary>
+internal static class WindowsColorMode
+{
+    [DllImport("dwmapi.dll", SetLastError = true)]
+    private static extern bool DwmSetWindowAttribute(
+        nint handle,
+        int param,
+        in int value,
+        int size
+    );
 
-            const string ColorThemeKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
-            const string ColorThemeValue = "SystemUsesLightTheme";
+    public static void Init(nint handle)
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, build: 18282))
+            return; // Only works on windows 10+
 
-            // Set color mode the first time:
-            CheckColorMode();
+        const string ColorThemeKey =
+            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+        const string ColorThemeValue = "SystemUsesLightTheme";
 
-            void CheckColorMode() {
-                int value = (int?) Registry.GetValue(ColorThemeKey, ColorThemeValue, 0) ?? 0;
-                value = ~value;
+        // Set color mode the first time.
+        CheckColorMode();
 
-                if(!DwmSetWindowAttribute(handle, 20, value, sizeof(int)))
-                    DwmSetWindowAttribute(handle, 19, value, sizeof(int));
-            }
+        void CheckColorMode()
+        {
+            // Get the negated value of the specified registry key.
+            int value = (int?)Registry.GetValue(ColorThemeKey, ColorThemeValue, 0) ?? 0;
+            value = ~value;
 
-            // Use a timer to check color mode every second:
-            System.Timers.Timer timer = new(1000);
-            timer.Elapsed += (o, e) => CheckColorMode();
-
-            timer.Start();
+            // Feed the value to the window attribute.
+            // Note that this will try a different position if the first one fails.
+            if (!DwmSetWindowAttribute(handle, 20, value, sizeof(int)))
+                DwmSetWindowAttribute(handle, 19, value, sizeof(int));
         }
+
+        // Use a timer to check color mode every second:
+        System.Timers.Timer timer = new(1000);
+        timer.Elapsed += (o, e) => CheckColorMode();
+
+        timer.Start();
     }
 }
