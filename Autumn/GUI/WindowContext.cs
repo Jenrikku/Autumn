@@ -60,8 +60,7 @@ internal abstract class WindowContext
             InputContext = Window.CreateInput();
             Keyboard = InputContext.Keyboards[0];
 
-            lock (new object())
-                ImGuiController = new(GL, Window, InputContext);
+            ImGuiController = new(GL, Window, InputContext, SetFont);
 
             var win32 = Window.Native?.Win32;
 
@@ -128,4 +127,14 @@ internal abstract class WindowContext
     /// </summary>
     /// <returns>Whether the window can be safely closed.</returns>
     public virtual bool Close() => true;
+
+    private void SetFont()
+    {
+        var io = ImGui.GetIO();
+
+        io.Fonts.AddFontFromFileTTF(
+            Path.Join("Resources", "NotoSansJP-Regular.ttf"),
+            size_pixels: 18
+        );
+    }
 }

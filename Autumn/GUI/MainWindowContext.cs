@@ -86,11 +86,9 @@ internal class MainWindowContext : WindowContext
                 _isFirstFrame = false;
             }
 
-            float barHeight = 17;
-
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
 
-            RenderMainMenuBar(barHeight);
+            RenderMainMenuBar(out float barHeight);
             RenderStatusBar(barHeight, viewport.Size);
 
             #region DockSpace
@@ -163,14 +161,14 @@ internal class MainWindowContext : WindowContext
     /// </summary>
     /// <seealso cref="ImGuiWidgets.CommandMenuItem"/>
     /// <seealso cref="Commands"/>
-    private void RenderMainMenuBar(float height)
+    private void RenderMainMenuBar(out float height)
     {
+        height = 0;
+
         if (!ImGui.BeginMainMenuBar())
             return;
 
-        // Checks if the size is correct.
-        // The parameter is not used anywhere else.
-        Debug.Assert(height != ImGui.GetItemRectSize().Y);
+        height = ImGui.GetWindowHeight();
 
         if (ImGui.BeginMenu("Project"))
         {
@@ -357,7 +355,7 @@ internal class MainWindowContext : WindowContext
 
         ImGui.OpenPopup("Stage selector");
 
-        Vector2 dimensions = new Vector2(450, 185) + ImGui.GetStyle().ItemSpacing;
+        Vector2 dimensions = new Vector2(450, 230) + ImGui.GetStyle().ItemSpacing;
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
         ImGui.SetNextWindowPos(
@@ -383,10 +381,10 @@ internal class MainWindowContext : WindowContext
         ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
 
         ImGui.InputTextWithHint(
-            "",
-            "Insert the name of the stage here.",
+            label: "",
+            hint: "Insert the name of the stage here.",
             ref _stageSearchInput,
-            128
+            maxLength: 128
         );
 
         #endregion
