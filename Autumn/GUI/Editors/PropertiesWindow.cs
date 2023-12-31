@@ -43,13 +43,13 @@ internal static class PropertiesWindow
                 if (ImGui.InputInt("ID", ref stageObj.ID) && stageObj.ID < 0)
                     stageObj.ID = 0;
 
-            if (ImGui.InputFloat3("Translation", ref stageObj.Translation))
+            if (ImGui.DragFloat3("Translation", ref stageObj.Translation, v_speed: 10))
                 sceneObj.UpdateTransform();
 
-            if (ImGui.InputFloat3("Rotation", ref stageObj.Rotation))
+            if (ImGui.DragFloat3("Rotation", ref stageObj.Rotation, v_speed: 2))
                 sceneObj.UpdateTransform();
 
-            if (ImGui.InputFloat3("Scale", ref stageObj.Scale))
+            if (ImGui.DragFloat3("Scale", ref stageObj.Scale, v_speed: 0.2f))
                 sceneObj.UpdateTransform();
 
             foreach (var (name, property) in stageObj.Properties)
