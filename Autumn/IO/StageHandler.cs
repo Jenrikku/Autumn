@@ -252,7 +252,7 @@ internal static class StageHandler
 
                 var railPointDict = railPointNode?.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
-                railPointDict.TryGetValue("l_id", out BYAMLNode? pointID);
+                railPointDict.TryGetValue("id", out BYAMLNode? pointID);
 
                 railPointDict.TryGetValue("pnt0_x", out BYAMLNode? pnt0X);
                 railPointDict.TryGetValue("pnt0_y", out BYAMLNode? pnt0Y);
@@ -300,7 +300,7 @@ internal static class StageHandler
                                             && i.Key != "pnt2_x"
                                             && i.Key != "pnt2_y"
                                             && i.Key != "pnt2_z"
-                                            && i.Key != "l_id"
+                                            && i.Key != "id"
                                     )
                                     .ToDictionary(
                                         i => i.Key,
