@@ -15,6 +15,4 @@ internal enum RailPointType : byte
 {
     Bezier,
     Linear
-
-    // Note that more may exist. Further observation required.
 }
