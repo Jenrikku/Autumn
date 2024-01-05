@@ -102,12 +102,7 @@ internal static partial class ProjectHandler
     {
         string filepath = Path.Join(path, "autumnproj.yml");
 
-        ActiveProject = new()
-        {
-            Name = name,
-            SavePath = path,
-            ProjectFileName = Path.GetFileName(path)
-        };
+        ActiveProject = new() { Name = name, SavePath = path };
 
         YAMLWrapper.Serialize(filepath, ActiveProject);
 

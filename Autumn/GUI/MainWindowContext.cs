@@ -8,7 +8,6 @@ using Autumn.Storage;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
-using System.Diagnostics;
 using System.Numerics;
 
 namespace Autumn.GUI;
@@ -28,6 +27,11 @@ internal class MainWindowContext : WindowContext
 
     private bool _stageSelectOpened = false;
     private string _stageSearchInput = string.Empty;
+
+    private bool _projectPropertiesOpened = false;
+    private string _projectPropertiesName = string.Empty;
+    private string _projectPropertiesBuildPath = string.Empty;
+    private bool _projectPropertiesBuildPathValid = false;
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -135,6 +139,9 @@ internal class MainWindowContext : WindowContext
             if (_closingDialogOpened)
                 RenderClosingDialog();
 
+            if (_projectPropertiesOpened)
+                RenderProjectPropertiesDialog();
+
             #endregion
 
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -172,7 +179,9 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            ImGuiWidgets.CommandMenuItem(CommandID.NewProject);
+            if (ImGuiWidgets.CommandMenuItem(CommandID.NewProject))
+                _projectPropertiesOpened = true;
+
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject);
 
             // Menu that displays the recently opened projects' list.
@@ -482,6 +491,89 @@ internal class MainWindowContext : WindowContext
 
         if (!BackgroundManager.IsBusy)
             Window.Close();
+
+        ImGui.EndPopup();
+    }
+
+    private void RenderProjectPropertiesDialog()
+    {
+        ImGui.OpenPopup("Project properties");
+
+        Vector2 dimensions = new Vector2(480, 185) + ImGui.GetStyle().ItemSpacing;
+        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
+
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Appearing,
+            new(0.5f, 0.5f)
+        );
+
+        if (
+            !ImGui.BeginPopupModal(
+                "Project properties",
+                ref _projectPropertiesOpened,
+                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
+            )
+        )
+            return;
+
+        ImGui.TextWrapped("Project: " + ProjectHandler.ActiveProject.SavePath);
+
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        // Correctly aline first field:
+        float size1 = ImGui.CalcTextSize("Name").X;
+        float size2 = ImGui.CalcTextSize("Build path").X;
+        float cursorX = ImGui.GetCursorPosX();
+
+        ImGui.SetCursorPosX(cursorX + size2 - size1);
+
+        ImGui.Text("Name: ");
+        ImGui.SameLine();
+        ImGui.InputText("", ref _projectPropertiesName, 255);
+
+        ImGui.Text("Build path: ");
+        ImGui.SameLine();
+        ImGuiWidgets.DirectoryPathSelector(
+            ref _projectPropertiesBuildPath,
+            ref _projectPropertiesBuildPathValid,
+            dialogTitle: "Please specify the project's build path"
+        );
+
+        ImGui.SameLine();
+
+        Vector2 cursorPos = ImGui.GetCursorPos();
+
+        ImGui.TextDisabled("?");
+
+        ImGui.SetCursorPos(cursorPos);
+
+        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(
+                "The build path is where the mod files will be saved to.\n"
+                    + "If you use an emulator, we recommend you to set this to the emulator's mod directory."
+            );
+
+        float okButtonY = ImGui.GetWindowHeight() - 40;
+        float okButtonX = ImGui.GetWindowWidth() - 60;
+
+        ImGui.SetCursorPos(new Vector2(okButtonX, okButtonY));
+
+        if (ImGui.Button("Ok", new(40, 0)))
+        {
+            ImGui.CloseCurrentPopup();
+            _projectPropertiesOpened = false;
+
+            ProjectHandler.ActiveProject.Name = _projectPropertiesName;
+
+            if (_projectPropertiesBuildPathValid)
+                ProjectHandler.ActiveProject.BuildOutput = _projectPropertiesBuildPath;
+
+            ProjectHandler.SaveProject();
+        }
 
         ImGui.EndPopup();
     }

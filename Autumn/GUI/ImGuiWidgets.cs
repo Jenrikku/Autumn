@@ -50,14 +50,19 @@ internal static class ImGuiWidgets
         }
     }
 
-    public static void CommandMenuItem(CommandID id)
+    public static bool CommandMenuItem(CommandID id)
     {
         Command? command = CommandHandler.GetCommand(id);
 
         if (command is null)
-            return;
+            return false;
 
         if (ImGui.MenuItem(command.DisplayName, command.DisplayShortcut, false, command.Enabled))
+        {
             command.Action.Invoke();
+            return true;
+        }
+
+        return false;
     }
 }
