@@ -97,22 +97,22 @@ internal static partial class ProjectHandler
         ProjectLoaded = false;
     }
 
-    /// <param name="path">The path to the project file.</param>
+    /// <param name="path">The path to the project's directory.</param>
     public static void CreateNew(string path, string name = "Untitled")
     {
-        string dir = Path.GetDirectoryName(path) ?? Directory.GetDirectoryRoot(path);
+        string filepath = Path.Join(path, "autumnproj.yml");
 
         ActiveProject = new()
         {
             Name = name,
-            SavePath = dir,
+            SavePath = path,
             ProjectFileName = Path.GetFileName(path)
         };
 
-        YAMLWrapper.Serialize(path, ActiveProject);
+        YAMLWrapper.Serialize(filepath, ActiveProject);
 
-        if (!RecentHandler.RecentOpenedPaths.Contains(path))
-            RecentHandler.RecentOpenedPaths.Add(path);
+        if (!RecentHandler.RecentOpenedPaths.Contains(filepath))
+            RecentHandler.RecentOpenedPaths.Add(filepath);
 
         ProjectLoaded = true;
     }
