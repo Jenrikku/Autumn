@@ -11,6 +11,7 @@ internal static class ImGuiWidgets
         ref string input,
         ref bool isValidPath,
         float? width = null,
+        string label = " ",
         string? dialogTitle = null,
         string? dialogDefaultPath = null
     )
@@ -20,13 +21,13 @@ internal static class ImGuiWidgets
         if (width.HasValue)
             ImGui.SetNextItemWidth(width.Value - 20);
 
-        if (ImGui.InputText(" ", ref input, 512))
+        if (ImGui.InputText(label, ref input, 512))
             isValidPath = Directory.Exists(input);
 
         ImGui.SameLine();
 
         if (
-            ImGui.Button("Select", new(20, 0))
+            ImGui.Button("Select", new(50, 0))
             && TinyFileDialogs.SelectFolderDialog(
                 out string? dialogOutput,
                 dialogTitle,
