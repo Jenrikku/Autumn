@@ -64,13 +64,18 @@ internal class WelcomeWindowContext : WindowContext
 
                     ImGui.SetCursorPosY(buttonsRowY);
 
-                    if (ImGui.Button("Exit", new(80, 20)))
-                        WindowManager.Stop();
+                    if (ImGui.Button("Exit", new(80, 0)))
+                    {
+                        if (WindowManager.Count <= 1)
+                            WindowManager.Stop();
+                        else
+                            Window.Close();
+                    }
 
                     ImGui.SetCursorPosY(buttonsRowY);
                     ImGui.SetCursorPosX(secondButtonX);
 
-                    if (ImGui.Button("Start", new(80, 20)))
+                    if (ImGui.Button("Start", new(80, 0)))
                         _currentPage++;
 
                     break;
@@ -86,19 +91,19 @@ internal class WelcomeWindowContext : WindowContext
                     ImGuiWidgets.DirectoryPathSelector(
                         ref _romfsInput,
                         ref _romfsIsValidPath,
-                        ImGui.GetContentRegionAvail().X - 60,
-                        "Select the folder containing the RomFS"
+                        width: ImGui.GetContentRegionAvail().X - 60,
+                        dialogTitle: "Select the folder containing the RomFS"
                     );
 
                     ImGui.SetCursorPosY(buttonsRowY);
 
-                    if (ImGui.Button("Back", new(80, 20)))
+                    if (ImGui.Button("Back", new(80, 0)))
                         _currentPage--;
 
                     ImGui.SetCursorPosY(buttonsRowY);
                     ImGui.SetCursorPosX(secondButtonX);
 
-                    if (ImGui.Button("Continue", new(80, 20)))
+                    if (ImGui.Button("Continue", new(80, 0)))
                     {
                         if (string.IsNullOrEmpty(_romfsInput))
                         {
@@ -139,13 +144,13 @@ internal class WelcomeWindowContext : WindowContext
 
                     ImGui.SetCursorPosY(buttonsRowY);
 
-                    if (ImGui.Button("Back", new(80, 20)))
+                    if (ImGui.Button("Back", new(80, 0)))
                         _currentPage--;
 
                     ImGui.SetCursorPosY(buttonsRowY);
                     ImGui.SetCursorPosX(secondButtonX);
 
-                    if (ImGui.Button("End", new(80, 20)))
+                    if (ImGui.Button("End", new(80, 0)))
                         _currentPage++;
 
                     break;
