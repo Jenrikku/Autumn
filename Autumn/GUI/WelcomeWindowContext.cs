@@ -83,7 +83,7 @@ internal class WelcomeWindowContext : WindowContext
                 case 1:
                     ImGui.TextWrapped(
                         "In order to function properly, Autumn will need the RomFS from 3D Land."
-                            + " Please input the path to an unmodifier copy of 3D Land's romfs."
+                            + " Please input the path to an unmodified copy of 3D Land's romfs."
                     );
 
                     ImGui.SetCursorPosY(pathInputY);
