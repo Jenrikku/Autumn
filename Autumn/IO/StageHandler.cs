@@ -278,7 +278,7 @@ internal static class StageHandler
                             && i.Key != "LayerName"
                             && i.Key != "l_id"
                     )
-                    .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                    .ToDictionary(i => i.Key, i => i.Value.Value)
             };
 
         // Rail point reading:
@@ -347,7 +347,7 @@ internal static class StageHandler
                                         && i.Key != "pnt2_z"
                                         && i.Key != "id"
                                 )
-                                .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                                .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
                     );
                     break;
@@ -370,7 +370,7 @@ internal static class StageHandler
                                         && i.Key != "pnt0_z"
                                         && i.Key != "id"
                                 )
-                                .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                                .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
                     );
                     break;
@@ -514,7 +514,7 @@ internal static class StageHandler
                             && i.Key != "GenerateParent"
                             && i.Key != "AreaParent"
                     )
-                    .ToDictionary(i => i.Key, i => new StageObjProperty(i.Value.Value))
+                    .ToDictionary(i => i.Key, i => i.Value.Value)
             };
 
         stageObj.SetRail(railObj);

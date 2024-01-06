@@ -54,31 +54,31 @@ internal static class PropertiesWindow
 
             foreach (var (name, property) in stageObj.Properties)
             {
-                if (property.Value is null)
+                if (property is null)
                 {
                     ImGui.TextDisabled(name);
                     return;
                 }
 
-                switch (property.Value)
+                switch (property)
                 {
                     case object p when p is int:
                         int intBuf = (int)(p ?? -1);
                         if (ImGui.InputInt(name, ref intBuf))
-                            property.Value = intBuf;
+                            stageObj.Properties[name] = intBuf;
 
                         break;
 
                     case object p when p is string:
                         string strBuf = (string)(p ?? string.Empty);
                         if (ImGui.InputText(name, ref strBuf, 128))
-                            property.Value = strBuf;
+                            stageObj.Properties[name] = strBuf;
 
                         break;
 
                     default:
                         throw new NotImplementedException(
-                            "The property type " + property.Value?.GetType().FullName
+                            "The property type " + property?.GetType().FullName
                                 ?? "null" + " is not supported."
                         );
                 }

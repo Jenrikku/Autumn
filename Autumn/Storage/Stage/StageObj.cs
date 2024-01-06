@@ -21,7 +21,7 @@ internal class StageObj
 
     public List<StageObj>? Children { get; set; }
 
-    public Dictionary<string, StageObjProperty> Properties { get; init; } = new();
+    public Dictionary<string, object?> Properties { get; init; } = new();
 
     private RailObj? _rail;
     private StageObj? _parent;
