@@ -6,7 +6,7 @@ internal abstract class RailPoint
 {
     public int ID = -1;
 
-    public Dictionary<string, object?> Properties { get; init; } = new();
+    public Dictionary<string, object?> Properties { get; set; } = new();
 }
 
 internal class RailPointBezier : RailPoint

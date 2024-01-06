@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using Autumn.Storage;
 using BYAMLSharp;
@@ -34,7 +35,27 @@ internal static class StageHandler
         yamlPath = Path.Join(path, "StageData.yml");
 
         if (File.Exists(yamlPath))
-            stage.StageData = YAMLWrapper.Deserialize<List<StageObj>>(yamlPath);
+        {
+            var root = YAMLWrapper.Deserialize<List<object>>(yamlPath);
+
+            if (root is not null)
+            {
+                stage.StageData ??= new();
+                stage.StageData.Clear();
+
+                foreach (object obj in root)
+                {
+                    Type t = obj.GetType();
+
+                    if (obj is not Dictionary<object, object> dict)
+                        continue;
+
+                    StageObj stageObj = ReadStageObj(dict);
+
+                    stage.StageData.Add(stageObj);
+                }
+            }
+        }
 
         // TO-DO: Other yamls.
 
@@ -520,5 +541,266 @@ internal static class StageHandler
         stageObj.SetRail(railObj);
 
         return stageObj;
+    }
+
+    // Used when reading a stage data yaml.
+    private static StageObj ReadStageObj(Dictionary<object, object> dict)
+    {
+        List<StageObj>? children = null;
+
+        List<RailPoint>? points = null;
+
+        StageObjFileType fileType = default;
+        StageObjType type = default;
+        RailPointType pointType = default;
+
+        int id = -1;
+        int parentId = -1;
+        int railId = -1;
+        int railNo = 0;
+
+        string? layer = null;
+        string? name = null;
+
+        bool closed = false;
+
+        Vector3 translation = new();
+        Vector3 rotation = new();
+        Vector3 scale = new(1);
+
+        Dictionary<string, object?>? properties = null;
+
+        foreach (var (key, value) in dict)
+        {
+            string keyStr = key.ToString() ?? string.Empty;
+
+            switch (keyStr, value)
+            {
+                case var (s, o) when s == "Children" && o is List<object> list:
+                    foreach (object item in list)
+                    {
+                        if (item is not Dictionary<object, object> itemDict)
+                            continue;
+
+                        StageObj child = ReadStageObj(itemDict);
+
+                        children ??= new();
+                        children.Add(child);
+                    }
+
+                    break;
+
+                case var (s, o) when s == "Points" && o is List<object> list:
+                    foreach (object item in list)
+                    {
+                        if (item is not Dictionary<object, object> itemDict)
+                            continue;
+
+                        RailPoint point = ReadRailPoint(dict);
+
+                        points ??= new();
+                        points.Add(point);
+                    }
+
+                    break;
+
+                case var (s, o) when s == "FileType" && o is string str:
+                    fileType = Enum.Parse<StageObjFileType>(str);
+                    break;
+
+                case var (s, o) when s == "Type" && o is string str:
+                    type = Enum.Parse<StageObjType>(str);
+                    break;
+
+                case var (s, o) when s == "PointType" && o is string str:
+                    pointType = Enum.Parse<RailPointType>(str);
+                    break;
+
+                case var (s, o) when s == "ID" && o is int no:
+                    id = no;
+                    break;
+
+                case var (s, o) when s == "ParentID" && o is int no:
+                    parentId = no;
+                    break;
+
+                case var (s, o) when s == "RailID" && o is int no:
+                    railId = no;
+                    break;
+
+                case var (s, o) when s == "RailNo" && o is int no:
+                    railNo = no;
+                    break;
+
+                case var (s, o) when s == "Layer" && o is string str:
+                    layer = str;
+                    break;
+
+                case var (s, o) when s == "Name" && o is string str:
+                    name = str;
+                    break;
+
+                case var (s, o) when s == "Closed" && o is bool b:
+                    closed = b;
+                    break;
+
+                case var (s, o)
+                    when s == "Translation" && o is Dictionary<object, object> childDict:
+                    ReadVector3(childDict, ref translation);
+                    break;
+
+                case var (s, o) when s == "Rotation" && o is Dictionary<object, object> childDict:
+                    ReadVector3(childDict, ref rotation);
+                    break;
+
+                case var (s, o) when s == "Scale" && o is Dictionary<object, object> childDict:
+                    ReadVector3(childDict, ref scale);
+                    break;
+
+                case var (s, o) when s == "Properties" && o is Dictionary<object, object> childDict:
+                    properties = ReadProperties(childDict);
+                    break;
+            }
+        }
+
+        if (type == StageObjType.Rail)
+        {
+            return new RailObj()
+            {
+                Children = children,
+                Points = points ?? new(),
+                FileType = fileType,
+                Type = type,
+                PointType = pointType,
+                ID = id,
+                ParentID = parentId,
+                RailID = railId,
+                RailNo = railNo,
+                Layer = layer ?? "共通",
+                Name = name ?? "Rail",
+                Closed = closed,
+                Translation = translation,
+                Rotation = rotation,
+                Scale = scale,
+                Properties = properties ?? new()
+            };
+        }
+
+        return new StageObj()
+        {
+            Children = children,
+            FileType = fileType,
+            Type = type,
+            ID = id,
+            ParentID = parentId,
+            RailID = railId,
+            Layer = layer ?? "共通",
+            Name = name ?? "StageObj",
+            Translation = translation,
+            Rotation = rotation,
+            Scale = scale,
+            Properties = properties ?? new()
+        };
+    }
+
+    private static RailPoint ReadRailPoint(Dictionary<object, object> dict)
+    {
+        RailPoint result;
+
+        // Detect point type:
+        if (dict.TryGetValue("Translation", out object? translation))
+        {
+            // Linear rail point:
+            RailPointLinear railPoint = new();
+
+            if (translation is Dictionary<object, object> translationDict)
+                ReadVector3(translationDict, ref railPoint.Translation);
+
+            result = railPoint;
+        }
+        else
+        {
+            // Bezier rail point:
+            RailPointBezier railPoint = new();
+
+            foreach (var (key, value) in dict)
+            {
+                string keyStr = key.ToString() ?? string.Empty;
+
+                switch (keyStr, value)
+                {
+                    case var (s, o)
+                        when s == "Point0Trans" && o is Dictionary<object, object> childDict:
+                        ReadVector3(childDict, ref railPoint.Point0Trans);
+                        break;
+
+                    case var (s, o)
+                        when s == "Point1Trans" && o is Dictionary<object, object> childDict:
+                        ReadVector3(childDict, ref railPoint.Point1Trans);
+                        break;
+
+                    case var (s, o)
+                        when s == "Point2Trans" && o is Dictionary<object, object> childDict:
+                        ReadVector3(childDict, ref railPoint.Point2Trans);
+                        break;
+                }
+            }
+
+            result = railPoint;
+        }
+
+        // Read ID:
+        if (dict.TryGetValue("ID", out object? id) && id is int idInt)
+            result.ID = idInt;
+
+        // Read properties:
+        if (
+            dict.TryGetValue("Properties", out object? properties)
+            && properties is Dictionary<object, object> propertiesDict
+        )
+            result.Properties = ReadProperties(propertiesDict);
+
+        return result;
+    }
+
+    private static void ReadVector3(Dictionary<object, object> dict, ref Vector3 vector)
+    {
+        foreach (var (key, value) in dict)
+        {
+            string keyStr = key.ToString() ?? string.Empty;
+
+            switch (keyStr, value)
+            {
+                case var (s, o) when s == "X" && o is double no:
+                    vector.X = (float)no;
+                    break;
+
+                case var (s, o) when s == "Y" && o is double no:
+                    vector.Y = (float)no;
+                    break;
+
+                case var (s, o) when s == "Z" && o is double no:
+                    vector.Z = (float)no;
+                    break;
+            }
+        }
+    }
+
+    private static Dictionary<string, object?> ReadProperties(Dictionary<object, object> dict)
+    {
+        Dictionary<string, object?> result = new();
+
+        foreach (var (key, value) in dict)
+        {
+            string resultKey = key.ToString() ?? string.Empty;
+            object resultValue = value;
+
+            if (resultValue is double valueDouble)
+                resultValue = (float)valueDouble;
+
+            result.Add(resultKey, resultValue);
+        }
+
+        return result;
     }
 }
