@@ -1,4 +1,4 @@
-﻿using Autumn.IO;
+using Autumn.IO;
 using Autumn.Storage;
 using Silk.NET.OpenGL;
 using System.Numerics;
@@ -58,10 +58,17 @@ internal class Scene
         SceneObjects.Clear();
         SelectedObjects.Clear();
 
-        if (Stage.StageData is null)
+        GenerateSceneObjects(Stage.StageData);
+
+        IsReady = true;
+    }
+
+    private void GenerateSceneObjects(List<StageObj>? stageData)
+    {
+        if (stageData is null)
             return;
 
-        foreach (StageObj stageObj in Stage.StageData)
+        foreach (StageObj stageObj in stageData)
         {
             ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
 
@@ -69,8 +76,8 @@ internal class Scene
 
             SceneObjects.Add(sceneObj);
             _pickableObjs.Add(_lastPickingId++, sceneObj);
-        }
 
-        IsReady = true;
+            GenerateSceneObjects(stageObj.Children);
+        }
     }
 }

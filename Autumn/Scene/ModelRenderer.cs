@@ -56,7 +56,11 @@ internal static class ModelRenderer
         StageObj stageObj = sceneObj.StageObj;
         ActorObj actorObj = sceneObj.ActorObj;
 
-        if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
+        if (
+            stageObj.Type == StageObjType.Area
+            || stageObj.Type == StageObjType.CameraArea
+            || stageObj.Type == StageObjType.AreaChild
+        )
         {
             // TO-DO: Change color based on the name here.
 
@@ -148,35 +152,5 @@ internal static class ModelRenderer
                     }
                 }
         }
-
-        // if(!s_modelCache.TryGetValue(name, out var model)) {
-        //     SPICA.Formats.CtrH3D.H3D? h3D = RomFSHandler.RequestModel(name);
-
-        //     if(h3D is null)
-        //         model = null;
-        //     else
-        //         model = new(h3D, name, gl);
-
-        //     s_modelCache.Add(name, model);
-        // }
-
-        //if(name == "FirstStepASideView")
-        //    return;
-
-        // if(model is null) {
-        //     s_defaultCubeSceneParams.Transform = transform;
-
-        //     DefaultCubeRenderer.Render(gl, s_defaultCubeMaterial, s_defaultCubeSceneParams);
-        // } else { // Render H3D:
-        //     model.Render(gl, s_viewMatrix, s_projectionMatrix, transform);
-        // }
     }
-
-    // public static void CleanUp(GL gl)
-    // {
-    //     DefaultCubeRenderer.CleanUp(gl);
-
-    //     foreach (var (_, model) in s_modelCache)
-    //         model?.CleanUp(gl);
-    // }
 }
