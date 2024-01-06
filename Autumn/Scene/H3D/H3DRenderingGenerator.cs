@@ -3,6 +3,7 @@ using Autumn.Storage;
 using SceneGL;
 using Silk.NET.OpenGL;
 using SPICA.PICA.Converters;
+using SPICA.PICA.Commands;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Model.Material;
 using Silk.NET.Maths;
@@ -64,10 +65,15 @@ internal static class H3DRenderingGenerator
             fixed (void* vertptr = picaVertices)
                 vertices = new((Vertex*)vertptr, picaVertices.Length);
 
+            int multiplier = 255;
+            foreach (PICAAttribute attrib in mesh.Attributes)
+                if (attrib.Name == PICAAttributeName.Color && attrib.Format == PICAAttributeFormat.Byte)
+                    multiplier = 127;
+
             for (int j = 0; j < vertices.Length; j++)
                 vertices[j] = vertices[j] with
                 {
-                    Color = vertices[j].Color * 255,
+                    Color = vertices[j].Color * multiplier,
                     Weights = vertices[j].Weights * 100
                 };
 
