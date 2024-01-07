@@ -186,7 +186,7 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            if (ImGuiWidgets.CommandMenuItem(CommandID.NewProject))
+            if (ImGuiWidgets.CommandMenuItem(CommandID.NewProject) && ProjectHandler.ProjectLoaded)
                 _projectPropertiesOpened = true;
 
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject);
