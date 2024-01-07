@@ -28,6 +28,10 @@ internal class MainWindowContext : WindowContext
     private bool _stageSelectOpened = false;
     private string _stageSearchInput = string.Empty;
 
+    private bool _newStageOpened = false;
+    private string _newStageName = string.Empty;
+    private string _newStageScenario = "1";
+
     private bool _projectPropertiesOpened = false;
     private string _projectPropertiesName = string.Empty;
     private string _projectPropertiesBuildPath = string.Empty;
@@ -136,6 +140,9 @@ internal class MainWindowContext : WindowContext
             if (_stageSelectOpened)
                 RenderStageSelectPopup();
 
+            if (_newStageOpened)
+                RenderNewStagePopup();
+
             if (_closingDialogOpened)
                 RenderClosingDialog();
 
@@ -212,6 +219,9 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Stage"))
         {
+            if (ImGui.MenuItem("Create New", ProjectHandler.ProjectLoaded))
+                _newStageOpened = true;
+
             if (ImGui.MenuItem("Save", CurrentScene is not null))
                 BackgroundManager.Add(
                     $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
@@ -447,6 +457,55 @@ internal class MainWindowContext : WindowContext
         }
 
         ImGui.EndPopup();
+    }
+
+    /// <summary>
+    /// Renders a dialog that asks the user for a name and a scenario for the new stage.
+    /// </summary>
+    private void RenderNewStagePopup()
+    {
+        ImGui.OpenPopup("Create new stage");
+
+        Vector2 dimensions = new Vector2(400, 95) + ImGui.GetStyle().ItemSpacing;
+        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
+
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Appearing,
+            new(0.5f, 0.5f)
+        );
+
+        if (
+            !ImGui.BeginPopupModal(
+                "Create new stage",
+                ref _newStageOpened,
+                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
+            )
+        )
+            return;
+
+        ImGui.SetNextItemWidth(350);
+        ImGui.InputTextWithHint("##name", "Name", ref _newStageName, 100);
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(30);
+        ImGui.InputText("##scenario", ref _newStageScenario, 2, ImGuiInputTextFlags.CharsDecimal);
+
+        ImGui.Spacing();
+
+        float windowWidth = ImGui.GetWindowWidth();
+        ImGui.SetCursorPosX(windowWidth / 2 - 25);
+
+        if (ImGui.Button("Create", new(50, 0)))
+        {
+            byte scenario = byte.Parse(_newStageScenario);
+            Stage stage = StageHandler.CreateNewStage(_newStageName, scenario);
+
+            ProjectHandler.ActiveProject.Stages.Add(stage);
+
+            ImGui.CloseCurrentPopup();
+            _newStageOpened = false;
+        }
     }
 
     /// <summary>

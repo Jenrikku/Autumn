@@ -11,6 +11,20 @@ internal static class StageHandler
 {
     private static readonly Encoding s_encoding = Encoding.GetEncoding("Shift-JIS");
 
+    public static Stage CreateNewStage(string name, byte scenario = 1)
+    {
+        Stage stage = new(name, scenario);
+
+        // Add a Mario.
+        StageObj startStageObj = new() { Type = StageObjType.Start, Name = "Mario" };
+        startStageObj.Properties.Add("MarioNo", 0);
+
+        stage.StageData ??= new();
+        stage.StageData.Add(startStageObj);
+
+        return stage;
+    }
+
     public static void LoadProjectStage(Stage stage)
     {
         if (!ProjectHandler.ProjectLoaded)
