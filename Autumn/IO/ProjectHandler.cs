@@ -33,6 +33,8 @@ internal static partial class ProjectHandler
         string stagesDir = Path.Join(dir, "stages");
         Regex regex = StageFolderRegex();
 
+        Directory.CreateDirectory(stagesDir);
+
         foreach (string stageDir in Directory.EnumerateDirectories(stagesDir))
         {
             string stageDirName = Path.GetFileName(stageDir)!;
