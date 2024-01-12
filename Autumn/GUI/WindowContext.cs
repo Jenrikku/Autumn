@@ -4,6 +4,7 @@ using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
+using Silk.NET.GLFW;
 
 namespace Autumn.GUI;
 
@@ -132,9 +133,20 @@ internal abstract class WindowContext
     {
         var io = ImGui.GetIO();
 
+        float xscale = 1;
+        unsafe
+        {
+            Glfw glfw = Glfw.GetApi();
+            Silk.NET.GLFW.Monitor* monitor = glfw.GetPrimaryMonitor();
+
+            glfw.GetMonitorContentScale(monitor, out xscale, out _);
+        }
+
         io.Fonts.AddFontFromFileTTF(
             Path.Join("Resources", "NotoSansJP-Regular.ttf"),
-            size_pixels: 18
+            size_pixels: 18 * xscale,
+            font_cfg: new ImFontConfigPtr(IntPtr.Zero),
+            io.Fonts.GetGlyphRangesJapanese()
         );
     }
 }
