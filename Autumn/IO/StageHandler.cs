@@ -18,6 +18,8 @@ internal static class StageHandler
         // Add a Mario.
         StageObj startStageObj = new() { Type = StageObjType.Start, Name = "Mario" };
         startStageObj.Properties.Add("MarioNo", 0);
+        if (ProjectHandler.ActiveProject.UseClassNames)
+            startStageObj.ClassName = "Mario";
 
         stage.StageData ??= new();
         stage.StageData.Add(startStageObj);
