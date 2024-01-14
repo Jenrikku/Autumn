@@ -18,6 +18,8 @@ internal static class StageHandler
         // Add a Mario.
         StageObj startStageObj = new() { Type = StageObjType.Start, Name = "Mario" };
         startStageObj.Properties.Add("MarioNo", 0);
+        if (ProjectHandler.ActiveProject.UseClassNames)
+            startStageObj.ClassName = "Mario";
 
         stage.StageData ??= new();
         stage.StageData.Add(startStageObj);
@@ -29,7 +31,6 @@ internal static class StageHandler
     {
         if (!ProjectHandler.ProjectLoaded)
             return;
-
         string stageDir = Path.Join(
             ProjectHandler.ActiveProject.SavePath,
             "stages",
@@ -431,6 +432,7 @@ internal static class StageHandler
 
         dict.TryGetValue("l_id", out BYAMLNode? id);
         dict.TryGetValue("name", out BYAMLNode? name);
+        dict.TryGetValue("ClassName", out BYAMLNode? className);
         dict.TryGetValue("LayerName", out BYAMLNode? layerName);
 
         dict.TryGetValue("pos_x", out BYAMLNode? posX);
@@ -525,6 +527,9 @@ internal static class StageHandler
                     scaleZ?.GetValueAs<float>() ?? 0
                 ),
                 Name = name?.GetValueAs<string>() ?? "StageObj",
+                //ClassName = "",//
+
+                ClassName = ProjectHandler.ActiveProject.UseClassNames ? (className?.GetValueAs<string>() ?? (name != null ? (RomFSHandler.CreatorClassNameTable.TryGetValue(name.GetValueAs<string>(), out string result) ? result : "") : "")) : null,
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
                 ID = id?.GetValueAs<int>() ?? -1,
                 ParentID = generateParent?.GetValueAs<int>() ?? areaParent?.GetValueAs<int>() ?? -1,
@@ -541,6 +546,7 @@ internal static class StageHandler
                             && i.Key != "scale_y"
                             && i.Key != "scale_z"
                             && i.Key != "name"
+                            && i.Key != "ClassName"
                             && i.Key != "LayerName"
                             && i.Key != "l_id"
                             && i.Key != "Rail"
@@ -575,6 +581,7 @@ internal static class StageHandler
 
         string? layer = null;
         string? name = null;
+        string? className = null;
 
         bool closed = false;
 
@@ -654,6 +661,10 @@ internal static class StageHandler
                     name = str;
                     break;
 
+                case var (s, o) when s == "ClassName" && o is string str:
+                    className = str;
+                    break;
+
                 case var (s, o) when s == "Closed" && o is bool b:
                     closed = b;
                     break;
@@ -710,6 +721,7 @@ internal static class StageHandler
             RailID = railId,
             Layer = layer ?? "共通",
             Name = name ?? "StageObj",
+            ClassName = ProjectHandler.ActiveProject.UseClassNames ? (className ?? (name != null ? (RomFSHandler.CreatorClassNameTable.TryGetValue(name, out string result) ? result : "") : "")) : null,
             Translation = translation,
             Rotation = rotation,
             Scale = scale,

@@ -15,6 +15,11 @@ internal class BackgroundManager
     public string StatusMessage { get; private set; } = string.Empty;
 
     /// <summary>
+    /// Detailed status message for the task that is currently being executed, to indicate progress.
+    /// </summary>
+    public string StatusMessageSecondary = string.Empty;
+
+    /// <summary>
     /// Whether the BackgroundWorker is executing a task.
     /// </summary>
     public bool IsBusy => _worker.IsBusy;

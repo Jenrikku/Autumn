@@ -53,31 +53,36 @@ internal class Scene
         SelectedObjects.Clear();
     }
 
-    public void GenerateSceneObjects()
+    public void GenerateSceneObjects(ref string status)
     {
         SceneObjects.Clear();
         SelectedObjects.Clear();
 
-        GenerateSceneObjects(Stage.StageData);
+        GenerateSceneObjects(Stage.StageData, ref status);
 
         IsReady = true;
     }
 
-    private void GenerateSceneObjects(List<StageObj>? stageData)
+    private void GenerateSceneObjects(List<StageObj>? stageData, ref string status)
     {
         if (stageData is null)
             return;
 
+        int curObj = 0;
         foreach (StageObj stageObj in stageData)
         {
-            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Name);
+            status = $"{curObj}/{stageData.Count} Loading model for {stageObj.Name}";
+            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Properties.TryGetValue("ModelName", out object? result) ? (string)result : stageObj.Name);
 
             SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
 
             SceneObjects.Add(sceneObj);
             _pickableObjs.Add(_lastPickingId++, sceneObj);
 
-            GenerateSceneObjects(stageObj.Children);
+            GenerateSceneObjects(stageObj.Children, ref status);
+            curObj++;
         }
+
+        status = string.Empty;
     }
 }

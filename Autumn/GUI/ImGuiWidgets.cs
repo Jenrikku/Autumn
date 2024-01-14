@@ -21,8 +21,13 @@ internal static class ImGuiWidgets
         if (width.HasValue)
             ImGui.SetNextItemWidth(width.Value - 20);
 
+        bool isInvalidPath = !isValidPath;
+        if (isInvalidPath)
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
         if (ImGui.InputText(label, ref input, 512))
             isValidPath = Directory.Exists(input);
+        if (isInvalidPath)
+            ImGui.PopStyleColor(1);
 
         ImGui.SameLine();
 
@@ -64,5 +69,16 @@ internal static class ImGuiWidgets
         }
 
         return false;
+    }
+
+    public static bool InputTextRedWhenEmpty(string label, ref string buf, uint buf_size)
+    {
+        bool isInvalid = buf == "";
+        if (isInvalid)
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+        bool rv = ImGui.InputText(label, ref buf, buf_size);
+        if (isInvalid)
+            ImGui.PopStyleColor(1);
+        return rv;
     }
 }

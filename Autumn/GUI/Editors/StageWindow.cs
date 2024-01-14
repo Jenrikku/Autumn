@@ -58,7 +58,7 @@ internal class StageWindow
                                     if (!stage.Loaded)
                                         StageHandler.LoadProjectStage(stage);
 
-                                    scene.GenerateSceneObjects();
+                                    scene.GenerateSceneObjects(ref context.BackgroundManager.StatusMessageSecondary);
                                 }
                             );
 

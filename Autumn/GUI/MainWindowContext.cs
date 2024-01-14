@@ -36,6 +36,7 @@ internal class MainWindowContext : WindowContext
     private string _projectPropertiesName = string.Empty;
     private string _projectPropertiesBuildPath = string.Empty;
     private bool _projectPropertiesBuildPathValid = false;
+    private bool _projectPropertiesUseClassNames = false;
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -321,7 +322,10 @@ internal class MainWindowContext : WindowContext
         if (!ImGui.Begin("StatusBar", flags))
             return;
 
-        ImGui.Text(BackgroundManager.StatusMessage);
+        string msg = BackgroundManager.StatusMessage;
+        if (BackgroundManager.StatusMessageSecondary != string.Empty)
+            msg += " | " + BackgroundManager.StatusMessageSecondary;
+        ImGui.Text(msg);
 
         ImGui.End();
         ImGui.PopStyleVar();
@@ -601,19 +605,27 @@ internal class MainWindowContext : WindowContext
         );
 
         ImGui.SameLine();
-
         Vector2 cursorPos = ImGui.GetCursorPos();
-
         ImGui.TextDisabled("?");
-
         ImGui.SetCursorPos(cursorPos);
-
         ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
-
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(
                 "The build path is where the mod files will be saved to.\n"
                     + "If you use an emulator, we recommend you to set this to the emulator's mod directory."
+            );
+
+        ImGui.Checkbox("Use class name patch", ref _projectPropertiesUseClassNames);
+        ImGui.SameLine();
+        cursorPos = ImGui.GetCursorPos();
+        ImGui.TextDisabled("?");
+        ImGui.SetCursorPos(cursorPos);
+        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(
+                "If enabled, the project will replace use of the CreatorClassNameTable with ObjectName/ClassName values individual to objects.\n"
+                + "Useful for convenience, but requires an ExeFS patch."
             );
 
         float okButtonY = ImGui.GetWindowHeight() - 40;
@@ -627,6 +639,7 @@ internal class MainWindowContext : WindowContext
             _projectPropertiesOpened = false;
 
             ProjectHandler.ActiveProject.Name = _projectPropertiesName;
+            ProjectHandler.ActiveProject.UseClassNames = _projectPropertiesUseClassNames;
 
             if (_projectPropertiesBuildPathValid)
                 ProjectHandler.ActiveProject.BuildOutput = _projectPropertiesBuildPath;
