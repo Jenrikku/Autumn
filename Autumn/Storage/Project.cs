@@ -12,6 +12,20 @@ internal struct Project
     public string BuildOutput { get; set; } = string.Empty;
     public Dictionary<string, object> Settings { get; set; } = new();
 
+    // Setting getters/setters
+    [YamlIgnore]
+    public bool UseClassNames
+    {
+        get
+        {
+            if (!Settings.ContainsKey("UseClassNames"))
+                Settings["UseClassNames"] = false;
+            return (bool)Settings["UseClassNames"];
+        }
+        set { Settings["UseClassNames"] = value; }
+    }
+
+
     [YamlIgnore]
     public string? SavePath { get; set; } // (Directory)
 

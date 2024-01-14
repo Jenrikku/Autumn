@@ -12,6 +12,7 @@ internal class StageObj
     public Vector3 Scale = new(1);
 
     public string Name = "StageObj";
+    public string? ClassName = null;
     public string Layer = "共通";
 
     // For object types that have no ID, the value must be -1.

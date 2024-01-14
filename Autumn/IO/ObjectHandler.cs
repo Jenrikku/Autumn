@@ -18,7 +18,7 @@ internal static class ObjectHandler
     private static readonly Dictionary<string, ActorObj> s_cachedRomFSObjects = new();
 
     /// <returns>An <see cref="ActorObj"/> from either the loaded project or the provided RomFS.</returns>
-    public static ActorObj GetObject(string name)
+    public static ActorObj GetObject(string name, string? modelName = null)
     {
         if (s_cachedRomFSObjects.TryGetValue(name, out ActorObj? obj))
             return obj;
@@ -27,7 +27,7 @@ internal static class ObjectHandler
             if (ProjectHandler.ActiveProject.Objects.TryGetValue(name, out obj))
                 return obj;
 
-            if (!TryImportObject(name, out obj))
+            if (!TryImportObject(name, modelName, out obj))
                 obj = new(name, true);
 
             s_cachedRomFSObjects.Add(name, obj);
@@ -36,8 +36,8 @@ internal static class ObjectHandler
         }
     }
 
-    public static bool TryImportObject(string name, out ActorObj obj) =>
-        TryImportObjectFrom(Path.Join(RomFSHandler.RomFSPath, "ObjectData"), name, out obj);
+    public static bool TryImportObject(string name, string? modelName, out ActorObj obj) =>
+        TryImportObjectFrom(Path.Join(RomFSHandler.RomFSPath, "ObjectData"), modelName ?? name, out obj);
 
     public static bool TryImportObjectFrom(string directory, string name, out ActorObj obj)
     {

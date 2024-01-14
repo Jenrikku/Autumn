@@ -1,4 +1,6 @@
 using Autumn.GUI;
+using NARCSharp;
+using BYAMLSharp;
 
 namespace Autumn.IO;
 
@@ -30,7 +32,7 @@ internal static class RomFSHandler
             if (!RomFSAvailable)
                 return new();
 
-            if (s_stageNames.Count <= 0)
+            if (s_stageNames.Count == 0)
             {
                 string stageDataPath = Path.Join(RomFSPath, "StageData");
 
@@ -44,6 +46,43 @@ internal static class RomFSHandler
             }
 
             return s_stageNames;
+        }
+    }
+
+    private static readonly Dictionary<string, string> s_creatorClassNameTable = new();
+
+    public static Dictionary<string, string> CreatorClassNameTable
+    {
+        get
+        {
+            if (!RomFSAvailable)
+                return new();
+
+            if (s_creatorClassNameTable.Count == 0)
+            {
+                string tablePath = Path.Join(RomFSPath, "SystemData/CreatorClassNameTable.szs");
+                NARCFileSystem? narc = SZSWrapper.ReadFile(tablePath);
+                if (narc == null)
+                    return new();
+
+                byte[] tableData = narc.GetFile("CreatorClassNameTable.byml");
+                if (tableData.Length == 0)
+                    return new();
+
+                s_creatorClassNameTable.Clear();
+
+                BYAML byamlData = BYAMLParser.Read(tableData);
+                BYAMLNode[] entries = byamlData.RootNode.GetValueAs<BYAMLNode[]>();
+                foreach (BYAMLNode node in entries)
+                {
+                    var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>();
+                    string className = dict["ClassName"].GetValueAs<string>();
+                    string objectName = dict["ObjectName"].GetValueAs<string>();
+                    s_creatorClassNameTable[objectName] = className;
+                }
+            }
+
+            return s_creatorClassNameTable;
         }
     }
 

@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Numerics;
+using Autumn.IO;
 using Autumn.GUI;
 using Autumn.Scene;
 using Autumn.Storage;
@@ -36,7 +38,23 @@ internal static class PropertiesWindow
             SceneObj sceneObj = selectedObjects[0];
             StageObj stageObj = sceneObj.StageObj;
 
-            ImGui.InputText("Name", ref stageObj.Name, 128);
+            ImGui.InputText(stageObj is RailObj ? "Name" : "ObjectName", ref stageObj.Name, 128);
+            if (stageObj is not RailObj)
+            {
+                if (ProjectHandler.ActiveProject.UseClassNames)
+                {
+                    Debug.Assert(stageObj.ClassName != null);
+                    ImGuiWidgets.InputTextRedWhenEmpty("ClassName", ref stageObj.ClassName, 128);
+                }
+                else
+                {
+                    Debug.Assert(stageObj.ClassName == null);
+                    RomFSHandler.CreatorClassNameTable.TryGetValue(stageObj.Name, out string? className);
+                    string name = className ?? "NotFound";
+                    ImGui.InputText("ClassName", ref name, 128, ImGuiInputTextFlags.ReadOnly);
+                }
+            }
+
             ImGui.InputText("Layer", ref stageObj.Layer, 30);
 
             if (stageObj.ID != -1)
