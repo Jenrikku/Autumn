@@ -217,25 +217,22 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("Exit"))
-                Window.Close();
-
-            ImGui.EndMenu();
-        }
-
-        if (ImGui.BeginMenu("Stage"))
-        {
-            if (ImGui.MenuItem("Create New", ProjectHandler.ProjectLoaded))
+            if (ImGui.MenuItem("New Stage", ProjectHandler.ProjectLoaded))
                 _newStageOpened = true;
 
-            if (ImGui.MenuItem("Save", CurrentScene is not null))
+            if (ImGui.MenuItem("Save Stage", CurrentScene is not null))
                 BackgroundManager.Add(
                     $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
                     () => StageHandler.SaveProjectStage(CurrentScene!.Stage)
                 );
 
-            if (ImGui.MenuItem("Import from RomFS", ProjectHandler.ProjectLoaded))
+            if (ImGui.MenuItem("Import stage from RomFS", ProjectHandler.ProjectLoaded))
                 _stageSelectOpened |= true;
+
+            ImGui.Separator();
+
+            if (ImGui.MenuItem("Exit"))
+                Window.Close();
 
             ImGui.EndMenu();
         }
