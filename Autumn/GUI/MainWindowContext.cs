@@ -205,6 +205,11 @@ internal class MainWindowContext : WindowContext
                             ProjectHandler.LoadProject(path);
                             break;
                         }
+
+                    ImGui.Separator();
+
+                    if (ImGui.Selectable("Clear all"))
+                        RecentHandler.RecentOpenedPaths.Clear();
                 }
 
                 ImGui.EndMenu();
@@ -625,7 +630,7 @@ internal class MainWindowContext : WindowContext
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(
                 "If enabled, the project will replace use of the CreatorClassNameTable with ObjectName/ClassName values individual to objects.\n"
-                + "Useful for convenience, but requires an ExeFS patch."
+                    + "Useful for convenience, but requires an ExeFS patch."
             );
 
         float okButtonY = ImGui.GetWindowHeight() - 40;
