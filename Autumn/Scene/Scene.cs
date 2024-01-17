@@ -72,17 +72,21 @@ internal class Scene
         foreach (StageObj stageObj in stageData)
         {
             status = $"{curObj}/{stageData.Count} Loading model for {stageObj.Name}";
-            ActorObj actorObj = ObjectHandler.GetObject(stageObj.Properties.TryGetValue("ModelName", out object? result) ? (string)result : stageObj.Name);
 
-            SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
-
-            SceneObjects.Add(sceneObj);
-            _pickableObjs.Add(_lastPickingId++, sceneObj);
-
+            GenerateSceneObject(stageObj);
             GenerateSceneObjects(stageObj.Children, ref status);
             curObj++;
         }
 
         status = string.Empty;
+    }
+
+    public void GenerateSceneObject(StageObj stageObj)
+    {
+        ActorObj actorObj = ObjectHandler.GetObject(stageObj.Properties.TryGetValue("ModelName", out object? result) ? (string)result : stageObj.Name);
+        SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
+
+        SceneObjects.Add(sceneObj);
+        _pickableObjs.Add(_lastPickingId++, sceneObj);
     }
 }
