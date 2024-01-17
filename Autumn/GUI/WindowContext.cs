@@ -142,11 +142,13 @@ internal abstract class WindowContext
             glfw.GetMonitorContentScale(monitor, out xscale, out _);
         }
 
+        const float sizeScalar = 1.5f; // Render a higher quality font texture for when we want to size up the font
+
         io.Fonts.AddFontFromFileTTF(
             Path.Join("Resources", "NotoSansJP-Regular.ttf"),
-            size_pixels: 18 * xscale,
+            size_pixels: 18 * xscale * sizeScalar,
             font_cfg: new ImFontConfigPtr(IntPtr.Zero),
             io.Fonts.GetGlyphRangesJapanese()
-        );
+        ).Scale = 1 / sizeScalar;
     }
 }

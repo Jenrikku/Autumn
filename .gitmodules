@@ -13,3 +13,6 @@
 [submodule "Libraries/tinyfiledialogs"]
 	path = Libraries/tinyfiledialogs
 	url = https://github.com/Jenrikku/TinyFileDialogsSharp
+[submodule "Autumn/Resources/RedPepper-ClassDataBase"]
+	path = Autumn/Resources/RedPepper-ClassDataBase
+	url = https://github.com/fruityloops1/RedPepper-ClassDataBase

@@ -3,6 +3,7 @@ using Autumn.Scene.Gizmo;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace Autumn.GUI.Editors;
@@ -11,6 +12,12 @@ internal class SceneWindow
 {
     private static bool _persistentMouseDrag = false;
     private static Vector2 _previousMousePos = Vector2.Zero;
+    private static Queue<Action<Vector4>> _mouseClickActions = new();
+
+    public static void AddMouseClickAction(Action<Vector4> action)
+    {
+        _mouseClickActions.Enqueue(action);
+    }
 
     public static unsafe void Render(MainWindowContext context, double deltaSeconds)
     {
@@ -227,6 +234,33 @@ internal class SceneWindow
                 PixelType.UnsignedInt,
                 out uint pixel
             );
+
+            context.GL.ReadPixels(
+                (int)pixelPos.X,
+                sceneImageHeight - (int)pixelPos.Y,
+                1,
+                1,
+                PixelFormat.DepthComponent,
+                PixelType.Float,
+                out float normPickingDepth
+            );
+
+            // 3D mouse position calculation
+            Vector2 windowMousePos = mousePos - sceneImageRectMin;
+            Vector2 sceneImageSize = sceneImageRectMax - sceneImageRectMin;
+            Vector2 ndcMousePosTwo = (windowMousePos / sceneImageSize * 2 - Vector2.One) * new Vector2(1, -1);
+            Vector4 ndcMousePos3D = new Vector4(ndcMousePosTwo.X, ndcMousePosTwo.Y, normPickingDepth * 2 - 1, 1.0f);
+            Matrix4x4 inverseViewProjection;
+            Debug.Assert(Matrix4x4.Invert(viewProjection, out inverseViewProjection));
+            Vector4 worldMousePos = Vector4.Transform(ndcMousePos3D, inverseViewProjection);
+            worldMousePos /= worldMousePos.W;
+
+            if (_mouseClickActions.TryDequeue(out var action))
+            {
+                action(worldMousePos);
+                return;
+            }
+
 
             if (
                 !(
