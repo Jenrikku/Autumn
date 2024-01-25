@@ -1,6 +1,6 @@
 using Autumn.GUI;
-using NARCSharp;
 using BYAMLSharp;
+using NARCSharp;
 
 namespace Autumn.IO;
 
@@ -25,7 +25,7 @@ internal static class RomFSHandler
         s_romfsPath = SettingsHandler.GetValue<string>("RomFSPath");
 
     private static readonly List<(string, byte)> s_stageNames = new();
-    public static List<(string, byte)> StageNames
+    public static List<(string Name, byte Scenario)> StageNames
     {
         get
         {

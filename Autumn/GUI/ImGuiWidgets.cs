@@ -21,13 +21,8 @@ internal static class ImGuiWidgets
         if (width.HasValue)
             ImGui.SetNextItemWidth(width.Value - 20);
 
-        bool isInvalidPath = !isValidPath;
-        if (isInvalidPath)
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-        if (ImGui.InputText(label, ref input, 512))
+        if (InputTextRedWhenInvalid(label, ref input, 512, !isValidPath))
             isValidPath = Directory.Exists(input);
-        if (isInvalidPath)
-            ImGui.PopStyleColor(1);
 
         ImGui.SameLine();
 
@@ -71,14 +66,46 @@ internal static class ImGuiWidgets
         return false;
     }
 
-    public static bool InputTextRedWhenEmpty(string label, ref string buf, uint buf_size)
+    public static bool InputTextRedWhenInvalid(
+        string label,
+        ref string buf,
+        uint buf_size,
+        bool isInvalid
+    )
     {
-        bool isInvalid = buf == "";
         if (isInvalid)
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(1.0f, 0.0f, 0.0f, 1.0f));
-        bool rv = ImGui.InputText(label, ref buf, buf_size);
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.7f, 0.0f, 0.0f, 1.0f));
+
+        bool result = ImGui.InputText(label, ref buf, buf_size);
+
         if (isInvalid)
-            ImGui.PopStyleColor(1);
-        return rv;
+            ImGui.PopStyleColor();
+
+        return result;
+    }
+
+    public static bool InputTextRedWhenEmpty(string label, ref string buf, uint buf_size) =>
+        InputTextRedWhenEqualsTo(label, ref buf, buf_size, invalidValue: string.Empty);
+
+    public static bool InputTextRedWhenEqualsTo(
+        string label,
+        ref string buf,
+        uint buf_size,
+        string invalidValue
+    ) => InputTextRedWhenInvalid(label, ref buf, buf_size, buf == invalidValue);
+
+    public static bool InputTextRedWhenEqualsTo(
+        string label,
+        ref string buf,
+        uint buf_size,
+        IEnumerable<string> invalidValues
+    )
+    {
+        bool isInvalid = false;
+
+        foreach (string invalidValue in invalidValues)
+            isInvalid |= buf == invalidValue;
+
+        return InputTextRedWhenInvalid(label, ref buf, buf_size, isInvalid);
     }
 }

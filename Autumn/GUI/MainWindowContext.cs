@@ -1,5 +1,7 @@
-﻿using Autumn.Background;
+﻿using System.Numerics;
+using Autumn.Background;
 using Autumn.Commands;
+using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.IO;
 using Autumn.Scene;
@@ -7,9 +9,8 @@ using Autumn.Scene.Gizmo;
 using Autumn.Storage;
 using ImGuiNET;
 using SceneGL.GLHelpers;
-using Silk.NET.OpenGL;
 using Silk.NET.Input;
-using System.Numerics;
+using Silk.NET.OpenGL;
 
 namespace Autumn.GUI;
 
@@ -20,18 +21,11 @@ internal class MainWindowContext : WindowContext
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
-    public BackgroundManager BackgroundManager { get; } = new();
-
     private bool _isFirstFrame = true;
 
+    private AddStagePopup _addStagePopup;
+
     private bool _closingDialogOpened = false;
-
-    private bool _stageSelectOpened = false;
-    private string _stageSearchInput = string.Empty;
-
-    private bool _newStageOpened = false;
-    private string _newStageName = string.Empty;
-    private string _newStageScenario = "1";
 
     private bool _projectPropertiesOpened = false;
     private string _projectPropertiesName = string.Empty;
@@ -46,13 +40,20 @@ internal class MainWindowContext : WindowContext
     private bool _newObjectPrevClassValid = false;
     private int[] _newObjectArgs = new int[8] { -1, -1, -1, -1, -1, -1, -1, -1 };
     private int _newObjectStageObjObjectType = 0;
-    private string[] _newObjectStageObjObjectTypeNames = new string[] { "Obj", "Goal", "Start", "StartEvent", "DemoScene" };
+    private string[] _newObjectStageObjObjectTypeNames = new string[]
+    {
+        "Obj",
+        "Goal",
+        "Start",
+        "StartEvent",
+        "DemoScene"
+    };
     private const ImGuiTableFlags _newObjectClassTableFlags =
-                    ImGuiTableFlags.ScrollY
-                    | ImGuiTableFlags.RowBg
-                    | ImGuiTableFlags.BordersOuter
-                    | ImGuiTableFlags.BordersV
-                    | ImGuiTableFlags.Resizable;
+        ImGuiTableFlags.ScrollY
+        | ImGuiTableFlags.RowBg
+        | ImGuiTableFlags.BordersOuter
+        | ImGuiTableFlags.BordersV
+        | ImGuiTableFlags.Resizable;
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -61,6 +62,9 @@ internal class MainWindowContext : WindowContext
     public MainWindowContext()
         : base()
     {
+        // Initialize dialogs:
+        _addStagePopup = new(this);
+
         Window.Title = "Autumn: Stage Editor";
 
         SceneFramebuffer = new(
@@ -154,11 +158,7 @@ internal class MainWindowContext : WindowContext
             #region Dialogs and popups
             // These dialogs are only rendered when their corresponding variables are set to true.
 
-            if (_stageSelectOpened)
-                RenderStageSelectPopup();
-
-            if (_newStageOpened)
-                RenderNewStagePopup();
+            _addStagePopup.Render();
 
             if (_closingDialogOpened)
                 RenderClosingDialog();
@@ -236,17 +236,14 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("New Stage", ProjectHandler.ProjectLoaded))
-                _newStageOpened = true;
+            if (ImGui.MenuItem("Add Stage", ProjectHandler.ProjectLoaded))
+                _addStagePopup.Open();
 
             if (ImGui.MenuItem("Save Stage", CurrentScene is not null))
                 BackgroundManager.Add(
                     $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
                     () => StageHandler.SaveProjectStage(CurrentScene!.Stage)
                 );
-
-            if (ImGui.MenuItem("Import stage from RomFS", ProjectHandler.ProjectLoaded))
-                _stageSelectOpened |= true;
 
             ImGui.Separator();
 
@@ -396,153 +393,6 @@ internal class MainWindowContext : WindowContext
     }
 
     /// <summary>
-    /// Renders a dialog that allows to the user to open a stage from the RomFS.
-    /// </summary>
-    private void RenderStageSelectPopup()
-    {
-        if (!RomFSHandler.RomFSAvailable)
-        {
-            _stageSelectOpened = false;
-            return;
-        }
-
-        ImGui.OpenPopup("Stage selector");
-
-        Vector2 dimensions = new Vector2(450, 230) + ImGui.GetStyle().ItemSpacing;
-        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
-
-        if (
-            !ImGui.BeginPopupModal(
-                "Stage selector",
-                ref _stageSelectOpened,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
-            )
-        )
-            return;
-
-        # region Search box
-
-        ImGui.Text("Search:");
-        ImGui.SameLine();
-
-        ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
-
-        ImGui.InputTextWithHint(
-            label: "",
-            hint: "Insert the name of the stage here.",
-            ref _stageSearchInput,
-            maxLength: 128
-        );
-
-        #endregion
-
-        ImGui.SetNextItemWidth(450 - ImGui.GetCursorPosX());
-
-        if (ImGui.BeginListBox(""))
-        {
-            foreach (var (name, scenario) in RomFSHandler.StageNames)
-            {
-                if (
-                    !string.IsNullOrEmpty(_stageSearchInput)
-                    && !name.Contains(
-                        _stageSearchInput,
-                        StringComparison.InvariantCultureIgnoreCase
-                    )
-                )
-                    continue;
-
-                // Does not show the stage if there is an already opened one with the same name and scenario:
-                if (
-                    Scenes.Find(
-                        scene => scene.Stage.Name == name && scene.Stage.Scenario == scenario
-                    )
-                    is not null
-                )
-                    continue;
-
-                if (ImGui.Selectable(name + scenario, false, ImGuiSelectableFlags.AllowDoubleClick))
-                {
-                    _stageSelectOpened = false;
-
-                    BackgroundManager.Add(
-                        $"Importing stage \"{name + scenario}\" from RomFS...",
-                        () =>
-                        {
-                            if (!StageHandler.TryImportStage(name, scenario, out Stage stage))
-                            {
-                                ImGui.CloseCurrentPopup();
-                                ImGui.EndPopup();
-                                return;
-                            }
-
-                            ProjectHandler.ActiveProject.Stages.Add(stage);
-                        }
-                    );
-
-                    ImGui.CloseCurrentPopup();
-                }
-            }
-        }
-
-        ImGui.EndPopup();
-    }
-
-    /// <summary>
-    /// Renders a dialog that asks the user for a name and a scenario for the new stage.
-    /// </summary>
-    private void RenderNewStagePopup()
-    {
-        ImGui.OpenPopup("Create new stage");
-
-        Vector2 dimensions = new Vector2(400, 95) + ImGui.GetStyle().ItemSpacing;
-        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
-
-        if (
-            !ImGui.BeginPopupModal(
-                "Create new stage",
-                ref _newStageOpened,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
-            )
-        )
-            return;
-
-        ImGui.SetNextItemWidth(350);
-        ImGui.InputTextWithHint("##name", "Name", ref _newStageName, 100);
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(30);
-        ImGui.InputText("##scenario", ref _newStageScenario, 2, ImGuiInputTextFlags.CharsDecimal);
-
-        ImGui.Spacing();
-
-        float windowWidth = ImGui.GetWindowWidth();
-        ImGui.SetCursorPosX(windowWidth / 2 - 25);
-
-        if (ImGui.Button("Create", new(50, 0)))
-        {
-            byte scenario = byte.Parse(_newStageScenario);
-            Stage stage = StageHandler.CreateNewStage(_newStageName, scenario);
-
-            ProjectHandler.ActiveProject.Stages.Add(stage);
-
-            ImGui.CloseCurrentPopup();
-            _newStageOpened = false;
-        }
-    }
-
-    /// <summary>
     /// Renders a dialog that prompts the user to wait for the background tasks to finish.
     /// This dialog is only rendered when the window is waiting to close.
     /// </summary>
@@ -655,7 +505,7 @@ internal class MainWindowContext : WindowContext
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(
                 "If enabled, the project will replace use of the CreatorClassNameTable with ObjectName/ClassName values individual to objects.\n"
-                + "Useful for convenience, but requires an ExeFS patch."
+                    + "Useful for convenience, but requires an ExeFS patch."
             );
 
         float okButtonY = ImGui.GetWindowHeight() - 40;
@@ -705,13 +555,14 @@ internal class MainWindowContext : WindowContext
                 break;
         }
 
-        StageObj newObj = new()
-        {
-            Type = type,
-            Name = _newObjectName,
-            ClassName = _newObjectClass,
-            Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100)
-        };
+        StageObj newObj =
+            new()
+            {
+                Type = type,
+                Name = _newObjectName,
+                ClassName = _newObjectClass,
+                Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100)
+            };
         for (int i = 0; i < 8; i++)
             newObj.Properties.Add($"Arg{i}", _newObjectArgs[i]);
 
@@ -735,7 +586,7 @@ internal class MainWindowContext : WindowContext
     {
         ImGui.OpenPopup("Add new object");
 
-        Vector2 dimensions = new Vector2(800, 0);
+        Vector2 dimensions = new(800, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
         ImGui.SetNextWindowPos(
@@ -757,11 +608,21 @@ internal class MainWindowContext : WindowContext
         {
             if (ImGui.BeginTabItem("Object"))
             {
-                ClassDatabaseHandler.DatabaseEntries.TryGetValue(_newObjectClass, out ClassDatabaseHandler.DatabaseEntry dbEntry);
+                ClassDatabaseHandler.DatabaseEntries.TryGetValue(
+                    _newObjectClass,
+                    out ClassDatabaseHandler.DatabaseEntry dbEntry
+                );
 
                 ImGui.SetNextItemWidth(400);
                 ImGui.InputText("Search", ref _newObjectClassSearchQuery, 128);
-                if (ImGui.BeginTable("ClassTable", 2, _newObjectClassTableFlags, new Vector2(400, 200)))
+                if (
+                    ImGui.BeginTable(
+                        "ClassTable",
+                        2,
+                        _newObjectClassTableFlags,
+                        new Vector2(400, 200)
+                    )
+                )
                 {
                     ImGui.TableSetupColumn("ClassName", ImGuiTableColumnFlags.None, 0.5f);
                     ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.None, 0.5f);
@@ -769,9 +630,11 @@ internal class MainWindowContext : WindowContext
 
                     foreach (var pair in ClassDatabaseHandler.DatabaseEntries)
                     {
-                        if (_newObjectClassSearchQuery != string.Empty
-                         && !pair.Key.ToLower().Contains(_newObjectClassSearchQuery.ToLower())
-                         && !pair.Value.Name.Contains(_newObjectClassSearchQuery.ToLower()))
+                        if (
+                            _newObjectClassSearchQuery != string.Empty
+                            && !pair.Key.ToLower().Contains(_newObjectClassSearchQuery.ToLower())
+                            && !pair.Value.Name.Contains(_newObjectClassSearchQuery.ToLower())
+                        )
                             continue;
                         ImGui.TableNextRow();
 
@@ -804,11 +667,23 @@ internal class MainWindowContext : WindowContext
                     ImGui.SameLine();
                     ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1.0f), _newObjectClass);
 
-                    ImGui.BeginChild("##Description", new Vector2(380, 40), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                    ImGui.BeginChild(
+                        "##Description",
+                        new Vector2(380, 40),
+                        false,
+                        ImGuiWindowFlags.AlwaysVerticalScrollbar
+                    );
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                     ImGui.TextWrapped(description);
                     ImGui.EndChild();
-                    if (ImGui.BeginTable("ArgTable", 4, _newObjectClassTableFlags, new Vector2(380, 130)))
+                    if (
+                        ImGui.BeginTable(
+                            "ArgTable",
+                            4,
+                            _newObjectClassTableFlags,
+                            new Vector2(380, 130)
+                        )
+                    )
                     {
                         ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
                         ImGui.TableSetupColumn("Val", ImGuiTableColumnFlags.None, 0.35f);
@@ -821,7 +696,11 @@ internal class MainWindowContext : WindowContext
                             string arg = $"Arg{i}";
                             string name = "";
                             string argDescription = "";
-                            if (dbEntry is not null && dbEntry.Args is not null && dbEntry.Args.TryGetValue(arg, out var argData))
+                            if (
+                                dbEntry is not null
+                                && dbEntry.Args is not null
+                                && dbEntry.Args.TryGetValue(arg, out var argData)
+                            )
                             {
                                 if (argData.Name is not null)
                                     name = argData.Name;
@@ -841,9 +720,18 @@ internal class MainWindowContext : WindowContext
                             ImGui.TableSetColumnIndex(2);
                             ImGui.Text(name);
                             ImGui.TableSetColumnIndex(3);
-                            bool needScrollbar = ImGui.CalcTextSize(argDescription).X > ImGui.GetContentRegionAvail().X;
-                            float ysize = ImGui.GetFont().FontSize * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
-                            ImGui.BeginChild($"##ArgDescription{i}", new Vector2(0, ysize), false, ImGuiWindowFlags.HorizontalScrollbar);
+                            bool needScrollbar =
+                                ImGui.CalcTextSize(argDescription).X
+                                > ImGui.GetContentRegionAvail().X;
+                            float ysize =
+                                ImGui.GetFont().FontSize
+                                * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
+                            ImGui.BeginChild(
+                                $"##ArgDescription{i}",
+                                new Vector2(0, ysize),
+                                false,
+                                ImGuiWindowFlags.HorizontalScrollbar
+                            );
                             ImGui.Text(argDescription);
                             ImGui.EndChild();
                         }
@@ -865,7 +753,8 @@ internal class MainWindowContext : WindowContext
                 ImGui.PopItemWidth();
 
                 float buttonTextSizeX = ImGui.CalcTextSize("<-").X;
-                float objectNameWidth = width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
+                float objectNameWidth =
+                    width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
                 ImGui.PushItemWidth(objectNameWidth);
                 ImGuiWidgets.InputTextRedWhenEmpty("##ObjectName", ref _newObjectName, 128);
                 ImGui.PopItemWidth();
@@ -879,7 +768,12 @@ internal class MainWindowContext : WindowContext
                 ImGui.PopItemWidth();
 
                 ImGui.SetNextItemWidth(100);
-                ImGui.Combo("Object Type", ref _newObjectStageObjObjectType, _newObjectStageObjObjectTypeNames, _newObjectStageObjObjectTypeNames.Length);
+                ImGui.Combo(
+                    "Object Type",
+                    ref _newObjectStageObjObjectType,
+                    _newObjectStageObjObjectTypeNames,
+                    _newObjectStageObjObjectTypeNames.Length
+                );
 
                 _newObjectPrevClassValid = dbEntry is not null;
                 bool canCreate = _newObjectName != string.Empty && _newObjectClass != string.Empty;

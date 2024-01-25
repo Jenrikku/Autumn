@@ -1,10 +1,11 @@
 ﻿using System.Runtime.InteropServices;
+using Autumn.Background;
 using ImGuiNET;
+using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
-using Silk.NET.GLFW;
 
 namespace Autumn.GUI;
 
@@ -22,6 +23,11 @@ internal abstract class WindowContext
 
     public IInputContext? InputContext { get; protected set; }
     public IKeyboard? Keyboard { get; protected set; }
+
+    public BackgroundManager BackgroundManager { get; } = new();
+
+    private float _scalingFactor = 1;
+    public float ScalingFactor => _scalingFactor;
 
     /// <summary>
     /// Specifies where the "imgui.ini" file is stored in.
@@ -60,6 +66,15 @@ internal abstract class WindowContext
 
             InputContext = Window.CreateInput();
             Keyboard = InputContext.Keyboards[0];
+
+            // Set scaling factor:
+            unsafe
+            {
+                Glfw glfw = Glfw.GetApi();
+                Silk.NET.GLFW.Monitor* monitor = glfw.GetPrimaryMonitor();
+
+                glfw.GetMonitorContentScale(monitor, out _scalingFactor, out _);
+            }
 
             ImGuiController = new(GL, Window, InputContext, SetFont);
 
@@ -133,22 +148,15 @@ internal abstract class WindowContext
     {
         var io = ImGui.GetIO();
 
-        float xscale = 1;
-        unsafe
-        {
-            Glfw glfw = Glfw.GetApi();
-            Silk.NET.GLFW.Monitor* monitor = glfw.GetPrimaryMonitor();
-
-            glfw.GetMonitorContentScale(monitor, out xscale, out _);
-        }
-
         const float sizeScalar = 1.5f; // Render a higher quality font texture for when we want to size up the font
 
-        io.Fonts.AddFontFromFileTTF(
-            Path.Join("Resources", "NotoSansJP-Regular.ttf"),
-            size_pixels: 18 * xscale * sizeScalar,
-            font_cfg: new ImFontConfigPtr(IntPtr.Zero),
-            io.Fonts.GetGlyphRangesJapanese()
-        ).Scale = 1 / sizeScalar;
+        io
+            .Fonts.AddFontFromFileTTF(
+                Path.Join("Resources", "NotoSansJP-Regular.ttf"),
+                size_pixels: 18 * _scalingFactor * sizeScalar,
+                font_cfg: new ImFontConfigPtr(IntPtr.Zero),
+                io.Fonts.GetGlyphRangesJapanese()
+            )
+            .Scale = 1 / sizeScalar;
     }
 }
