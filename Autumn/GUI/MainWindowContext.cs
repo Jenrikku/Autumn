@@ -23,7 +23,7 @@ internal class MainWindowContext : WindowContext
 
     private bool _isFirstFrame = true;
 
-    private AddStagePopup _addStagePopup;
+    private AddStageDialog _addStageDialog;
 
     private bool _closingDialogOpened = false;
 
@@ -63,7 +63,7 @@ internal class MainWindowContext : WindowContext
         : base()
     {
         // Initialize dialogs:
-        _addStagePopup = new(this);
+        _addStageDialog = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -158,7 +158,7 @@ internal class MainWindowContext : WindowContext
             #region Dialogs and popups
             // These dialogs are only rendered when their corresponding variables are set to true.
 
-            _addStagePopup.Render();
+            _addStageDialog.Render();
 
             if (_closingDialogOpened)
                 RenderClosingDialog();
@@ -237,7 +237,7 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
 
             if (ImGui.MenuItem("Add Stage", ProjectHandler.ProjectLoaded))
-                _addStagePopup.Open();
+                _addStageDialog.Open();
 
             if (ImGui.MenuItem("Save Stage", CurrentScene is not null))
                 BackgroundManager.Add(

@@ -8,9 +8,11 @@ namespace Autumn.GUI.Dialogs;
 /// <summary>
 /// Renders a dialog that allows to the user to open a stage from the RomFS.
 /// </summary>
-internal class AddStagePopup
+internal class AddStageDialog
 {
     private WindowContext _context;
+
+    private bool _isOpened = false;
 
     private string _name = string.Empty;
     private string _scenario = string.Empty;
@@ -20,14 +22,12 @@ internal class AddStagePopup
     private bool _stageListNeedsRebuild = true;
     private List<(string Name, byte Scenario)>? _foundStages;
 
-    private bool _isOpened = false;
-
     /// <summary>
     /// Whether to reset the dialog to its defaults values once the "Ok" button has been pressed.
     /// </summary>
     public bool ResetOnDone;
 
-    public AddStagePopup(WindowContext context, bool resetOnDone = true)
+    public AddStageDialog(WindowContext context, bool resetOnDone = true)
     {
         _context = context;
         ResetOnDone = resetOnDone;
