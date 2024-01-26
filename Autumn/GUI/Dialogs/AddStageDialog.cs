@@ -6,7 +6,7 @@ using ImGuiNET;
 namespace Autumn.GUI.Dialogs;
 
 /// <summary>
-/// Renders a dialog that allows to the user to open a stage from the RomFS.
+/// A dialog that allows the user to add a new empty stage or import it from the RomFS.
 /// </summary>
 internal class AddStageDialog
 {
