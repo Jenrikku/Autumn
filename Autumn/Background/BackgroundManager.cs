@@ -29,7 +29,11 @@ internal class BackgroundManager
     /// <summary>
     /// Adds a task to the queue and executes it last. Calls <see cref="Run"/>.
     /// </summary>
-    public void Add(string message, Action action) => Add(new(message, action));
+    public void Add(
+        string message,
+        Action action,
+        BackgroundTaskPriority priority = BackgroundTaskPriority.Regular
+    ) => Add(new(message, action, priority));
 
     /// <summary>
     /// Adds a task to the queue and executes it last. Calls <see cref="Run"/>.
@@ -51,15 +55,24 @@ internal class BackgroundManager
     }
 
     /// <summary>
-    /// Requests the BackgroundWorker to stop before executing the next task.
+    /// Requests the BackgroundWorker to stop before executing the next task.<br />
+    /// This will fail if there are High or higher priority tasks to be done and <see cref="force"/> is set to false.
     /// </summary>
-    public void Stop()
+    /// <returns>If the operation was successful.</returns>
+    public bool Stop(bool force = false)
     {
         if (!IsBusy)
-            return;
+            return false;
+
+        Predicate<BackgroundTask> predicate = (task) =>
+            task.Priority > BackgroundTaskPriority.Regular;
+
+        if (!force && _tasks.Find(predicate) is not null)
+            return false;
 
         _worker.CancelAsync();
         _resetEvent.WaitOne();
+        return true;
     }
 
     public IEnumerable<BackgroundTask> GetRemainingTasks()
@@ -81,14 +94,24 @@ internal class BackgroundManager
                 break;
             }
 
-            BackgroundTask task = _tasks[0];
+            BackgroundTask nextTask = _tasks[0];
 
-            StatusMessage = task.Message;
-            task.Action.Invoke();
+            foreach (BackgroundTask task in _tasks)
+            {
+                if (task.Priority > nextTask.Priority)
+                    nextTask = task;
+
+                if (nextTask.Priority == BackgroundTaskPriority.Highest)
+                    break;
+            }
+
+            StatusMessage = nextTask.Message;
+            nextTask.Action.Invoke();
 
             _tasks.RemoveAt(0);
         }
 
         StatusMessage = string.Empty;
+        StatusMessageSecondary = string.Empty;
     }
 }
