@@ -53,12 +53,12 @@ internal class StageWindow
                         if (!scene.IsReady)
                             context.BackgroundManager.Add(
                                 $"Loading stage \"{stage.Name + stage.Scenario}\"...",
-                                () =>
+                                manager =>
                                 {
                                     if (!stage.Loaded)
                                         StageHandler.LoadProjectStage(stage);
 
-                                    scene.GenerateSceneObjects(ref context.BackgroundManager.StatusMessageSecondary);
+                                    scene.GenerateSceneObjects(ref manager.StatusMessageSecondary);
                                 }
                             );
 

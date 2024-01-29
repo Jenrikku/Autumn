@@ -6,8 +6,7 @@ internal class BackgroundManager
 {
     private readonly List<BackgroundTask> _tasks = new();
 
-    private readonly BackgroundWorker _worker = new();
-    private readonly AutoResetEvent _resetEvent = new(false);
+    private readonly BackgroundWorker _worker = new() { WorkerSupportsCancellation = true };
 
     /// <summary>
     /// The specified status message for the task that is currently being executed.
@@ -31,8 +30,8 @@ internal class BackgroundManager
     /// </summary>
     public void Add(
         string message,
-        Action action,
-        BackgroundTaskPriority priority = BackgroundTaskPriority.Regular
+        Action<BackgroundManager> action,
+        BackgroundTaskPriority priority = default
     ) => Add(new(message, action, priority));
 
     /// <summary>
@@ -71,16 +70,23 @@ internal class BackgroundManager
             return false;
 
         _worker.CancelAsync();
-        _resetEvent.WaitOne();
         return true;
     }
 
-    public IEnumerable<BackgroundTask> GetRemainingTasks()
+    /// <param name="lowestPriority">Only the priorities equal or higher to this will be enumerated.</param>
+    public IEnumerable<BackgroundTask> GetRemainingTasks(
+        BackgroundTaskPriority lowestPriority = default
+    )
     {
         // This is done using a for loop because _tasks may be changed by the background worker.
 
         for (int i = 0; i < _tasks.Count; i++)
-            yield return _tasks[i];
+        {
+            BackgroundTask task = _tasks[i];
+
+            if (task.Priority >= lowestPriority)
+                yield return task;
+        }
     }
 
     private void BackgroundWork(object? sender, DoWorkEventArgs e)
@@ -90,7 +96,6 @@ internal class BackgroundManager
             if (sender is BackgroundWorker worker && worker.CancellationPending)
             {
                 e.Cancel = true;
-                _resetEvent.Set();
                 break;
             }
 
@@ -106,7 +111,7 @@ internal class BackgroundManager
             }
 
             StatusMessage = nextTask.Message;
-            nextTask.Action.Invoke();
+            nextTask.Action.Invoke(this);
 
             _tasks.RemoveAt(0);
         }

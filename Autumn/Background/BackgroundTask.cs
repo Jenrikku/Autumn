@@ -1,6 +1,10 @@
 namespace Autumn.Background;
 
-internal record BackgroundTask(string Message, Action Action, BackgroundTaskPriority Priority);
+internal record BackgroundTask(
+    string Message,
+    Action<BackgroundManager> Action,
+    BackgroundTaskPriority Priority
+);
 
 /// <summary>
 /// An enum that defines the priority of the <see cref="BackgroundTask"/>.<br />
@@ -9,7 +13,7 @@ internal record BackgroundTask(string Message, Action Action, BackgroundTaskPrio
 /// </summary>
 internal enum BackgroundTaskPriority
 {
-    Regular,
+    Regular = default,
     High,
     Highest
 }

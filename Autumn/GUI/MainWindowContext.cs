@@ -24,8 +24,7 @@ internal class MainWindowContext : WindowContext
     private bool _isFirstFrame = true;
 
     private AddStageDialog _addStageDialog;
-
-    private bool _closingDialogOpened = false;
+    private ClosingDialog _closingDialog;
 
     private bool _projectPropertiesOpened = false;
     private string _projectPropertiesName = string.Empty;
@@ -64,6 +63,7 @@ internal class MainWindowContext : WindowContext
     {
         // Initialize dialogs:
         _addStageDialog = new(this);
+        _closingDialog = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -159,9 +159,7 @@ internal class MainWindowContext : WindowContext
             // These dialogs are only rendered when their corresponding variables are set to true.
 
             _addStageDialog.Render();
-
-            if (_closingDialogOpened)
-                RenderClosingDialog();
+            _closingDialog.Render();
 
             if (_projectPropertiesOpened)
                 RenderProjectPropertiesDialog();
@@ -182,7 +180,7 @@ internal class MainWindowContext : WindowContext
     {
         if (BackgroundManager.IsBusy)
         {
-            _closingDialogOpened = true;
+            _closingDialog.Open();
             return false;
         }
 
@@ -242,7 +240,8 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Save Stage", CurrentScene is not null))
                 BackgroundManager.Add(
                     $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
-                    () => StageHandler.SaveProjectStage(CurrentScene!.Stage)
+                    manager => StageHandler.SaveProjectStage(CurrentScene!.Stage),
+                    BackgroundTaskPriority.High
                 );
 
             ImGui.Separator();
@@ -390,52 +389,6 @@ internal class MainWindowContext : WindowContext
         ImGui.TextDisabled("Please, open a project from the menu or drop a folder here.");
 
         ImGui.End();
-    }
-
-    /// <summary>
-    /// Renders a dialog that prompts the user to wait for the background tasks to finish.
-    /// This dialog is only rendered when the window is waiting to close.
-    /// </summary>
-    private void RenderClosingDialog()
-    {
-        ImGui.OpenPopup("##ClosingDialog");
-
-        Vector2 dimensions = new Vector2(450, 185) + ImGui.GetStyle().ItemSpacing;
-        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
-
-        if (
-            !ImGui.BeginPopupModal(
-                "##ClosingDialog",
-                ref _closingDialogOpened,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
-            )
-        )
-            return;
-
-        ImGui.TextWrapped(
-            "Please wait for the following tasks to finish before exiting the program:"
-        );
-
-        ImGui.Spacing();
-
-        foreach (var (message, _) in BackgroundManager.GetRemainingTasks())
-        {
-            if (message is null)
-                ImGui.TextDisabled("BackgroundTask");
-            else
-                ImGui.Text(message);
-        }
-
-        if (!BackgroundManager.IsBusy)
-            Window.Close();
-
-        ImGui.EndPopup();
     }
 
     private void RenderProjectPropertiesDialog()

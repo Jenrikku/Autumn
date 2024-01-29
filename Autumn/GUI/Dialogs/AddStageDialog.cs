@@ -174,7 +174,7 @@ internal class AddStageDialog
             {
                 _context.BackgroundManager.Add(
                     $"Importing stage \"{_name + scenarioNo}\" from RomFS...",
-                    () =>
+                    manager =>
                     {
                         if (StageHandler.TryImportStage(_name, scenarioNo, out Stage stage))
                             ProjectHandler.ActiveProject.Stages.Add(stage);
@@ -188,7 +188,7 @@ internal class AddStageDialog
             {
                 _context.BackgroundManager.Add(
                     $"Creating the stage \"{_name + scenarioNo}\"...",
-                    () =>
+                    manager =>
                     {
                         Stage stage = StageHandler.CreateNewStage(_name, scenarioNo);
                         ProjectHandler.ActiveProject.Stages.Add(stage);
