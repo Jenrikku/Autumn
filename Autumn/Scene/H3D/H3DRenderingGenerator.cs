@@ -2,12 +2,10 @@ using System.Numerics;
 using Autumn.Storage;
 using SceneGL;
 using Silk.NET.OpenGL;
-using SPICA.PICA.Converters;
-using SPICA.PICA.Commands;
-using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Model.Material;
-using Silk.NET.Maths;
-using System.Diagnostics;
+using SPICA.Formats.CtrH3D.Model.Mesh;
+using SPICA.PICA.Commands;
+using SPICA.PICA.Converters;
 
 namespace Autumn.Scene.H3D;
 
@@ -50,8 +48,8 @@ internal static class H3DRenderingGenerator
         if (meshCount <= 0)
             return;
 
-        H3DRenderingMaterial[] renderingMaterials = new H3DRenderingMaterial[meshCount];
-        RenderableModel[] renderableModels = new RenderableModel[meshCount];
+        List<H3DRenderingMaterial> renderingMaterials = new();
+        List<(RenderableModel Model, int Layer)> renderableModels = new();
 
         for (int i = 0; i < meshCount; i++)
         {
@@ -65,27 +63,31 @@ internal static class H3DRenderingGenerator
             fixed (void* vertptr = picaVertices)
                 vertices = new((Vertex*)vertptr, picaVertices.Length);
 
-            int multiplier = 255;
-            foreach (PICAAttribute attrib in mesh.Attributes)
-                if (attrib.Name == PICAAttributeName.Color && attrib.Format == PICAAttributeFormat.Byte)
-                    multiplier = 127;
+            var colorAttribute = mesh.Attributes.Find(x => x.Name == PICAAttributeName.Color);
+            int colorMultiplier = colorAttribute.Format == PICAAttributeFormat.Byte ? 127 : 255;
 
             for (int j = 0; j < vertices.Length; j++)
                 vertices[j] = vertices[j] with
                 {
-                    Color = vertices[j].Color * multiplier,
+                    Color = vertices[j].Color * colorMultiplier,
                     Weights = vertices[j].Weights * 100
                 };
 
-            renderingMaterials[i] = new(gl, material, mesh, actorObj);
-            renderableModels[i] = RenderableModel.Create<ushort, Vertex>(
+            var renderingMaterial = new H3DRenderingMaterial(gl, material, mesh, actorObj);
+            var renderingModel = RenderableModel.Create<ushort, Vertex>(
                 gl,
                 mesh.SubMeshes[0].Indices,
                 vertices
             );
+
+            renderingMaterials.Add(renderingMaterial);
+            renderableModels.Add((renderingModel, mesh.Layer));
         }
 
-        actorObj.RenderingMaterials = renderingMaterials;
-        actorObj.RenderableModels = renderableModels;
+        renderingMaterials.Sort((first, second) => first.Layer.CompareTo(second.Layer));
+        renderableModels.Sort((first, second) => first.Layer.CompareTo(second.Layer));
+
+        actorObj.RenderingMaterials = renderingMaterials.ToArray();
+        actorObj.RenderableModels = renderableModels.Select(x => x.Model).ToArray();
     }
 }
