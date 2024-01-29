@@ -1,7 +1,6 @@
-using Autumn.IO;
 using static System.Environment;
 
-namespace Autumn.GUI;
+namespace Autumn.IO;
 
 internal static class SettingsHandler
 {
@@ -34,6 +33,13 @@ internal static class SettingsHandler
 
     public static T? GetValue<T>(string key, T? defaultValue = default)
     {
+        if (
+            ProjectHandler.ProjectLoaded
+            && ProjectHandler.Settings.TryGetValue(key, out object? pObj)
+            && pObj is T pResult
+        )
+            return pResult;
+
         if (Settings.TryGetValue(key, out object? obj) && obj is T result)
             return result;
 

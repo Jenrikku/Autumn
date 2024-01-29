@@ -413,7 +413,7 @@ internal class MainWindowContext : WindowContext
         )
             return;
 
-        ImGui.TextWrapped("Project: " + ProjectHandler.ActiveProject.SavePath);
+        ImGui.TextWrapped("Project: " + ProjectHandler.ProjectSavePath);
 
         ImGui.Separator();
         ImGui.Spacing();
@@ -471,13 +471,13 @@ internal class MainWindowContext : WindowContext
             ImGui.CloseCurrentPopup();
             _projectPropertiesOpened = false;
 
-            ProjectHandler.ActiveProject.Name = _projectPropertiesName;
-            ProjectHandler.ActiveProject.UseClassNames = _projectPropertiesUseClassNames;
+            ProjectHandler.ProjectName = _projectPropertiesName;
+            ProjectHandler.UseClassNames = _projectPropertiesUseClassNames;
 
             if (_projectPropertiesBuildPathValid)
-                ProjectHandler.ActiveProject.BuildOutput = _projectPropertiesBuildPath;
+                ProjectHandler.ProjectBuildOutput = _projectPropertiesBuildPath;
 
-            ProjectHandler.SaveProject();
+            ProjectHandler.SaveProjectFile();
         }
 
         ImGui.EndPopup();
@@ -519,8 +519,8 @@ internal class MainWindowContext : WindowContext
         for (int i = 0; i < 8; i++)
             newObj.Properties.Add($"Arg{i}", _newObjectArgs[i]);
 
-        CurrentScene.Stage.StageData.Add(newObj);
-        CurrentScene.GenerateSceneObject(newObj);
+        CurrentScene?.Stage.StageData?.Add(newObj);
+        CurrentScene?.GenerateSceneObject(newObj);
 
         if (Keyboard?.IsKeyPressed(Key.ShiftLeft) ?? false)
             SceneWindow.AddMouseClickAction(new Action<Vector4>(AddQueuedObject));
@@ -561,7 +561,7 @@ internal class MainWindowContext : WindowContext
         {
             if (ImGui.BeginTabItem("Object"))
             {
-                ClassDatabaseHandler.DatabaseEntries.TryGetValue(
+                bool databaseHasEntry = ClassDatabaseHandler.DatabaseEntries.TryGetValue(
                     _newObjectClass,
                     out ClassDatabaseHandler.DatabaseEntry dbEntry
                 );
@@ -595,7 +595,7 @@ internal class MainWindowContext : WindowContext
                         if (ImGui.Selectable(pair.Key))
                         {
                             _newObjectClass = pair.Key;
-                            dbEntry = null;
+                            databaseHasEntry = false;
                             ResetNewObjectArgs();
                         }
                         ImGui.TableSetColumnIndex(1);
@@ -608,11 +608,11 @@ internal class MainWindowContext : WindowContext
 
                 {
                     ImGui.BeginChild("##Desc_Args", new Vector2(380, 210));
-                    string description = dbEntry?.Description ?? "No Description";
-                    if (dbEntry?.DescriptionAdditional is not null)
+                    string description = dbEntry.Description ?? "No Description";
+                    if (dbEntry.DescriptionAdditional is not null)
                         description += $"\n{dbEntry.DescriptionAdditional}";
                     ImGui.SetWindowFontScale(1.3f);
-                    if (dbEntry is not null)
+                    if (databaseHasEntry)
                         ImGui.Text(dbEntry.Name == " " ? _newObjectClass : dbEntry.Name);
                     else
                         ImGui.Text(_newObjectClass);
@@ -650,7 +650,7 @@ internal class MainWindowContext : WindowContext
                             string name = "";
                             string argDescription = "";
                             if (
-                                dbEntry is not null
+                                databaseHasEntry
                                 && dbEntry.Args is not null
                                 && dbEntry.Args.TryGetValue(arg, out var argData)
                             )
@@ -728,7 +728,7 @@ internal class MainWindowContext : WindowContext
                     _newObjectStageObjObjectTypeNames.Length
                 );
 
-                _newObjectPrevClassValid = dbEntry is not null;
+                _newObjectPrevClassValid = databaseHasEntry;
                 bool canCreate = _newObjectName != string.Empty && _newObjectClass != string.Empty;
                 if (canCreate)
                     ImGui.SameLine();

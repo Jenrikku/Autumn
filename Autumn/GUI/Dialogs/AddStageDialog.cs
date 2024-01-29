@@ -106,7 +106,7 @@ internal class AddStageDialog
             );
 
             // Remove already opened stages:
-            foreach (Stage stage in ProjectHandler.ActiveProject.Stages)
+            foreach (Stage stage in ProjectHandler.Stages)
                 _foundStages.RemoveAll((t) => t.Name == stage.Name && t.Scenario == stage.Scenario);
 
             _foundStages.Sort();
@@ -163,7 +163,7 @@ internal class AddStageDialog
         ImGui.SameLine();
 
         Predicate<Stage> predicate = (stage) => stage.Name == _name && stage.Scenario == scenarioNo;
-        bool stageExists = ProjectHandler.ActiveProject.Stages.Find(predicate) is not null;
+        bool stageExists = ProjectHandler.Stages.Find(predicate) is not null;
 
         if (string.IsNullOrEmpty(_name) || stageExists)
             ImGui.BeginDisabled();
@@ -177,7 +177,7 @@ internal class AddStageDialog
                     manager =>
                     {
                         if (StageHandler.TryImportStage(_name, scenarioNo, out Stage stage))
-                            ProjectHandler.ActiveProject.Stages.Add(stage);
+                            ProjectHandler.Stages.Add(stage);
 
                         if (ResetOnDone)
                             Reset();
@@ -191,7 +191,7 @@ internal class AddStageDialog
                     manager =>
                     {
                         Stage stage = StageHandler.CreateNewStage(_name, scenarioNo);
-                        ProjectHandler.ActiveProject.Stages.Add(stage);
+                        ProjectHandler.Stages.Add(stage);
 
                         if (ResetOnDone)
                             Reset();

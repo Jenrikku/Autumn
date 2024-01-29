@@ -18,7 +18,7 @@ internal static class StageHandler
         // Add a Mario.
         StageObj startStageObj = new() { Type = StageObjType.Start, Name = "Mario" };
         startStageObj.Properties.Add("MarioNo", 0);
-        if (ProjectHandler.ActiveProject.UseClassNames)
+        if (ProjectHandler.UseClassNames)
             startStageObj.ClassName = "Mario";
 
         stage.StageData ??= new();
@@ -31,8 +31,9 @@ internal static class StageHandler
     {
         if (!ProjectHandler.ProjectLoaded)
             return;
+
         string stageDir = Path.Join(
-            ProjectHandler.ActiveProject.SavePath,
+            ProjectHandler.ProjectSavePath,
             "stages",
             stage.Name + stage.Scenario
         );
@@ -83,7 +84,7 @@ internal static class StageHandler
             return;
 
         string stageDir = Path.Join(
-            ProjectHandler.ActiveProject.SavePath,
+            ProjectHandler.ProjectSavePath,
             "stages",
             stage.Name + stage.Scenario
         );
@@ -303,16 +304,15 @@ internal static class StageHandler
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
                 RailNo = railNo?.GetValueAs<int>() ?? 0,
                 Closed = railClosed?.GetValueAs<string>() == "CLOSE",
-                Properties = dict.Where(
-                        i =>
-                            i.Key != "no"
-                            && i.Key != "closed"
-                            && i.Key != "type"
-                            && i.Key != "num_pnt"
-                            && i.Key != "Points"
-                            && i.Key != "name"
-                            && i.Key != "LayerName"
-                            && i.Key != "l_id"
+                Properties = dict.Where(i =>
+                        i.Key != "no"
+                        && i.Key != "closed"
+                        && i.Key != "type"
+                        && i.Key != "num_pnt"
+                        && i.Key != "Points"
+                        && i.Key != "name"
+                        && i.Key != "LayerName"
+                        && i.Key != "l_id"
                     )
                     .ToDictionary(i => i.Key, i => i.Value.Value)
             };
@@ -370,18 +370,17 @@ internal static class StageHandler
                                 pnt2Z?.GetValueAs<float>() ?? 0
                             ),
                             Properties = railPointDict
-                                .Where(
-                                    i =>
-                                        i.Key != "pnt0_x"
-                                        && i.Key != "pnt0_y"
-                                        && i.Key != "pnt0_z"
-                                        && i.Key != "pnt1_x"
-                                        && i.Key != "pnt1_y"
-                                        && i.Key != "pnt1_z"
-                                        && i.Key != "pnt2_x"
-                                        && i.Key != "pnt2_y"
-                                        && i.Key != "pnt2_z"
-                                        && i.Key != "id"
+                                .Where(i =>
+                                    i.Key != "pnt0_x"
+                                    && i.Key != "pnt0_y"
+                                    && i.Key != "pnt0_z"
+                                    && i.Key != "pnt1_x"
+                                    && i.Key != "pnt1_y"
+                                    && i.Key != "pnt1_z"
+                                    && i.Key != "pnt2_x"
+                                    && i.Key != "pnt2_y"
+                                    && i.Key != "pnt2_z"
+                                    && i.Key != "id"
                                 )
                                 .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
@@ -399,12 +398,11 @@ internal static class StageHandler
                                 pnt0Z?.GetValueAs<float>() ?? 0
                             ),
                             Properties = railPointDict
-                                .Where(
-                                    i =>
-                                        i.Key != "pnt0_x"
-                                        && i.Key != "pnt0_y"
-                                        && i.Key != "pnt0_z"
-                                        && i.Key != "id"
+                                .Where(i =>
+                                    i.Key != "pnt0_x"
+                                    && i.Key != "pnt0_y"
+                                    && i.Key != "pnt0_z"
+                                    && i.Key != "id"
                                 )
                                 .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
@@ -504,6 +502,24 @@ internal static class StageHandler
             }
         }
 
+        bool useClassNames = ProjectHandler.UseClassNames;
+        string? classNameRes = null;
+
+        if (useClassNames)
+        {
+            classNameRes = className?.GetValueAs<string>();
+
+            if (classNameRes is null && name is not null)
+            {
+                RomFSHandler.CreatorClassNameTable.TryGetValue(
+                    name.GetValueAs<string>()!,
+                    out classNameRes
+                );
+            }
+
+            classNameRes ??= string.Empty;
+        }
+
         #endregion
 
         StageObj stageObj =
@@ -527,33 +543,30 @@ internal static class StageHandler
                     scaleZ?.GetValueAs<float>() ?? 0
                 ),
                 Name = name?.GetValueAs<string>() ?? "StageObj",
-                //ClassName = "",//
-
-                ClassName = ProjectHandler.ActiveProject.UseClassNames ? (className?.GetValueAs<string>() ?? (name != null ? (RomFSHandler.CreatorClassNameTable.TryGetValue(name.GetValueAs<string>(), out string result) ? result : "") : "")) : null,
+                ClassName = classNameRes,
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
                 ID = id?.GetValueAs<int>() ?? -1,
                 ParentID = generateParent?.GetValueAs<int>() ?? areaParent?.GetValueAs<int>() ?? -1,
                 Children = children,
-                Properties = dict.Where(
-                        i =>
-                            i.Key != "pos_x"
-                            && i.Key != "pos_y"
-                            && i.Key != "pos_z"
-                            && i.Key != "dir_x"
-                            && i.Key != "dir_y"
-                            && i.Key != "dir_z"
-                            && i.Key != "scale_x"
-                            && i.Key != "scale_y"
-                            && i.Key != "scale_z"
-                            && i.Key != "name"
-                            && i.Key != "ClassName"
-                            && i.Key != "LayerName"
-                            && i.Key != "l_id"
-                            && i.Key != "Rail"
-                            && i.Key != "AreaChildren"
-                            && i.Key != "GenerateChildren"
-                            && i.Key != "GenerateParent"
-                            && i.Key != "AreaParent"
+                Properties = dict.Where(i =>
+                        i.Key != "pos_x"
+                        && i.Key != "pos_y"
+                        && i.Key != "pos_z"
+                        && i.Key != "dir_x"
+                        && i.Key != "dir_y"
+                        && i.Key != "dir_z"
+                        && i.Key != "scale_x"
+                        && i.Key != "scale_y"
+                        && i.Key != "scale_z"
+                        && i.Key != "name"
+                        && i.Key != "LayerName"
+                        && i.Key != "l_id"
+                        && i.Key != "Rail"
+                        && i.Key != "AreaChildren"
+                        && i.Key != "GenerateChildren"
+                        && i.Key != "GenerateParent"
+                        && i.Key != "AreaParent"
+                        && (!useClassNames || i.Key != "ClassName")
                     )
                     .ToDictionary(i => i.Key, i => i.Value.Value)
             };
@@ -711,6 +724,22 @@ internal static class StageHandler
             };
         }
 
+        bool useClassNames = ProjectHandler.UseClassNames;
+
+        if (useClassNames && className is null)
+        {
+            if (name is not null)
+                RomFSHandler.CreatorClassNameTable.TryGetValue(name, out className);
+
+            className ??= string.Empty;
+        }
+
+        if (!useClassNames && className is not null)
+        {
+            properties ??= new();
+            properties.Add("ClassName", className);
+        }
+
         return new StageObj()
         {
             Children = children,
@@ -721,7 +750,7 @@ internal static class StageHandler
             RailID = railId,
             Layer = layer ?? "共通",
             Name = name ?? "StageObj",
-            ClassName = ProjectHandler.ActiveProject.UseClassNames ? (className ?? (name != null ? (RomFSHandler.CreatorClassNameTable.TryGetValue(name, out string result) ? result : "") : "")) : null,
+            ClassName = useClassNames ? className : null,
             Translation = translation,
             Rotation = rotation,
             Scale = scale,

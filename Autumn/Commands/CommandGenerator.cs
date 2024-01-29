@@ -20,7 +20,7 @@ internal static class CommandGenerator
                 if (success)
                 {
                     RecentHandler.LastProjectSavePath = output!;
-                    ProjectHandler.CreateNew(output!);
+                    ProjectHandler.CreateNewProject(output!);
                 }
             },
             enabled: true

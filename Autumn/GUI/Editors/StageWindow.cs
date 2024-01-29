@@ -28,7 +28,7 @@ internal class StageWindow
             ImGui.TableSetupColumn("Scenario", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
 
-            foreach (Stage stage in ProjectHandler.ActiveProject.Stages)
+            foreach (Stage stage in ProjectHandler.Stages)
             {
                 Debug.Assert(stage.Name is not null);
 

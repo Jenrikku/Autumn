@@ -24,7 +24,7 @@ internal static class ObjectHandler
             return obj;
         else
         {
-            if (ProjectHandler.ActiveProject.Objects.TryGetValue(name, out obj))
+            if (ProjectHandler.Objects.TryGetValue(name, out obj))
                 return obj;
 
             if (!TryImportObject(name, modelName, out obj))
@@ -37,7 +37,11 @@ internal static class ObjectHandler
     }
 
     public static bool TryImportObject(string name, string? modelName, out ActorObj obj) =>
-        TryImportObjectFrom(Path.Join(RomFSHandler.RomFSPath, "ObjectData"), modelName ?? name, out obj);
+        TryImportObjectFrom(
+            Path.Join(RomFSHandler.RomFSPath, "ObjectData"),
+            modelName ?? name,
+            out obj
+        );
 
     public static bool TryImportObjectFrom(string directory, string name, out ActorObj obj)
     {
@@ -126,36 +130,36 @@ internal static class ObjectHandler
             obj.FogAnimations.Add(animation);
 
         foreach (H3DLUT lut in h3D.LUTs)
-            foreach (H3DLUTSampler sampler in lut.Samplers)
+        foreach (H3DLUTSampler sampler in lut.Samplers)
+        {
+            string lutSamplerName = lut.Name + "/" + sampler.Name;
+            float[] table = new float[512];
+
+            if ((sampler.Flags & H3DLUTFlags.IsAbsolute) != 0)
             {
-                string lutSamplerName = lut.Name + "/" + sampler.Name;
-                float[] table = new float[512];
-
-                if ((sampler.Flags & H3DLUTFlags.IsAbsolute) != 0)
+                for (int i = 0; i < 256; i++)
                 {
-                    for (int i = 0; i < 256; i++)
-                    {
-                        table[i + 256] = sampler.Table[i];
-                        table[i + 0] = sampler.Table[0];
-                    }
+                    table[i + 256] = sampler.Table[i];
+                    table[i + 0] = sampler.Table[0];
                 }
-                else
-                {
-                    for (int i = 0; i < 256; i += 2)
-                    {
-                        int PosIdx = i >> 1;
-                        int NegIdx = PosIdx + 128;
-
-                        table[i + 256] = sampler.Table[PosIdx];
-                        table[i + 257] = sampler.Table[PosIdx];
-                        table[i + 0] = sampler.Table[NegIdx];
-                        table[i + 1] = sampler.Table[NegIdx];
-                    }
-                }
-
-                obj.LUTSamplers.Add((lutSamplerName, sampler));
-                obj.LUTSamplerTextures.Add(lutSamplerName, table);
             }
+            else
+            {
+                for (int i = 0; i < 256; i += 2)
+                {
+                    int PosIdx = i >> 1;
+                    int NegIdx = PosIdx + 128;
+
+                    table[i + 256] = sampler.Table[PosIdx];
+                    table[i + 257] = sampler.Table[PosIdx];
+                    table[i + 0] = sampler.Table[NegIdx];
+                    table[i + 1] = sampler.Table[NegIdx];
+                }
+            }
+
+            obj.LUTSamplers.Add((lutSamplerName, sampler));
+            obj.LUTSamplerTextures.Add(lutSamplerName, table);
+        }
 
         return true;
     }
@@ -168,7 +172,7 @@ internal static class ObjectHandler
         if (!ProjectHandler.ProjectLoaded)
             return;
 
-        string? path = ProjectHandler.ActiveProject.SavePath;
+        string? path = ProjectHandler.ProjectSavePath;
 
         if (string.IsNullOrEmpty(path))
             return;
