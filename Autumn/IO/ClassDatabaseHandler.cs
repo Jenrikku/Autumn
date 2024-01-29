@@ -2,7 +2,7 @@ namespace Autumn.IO;
 
 internal static class ClassDatabaseHandler
 {
-    public class DatabaseEntry
+    public struct DatabaseEntry
     {
         public Dictionary<string, Arg> Args { get; set; }
         public string ClassName { get; set; }
@@ -14,7 +14,7 @@ internal static class ClassDatabaseHandler
         public Dictionary<string, Switch> Switches { get; set; }
     }
 
-    public class Arg
+    public struct Arg
     {
         public object Default { get; set; }
         public string Description { get; set; }
@@ -22,13 +22,13 @@ internal static class ClassDatabaseHandler
         public bool Required { get; set; }
     }
 
-    public class Switch
+    public struct Switch
     {
         public string Description { get; set; }
         public string Type { get; set; }
     }
 
-    private static SortedDictionary<string, DatabaseEntry> s_DatabaseEntries = null;
+    private static SortedDictionary<string, DatabaseEntry>? s_DatabaseEntries = null;
 
     public static SortedDictionary<string, DatabaseEntry> DatabaseEntries
     {
@@ -41,7 +41,6 @@ internal static class ClassDatabaseHandler
 
                 foreach (string entryPath in Directory.EnumerateFiles(path))
                 {
-                    string className = Path.GetFileName(entryPath);
                     DatabaseEntry entry = YAMLWrapper.Deserialize<DatabaseEntry>(entryPath);
                     s_DatabaseEntries[entry.ClassName] = entry;
                 }
