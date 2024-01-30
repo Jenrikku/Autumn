@@ -25,12 +25,7 @@ internal class MainWindowContext : WindowContext
 
     private AddStageDialog _addStageDialog;
     private ClosingDialog _closingDialog;
-
-    private bool _projectPropertiesOpened = false;
-    private string _projectPropertiesName = string.Empty;
-    private string _projectPropertiesBuildPath = string.Empty;
-    private bool _projectPropertiesBuildPathValid = false;
-    private bool _projectPropertiesUseClassNames = false;
+    private ProjectPropertiesDialog _projectPropertiesDialog;
 
     private bool _newObjectOpened = false;
     private string _newObjectName = "";
@@ -64,6 +59,9 @@ internal class MainWindowContext : WindowContext
         // Initialize dialogs:
         _addStageDialog = new(this);
         _closingDialog = new(this);
+        _projectPropertiesDialog = new(this);
+
+        ProjectHandler.ProjectCreatedEvent += _projectPropertiesDialog.Open;
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -160,9 +158,7 @@ internal class MainWindowContext : WindowContext
 
             _addStageDialog.Render();
             _closingDialog.Render();
-
-            if (_projectPropertiesOpened)
-                RenderProjectPropertiesDialog();
+            _projectPropertiesDialog.Render();
 
             if (_newObjectOpened)
                 RenderNewObjectPopup();
@@ -253,9 +249,11 @@ internal class MainWindowContext : WindowContext
         if (ImGui.BeginMenu("Edit"))
         {
             if (ImGui.MenuItem("Add object", CurrentScene is not null))
-            {
                 _newObjectOpened = true;
-            }
+
+            if (ImGui.MenuItem("Project properties", ProjectHandler.ProjectLoaded))
+                _projectPropertiesDialog.Open();
+
             ImGui.EndMenu();
         }
 
@@ -387,98 +385,6 @@ internal class MainWindowContext : WindowContext
         ImGui.TextDisabled("Please, open a project from the menu or drop a folder here.");
 
         ImGui.End();
-    }
-
-    private void RenderProjectPropertiesDialog()
-    {
-        ImGui.OpenPopup("Project properties");
-
-        Vector2 dimensions = new Vector2(480, 185) + ImGui.GetStyle().ItemSpacing;
-        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
-
-        if (
-            !ImGui.BeginPopupModal(
-                "Project properties",
-                ref _projectPropertiesOpened,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
-            )
-        )
-            return;
-
-        ImGui.TextWrapped("Project: " + ProjectHandler.ProjectSavePath);
-
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        // Correctly aline first field:
-        float size1 = ImGui.CalcTextSize("Name").X;
-        float size2 = ImGui.CalcTextSize("Build path").X;
-        float cursorX = ImGui.GetCursorPosX();
-
-        ImGui.SetCursorPosX(cursorX + size2 - size1);
-
-        ImGui.Text("Name: ");
-        ImGui.SameLine();
-        ImGui.InputText("", ref _projectPropertiesName, 255);
-
-        ImGui.Text("Build path: ");
-        ImGui.SameLine();
-        ImGuiWidgets.DirectoryPathSelector(
-            ref _projectPropertiesBuildPath,
-            ref _projectPropertiesBuildPathValid,
-            dialogTitle: "Please specify the project's build path"
-        );
-
-        ImGui.SameLine();
-        Vector2 cursorPos = ImGui.GetCursorPos();
-        ImGui.TextDisabled("?");
-        ImGui.SetCursorPos(cursorPos);
-        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(
-                "The build path is where the mod files will be saved to.\n"
-                    + "If you use an emulator, we recommend you to set this to the emulator's mod directory."
-            );
-
-        ImGui.Checkbox("Use class name patch", ref _projectPropertiesUseClassNames);
-        ImGui.SameLine();
-        cursorPos = ImGui.GetCursorPos();
-        ImGui.TextDisabled("?");
-        ImGui.SetCursorPos(cursorPos);
-        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
-
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(
-                "If enabled, the project will replace use of the CreatorClassNameTable with ObjectName/ClassName values individual to objects.\n"
-                    + "Useful for convenience, but requires an ExeFS patch."
-            );
-
-        float okButtonY = ImGui.GetWindowHeight() - 40;
-        float okButtonX = ImGui.GetWindowWidth() - 60;
-
-        ImGui.SetCursorPos(new Vector2(okButtonX, okButtonY));
-
-        if (ImGui.Button("Ok", new(40, 0)))
-        {
-            ImGui.CloseCurrentPopup();
-            _projectPropertiesOpened = false;
-
-            ProjectHandler.ProjectName = _projectPropertiesName;
-            ProjectHandler.UseClassNames = _projectPropertiesUseClassNames;
-
-            if (_projectPropertiesBuildPathValid)
-                ProjectHandler.ProjectBuildOutput = _projectPropertiesBuildPath;
-
-            ProjectHandler.SaveProjectFile();
-        }
-
-        ImGui.EndPopup();
     }
 
     private void AddQueuedObject(Vector4 trans)

@@ -50,20 +50,28 @@ internal static class ImGuiWidgets
         }
     }
 
-    public static bool CommandMenuItem(CommandID id)
+    public static void CommandMenuItem(CommandID id)
     {
         Command? command = CommandHandler.GetCommand(id);
 
         if (command is null)
-            return false;
+            return;
 
         if (ImGui.MenuItem(command.DisplayName, command.DisplayShortcut, false, command.Enabled))
-        {
             command.Action.Invoke();
-            return true;
-        }
+    }
 
-        return false;
+    public static void HelpTooltip(string tooltip)
+    {
+        Vector2 cursorPos = ImGui.GetCursorPos();
+
+        ImGui.TextDisabled("?");
+        ImGui.SetCursorPos(cursorPos);
+
+        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(tooltip);
     }
 
     public static bool InputTextRedWhenInvalid(
