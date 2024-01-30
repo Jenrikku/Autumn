@@ -204,9 +204,7 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            if (ImGuiWidgets.CommandMenuItem(CommandID.NewProject) && ProjectHandler.ProjectLoaded)
-                _projectPropertiesOpened = true;
-
+            ImGuiWidgets.CommandMenuItem(CommandID.NewProject);
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject);
 
             // Menu that displays the recently opened projects' list.

@@ -25,9 +25,9 @@ internal static partial class ProjectHandler
     public static event Func<Project>? ProjectClosingEvent;
 
     /// <summary>
-    /// An event that is triggered when a new project has been opened.
+    /// An event that is triggered when a new project has been created.
     /// </summary>
-    public static event Action? ProjectOpenedEvent;
+    public static event Action? ProjectCreatedEvent;
 
     /// <summary>
     /// Whether there is a project loaded.
@@ -107,7 +107,6 @@ internal static partial class ProjectHandler
             RecentHandler.RecentOpenedPaths.Add(path);
 
         ProjectLoaded = true;
-        ProjectOpenedEvent?.Invoke();
     }
 
     /// <summary>
@@ -169,7 +168,7 @@ internal static partial class ProjectHandler
             RecentHandler.RecentOpenedPaths.Add(filepath);
 
         ProjectLoaded = true;
-        ProjectOpenedEvent?.Invoke();
+        ProjectCreatedEvent?.Invoke();
     }
 
     public static bool FileExists(string path)
