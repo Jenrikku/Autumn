@@ -159,8 +159,16 @@ internal static partial class ProjectHandler
             return;
 
         string filepath = Path.Join(path, "autumnproj.yml");
+        string buildPath = Path.Join(path, "build");
 
-        s_activeProject = new() { Name = name, SavePath = path };
+        Directory.CreateDirectory(buildPath);
+
+        s_activeProject = new()
+        {
+            Name = name,
+            SavePath = path,
+            BuildOutput = buildPath
+        };
 
         YAMLWrapper.Serialize(filepath, s_activeProject);
 
