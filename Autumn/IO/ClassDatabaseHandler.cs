@@ -11,7 +11,7 @@ internal static class ClassDatabaseHandler
         public string DescriptionAdditional { get; set; }
         public string Name { get; set; }
         public bool RailRequired { get; set; }
-        public Dictionary<string, Switch> Switches { get; set; }
+        public Dictionary<string, Switch?> Switches { get; set; }
     }
 
     public struct Arg
