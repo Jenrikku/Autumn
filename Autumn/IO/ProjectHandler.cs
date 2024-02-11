@@ -78,6 +78,8 @@ internal static partial class ProjectHandler
             return;
         }
 
+        s_activeProject = project;
+
         string dir = Path.GetDirectoryName(path) ?? Directory.GetDirectoryRoot(path);
 
         s_activeProject.SavePath = dir;

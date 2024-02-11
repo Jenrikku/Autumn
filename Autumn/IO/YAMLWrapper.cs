@@ -4,7 +4,7 @@ namespace Autumn.IO;
 
 internal class YAMLWrapper
 {
-    public static SerializerSettings settings =
+    private static readonly SerializerSettings s_settings =
         new()
         {
             NamingConvention = new PascalNamingConvention(),
@@ -13,14 +13,11 @@ internal class YAMLWrapper
             EmitAlias = false
         };
 
-    public static Serializer? serializer;
-
     public static T? Deserialize<T>(string path)
         where T : notnull
     {
         string text;
-
-        serializer = new(settings);
+        Serializer serializer = new(s_settings);
 
         try
         {
@@ -37,7 +34,7 @@ internal class YAMLWrapper
     public static void Serialize<T>(string path, T obj)
         where T : notnull
     {
-        serializer = new(settings);
+        Serializer serializer = new(s_settings);
 
         string? dir = Path.GetDirectoryName(path);
 
