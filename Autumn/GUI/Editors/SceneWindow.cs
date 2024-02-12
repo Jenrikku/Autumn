@@ -1,10 +1,10 @@
-﻿using Autumn.Scene;
+﻿using System.Diagnostics;
+using System.Numerics;
+using Autumn.Scene;
 using Autumn.Scene.Gizmo;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
-using System.Diagnostics;
-using System.Numerics;
 
 namespace Autumn.GUI.Editors;
 
@@ -24,14 +24,14 @@ internal class SceneWindow
         if (context.CurrentScene is null)
             return;
 
-        float aspectRatio = 1;
+        float aspectRatio;
 
-        bool isSceneHovered = false;
-        bool isSceneWindowFocused = false;
+        bool isSceneHovered;
+        bool isSceneWindowFocused;
 
-        Vector2 sceneImageRectMin = new();
-        Vector2 sceneImageRectMax = new();
-        int sceneImageHeight = 0;
+        Vector2 sceneImageRectMin;
+        Vector2 sceneImageRectMax;
+        Vector2 sceneImageSize;
 
         bool sceneNotReady =
             (!context.CurrentScene?.Stage.Loaded ?? false)
@@ -64,8 +64,6 @@ internal class SceneWindow
             return;
         }
 
-        sceneImageHeight = (int)contentAvail.Y;
-
         context.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
         context.SceneFramebuffer.Create(context.GL!);
 
@@ -80,6 +78,7 @@ internal class SceneWindow
         isSceneWindowFocused = ImGui.IsWindowFocused();
         sceneImageRectMin = ImGui.GetItemRectMin();
         sceneImageRectMax = ImGui.GetItemRectMax();
+        sceneImageSize = contentAvail;
 
         ImGui.PopStyleVar();
 
@@ -162,7 +161,7 @@ internal class SceneWindow
         float xScale = yScale / aspectRatio;
 
         Vector2 ndcMousePos =
-            ((mousePos - sceneWindowRegionMin) / sceneImageHeight * 2 - Vector2.One)
+            ((mousePos - sceneWindowRegionMin) / sceneImageSize.Y * 2 - Vector2.One)
             * new Vector2(1, -1);
 
         Vector3 mouseRayDirection = Vector3.Transform(
@@ -227,7 +226,7 @@ internal class SceneWindow
 
             context.GL.ReadPixels(
                 (int)pixelPos.X,
-                sceneImageHeight - (int)pixelPos.Y,
+                (int)(sceneImageSize.Y - pixelPos.Y),
                 1,
                 1,
                 PixelFormat.RedInteger,
@@ -237,7 +236,7 @@ internal class SceneWindow
 
             context.GL.ReadPixels(
                 (int)pixelPos.X,
-                sceneImageHeight - (int)pixelPos.Y,
+                (int)(sceneImageSize.Y - pixelPos.Y),
                 1,
                 1,
                 PixelFormat.DepthComponent,
@@ -247,11 +246,12 @@ internal class SceneWindow
 
             // 3D mouse position calculation
             Vector2 windowMousePos = mousePos - sceneImageRectMin;
-            Vector2 sceneImageSize = sceneImageRectMax - sceneImageRectMin;
-            Vector2 ndcMousePosTwo = (windowMousePos / sceneImageSize * 2 - Vector2.One) * new Vector2(1, -1);
-            Vector4 ndcMousePos3D = new Vector4(ndcMousePosTwo.X, ndcMousePosTwo.Y, normPickingDepth * 2 - 1, 1.0f);
-            Matrix4x4 inverseViewProjection;
-            Debug.Assert(Matrix4x4.Invert(viewProjection, out inverseViewProjection));
+            ndcMousePos = (windowMousePos / sceneImageSize * 2 - Vector2.One) * new Vector2(1, -1);
+            Vector4 ndcMousePos3D = new(ndcMousePos, normPickingDepth * 2 - 1, 1.0f);
+
+            bool canInvert = Matrix4x4.Invert(viewProjection, out Matrix4x4 inverseViewProjection);
+            Debug.Assert(canInvert);
+
             Vector4 worldMousePos = Vector4.Transform(ndcMousePos3D, inverseViewProjection);
             worldMousePos /= worldMousePos.W;
 
@@ -260,7 +260,6 @@ internal class SceneWindow
                 action(worldMousePos);
                 return;
             }
-
 
             if (
                 !(
