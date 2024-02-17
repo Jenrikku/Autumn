@@ -2,11 +2,13 @@
 using Autumn.Background;
 using Autumn.IO;
 using ImGuiNET;
+using Silk.NET.Core;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Autumn.GUI;
 
@@ -39,6 +41,8 @@ internal abstract class WindowContext
         "imgui.ini"
     );
 
+    private static RawImage[]? s_iconCache;
+
     public WindowContext()
     {
         WindowOptions options = WindowOptions.Default;
@@ -67,6 +71,28 @@ internal abstract class WindowContext
 
             InputContext = Window.CreateInput();
             Keyboard = InputContext.Keyboards[0];
+
+            # region Load icons
+
+            if (s_iconCache is null)
+            {
+                byte[] iconSizes = [16, 32, 64];
+                s_iconCache = new RawImage[3];
+                for (int i = 0; i < iconSizes.Length; i++)
+                {
+                    string path = Path.Join("Resources", "Icons", $"autumn{iconSizes[i]}.png");
+                    Image<Rgba32> image = Image.Load<Rgba32>(path);
+
+                    byte[] pixels = new byte[image.Width * image.Height * 4];
+                    image.CopyPixelDataTo(pixels);
+
+                    s_iconCache[i] = new(image.Width, image.Height, pixels);
+                }
+            }
+
+            Window.SetWindowIcon(s_iconCache);
+
+            # endregion
 
             // Set scaling factor:
             unsafe
