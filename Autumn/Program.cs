@@ -1,7 +1,7 @@
+using System.Text;
 using Autumn.Commands;
 using Autumn.GUI;
 using Autumn.IO;
-using System.Text;
 
 // Required to support Shift-JIS encoding.
 // See System.Text.Encoding.CodePages package.
@@ -17,6 +17,10 @@ RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
 
 CommandHandler.Initialize();
+
+// Load project from argument if available.
+if (args.Length > 0)
+    ProjectHandler.LoadProject(args[0]);
 
 // Checks whether the welcome window has to be shown.
 if (!SettingsHandler.GetValue<bool>("SkipWelcomeWindow"))
