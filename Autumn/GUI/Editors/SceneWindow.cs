@@ -2,6 +2,7 @@
 using System.Numerics;
 using Autumn.Scene;
 using Autumn.Scene.Gizmo;
+using Autumn.Utils;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -261,15 +262,11 @@ internal class SceneWindow
                 return;
             }
 
-            if (
-                !(
-                    (context.Keyboard?.IsKeyPressed(Key.ControlLeft) ?? false)
-                    || (context.Keyboard?.IsKeyPressed(Key.ControlRight) ?? false)
-                )
-            )
-                context.CurrentScene.UnselectAllObjects();
-
-            context.CurrentScene.ToggleObjectSelection(pixel);
+            context.ChangeHandler.ToggleObjectSelection(
+                context,
+                pixel,
+                !context.Keyboard?.IsCtrlPressed() ?? true
+            );
         }
 
         GizmoDrawer.EndGizmoDrawing();

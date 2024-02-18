@@ -21,8 +21,8 @@ internal static class PropertiesWindow
             return;
         }
 
-        List<SceneObj> selectedObjects = context.CurrentScene.SelectedObjects;
-        int selectedCount = selectedObjects.Count;
+        IEnumerable<SceneObj> selectedObjects = context.CurrentScene.SelectedObjects;
+        int selectedCount = selectedObjects.Count();
 
         if (selectedCount <= 0)
         {
@@ -34,7 +34,7 @@ internal static class PropertiesWindow
         if (selectedCount == 1)
         {
             // Only one object selected:
-            SceneObj sceneObj = selectedObjects[0];
+            SceneObj sceneObj = selectedObjects.First();
             StageObj stageObj = sceneObj.StageObj;
 
             ImGui.InputText(stageObj is RailObj ? "Name" : "ObjectName", ref stageObj.Name, 128);

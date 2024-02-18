@@ -5,8 +5,8 @@ namespace Autumn.History;
 /// </summary>
 internal class ChangeHistory
 {
-    private List<Change> _changes = new();
-    private List<Change> _undoneChanges = new();
+    private readonly List<Change> _changes = new();
+    private readonly List<Change> _undoneChanges = new();
 
     public bool CanUndo => _changes.Count > 0;
     public bool CanRedo => _undoneChanges.Count > 0;

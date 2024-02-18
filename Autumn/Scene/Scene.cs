@@ -1,7 +1,7 @@
+using System.Numerics;
 using Autumn.IO;
 using Autumn.Storage;
 using Silk.NET.OpenGL;
-using System.Numerics;
 
 namespace Autumn.Scene;
 
@@ -9,7 +9,9 @@ internal class Scene
 {
     public Stage Stage { get; set; }
     public List<SceneObj> SceneObjects { get; } = new();
-    public List<SceneObj> SelectedObjects { get; } = new();
+
+    private readonly List<SceneObj> _selectedObjects = new();
+    public IEnumerable<SceneObj> SelectedObjects => _selectedObjects;
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
 
@@ -31,32 +33,48 @@ internal class Scene
             ModelRenderer.Draw(gl, obj);
     }
 
-    /// <returns>Whether the object is now selected. It will be false as well whenever no object was found.</returns>
-    public bool ToggleObjectSelection(uint id)
+    public bool IsObjectSelected(uint id)
+    {
+        _pickableObjs.TryGetValue(id, out SceneObj? sceneObj);
+        return sceneObj?.Selected ?? false;
+    }
+
+    public void SetObjectSelected(uint id, bool value)
     {
         if (!_pickableObjs.TryGetValue(id, out SceneObj? sceneObj))
-            return false;
+            return;
 
-        sceneObj.Selected |= true;
+        sceneObj.Selected = value;
 
         if (sceneObj.Selected)
-            SelectedObjects.Add(sceneObj);
-
-        return sceneObj.Selected;
+            _selectedObjects.Add(sceneObj);
+        else
+            _selectedObjects.Remove(sceneObj);
     }
 
     public void UnselectAllObjects()
     {
-        foreach (SceneObj sceneObj in SelectedObjects)
+        foreach (SceneObj sceneObj in _selectedObjects)
             sceneObj.Selected = false;
 
-        SelectedObjects.Clear();
+        _selectedObjects.Clear();
+    }
+
+    public void SetSelectedObjects(IEnumerable<SceneObj> objs)
+    {
+        UnselectAllObjects();
+
+        foreach (SceneObj sceneObj in objs)
+        {
+            sceneObj.Selected = true;
+            _selectedObjects.Add(sceneObj);
+        }
     }
 
     public void GenerateSceneObjects(ref string status)
     {
         SceneObjects.Clear();
-        SelectedObjects.Clear();
+        _selectedObjects.Clear();
 
         GenerateSceneObjects(Stage.StageData, ref status);
 
@@ -83,7 +101,16 @@ internal class Scene
 
     public void GenerateSceneObject(StageObj stageObj)
     {
-        ActorObj actorObj = ObjectHandler.GetObject(stageObj.Properties.TryGetValue("ModelName", out object? result) ? (string)result : stageObj.Name);
+        string actorName = stageObj.Name;
+
+        if (
+            stageObj.Properties.TryGetValue("ModelName", out object? modelName)
+            && modelName is string modelNameString
+            && !string.IsNullOrEmpty(modelNameString)
+        )
+            actorName = modelNameString;
+
+        ActorObj actorObj = ObjectHandler.GetObject(actorName);
         SceneObj sceneObj = new(stageObj, actorObj, _lastPickingId);
 
         SceneObjects.Add(sceneObj);
