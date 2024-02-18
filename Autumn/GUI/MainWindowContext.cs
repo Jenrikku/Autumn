@@ -7,6 +7,7 @@ using Autumn.IO;
 using Autumn.Scene;
 using Autumn.Scene.Gizmo;
 using Autumn.Storage;
+using Autumn.Utils;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.Input;
@@ -20,6 +21,8 @@ internal class MainWindowContext : WindowContext
     public Scene.Scene? CurrentScene { get; set; }
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
+
+    public ChangeHandler ChangeHandler { get; } = new();
 
     private bool _isFirstFrame = true;
 
@@ -153,7 +156,7 @@ internal class MainWindowContext : WindowContext
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
 
-            #region Dialogs and popups
+            # region Dialogs and popups
             // These dialogs are only rendered when their corresponding variables are set to true.
 
             _addStageDialog.Render();
@@ -163,12 +166,33 @@ internal class MainWindowContext : WindowContext
             if (_newObjectOpened)
                 RenderNewObjectPopup();
 
-            #endregion
+            # endregion
+
+            # region Undo / Redo
+
+            // Undo
+            if (Keyboard?.IsCtrlCombinationPressed(Key.Z) ?? false)
+                ChangeHandler.History.Undo();
+
+            // Redo
+            if (Keyboard?.IsCtrlCombinationPressed(Key.Y) ?? false)
+                ChangeHandler.History.Redo();
+
+            # endregion
 
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
             GL!.Viewport(Window.FramebufferSize);
             ImGuiController.Render();
+        };
+
+        Window.FileDrop += (paths) =>
+        {
+            if (paths.Length < 1)
+                return;
+
+            string path = paths[0];
+            ProjectHandler.LoadProject(path);
         };
     }
 
@@ -382,7 +406,7 @@ internal class MainWindowContext : WindowContext
         if (!ImGui.Begin("##", flags))
             return;
 
-        ImGui.TextDisabled("Please, open a project from the menu or drop a folder here.");
+        ImGui.TextDisabled("Please open a project from the menu or drop a the project file here.");
 
         ImGui.End();
     }
