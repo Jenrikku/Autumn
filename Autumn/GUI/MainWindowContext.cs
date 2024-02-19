@@ -272,6 +272,14 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Edit"))
         {
+            if (ImGui.MenuItem("Undo", CurrentScene is not null && ChangeHandler.History.CanUndo))
+                ChangeHandler.History.Undo();
+
+            if (ImGui.MenuItem("Redo", CurrentScene is not null && ChangeHandler.History.CanRedo))
+                ChangeHandler.History.Redo();
+
+            ImGui.Separator();
+
             if (ImGui.MenuItem("Add object", CurrentScene is not null))
                 _newObjectOpened = true;
 
