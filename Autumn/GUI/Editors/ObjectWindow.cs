@@ -1,5 +1,6 @@
 using Autumn.Scene;
 using Autumn.Storage;
+using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
@@ -63,7 +64,13 @@ internal class ObjectWindow
 
                 ImGui.TableSetColumnIndex(0);
 
-                ImGui.Selectable(stageObj.Name);
+                ImGui.PushID("SceneObjSelectable" + obj.PickingId);
+                if (ImGui.Selectable(stageObj.Name, obj.Selected))
+                    context.ChangeHandler.ToggleObjectSelection(
+                        context,
+                        obj,
+                        !context.Keyboard?.IsCtrlPressed() ?? true
+                    );
 
                 ImGui.TableNextColumn();
 
