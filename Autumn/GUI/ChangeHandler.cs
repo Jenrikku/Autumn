@@ -16,12 +16,14 @@ internal class ChangeHandler
             return;
 
         SceneObj[]? cleared = null;
-        bool isSelected = false;
+        bool isSelected = context.CurrentScene.IsObjectSelected(id);
+
+        // If the only selected object is the one that has been clicked, then nothing is done.
+        if (context.CurrentScene.SelectedObjects.Count() == 1 && isSelected)
+            return;
 
         if (clear)
             cleared = context.CurrentScene.SelectedObjects.ToArray();
-        else
-            isSelected = context.CurrentScene.IsObjectSelected(id);
 
         Change change =
             new(
