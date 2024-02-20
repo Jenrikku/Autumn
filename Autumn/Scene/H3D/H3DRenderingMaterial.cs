@@ -342,9 +342,9 @@ internal class H3DRenderingMaterial
         Matrix3X4<float>[] packedTransforms = new Matrix3X4<float>[20];
         Vector4D<int>[] boneTable = new Vector4D<int>[20];
 
-        if (actorObj.SkeletalAnimatior is not null)
+        if (actorObj.SkeletalAnimator is not null)
         {
-            Matrix4x4[] transforms = actorObj.SkeletalAnimatior.GetSkeletonTransforms();
+            Matrix4x4[] transforms = actorObj.SkeletalAnimator.GetSkeletonTransforms();
 
             for (int i = 0; i < packedTransforms.Length; i++)
             {

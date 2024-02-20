@@ -1,15 +1,15 @@
+using System.Diagnostics;
+using System.Numerics;
 using Autumn.Utils;
 using Silk.NET.Maths;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.Animation;
 using SPICA.Formats.CtrH3D.Model;
-using System.Diagnostics;
-using System.Numerics;
 
 namespace Autumn.Scene.H3D.Animation;
 
 // Based on: https://github.com/KillzXGaming/SPICA/blob/master/SPICA.Rendering/Animation/SkeletalAnimation.cs
-internal class H3DSkeletalAnimatior : H3DAnimationControl
+internal class H3DSkeletalAnimator : H3DAnimationControl
 {
     public class Bone
     {
@@ -55,7 +55,7 @@ internal class H3DSkeletalAnimatior : H3DAnimationControl
     private readonly Matrix4x4[] _transforms;
     private readonly H3DDict<H3DBone> _skeleton;
 
-    public H3DSkeletalAnimatior(H3DDict<H3DBone> skeleton)
+    public H3DSkeletalAnimator(H3DDict<H3DBone> skeleton)
     {
         _skeleton = skeleton;
 

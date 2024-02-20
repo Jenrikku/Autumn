@@ -26,7 +26,7 @@ internal class ActorObj
     public Dictionary<string, RGBATexture> RGBATextures { get; set; }
     public Dictionary<string, float[]> LUTSamplerTextures { get; set; }
 
-    public H3DSkeletalAnimatior? SkeletalAnimatior { get; set; }
+    public H3DSkeletalAnimator? SkeletalAnimator { get; set; }
 
     public string Name { get; set; }
     public bool IsNoModel { get; set; }

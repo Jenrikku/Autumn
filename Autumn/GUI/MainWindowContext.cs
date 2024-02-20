@@ -414,7 +414,7 @@ internal class MainWindowContext : WindowContext
         if (!ImGui.Begin("##", flags))
             return;
 
-        ImGui.TextDisabled("Please open a project from the menu or drop a the project file here.");
+        ImGui.TextDisabled("Please open a project from the menu or drop a project file here.");
 
         ImGui.End();
     }
@@ -497,10 +497,9 @@ internal class MainWindowContext : WindowContext
         {
             if (ImGui.BeginTabItem("Object"))
             {
-                bool databaseHasEntry = ClassDatabaseHandler.DatabaseEntries.TryGetValue(
-                    _newObjectClass,
-                    out ClassDatabaseHandler.DatabaseEntry dbEntry
-                );
+                bool databaseHasEntry = ClassDatabaseHandler
+                    .DatabaseEntries
+                    .TryGetValue(_newObjectClass, out ClassDatabaseHandler.DatabaseEntry dbEntry);
 
                 ImGui.SetNextItemWidth(400);
                 ImGui.InputText("Search", ref _newObjectClassSearchQuery, 128);

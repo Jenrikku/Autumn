@@ -93,7 +93,7 @@ internal static class ObjectHandler
                 obj.Skeleton.Add(bone);
 
             if (model.Skeleton.Count > 0)
-                obj.SkeletalAnimatior = new(model.Skeleton);
+                obj.SkeletalAnimator = new(model.Skeleton);
         }
 
         foreach (H3DTexture texture in h3D.Textures)
