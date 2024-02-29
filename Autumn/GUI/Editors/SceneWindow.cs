@@ -265,7 +265,7 @@ internal class SceneWindow
             context.ChangeHandler.ToggleObjectSelection(
                 context,
                 pixel,
-                !context.Keyboard?.IsCtrlPressed() ?? true
+                !(context.Keyboard?.IsCtrlPressed() ?? false)
             );
         }
 

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Diagnostics;
 using System.Numerics;
 using Autumn.Storage;
@@ -38,7 +37,7 @@ internal class H3DRenderingMaterial
         public Matrix3X4<float> ViewMtx;
         public Vector4D<int> LightCt;
         public Bools BoolUniforms;
-        public Silk.NET.OpenGL.Boolean DisableVertexColor;
+        public int DisableVertexColor; // bool
         public Vector2 _Padding;
 
         [Flags]
@@ -98,10 +97,10 @@ internal class H3DRenderingMaterial
             public float AttenuationBias;
             public float AngleLUTScale;
             public int AngleLUTInput;
-            public Silk.NET.OpenGL.Boolean SpotAttEnbled;
-            public Silk.NET.OpenGL.Boolean DistAttEnbled;
-            public Silk.NET.OpenGL.Boolean TwoSidedDiffuse;
-            public Silk.NET.OpenGL.Boolean Directional;
+            public int SpotAttEnbled; // bool
+            public int DistAttEnbled; // bool
+            public int TwoSidedDiffuse; // bool
+            public int Directional; // bool
         }
     }
 
@@ -118,7 +117,7 @@ internal class H3DRenderingMaterial
 
     private Matrix4x4 _lastTransform;
 
-    public CullFaceMode CullFaceMode { get; }
+    public TriangleFace CullFaceMode { get; }
     public H3DRenderingLayer Layer { get; }
 
     public bool BlendingEnabled { get; }
@@ -213,8 +212,8 @@ internal class H3DRenderingMaterial
 
         CullFaceMode = matParams.FaceCulling switch
         {
-            PICAFaceCulling.FrontFace => CullFaceMode.Front,
-            PICAFaceCulling.BackFace => CullFaceMode.Back,
+            PICAFaceCulling.FrontFace => TriangleFace.Front,
+            PICAFaceCulling.BackFace => TriangleFace.Back,
             _ => 0
         };
 
@@ -333,7 +332,7 @@ internal class H3DRenderingMaterial
                     Diffuse = new(0.4f, 0.4f, 0.4f, 1),
                     Specular0 = new(0.8f, 0.8f, 0.8f, 1),
                     Specular1 = new(0.4f, 0.4f, 0.4f, 1),
-                    TwoSidedDiffuse = Silk.NET.OpenGL.Boolean.True
+                    TwoSidedDiffuse = 1
                 }
             };
 

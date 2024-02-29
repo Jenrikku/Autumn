@@ -6,9 +6,8 @@ using Silk.NET.Core;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
-using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
-using Image = SixLabors.ImageSharp.Image;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Autumn.GUI;
 
@@ -81,7 +80,7 @@ internal abstract class WindowContext
                 for (int i = 0; i < iconSizes.Length; i++)
                 {
                     string path = Path.Join("Resources", "Icons", $"autumn{iconSizes[i]}.png");
-                    Image<Rgba32> image = Image.Load<Rgba32>(path);
+                    var image = SixLabors.ImageSharp.Image.Load<Rgba32>(path);
 
                     byte[] pixels = new byte[image.Width * image.Height * 4];
                     image.CopyPixelDataTo(pixels);

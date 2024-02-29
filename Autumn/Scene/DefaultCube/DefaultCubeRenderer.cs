@@ -1,7 +1,7 @@
-﻿using SceneGL;
+﻿using System.Numerics;
+using SceneGL;
 using SceneGL.Materials;
 using Silk.NET.OpenGL;
-using System.Numerics;
 
 namespace Autumn.Scene.DefaultCube;
 
@@ -180,7 +180,7 @@ internal static class DefaultCubeRenderer
 
         using (scope)
         {
-            gl.CullFace(CullFaceMode.Back);
+            gl.CullFace(TriangleFace.Back);
 
             DefaultCubeMaterial.Program.TryGetUniformLoc("uPickingId", out int location);
             gl.Uniform1(location, pickingId);

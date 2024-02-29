@@ -1,10 +1,10 @@
-﻿using Autumn.Scene.Area;
+﻿using System.Numerics;
+using Autumn.Scene.Area;
 using Autumn.Scene.DefaultCube;
 using Autumn.Scene.H3D;
 using Autumn.Storage;
 using SceneGL;
 using Silk.NET.OpenGL;
-using System.Numerics;
 
 namespace Autumn.Scene;
 
@@ -67,7 +67,7 @@ internal static class ModelRenderer
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_areaMaterialParams.Selected = sceneObj.Selected;
 
-            gl.CullFace(CullFaceMode.Back);
+            gl.CullFace(TriangleFace.Back);
 
             AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams);
             return;
@@ -78,7 +78,7 @@ internal static class ModelRenderer
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
 
-            gl.CullFace(CullFaceMode.Back);
+            gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(
                 gl,
@@ -93,64 +93,64 @@ internal static class ModelRenderer
                 H3DRenderingGenerator.GenerateMaterialsAndModels(gl, actorObj);
 
             for (int i = 0; i < 3; i++)
-                for (int j = 0; j < actorObj.RenderingMaterials.Length; j++)
+            for (int j = 0; j < actorObj.RenderingMaterials.Length; j++)
+            {
+                RenderableModel model = actorObj.RenderableModels[j];
+                H3DRenderingMaterial material = actorObj.RenderingMaterials[j];
+
+                if ((int)material.Layer != i)
+                    continue;
+
+                material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.4f : 0));
+
+                material.SetMatrices(
+                    s_projectionMatrix,
+                    s_h3DScale * sceneObj.Transform,
+                    s_viewMatrix
+                );
+
+                material.TryUse(gl, out ProgramUniformScope scope);
+
+                using (scope)
                 {
-                    RenderableModel model = actorObj.RenderableModels[j];
-                    H3DRenderingMaterial material = actorObj.RenderingMaterials[j];
+                    if (material.CullFaceMode == 0)
+                        gl.Disable(EnableCap.CullFace);
+                    else
+                        gl.CullFace(material.CullFaceMode);
 
-                    if ((int)material.Layer != i)
-                        continue;
-
-                    material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.4f : 0));
-
-                    material.SetMatrices(
-                        s_projectionMatrix,
-                        s_h3DScale * sceneObj.Transform,
-                        s_viewMatrix
-                    );
-
-                    material.TryUse(gl, out ProgramUniformScope scope);
-
-                    using (scope)
+                    if (material.BlendingEnabled)
                     {
-                        if (material.CullFaceMode == 0)
-                            gl.Disable(EnableCap.CullFace);
-                        else
-                            gl.CullFace(material.CullFaceMode);
+                        gl.Enable(EnableCap.Blend);
 
-                        if (material.BlendingEnabled)
-                        {
-                            gl.Enable(EnableCap.Blend);
+                        gl.BlendColor(
+                            material.BlendingColor.X,
+                            material.BlendingColor.Y,
+                            material.BlendingColor.Z,
+                            material.BlendingColor.W
+                        );
 
-                            gl.BlendColor(
-                                material.BlendingColor.X,
-                                material.BlendingColor.Y,
-                                material.BlendingColor.Z,
-                                material.BlendingColor.W
-                            );
+                        gl.BlendEquationSeparate(
+                            material.ColorBlendEquation,
+                            material.AlphaBlendEquation
+                        );
 
-                            gl.BlendEquationSeparate(
-                                material.ColorBlendEquation,
-                                material.AlphaBlendEquation
-                            );
-
-                            gl.BlendFuncSeparate(
-                                material.ColorSrcFact,
-                                material.ColorDstFact,
-                                material.AlphaSrcFact,
-                                material.AlphaDstFact
-                            );
-                        }
-
-                        material.Program.TryGetUniformLoc("uPickingId", out int location);
-                        gl.Uniform1(location, sceneObj.PickingId);
-
-                        model.Draw(gl);
-
-                        gl.Enable(EnableCap.CullFace);
-                        gl.Disable(EnableCap.Blend);
+                        gl.BlendFuncSeparate(
+                            material.ColorSrcFact,
+                            material.ColorDstFact,
+                            material.AlphaSrcFact,
+                            material.AlphaDstFact
+                        );
                     }
+
+                    material.Program.TryGetUniformLoc("uPickingId", out int location);
+                    gl.Uniform1(location, sceneObj.PickingId);
+
+                    model.Draw(gl);
+
+                    gl.Enable(EnableCap.CullFace);
+                    gl.Disable(EnableCap.Blend);
                 }
+            }
         }
     }
 }

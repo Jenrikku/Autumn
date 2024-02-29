@@ -12,6 +12,8 @@ using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Autumn.GUI;
 
@@ -165,18 +167,6 @@ internal class MainWindowContext : WindowContext
 
             if (_newObjectOpened)
                 RenderNewObjectPopup();
-
-            # endregion
-
-            # region Undo / Redo
-
-            // Undo
-            if (Keyboard?.IsCtrlCombinationPressed(Key.Z) ?? false)
-                ChangeHandler.History.Undo();
-
-            // Redo
-            if (Keyboard?.IsCtrlCombinationPressed(Key.Y) ?? false)
-                ChangeHandler.History.Redo();
 
             # endregion
 
@@ -497,9 +487,10 @@ internal class MainWindowContext : WindowContext
         {
             if (ImGui.BeginTabItem("Object"))
             {
-                bool databaseHasEntry = ClassDatabaseHandler
-                    .DatabaseEntries
-                    .TryGetValue(_newObjectClass, out ClassDatabaseHandler.DatabaseEntry dbEntry);
+                bool databaseHasEntry = ClassDatabaseHandler.DatabaseEntries.TryGetValue(
+                    _newObjectClass,
+                    out ClassDatabaseHandler.DatabaseEntry dbEntry
+                );
 
                 ImGui.SetNextItemWidth(400);
                 ImGui.InputText("Search", ref _newObjectClassSearchQuery, 128);
@@ -558,7 +549,7 @@ internal class MainWindowContext : WindowContext
                     ImGui.BeginChild(
                         "##Description",
                         new Vector2(380, 40),
-                        false,
+                        ImGuiChildFlags.None,
                         ImGuiWindowFlags.AlwaysVerticalScrollbar
                     );
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
@@ -617,7 +608,7 @@ internal class MainWindowContext : WindowContext
                             ImGui.BeginChild(
                                 $"##ArgDescription{i}",
                                 new Vector2(0, ysize),
-                                false,
+                                ImGuiChildFlags.None,
                                 ImGuiWindowFlags.HorizontalScrollbar
                             );
                             ImGui.Text(argDescription);
