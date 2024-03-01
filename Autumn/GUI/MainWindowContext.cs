@@ -7,7 +7,6 @@ using Autumn.IO;
 using Autumn.Scene;
 using Autumn.Scene.Gizmo;
 using Autumn.Storage;
-using Autumn.Utils;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.Input;

@@ -15,6 +15,7 @@ SettingsHandler.LoadSettings();
 
 RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
+ShortcutHandler.LoadFromSettings();
 
 CommandHandler.Initialize();
 

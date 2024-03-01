@@ -96,6 +96,8 @@ internal static class WindowManager
                     i--;
                 }
             }
+
+            ShortcutHandler.ExecuteShortcuts();
         }
     }
 
