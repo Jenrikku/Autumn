@@ -50,15 +50,22 @@ internal static class ImGuiWidgets
         }
     }
 
-    public static void CommandMenuItem(CommandID id)
+    public static void CommandMenuItem(CommandID id, WindowContext context)
     {
         Command? command = CommandHandler.GetCommand(id);
 
         if (command is null)
             return;
 
-        if (ImGui.MenuItem(command.DisplayName, command.DisplayShortcut, false, command.Enabled))
-            command.Action.Invoke();
+        bool clicked = ImGui.MenuItem(
+            command.DisplayName,
+            command.DisplayShortcut,
+            false,
+            command.Enabled(context)
+        );
+
+        if (clicked)
+            command.Action(context);
     }
 
     public static void HelpTooltip(string tooltip)

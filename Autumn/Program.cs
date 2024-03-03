@@ -13,11 +13,11 @@ Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
 SettingsHandler.LoadSettings();
 
+CommandHandler.Initialize();
+
 RomFSHandler.LoadFromSettings();
 RecentHandler.LoadFromSettings();
 ShortcutHandler.LoadFromSettings();
-
-CommandHandler.Initialize();
 
 // Load project from argument if available.
 if (args.Length > 0)

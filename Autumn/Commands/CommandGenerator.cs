@@ -9,7 +9,7 @@ internal static class CommandGenerator
         new(
             displayName: "New Project",
             displayShortcut: string.Empty,
-            action: () =>
+            action: context =>
             {
                 bool success = TinyFileDialogs.SelectFolderDialog(
                     out string? output,
@@ -17,39 +17,38 @@ internal static class CommandGenerator
                     defaultPath: RecentHandler.LastProjectSavePath
                 );
 
-                if (success)
-                {
-                    RecentHandler.LastProjectSavePath = output!;
-                    ProjectHandler.CreateNewProject(output!);
-                }
+                if (!success)
+                    return;
+
+                RecentHandler.LastProjectSavePath = output!;
+                ProjectHandler.CreateNewProject(output!);
             },
-            enabled: true
+            enabled: context => true
         );
 
     public static Command OpenProject() =>
         new(
             displayName: "Open Project",
             displayShortcut: string.Empty,
-            action: () =>
+            action: context =>
             {
                 bool success = TinyFileDialogs.OpenFileDialog(
                     out string[]? output,
                     title: "Select the Autumn project file.",
                     defaultPath: RecentHandler.LastProjectOpenPath,
-                    filterPatterns: new string[] { "*.yml", ".yaml" },
+                    filterPatterns: ["*.yml", ".yaml"],
                     filterDescription: "YAML file"
                 );
 
-                if (success)
-                {
-                    string projectPath = output![0];
-                    RecentHandler.LastProjectOpenPath =
-                        Path.GetDirectoryName(projectPath)
-                        ?? Directory.GetDirectoryRoot(projectPath);
+                if (!success)
+                    return;
 
-                    ProjectHandler.LoadProject(projectPath);
-                }
+                string projectPath = output![0];
+                RecentHandler.LastProjectOpenPath =
+                    Path.GetDirectoryName(projectPath) ?? Directory.GetDirectoryRoot(projectPath);
+
+                ProjectHandler.LoadProject(projectPath);
             },
-            enabled: true
+            enabled: context => true
         );
 }

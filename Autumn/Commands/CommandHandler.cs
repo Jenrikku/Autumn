@@ -1,3 +1,5 @@
+using Autumn.GUI;
+
 namespace Autumn.Commands;
 
 internal static class CommandHandler
@@ -20,12 +22,12 @@ internal static class CommandHandler
     public static Dictionary<CommandID, Command>.Enumerator EnumerateCommands() =>
         s_commands.GetEnumerator();
 
-    public static void CallCommand(CommandID id)
+    public static void CallCommand(CommandID id, WindowContext? context)
     {
         if (!s_commands.TryGetValue(id, out Command? command))
             return;
 
-        command.Action.Invoke();
+        command.Action(context);
     }
 
     public static Command? GetCommand(CommandID id)
@@ -49,14 +51,6 @@ internal static class CommandHandler
         Command? command = GetCommand(id);
 
         if (command is not null)
-            command.DisplayName = displayShortcut;
-    }
-
-    public static void SetEnabled(CommandID id, bool enabled)
-    {
-        Command? command = GetCommand(id);
-
-        if (command is not null)
-            command.Enabled = enabled;
+            command.DisplayShortcut = displayShortcut;
     }
 }

@@ -6,7 +6,7 @@ namespace Autumn.GUI;
 
 internal static class ShortcutHandler
 {
-    private static readonly Dictionary<CommandID, ImGuiKey[]> s_commandShortcuts = new();
+    private static readonly SortedDictionary<CommandID, ImGuiKey[]> s_commandShortcuts = new();
 
     public static void LoadFromSettings()
     {
@@ -30,7 +30,7 @@ internal static class ShortcutHandler
                     if (id == CommandID.Unknown)
                         continue;
 
-                    s_commandShortcuts.TryAdd(id, keys);
+                    SetCommandShortcut(true, id, keys);
                     break;
 
                 // More to be added.
@@ -48,7 +48,7 @@ internal static class ShortcutHandler
         foreach (var (id, keys) in s_commandShortcuts)
         {
             if (IsShortcutTriggered(keys))
-                CommandHandler.CallCommand(id);
+                CommandHandler.CallCommand(id, WindowManager.GetFocusedWindow());
         }
 
         static bool IsShortcutTriggered(ImGuiKey[] keys)
@@ -66,15 +66,39 @@ internal static class ShortcutHandler
     /// <param name="overwrite">Already set shortcuts will only be overwritten when this is true.</param>
     public static void SetDefaultShortcuts(bool overwrite = false)
     {
-        SetCommandShortcut(CommandID.NewProject, ImGuiKey.ModCtrl, ImGuiKey.N);
-        SetCommandShortcut(CommandID.OpenProject, ImGuiKey.ModCtrl, ImGuiKey.O);
+        SetCommandShortcut(overwrite, CommandID.NewProject, ImGuiKey.ModCtrl, ImGuiKey.N);
+        SetCommandShortcut(overwrite, CommandID.OpenProject, ImGuiKey.ModCtrl, ImGuiKey.O);
+    }
 
-        void SetCommandShortcut(CommandID id, params ImGuiKey[] keys)
+    private static void SetCommandShortcut(bool overwrite, CommandID id, params ImGuiKey[] keys)
+    {
+        if (!overwrite && s_commandShortcuts.ContainsKey(id))
+            return;
+
+        string displayShortcut = GenerateDisplayShortcut(keys);
+        CommandHandler.SetDisplayShortcut(id, displayShortcut);
+
+        s_commandShortcuts[id] = keys;
+    }
+
+    private static string GenerateDisplayShortcut(params ImGuiKey[] keys)
+    {
+        string result = string.Empty;
+
+        for (int i = 0; i < keys.Length; i++)
         {
-            if (!overwrite && s_commandShortcuts.ContainsKey(id))
-                return;
+            ImGuiKey key = keys[i];
+            string keyName = key.ToString();
 
-            s_commandShortcuts.Add(id, keys);
+            if (keyName.StartsWith("Mod"))
+                keyName = keyName.Remove(0, 3);
+
+            result += keyName;
+
+            if (i < keys.Length - 1)
+                result += "+";
         }
+
+        return result;
     }
 }

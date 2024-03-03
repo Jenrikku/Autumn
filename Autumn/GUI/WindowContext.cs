@@ -26,6 +26,8 @@ internal abstract class WindowContext
     public IInputContext? InputContext { get; protected set; }
     public IKeyboard? Keyboard { get; protected set; }
 
+    public bool IsFocused { get; private set; }
+
     public BackgroundManager BackgroundManager { get; } = new();
 
     private float _scalingFactor = 1;
@@ -145,7 +147,9 @@ internal abstract class WindowContext
             GL.DepthFunc(DepthFunction.Lequal);
         };
 
-        Window.Update += (delta) => ImGuiController?.Update((float)delta);
+        Window.Update += delta => ImGuiController?.Update((float)delta);
+
+        Window.FocusChanged += focused => IsFocused = focused;
 
         Window.Closing += () =>
         {

@@ -116,4 +116,16 @@ internal static class WindowManager
             RemoveAt(0);
         }
     }
+
+    /// <returns>The context of the focused Window.</returns>
+    public static WindowContext? GetFocusedWindow()
+    {
+        foreach (WindowContext context in s_contexts)
+        {
+            if (context.IsFocused)
+                return context;
+        }
+
+        return null;
+    }
 }
