@@ -197,6 +197,10 @@ internal class MainWindowContext : WindowContext
         return true;
     }
 
+    public void OpenAddStageDialog() => _addStageDialog.Open();
+
+    public void OpenProjectProperties() => _projectPropertiesDialog.Open();
+
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
     /// </summary>
@@ -241,39 +245,27 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("Add Stage", ProjectHandler.ProjectLoaded))
-                _addStageDialog.Open();
-
-            if (ImGui.MenuItem("Save Stage", CurrentScene is not null))
-                BackgroundManager.Add(
-                    $"Saving stage \"{CurrentScene!.Stage.Name + CurrentScene!.Stage.Scenario}\"...",
-                    manager => StageHandler.SaveProjectStage(CurrentScene!.Stage),
-                    BackgroundTaskPriority.High
-                );
+            ImGuiWidgets.CommandMenuItem(CommandID.AddStage, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.SaveStage, this);
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("Exit"))
-                Window.Close();
+            ImGuiWidgets.CommandMenuItem(CommandID.Exit, this);
 
             ImGui.EndMenu();
         }
 
         if (ImGui.BeginMenu("Edit"))
         {
-            if (ImGui.MenuItem("Undo", CurrentScene is not null && ChangeHandler.History.CanUndo))
-                ChangeHandler.History.Undo();
-
-            if (ImGui.MenuItem("Redo", CurrentScene is not null && ChangeHandler.History.CanRedo))
-                ChangeHandler.History.Redo();
+            ImGuiWidgets.CommandMenuItem(CommandID.Undo, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.Redo, this);
 
             ImGui.Separator();
 
             if (ImGui.MenuItem("Add object", CurrentScene is not null))
                 _newObjectOpened = true;
 
-            if (ImGui.MenuItem("Project properties", ProjectHandler.ProjectLoaded))
-                _projectPropertiesDialog.Open();
+            ImGuiWidgets.CommandMenuItem(CommandID.ProjectProperties, this);
 
             ImGui.EndMenu();
         }

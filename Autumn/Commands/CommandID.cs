@@ -6,6 +6,10 @@ internal enum CommandID
     NewProject,
     OpenProject,
     Exit,
+    AddStage,
     SaveStage,
-    ImportStage
+    Undo,
+    Redo,
+    AddObject,
+    ProjectProperties
 }

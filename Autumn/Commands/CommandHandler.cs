@@ -15,6 +15,12 @@ internal static class CommandHandler
 
         s_commands.Add(CommandID.NewProject, CommandGenerator.NewProject());
         s_commands.Add(CommandID.OpenProject, CommandGenerator.OpenProject());
+        s_commands.Add(CommandID.Exit, CommandGenerator.Exit());
+        s_commands.Add(CommandID.AddStage, CommandGenerator.AddStage());
+        s_commands.Add(CommandID.SaveStage, CommandGenerator.SaveStage());
+        s_commands.Add(CommandID.Undo, CommandGenerator.Undo());
+        s_commands.Add(CommandID.Redo, CommandGenerator.Redo());
+        s_commands.Add(CommandID.ProjectProperties, CommandGenerator.ProjectProperties());
 
         s_isInitilized = true;
     }

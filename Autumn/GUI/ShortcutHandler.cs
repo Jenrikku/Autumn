@@ -66,8 +66,14 @@ internal static class ShortcutHandler
     /// <param name="overwrite">Already set shortcuts will only be overwritten when this is true.</param>
     public static void SetDefaultShortcuts(bool overwrite = false)
     {
-        SetCommandShortcut(overwrite, CommandID.NewProject, ImGuiKey.ModCtrl, ImGuiKey.N);
-        SetCommandShortcut(overwrite, CommandID.OpenProject, ImGuiKey.ModCtrl, ImGuiKey.O);
+        const ImGuiKey ctrl = ImGuiKey.ModCtrl;
+        const ImGuiKey shift = ImGuiKey.ModShift;
+        //const ImGuiKey alt = ImGuiKey.ModAlt;
+
+        SetCommandShortcut(overwrite, CommandID.NewProject, ctrl, ImGuiKey.N);
+        SetCommandShortcut(overwrite, CommandID.OpenProject, ctrl, ImGuiKey.O);
+        SetCommandShortcut(overwrite, CommandID.Undo, ctrl, ImGuiKey.Z);
+        SetCommandShortcut(overwrite, CommandID.Redo, ctrl, shift, ImGuiKey.Z);
     }
 
     private static void SetCommandShortcut(bool overwrite, CommandID id, params ImGuiKey[] keys)

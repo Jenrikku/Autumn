@@ -128,4 +128,10 @@ internal static class WindowManager
 
         return null;
     }
+
+    public static IEnumerable<WindowContext> EnumerateContexts()
+    {
+        foreach (WindowContext context in s_contexts)
+            yield return context;
+    }
 }
