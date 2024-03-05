@@ -4,18 +4,20 @@ using ImGuiNET;
 
 namespace Autumn.GUI;
 
+internal record struct Shortcut(bool Ctrl, bool Shift, bool Alt, ImGuiKey Key);
+
 internal static class ShortcutHandler
 {
-    private static readonly SortedDictionary<CommandID, ImGuiKey[]> s_commandShortcuts = new();
+    private static readonly SortedDictionary<CommandID, Shortcut> s_commandShortcuts = new();
 
     public static void LoadFromSettings()
     {
         s_commandShortcuts.Clear();
 
-        var dict = SettingsHandler.GetValue<Dictionary<string, ImGuiKey[]>>("KeyboardShortcuts");
+        var dict = SettingsHandler.GetValue<Dictionary<string, Shortcut>>("KeyboardShortcuts");
         dict ??= new();
 
-        foreach (var (name, keys) in dict)
+        foreach (var (name, shortcut) in dict)
         {
             string[] splitName = name.Split('.');
 
@@ -30,7 +32,7 @@ internal static class ShortcutHandler
                     if (id == CommandID.Unknown)
                         continue;
 
-                    SetCommandShortcut(true, id, keys);
+                    SetCommandShortcut(id, shortcut);
                     break;
 
                 // More to be added.
@@ -45,65 +47,78 @@ internal static class ShortcutHandler
 
     public static void ExecuteShortcuts()
     {
-        foreach (var (id, keys) in s_commandShortcuts)
+        foreach (var (id, shortcut) in s_commandShortcuts)
         {
-            if (IsShortcutTriggered(keys))
+            if (IsShortcutTriggered(shortcut))
                 CommandHandler.CallCommand(id, WindowManager.GetFocusedWindow());
         }
 
-        static bool IsShortcutTriggered(ImGuiKey[] keys)
+        static bool IsShortcutTriggered(Shortcut shortcut)
         {
-            foreach (ImGuiKey key in keys)
-            {
-                if (!ImGui.IsKeyPressed(key))
-                    return false;
-            }
+            bool result = true;
 
-            return true;
+            result &= shortcut.Ctrl == ImGui.IsKeyDown(ImGuiKey.ModCtrl);
+            result &= shortcut.Shift == ImGui.IsKeyDown(ImGuiKey.ModShift);
+            result &= shortcut.Alt == ImGui.IsKeyDown(ImGuiKey.ModAlt);
+
+            result &= ImGui.IsKeyPressed(shortcut.Key);
+
+            return result;
         }
     }
 
-    /// <param name="overwrite">Already set shortcuts will only be overwritten when this is true.</param>
-    public static void SetDefaultShortcuts(bool overwrite = false)
+    public static void ClearShortcuts()
     {
-        const ImGuiKey ctrl = ImGuiKey.ModCtrl;
-        const ImGuiKey shift = ImGuiKey.ModShift;
-        //const ImGuiKey alt = ImGuiKey.ModAlt;
+        foreach (var (id, _) in s_commandShortcuts)
+            CommandHandler.SetDisplayShortcut(id, string.Empty);
 
-        SetCommandShortcut(overwrite, CommandID.NewProject, ctrl, ImGuiKey.N);
-        SetCommandShortcut(overwrite, CommandID.OpenProject, ctrl, ImGuiKey.O);
-        SetCommandShortcut(overwrite, CommandID.Undo, ctrl, ImGuiKey.Z);
-        SetCommandShortcut(overwrite, CommandID.Redo, ctrl, shift, ImGuiKey.Z);
+        s_commandShortcuts.Clear();
     }
 
-    private static void SetCommandShortcut(bool overwrite, CommandID id, params ImGuiKey[] keys)
+    /// <summary>
+    /// Sets
+    /// </summary>
+    /// <param name="overwrite"></param>
+    public static void SetDefaultShortcuts(bool overwrite = false)
+    {
+        // Define shortcuts
+        Shortcut newProject = new(Ctrl: true, Shift: false, Alt: false, ImGuiKey.N),
+            openProject = new(Ctrl: true, Shift: false, Alt: false, ImGuiKey.O),
+            undo = new(Ctrl: true, Shift: false, Alt: false, ImGuiKey.Z),
+            redo = new(Ctrl: true, Shift: true, Alt: false, ImGuiKey.Z);
+
+        // Set shortcuts
+        SetCommandShortcut(CommandID.NewProject, newProject, overwrite);
+        SetCommandShortcut(CommandID.OpenProject, openProject, overwrite);
+        SetCommandShortcut(CommandID.Undo, undo, overwrite);
+        SetCommandShortcut(CommandID.Redo, redo, overwrite);
+    }
+
+    private static void SetCommandShortcut(CommandID id, Shortcut shortcut, bool overwrite = false)
     {
         if (!overwrite && s_commandShortcuts.ContainsKey(id))
             return;
 
-        string displayShortcut = GenerateDisplayShortcut(keys);
+        string displayShortcut = GenerateDisplayShortcut(shortcut);
         CommandHandler.SetDisplayShortcut(id, displayShortcut);
 
-        s_commandShortcuts[id] = keys;
+        s_commandShortcuts[id] = shortcut;
     }
 
-    private static string GenerateDisplayShortcut(params ImGuiKey[] keys)
+    private static string GenerateDisplayShortcut(Shortcut shortcut)
     {
         string result = string.Empty;
 
-        for (int i = 0; i < keys.Length; i++)
-        {
-            ImGuiKey key = keys[i];
-            string keyName = key.ToString();
+        if (shortcut.Ctrl)
+            result += "Ctrl+";
 
-            if (keyName.StartsWith("Mod"))
-                keyName = keyName.Remove(0, 3);
+        if (shortcut.Shift)
+            result += "Shift+";
 
-            result += keyName;
+        if (shortcut.Alt)
+            result += "Alt+";
 
-            if (i < keys.Length - 1)
-                result += "+";
-        }
+        result += shortcut.Key.ToString();
 
         return result;
     }
