@@ -47,6 +47,9 @@ internal static class ShortcutHandler
 
     public static void ExecuteShortcuts()
     {
+        if (ImGui.GetIO().WantTextInput)
+            return;
+
         foreach (var (id, shortcut) in s_commandShortcuts)
         {
             if (IsShortcutTriggered(shortcut))
