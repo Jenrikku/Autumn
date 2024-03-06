@@ -116,4 +116,38 @@ internal class Scene
         SceneObjects.Add(sceneObj);
         _pickableObjs.Add(_lastPickingId++, sceneObj);
     }
+
+    public void ResetCamera()
+    {
+        // Find the first Mario and set the camera to its position.
+        StageObj? mario = SceneObjects
+            .Find(
+                (sceneObj) =>
+                    sceneObj.StageObj.Type == StageObjType.Start
+                    && sceneObj.StageObj.Properties.TryGetValue("MarioNo", out object? marioNoObj)
+                    && marioNoObj is int marioNo
+                    && marioNo == 0
+            )
+            ?.StageObj;
+
+        if (mario is null)
+        {
+            Camera.LookAt(new Vector3(-10, 7, 10), Vector3.Zero);
+            return;
+        }
+
+        float rotX = (float)(mario.Rotation.X * (Math.PI / 180f));
+        float rotY = (float)(mario.Rotation.Y * (Math.PI / 180f));
+        float rotZ = (float)(mario.Rotation.Z * (Math.PI / 180f));
+
+        Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotY, rotZ, rotX);
+        rotation.X += 0.5f;
+        rotation = Quaternion.Normalize(rotation);
+
+        Vector3 cameraDistance = Vector3.Transform(Vector3.UnitZ, rotation) * 13;
+        Vector3 marioPos = mario.Translation / 100f;
+        Vector3 eye = marioPos - cameraDistance;
+
+        Camera.LookAt(eye, marioPos);
+    }
 }

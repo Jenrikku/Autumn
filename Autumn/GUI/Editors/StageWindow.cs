@@ -59,6 +59,8 @@ internal class StageWindow
                                         StageHandler.LoadProjectStage(stage);
 
                                     scene.GenerateSceneObjects(ref manager.StatusMessageSecondary);
+
+                                    scene.ResetCamera();
                                 }
                             );
 
