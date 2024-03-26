@@ -112,7 +112,7 @@ internal static class CommandGenerator
             enabled: context =>
                 context is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && (mainContext.CurrentScene?.History.CanUndo ?? false)
+                && mainContext.CurrentScene.History.CanUndo
         );
 
     public static Command Redo() =>
@@ -128,7 +128,7 @@ internal static class CommandGenerator
             enabled: context =>
                 context is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && (mainContext.CurrentScene?.History.CanRedo ?? false)
+                && mainContext.CurrentScene.History.CanRedo
         );
 
     public static Command ProjectProperties() =>
