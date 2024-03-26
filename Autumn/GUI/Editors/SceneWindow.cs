@@ -262,8 +262,9 @@ internal class SceneWindow
                 return;
             }
 
-            context.ChangeHandler.ToggleObjectSelection(
+            ChangeHandler.ToggleObjectSelection(
                 context,
+                context.CurrentScene.History,
                 pixel,
                 !(context.Keyboard?.IsCtrlPressed() ?? false)
             );

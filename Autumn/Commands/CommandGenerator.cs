@@ -107,12 +107,12 @@ internal static class CommandGenerator
                 if (context is not MainWindowContext mainContext)
                     return;
 
-                mainContext.ChangeHandler.History.Undo();
+                mainContext.CurrentScene?.History.Undo();
             },
             enabled: context =>
                 context is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.ChangeHandler.History.CanUndo
+                && (mainContext.CurrentScene?.History.CanUndo ?? false)
         );
 
     public static Command Redo() =>
@@ -123,12 +123,12 @@ internal static class CommandGenerator
                 if (context is not MainWindowContext mainContext)
                     return;
 
-                mainContext.ChangeHandler.History.Redo();
+                mainContext.CurrentScene?.History.Redo();
             },
             enabled: context =>
                 context is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.ChangeHandler.History.CanRedo
+                && (mainContext.CurrentScene?.History.CanRedo ?? false)
         );
 
     public static Command ProjectProperties() =>

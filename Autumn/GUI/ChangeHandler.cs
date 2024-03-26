@@ -3,14 +3,21 @@ using Autumn.Scene;
 
 namespace Autumn.GUI;
 
-internal class ChangeHandler
+internal static class ChangeHandler
 {
-    public ChangeHistory History { get; } = new();
+    public static void ToggleObjectSelection(
+        MainWindowContext context,
+        ChangeHistory history,
+        SceneObj obj,
+        bool clear
+    ) => ToggleObjectSelection(context, history, obj.PickingId, clear);
 
-    public void ToggleObjectSelection(MainWindowContext context, SceneObj obj, bool clear) =>
-        ToggleObjectSelection(context, obj.PickingId, clear);
-
-    public void ToggleObjectSelection(MainWindowContext context, uint id, bool clear)
+    public static void ToggleObjectSelection(
+        MainWindowContext context,
+        ChangeHistory history,
+        uint id,
+        bool clear
+    )
     {
         if (context.CurrentScene is null)
             return;
@@ -47,6 +54,6 @@ internal class ChangeHandler
             );
 
         change.Redo();
-        History.Add(change);
+        history.Add(change);
     }
 }

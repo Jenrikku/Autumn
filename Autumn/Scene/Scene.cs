@@ -1,4 +1,5 @@
 using System.Numerics;
+using Autumn.History;
 using Autumn.IO;
 using Autumn.Storage;
 using Silk.NET.OpenGL;
@@ -9,6 +10,8 @@ internal class Scene
 {
     public Stage Stage { get; set; }
     public List<SceneObj> SceneObjects { get; } = new();
+
+    public ChangeHistory History { get; } = new();
 
     private readonly List<SceneObj> _selectedObjects = new();
     public IEnumerable<SceneObj> SelectedObjects => _selectedObjects;

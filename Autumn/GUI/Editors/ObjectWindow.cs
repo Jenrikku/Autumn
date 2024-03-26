@@ -66,8 +66,9 @@ internal class ObjectWindow
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
                 if (ImGui.Selectable(stageObj.Name, obj.Selected))
-                    context.ChangeHandler.ToggleObjectSelection(
+                    ChangeHandler.ToggleObjectSelection(
                         context,
+                        context.CurrentScene.History,
                         obj,
                         !context.Keyboard?.IsCtrlPressed() ?? true
                     );

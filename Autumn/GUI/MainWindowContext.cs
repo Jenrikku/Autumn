@@ -23,8 +23,6 @@ internal class MainWindowContext : WindowContext
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
-    public ChangeHandler ChangeHandler { get; } = new();
-
     private bool _isFirstFrame = true;
 
     private AddStageDialog _addStageDialog;
