@@ -10,7 +10,12 @@ internal static class AreaRenderer
 
     public static void Initialize(GL gl) => s_model = DefaultCubeRenderer.GenerateCubeModel(gl, 10);
 
-    public static void Render(GL gl, CommonSceneParameters scene, CommonMaterialParameters material)
+    public static void Render(
+        GL gl,
+        CommonSceneParameters scene,
+        CommonMaterialParameters material,
+        uint pickingId
+    )
     {
         if (!AreaMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
             return;
@@ -18,6 +23,9 @@ internal static class AreaRenderer
         using (scope)
         {
             gl.Disable(EnableCap.CullFace);
+
+            if (AreaMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+                gl.Uniform1(location, pickingId);
 
             s_model!.Draw(gl);
 

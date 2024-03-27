@@ -110,7 +110,7 @@ internal static class ModelRenderer
 
             gl.CullFace(TriangleFace.Back);
 
-            AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams);
+            AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams, sceneObj.PickingId);
             return;
         }
 

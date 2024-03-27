@@ -48,9 +48,12 @@ internal static class AreaMaterial
                 vec4 uHighlightColor;
             };
 
-            out vec4 oColor;
+            uniform uint uPickingId;
 
-            void main() {
+            out vec4 oColor;
+            out uint oPickingId;
+
+            void main() {                
                 vec3 absolute = abs(vPos);
 
                 float a = max3(
@@ -65,6 +68,8 @@ internal static class AreaMaterial
                 if(outline == 0)
                     discard;
 
+                oPickingId = uPickingId;
+
                 oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
 
                 oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
@@ -72,7 +77,7 @@ internal static class AreaMaterial
             """
         );
 
-    private static readonly ShaderProgram s_program = new(s_vertexShader, s_fragmentShader);
+    public static readonly ShaderProgram Program = new(s_vertexShader, s_fragmentShader);
 
     public static bool TryUse(
         GL gl,
@@ -80,7 +85,7 @@ internal static class AreaMaterial
         CommonMaterialParameters material,
         out ProgramUniformScope scope
     ) =>
-        s_program.TryUse(
+        Program.TryUse(
             gl,
             null,
             new ShaderParams[] { scene.ShaderParameters, material.ShaderParameters },

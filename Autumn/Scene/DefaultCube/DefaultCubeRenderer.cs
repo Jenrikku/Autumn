@@ -182,8 +182,8 @@ internal static class DefaultCubeRenderer
         {
             gl.CullFace(TriangleFace.Back);
 
-            DefaultCubeMaterial.Program.TryGetUniformLoc("uPickingId", out int location);
-            gl.Uniform1(location, pickingId);
+            if (DefaultCubeMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+                gl.Uniform1(location, pickingId);
 
             s_model!.Draw(gl);
         }
