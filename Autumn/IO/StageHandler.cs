@@ -3,7 +3,9 @@ using System.Numerics;
 using System.Text;
 using Autumn.Storage;
 using BYAMLSharp;
+using BYAMLSharp.Ext;
 using NARCSharp;
+using NewGear.Trees.TrueTree;
 
 namespace Autumn.IO;
 
@@ -73,7 +75,24 @@ internal static class StageHandler
             }
         }
 
-        // TO-DO: Other yamls.
+        yamlPath = Path.Join(path, "PreLoadFileList.yml");
+
+        if (File.Exists(yamlPath))
+        {
+            var root = YAMLWrapper.Deserialize<List<object?>>(yamlPath);
+            stage.PreLoadFileList = root;
+        }
+
+        // Other yamls.
+
+        foreach (string file in Directory.EnumerateFiles(path))
+        {
+            if (file == "StageData.yml" || file == "PreLoadFileList.yml")
+                continue;
+
+            var root = YAMLWrapper.Deserialize<Dictionary<string, object?>>(yamlPath);
+            stage.OtherFiles.Add(Path.GetFileNameWithoutExtension(file), root ?? new());
+        }
 
         stage.Loaded = true;
     }
@@ -108,7 +127,17 @@ internal static class StageHandler
             YAMLWrapper.Serialize(yamlPath, stage.StageData);
         }
 
-        // TO-DO: Other yamls.
+        if (stage.PreLoadFileList is not null)
+        {
+            yamlPath = Path.Join(path, "PreLoadFileList.byml");
+            YAMLWrapper.Serialize(yamlPath, stage.PreLoadFileList);
+        }
+
+        foreach (var (name, dict) in stage.OtherFiles)
+        {
+            yamlPath = Path.Join(path, name + ".yml");
+            YAMLWrapper.Serialize(yamlPath, dict);
+        }
     }
 
     public static bool TryImportStage(string name, byte scenario, out Stage stage) =>
@@ -200,7 +229,41 @@ internal static class StageHandler
         stage.StageData ??= new();
         stage.StageData.AddRange(stageObjs);
 
-        // TO-DO: Other byamls.
+        // PreLoadFileList (unfinished)
+
+        data = narc.GetFile($"PreLoadFileList{stage.Scenario}.byml");
+
+        if (data.Length > 0)
+        {
+            byaml = BYAMLParser.Read(data, s_encoding);
+
+            List<object?>? preLoadList = byaml.RootNode.AsObjectList();
+
+            stage.PreLoadFileList = preLoadList;
+        }
+
+        // Other byamls.
+
+        foreach (LeafNode<byte[]> leaf in narc.ToNARC().RootNode.ChildLeaves)
+        {
+            if (
+                leaf.Name == "StageData.byml"
+                || leaf.Name.StartsWith("PreLoadFileList")
+                || !leaf.Name.EndsWith(".byml")
+            )
+                continue;
+
+            data = leaf.Contents ?? Array.Empty<byte>();
+            byaml = BYAMLParser.Read(data, s_encoding);
+
+            BYAMLNode root = byaml.RootNode;
+
+            Debug.Assert(root.NodeType == BYAMLNodeType.Dictionary);
+
+            var dict = root.AsObjectDictionary();
+
+            stage.OtherFiles.Add(leaf.Name.Replace(".byml", null), dict!);
+        }
     }
 
     private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageObjFileType fileType)

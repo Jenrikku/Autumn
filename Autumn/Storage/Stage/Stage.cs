@@ -21,12 +21,7 @@ internal class Stage
 
     public List<StageObj>? StageData { get; set; }
 
-    public List<string>? PreLoadFileList { get; set; }
+    public List<object?>? PreLoadFileList { get; set; }
 
-    public Dictionary<string, object>? AreaIdToLightNameTable { get; set; }
-    public Dictionary<string, object>? CameraParam { get; set; }
-    public Dictionary<string, object>? FogParam { get; set; }
-    public Dictionary<string, object>? LightParam { get; set; }
-    public Dictionary<string, object>? ModelToMapLightNameTable { get; set; }
-    public Dictionary<string, object>? StageInfo { get; set; }
+    public Dictionary<string, Dictionary<string, object?>> OtherFiles { get; } = new();
 }
