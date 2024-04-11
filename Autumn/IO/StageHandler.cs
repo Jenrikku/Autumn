@@ -129,7 +129,7 @@ internal static class StageHandler
 
         if (stage.PreLoadFileList is not null)
         {
-            yamlPath = Path.Join(path, "PreLoadFileList.byml");
+            yamlPath = Path.Join(path, "PreLoadFileList.yml");
             YAMLWrapper.Serialize(yamlPath, stage.PreLoadFileList);
         }
 
