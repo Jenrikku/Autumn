@@ -87,10 +87,10 @@ internal static class StageHandler
 
         foreach (string file in Directory.EnumerateFiles(path))
         {
-            if (file == "StageData.yml" || file == "PreLoadFileList.yml")
+            if (file.EndsWith("StageData.yml") || file.EndsWith("PreLoadFileList.yml"))
                 continue;
 
-            var root = YAMLWrapper.Deserialize<Dictionary<string, object?>>(yamlPath);
+            var root = YAMLWrapper.Deserialize<Dictionary<string, object?>>(file);
             stage.OtherFiles.Add(Path.GetFileNameWithoutExtension(file), root ?? new());
         }
 
