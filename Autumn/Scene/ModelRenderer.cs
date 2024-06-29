@@ -154,7 +154,7 @@ internal static class ModelRenderer
 
                 using (scope)
                 {
-                    if (material.CullFaceMode == 0)
+                    if (material.CullFaceMode == TriangleFace.FrontAndBack)
                         gl.Disable(EnableCap.CullFace);
                     else
                         gl.CullFace(material.CullFaceMode);
@@ -182,6 +182,30 @@ internal static class ModelRenderer
                             material.AlphaDstFact
                         );
                     }
+
+                    gl.StencilFunc(
+                        material.StencilFunction,
+                        material.StencilRef,
+                        material.StencilMask
+                    );
+
+                    gl.StencilMask(material.StencilBufferMask);
+
+                    gl.StencilOp(
+                        material.StencilOps[0],
+                        material.StencilOps[1],
+                        material.StencilOps[2]
+                    );
+
+                    gl.DepthFunc(material.DepthFunction);
+                    gl.DepthMask(material.DepthMaskEnabled);
+
+                    gl.ColorMask(
+                        material.ColorMask[0],
+                        material.ColorMask[1],
+                        material.ColorMask[2],
+                        material.ColorMask[3]
+                    );
 
                     material.Program.TryGetUniformLoc("uPickingId", out int location);
                     gl.Uniform1(location, sceneObj.PickingId);

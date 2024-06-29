@@ -121,8 +121,17 @@ internal class H3DRenderingMaterial
     public H3DRenderingLayer Layer { get; }
 
     public bool BlendingEnabled { get; }
-
     public Vector4 BlendingColor { get; }
+
+    public DepthFunction DepthFunction { get; }
+    public bool DepthMaskEnabled { get; }
+    public bool[] ColorMask { get; }
+
+    public StencilOp[] StencilOps { get; }
+    public StencilFunction StencilFunction { get; }
+    public int StencilRef { get; }
+    public uint StencilMask { get; }
+    public uint StencilBufferMask { get; }
 
     public BlendEquationModeEXT ColorBlendEquation { get; }
     public BlendEquationModeEXT AlphaBlendEquation { get; }
@@ -152,6 +161,30 @@ internal class H3DRenderingMaterial
 
         Layer = (H3DRenderingLayer)mesh.Layer;
 
+        DepthFunction = (DepthFunction)FromPICATestFunc(matParams.DepthColorMask.DepthFunc);
+
+        DepthMaskEnabled = matParams.DepthColorMask.DepthWrite;
+
+        ColorMask =
+        [
+            matParams.DepthColorMask.RedWrite,
+            matParams.DepthColorMask.GreenWrite,
+            matParams.DepthColorMask.BlueWrite,
+            matParams.DepthColorMask.AlphaWrite
+        ];
+
+        StencilOps =
+        [
+            FromPICAStencilOp(matParams.StencilOperation.FailOp),
+            FromPICAStencilOp(matParams.StencilOperation.ZFailOp),
+            FromPICAStencilOp(matParams.StencilOperation.ZPassOp)
+        ];
+
+        StencilFunction = (StencilFunction)FromPICATestFunc(matParams.StencilTest.Function);
+        StencilRef = matParams.StencilTest.Reference;
+        StencilMask = matParams.StencilTest.Mask;
+        StencilBufferMask = matParams.StencilTest.BufferMask;
+
         // Blending:
         BlendingEnabled = matParams.BlendMode != GfxFragOpBlendMode.None;
 
@@ -169,6 +202,34 @@ internal class H3DRenderingMaterial
         ColorDstFact = FromPICABlendFunc(matParams.BlendFunction.ColorDstFunc);
         AlphaSrcFact = FromPICABlendFunc(matParams.BlendFunction.AlphaSrcFunc);
         AlphaDstFact = FromPICABlendFunc(matParams.BlendFunction.AlphaDstFunc);
+
+        GLEnum FromPICATestFunc(PICATestFunc func) =>
+            func switch
+            {
+                PICATestFunc.Never => GLEnum.Never,
+                PICATestFunc.Always => GLEnum.Always,
+                PICATestFunc.Equal => GLEnum.Equal,
+                PICATestFunc.Notequal => GLEnum.Notequal,
+                PICATestFunc.Less => GLEnum.Less,
+                PICATestFunc.Lequal => GLEnum.Lequal,
+                PICATestFunc.Greater => GLEnum.Greater,
+                PICATestFunc.Gequal => GLEnum.Gequal,
+                _ => GLEnum.Never
+            };
+
+        StencilOp FromPICAStencilOp(PICAStencilOp op) =>
+            op switch
+            {
+                PICAStencilOp.Keep => StencilOp.Keep,
+                PICAStencilOp.Zero => StencilOp.Zero,
+                PICAStencilOp.Replace => StencilOp.Replace,
+                PICAStencilOp.Increment => StencilOp.Incr,
+                PICAStencilOp.Decrement => StencilOp.Decr,
+                PICAStencilOp.Invert => StencilOp.Invert,
+                PICAStencilOp.IncrementWrap => StencilOp.IncrWrap,
+                PICAStencilOp.DecrementWrap => StencilOp.DecrWrap,
+                _ => StencilOp.Keep
+            };
 
         BlendEquationModeEXT FromPICABlendEquation(PICABlendEquation equation) =>
             equation switch
@@ -214,7 +275,7 @@ internal class H3DRenderingMaterial
         {
             PICAFaceCulling.FrontFace => TriangleFace.Front,
             PICAFaceCulling.BackFace => TriangleFace.Back,
-            _ => 0
+            _ => TriangleFace.FrontAndBack
         };
 
         // SceneData -----------------------------------------------------------------------------------
