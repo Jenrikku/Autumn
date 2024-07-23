@@ -1,3 +1,5 @@
+using Autumn.Wrappers;
+
 namespace Autumn.IO;
 
 internal static class ClassDatabaseHandler

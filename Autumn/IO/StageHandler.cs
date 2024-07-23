@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Text;
+using Autumn.Enums;
 using Autumn.Storage;
+using Autumn.Wrappers;
 using BYAMLSharp;
 using BYAMLSharp.Ext;
 using NARCSharp;
@@ -203,16 +205,16 @@ internal static class StageHandler
     )
     {
         if (design is not null)
-            ParseStageFile(stage, design, StageObjFileType.Design);
+            ParseStageFile(stage, design, StageFileType.Design);
 
         if (map is not null)
-            ParseStageFile(stage, map, StageObjFileType.Map);
+            ParseStageFile(stage, map, StageFileType.Map);
 
         if (sound is not null)
-            ParseStageFile(stage, sound, StageObjFileType.Sound);
+            ParseStageFile(stage, sound, StageFileType.Sound);
     }
 
-    private static void ParseStageFile(Stage stage, NARCFileSystem narc, StageObjFileType fileType)
+    private static void ParseStageFile(Stage stage, NARCFileSystem narc, StageFileType fileType)
     {
         byte scenario = stage.Scenario;
 
@@ -266,7 +268,7 @@ internal static class StageHandler
         }
     }
 
-    private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageObjFileType fileType)
+    private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageFileType fileType)
     {
         if (byaml.RootNode.NodeType is not BYAMLNodeType.Dictionary)
             throw new("The given BYAML was not formatted correctly.");
@@ -333,7 +335,7 @@ internal static class StageHandler
         }
     }
 
-    private static RailObj ReadRailObj(BYAMLNode node, StageObjFileType fileType)
+    private static RailObj ReadRailObj(BYAMLNode node, StageFileType fileType)
     {
         var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
@@ -486,7 +488,7 @@ internal static class StageHandler
         BYAMLNode node,
         Dictionary<BYAMLNode, RailObj> processedRails,
         StageObjType objType,
-        StageObjFileType fileType
+        StageFileType fileType
     )
     {
         var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
@@ -646,7 +648,7 @@ internal static class StageHandler
 
         List<RailPoint>? points = null;
 
-        StageObjFileType fileType = default;
+        StageFileType fileType = default;
         StageObjType type = default;
         RailPointType pointType = default;
 
@@ -702,7 +704,7 @@ internal static class StageHandler
                     break;
 
                 case var (s, o) when s == "FileType" && o is string str:
-                    fileType = Enum.Parse<StageObjFileType>(str);
+                    fileType = Enum.Parse<StageFileType>(str);
                     break;
 
                 case var (s, o) when s == "Type" && o is string str:

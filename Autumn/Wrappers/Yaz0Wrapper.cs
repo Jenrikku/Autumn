@@ -1,10 +1,13 @@
 using System.Runtime.InteropServices;
 
-// Code based of EveryFileExplorer (https://github.com/Gericom/EveryFileExplorer/blob/master/CommonCompressors/YAZ0.cs)
-namespace Autumn.IO;
+namespace Autumn.Wrappers;
 
-internal static class Yaz0
+// Code based on EveryFileExplorer (https://github.com/Gericom/EveryFileExplorer/blob/master/CommonCompressors/YAZ0.cs)
+internal static class Yaz0Wrapper
 {
+    /// <summary>
+    /// Defines the level of compression used when compressing.
+    /// </summary>
     public static byte? Level { get; set; } = 10;
 
     public static unsafe byte[] Compress(byte[] data)

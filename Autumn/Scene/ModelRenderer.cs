@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Autumn.Enums;
 using Autumn.Scene.Area;
 using Autumn.Scene.DefaultCube;
 using Autumn.Scene.H3D;

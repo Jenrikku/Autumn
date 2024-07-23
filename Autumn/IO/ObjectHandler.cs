@@ -1,5 +1,6 @@
 using Autumn.Storage;
 using Autumn.Utils;
+using Autumn.Wrappers;
 using NARCSharp;
 using Silk.NET.Maths;
 using SPICA.Formats.CtrGfx;

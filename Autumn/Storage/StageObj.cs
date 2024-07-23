@@ -1,11 +1,12 @@
 using System.Numerics;
+using Autumn.Enums;
 
 namespace Autumn.Storage;
 
 internal class StageObj
 {
     public StageObjType Type { get; set; }
-    public StageObjFileType FileType { get; set; }
+    public StageFileType FileType { get; set; }
 
     public Vector3 Translation = new();
     public Vector3 Rotation = new();
@@ -74,25 +75,4 @@ internal class StageObj
         RailID = rail?.ID ?? -1;
         _rail = rail;
     }
-}
-
-internal enum StageObjType : byte
-{
-    Regular = 0,
-    Area,
-    CameraArea,
-    Goal,
-    StartEvent,
-    Start,
-    DemoScene,
-    Rail,
-    AreaChild,
-    Child
-}
-
-internal enum StageObjFileType : byte
-{
-    Map,
-    Design,
-    Sound
 }

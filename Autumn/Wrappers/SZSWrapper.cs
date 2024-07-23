@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using NARCSharp;
 
-namespace Autumn.IO;
+namespace Autumn.Wrappers;
 
-internal class SZSWrapper
+internal static class SZSWrapper
 {
     public static NARCFileSystem? ReadFile(string path)
     {
@@ -13,7 +13,7 @@ internal class SZSWrapper
         try
         {
             compressed = File.ReadAllBytes(path);
-            result = NARCParser.Read(Yaz0.Decompress(compressed));
+            result = NARCParser.Read(Yaz0Wrapper.Decompress(compressed));
         }
         catch
         {
@@ -27,7 +27,7 @@ internal class SZSWrapper
     {
         try
         {
-            return NARCParser.Read(Yaz0.Decompress(data)).AsFileSystem();
+            return NARCParser.Read(Yaz0Wrapper.Decompress(data)).AsFileSystem();
         }
         catch
         {
@@ -57,7 +57,7 @@ internal class SZSWrapper
         try
         {
             compressed = File.ReadAllBytes(path);
-            return NARCParser.Identify(Yaz0.Decompress(compressed));
+            return NARCParser.Identify(Yaz0Wrapper.Decompress(compressed));
         }
         catch
         {

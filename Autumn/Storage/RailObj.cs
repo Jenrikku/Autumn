@@ -1,3 +1,5 @@
+using Autumn.Enums;
+
 namespace Autumn.Storage;
 
 internal class RailObj : StageObj
@@ -9,10 +11,4 @@ internal class RailObj : StageObj
     public bool Closed = false;
 
     public List<RailPoint> Points { get; init; } = new();
-}
-
-internal enum RailPointType : byte
-{
-    Bezier,
-    Linear
 }

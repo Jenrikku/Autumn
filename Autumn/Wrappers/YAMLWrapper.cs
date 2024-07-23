@@ -1,8 +1,8 @@
 using SharpYaml.Serialization;
 
-namespace Autumn.IO;
+namespace Autumn.Wrappers;
 
-internal class YAMLWrapper
+internal static class YAMLWrapper
 {
     private static readonly SerializerSettings s_settings =
         new()
@@ -18,42 +18,43 @@ internal class YAMLWrapper
     {
         string text;
         Serializer serializer = new(s_settings);
+        T? result;
 
         try
         {
             text = File.ReadAllText(path);
+            result = serializer.Deserialize<T>(text);
         }
         catch
         {
             return default;
         }
 
-        return serializer.Deserialize<T>(text);
+        return result;
     }
 
-    public static void Serialize<T>(string path, T obj)
+    /// <returns>Whether the object was serialized correctly.</returns>
+    public static bool Serialize<T>(string path, T obj)
         where T : notnull
     {
         Serializer serializer = new(s_settings);
 
         string? dir = Path.GetDirectoryName(path);
 
-        if (dir is not null)
-            Directory.CreateDirectory(dir);
-
-        StreamWriter writer;
-
         try
         {
-            writer = new(path) { AutoFlush = true };
+            if (dir is not null)
+                Directory.CreateDirectory(dir);
+
+            StreamWriter writer = new(path) { AutoFlush = true };
+            serializer.Serialize(writer, obj, typeof(T));
+            writer.Dispose();
         }
         catch
         {
-            return;
+            return false;
         }
 
-        serializer.Serialize(writer, obj, typeof(T));
-
-        writer.Dispose();
+        return true;
     }
 }
