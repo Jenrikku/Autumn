@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ImGui.NET" Version="1.91.0.1" />
+    <PackageReference Include="ImGui.NET" Version="1.90.1.1" />
     <PackageReference Include="SharpYaml" Version="2.1.1" />
     <PackageReference Include="Silk.NET.Input" Version="2.21.0" />
     <PackageReference Include="Silk.NET.Input.Extensions" Version="2.21.0" />
