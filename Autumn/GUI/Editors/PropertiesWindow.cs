@@ -1,27 +1,26 @@
 using System.Diagnostics;
 using Autumn.GUI;
-using Autumn.IO;
-using Autumn.Scene;
+using Autumn.Rendering;
 using Autumn.Storage;
 using ImGuiNET;
 
 namespace Autumn;
 
-internal static class PropertiesWindow
+internal class PropertiesWindow(MainWindowContext window)
 {
-    public static void Render(MainWindowContext context)
+    public void Render()
     {
         if (!ImGui.Begin("Properties"))
             return;
 
-        if (context.CurrentScene is null)
+        if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");
             ImGui.End();
             return;
         }
 
-        IEnumerable<SceneObj> selectedObjects = context.CurrentScene.SelectedObjects;
+        IEnumerable<SceneObj> selectedObjects = window.CurrentScene.SelectedObjects;
         int selectedCount = selectedObjects.Count();
 
         if (selectedCount <= 0)
@@ -40,30 +39,32 @@ internal static class PropertiesWindow
             ImGui.InputText(stageObj is RailObj ? "Name" : "ObjectName", ref stageObj.Name, 128);
             if (stageObj is not RailObj)
             {
-                if (ProjectHandler.UseClassNames)
+                if (window.ContextHandler.Settings.UseClassNames)
                 {
-                    Debug.Assert(stageObj.ClassName is not null);
-                    ImGuiWidgets.InputTextRedWhenEmpty("ClassName", ref stageObj.ClassName, 128);
+                    string hint = string.Empty;
+
+                    if (string.IsNullOrEmpty(stageObj.ClassName))
+                        hint = GetClassFromCCNT(stageObj.Name);
+
+                    stageObj.ClassName ??= ""; // So that input text works well.
+
+                    ImGui.InputTextWithHint("ClassName", hint, ref stageObj.ClassName, 128);
                 }
                 else
                 {
-                    Debug.Assert(stageObj.ClassName is null);
+                    ImGui.Text("ClassName: ");
+                    ImGui.SameLine();
+                    ImGui.Text(GetClassFromCCNT(stageObj.Name));
+                    ImGui.SameLine();
+                    ImGui.Spacing();
 
-                    RomFSHandler.CreatorClassNameTable.TryGetValue(
-                        stageObj.Name,
-                        out string? className
+                    ImGuiWidgets.HelpTooltip(
+                        "The class name is picked from CreatorClassNameTable.szs"
                     );
-
-                    string name = className ?? "NotFound";
-                    ImGui.InputText("ClassName", ref name, 128, ImGuiInputTextFlags.ReadOnly);
                 }
             }
 
             ImGui.InputText("Layer", ref stageObj.Layer, 30);
-
-            if (stageObj.ID != -1)
-                if (ImGui.InputInt("ID", ref stageObj.ID) && stageObj.ID < 0)
-                    stageObj.ID = 0;
 
             if (ImGui.DragFloat3("Translation", ref stageObj.Translation, v_speed: 10))
                 sceneObj.UpdateTransform();
@@ -112,5 +113,15 @@ internal static class PropertiesWindow
         }
 
         ImGui.End();
+    }
+
+    private string GetClassFromCCNT(string objectName)
+    {
+        var table = window.ContextHandler.FSHandler.ReadCreatorClassNameTable();
+
+        if (!table.TryGetValue(objectName, out string? className))
+            return "NotFound";
+
+        return className;
     }
 }

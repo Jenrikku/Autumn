@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
-using Autumn.Scene;
-using Autumn.Scene.Gizmo;
+using Autumn.Rendering;
+using Autumn.Rendering.Gizmo;
 using Autumn.Utils;
 using ImGuiNET;
 using Silk.NET.Input;
@@ -9,20 +9,20 @@ using Silk.NET.OpenGL;
 
 namespace Autumn.GUI.Editors;
 
-internal class SceneWindow
+internal class SceneWindow(MainWindowContext window)
 {
-    private static bool _persistentMouseDrag = false;
-    private static Vector2 _previousMousePos = Vector2.Zero;
-    private static Queue<Action<Vector4>> _mouseClickActions = new();
+    private bool _persistentMouseDrag = false;
+    private Vector2 _previousMousePos = Vector2.Zero;
+    private Queue<Action<MainWindowContext, Vector4>> _mouseClickActions = new();
 
-    public static void AddMouseClickAction(Action<Vector4> action)
+    public void AddMouseClickAction(Action<MainWindowContext, Vector4> action)
     {
         _mouseClickActions.Enqueue(action);
     }
 
-    public static unsafe void Render(MainWindowContext context, double deltaSeconds)
+    public unsafe void Render(double deltaSeconds)
     {
-        if (context.CurrentScene is null)
+        if (window.CurrentScene is null)
             return;
 
         float aspectRatio;
@@ -34,24 +34,10 @@ internal class SceneWindow
         Vector2 sceneImageRectMax;
         Vector2 sceneImageSize;
 
-        bool sceneNotReady =
-            (!context.CurrentScene?.Stage.Loaded ?? false)
-            || (!context.CurrentScene?.IsReady ?? false);
-
-        if (!sceneNotReady)
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
-
         if (
             !ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
         )
             return;
-
-        if (sceneNotReady)
-        {
-            ImGui.TextDisabled("The stage is being loaded, please wait...");
-            ImGui.End();
-            return;
-        }
 
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         aspectRatio = contentAvail.X / contentAvail.Y;
@@ -65,11 +51,11 @@ internal class SceneWindow
             return;
         }
 
-        context.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
-        context.SceneFramebuffer.Create(context.GL!);
+        window.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
+        window.SceneFramebuffer.Create(window.GL!);
 
         ImGui.Image(
-            new IntPtr(context.SceneFramebuffer.GetColorTexture(0)),
+            new IntPtr(window.SceneFramebuffer.GetColorTexture(0)),
             contentAvail,
             new Vector2(0, 1),
             new Vector2(1, 0)
@@ -83,7 +69,7 @@ internal class SceneWindow
 
         ImGui.PopStyleVar();
 
-        Camera camera = context.CurrentScene!.Camera;
+        Camera camera = window.CurrentScene!.Camera;
 
         #region Input
 
@@ -115,29 +101,29 @@ internal class SceneWindow
         {
             float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
 
-            if (context.Keyboard?.IsKeyPressed(Key.W) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
                 camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
-            if (context.Keyboard?.IsKeyPressed(Key.S) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.S) ?? false)
                 camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
 
-            if (context.Keyboard?.IsKeyPressed(Key.A) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.A) ?? false)
                 camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
-            if (context.Keyboard?.IsKeyPressed(Key.D) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.D) ?? false)
                 camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
 
-            if (context.Keyboard?.IsKeyPressed(Key.Q) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.Q) ?? false)
                 camera.Eye -= Vector3.UnitY * camMoveSpeed;
-            if (context.Keyboard?.IsKeyPressed(Key.E) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
                 camera.Eye += Vector3.UnitY * camMoveSpeed;
 
-            if (context.Keyboard?.IsKeyPressed(Key.Keypad1) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.Keypad1) ?? false)
                 camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, -1));
-            if (context.Keyboard?.IsKeyPressed(Key.Keypad3) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.Keypad3) ?? false)
                 camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
-            if (context.Keyboard?.IsKeyPressed(Key.Keypad7) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.Keypad7) ?? false)
                 camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, -1, 0));
 
-            if (context.Keyboard?.IsKeyPressed(Key.Pause) ?? false)
+            if (window.Keyboard?.IsKeyPressed(Key.Pause) ?? false)
                 camera.LookAt(new(0, 1, 5), camera.Eye + new Vector3(0, 0, -1));
         }
 
@@ -170,12 +156,12 @@ internal class SceneWindow
             rotAnimated
         );
 
-        context.SceneFramebuffer.Use(context.GL!);
-        context.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        window.SceneFramebuffer.Use(window.GL!);
+        window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        context.CurrentScene?.Render(context.GL, viewMatrix, projectionMatrix);
+        window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix);
 
-        InfiniteGrid.Render(context.GL, viewProjection);
+        InfiniteGrid.Render(window.GL, viewProjection);
 
         CameraState cameraState =
             new(
@@ -211,7 +197,7 @@ internal class SceneWindow
         if (
             ImGui.IsMouseClicked(ImGuiMouseButton.Left)
             && isSceneHovered
-            && context.CurrentScene is not null
+            && window.CurrentScene is not null
         )
         {
             if (orientationCubeHovered)
@@ -222,10 +208,10 @@ internal class SceneWindow
 
             Vector2 pixelPos = mousePos - sceneImageRectMin;
 
-            context.GL.BindBuffer(BufferTargetARB.PixelPackBuffer, 0);
-            context.GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
+            window.GL.BindBuffer(BufferTargetARB.PixelPackBuffer, 0);
+            window.GL.ReadBuffer(ReadBufferMode.ColorAttachment1);
 
-            context.GL.ReadPixels(
+            window.GL.ReadPixels(
                 (int)pixelPos.X,
                 (int)(sceneImageSize.Y - pixelPos.Y),
                 1,
@@ -235,7 +221,7 @@ internal class SceneWindow
                 out uint pixel
             );
 
-            context.GL.ReadPixels(
+            window.GL.ReadPixels(
                 (int)pixelPos.X,
                 (int)(sceneImageSize.Y - pixelPos.Y),
                 1,
@@ -258,15 +244,15 @@ internal class SceneWindow
 
             if (_mouseClickActions.TryDequeue(out var action))
             {
-                action(worldMousePos);
+                action(window, worldMousePos);
                 return;
             }
 
             ChangeHandler.ToggleObjectSelection(
-                context,
-                context.CurrentScene.History,
+                window,
+                window.CurrentScene.History,
                 pixel,
-                !(context.Keyboard?.IsCtrlPressed() ?? false)
+                !(window.Keyboard?.IsCtrlPressed() ?? false)
             );
         }
 

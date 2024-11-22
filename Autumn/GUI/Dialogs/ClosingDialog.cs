@@ -1,5 +1,5 @@
 using System.Numerics;
-using Autumn.Background;
+using Autumn.Enums;
 using ImGuiNET;
 
 namespace Autumn.GUI.Dialogs;
@@ -10,11 +10,11 @@ namespace Autumn.GUI.Dialogs;
 /// </summary>
 internal class ClosingDialog
 {
-    private WindowContext _context;
+    private MainWindowContext _context;
 
     private bool _isOpened = false;
 
-    public ClosingDialog(WindowContext context) => _context = context;
+    public ClosingDialog(MainWindowContext context) => _context = context;
 
     public void Open() => _isOpened = true;
 

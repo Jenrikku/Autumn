@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using Autumn.Background;
-using Autumn.IO;
+using Autumn.Context;
 using ImGuiNET;
 using Silk.NET.Core;
 using Silk.NET.GLFW;
@@ -28,7 +27,8 @@ internal abstract class WindowContext
 
     public bool IsFocused { get; private set; }
 
-    public BackgroundManager BackgroundManager { get; } = new();
+    public ContextHandler ContextHandler { get; }
+    public WindowManager WindowManager { get; }
 
     private float _scalingFactor = 1;
     public float ScalingFactor => _scalingFactor;
@@ -37,15 +37,20 @@ internal abstract class WindowContext
     /// Specifies where the "imgui.ini" file is stored in.
     /// By default, it will be stored within Autumn's settings path.
     /// </summary>
-    protected readonly string ImguiSettingsFile = Path.Join(
-        Path.GetDirectoryName(SettingsHandler.SettingsPath),
-        "imgui.ini"
-    );
+    protected readonly string ImguiSettingsFile;
 
     private static RawImage[]? s_iconCache;
 
-    public WindowContext()
+    public WindowContext(ContextHandler contextHandler, WindowManager windowManager)
     {
+        ContextHandler = contextHandler;
+        WindowManager = windowManager;
+
+        ImguiSettingsFile = Path.Join(
+            Path.GetDirectoryName(contextHandler.SettingsPath),
+            "imgui.ini"
+        );
+
         WindowOptions options = WindowOptions.Default;
 
         options.VSync = true;

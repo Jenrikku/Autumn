@@ -1,21 +1,23 @@
-﻿using Silk.NET.Core.Contexts;
+﻿using Autumn.ActionSystem;
+using ImGuiNET;
+using Silk.NET.Core.Contexts;
 
 namespace Autumn.GUI;
 
 // Based on SceneGL.Testing: https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/WindowManager.cs
-internal static class WindowManager
+internal class WindowManager
 {
-    public static IGLContext? SharedContext { get; private set; } = null;
+    public IGLContext? SharedContext { get; private set; } = null;
 
-    private static bool s_isRunning = false;
+    private bool s_isRunning = false;
 
-    private static readonly List<WindowContext> s_contexts = new();
-    private static readonly List<WindowContext> s_pendingInits = new();
+    private readonly List<WindowContext> s_contexts = new();
+    private readonly List<WindowContext> s_pendingInits = new();
 
-    public static bool IsEmpty => s_contexts.Count <= 0 && s_pendingInits.Count <= 0;
-    public static int Count => s_contexts.Count + s_pendingInits.Count;
+    public bool IsEmpty => s_contexts.Count <= 0 && s_pendingInits.Count <= 0;
+    public int Count => s_contexts.Count + s_pendingInits.Count;
 
-    public static bool Add(WindowContext context)
+    public bool Add(WindowContext context)
     {
         if (!s_contexts.Contains(context))
         {
@@ -26,7 +28,7 @@ internal static class WindowManager
         return false;
     }
 
-    public static void Remove(WindowContext context)
+    public void Remove(WindowContext context)
     {
         s_contexts.Remove(context);
 
@@ -37,7 +39,7 @@ internal static class WindowManager
         context.Window.Reset();
     }
 
-    public static void RemoveAt(int index)
+    public void RemoveAt(int index)
     {
         WindowContext context = s_contexts[index];
 
@@ -50,7 +52,7 @@ internal static class WindowManager
         context.Window.Reset();
     }
 
-    public static void Run()
+    public void Run(ActionHandler actionHandler)
     {
         if (s_isRunning)
             return;
@@ -97,11 +99,12 @@ internal static class WindowManager
                 }
             }
 
-            ShortcutHandler.ExecuteShortcuts();
+            if (!ImGui.GetIO().WantTextInput)
+                actionHandler.ExecuteShortcuts(GetFocusedWindow());
         }
     }
 
-    public static void Stop()
+    public void Stop()
     {
         if (!s_isRunning)
             return;
@@ -118,7 +121,7 @@ internal static class WindowManager
     }
 
     /// <returns>The context of the focused Window.</returns>
-    public static WindowContext? GetFocusedWindow()
+    public WindowContext? GetFocusedWindow()
     {
         foreach (WindowContext context in s_contexts)
         {
@@ -129,7 +132,7 @@ internal static class WindowManager
         return null;
     }
 
-    public static IEnumerable<WindowContext> EnumerateContexts()
+    public IEnumerable<WindowContext> EnumerateContexts()
     {
         foreach (WindowContext context in s_contexts)
             yield return context;

@@ -1,11 +1,13 @@
-﻿using System.Diagnostics;
-using Autumn.IO;
+using Autumn.Rendering;
 using Autumn.Storage;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
 
-internal class StageWindow
+/// <summary>
+/// A window that makes it possible to open stages from the project.
+/// </summary>
+internal class StageWindow(MainWindowContext window)
 {
     private const ImGuiTableFlags _stageTableFlags =
         ImGuiTableFlags.ScrollY
@@ -14,7 +16,7 @@ internal class StageWindow
         | ImGuiTableFlags.BordersV
         | ImGuiTableFlags.Resizable;
 
-    public static void Render(MainWindowContext context)
+    public void Render()
     {
         if (!ImGui.Begin("Stages"))
             return;
@@ -28,45 +30,46 @@ internal class StageWindow
             ImGui.TableSetupColumn("Scenario", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
 
-            foreach (Stage stage in ProjectHandler.Stages)
+            foreach (var (name, scenario) in window.ContextHandler.ProjectStages)
             {
-                Debug.Assert(stage.Name is not null);
-
                 ImGui.TableNextRow();
 
                 ImGui.TableSetColumnIndex(0);
 
-                if (
-                    ImGui.Selectable(stage.Name, false, ImGuiSelectableFlags.AllowDoubleClick)
-                    && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)
-                )
+                if (ImGui.Selectable(name, false))
                 {
-                    Scene.Scene? scene;
-                    scene = context.Scenes.Find(scene => scene.Stage == stage);
+                    Scene? scene = window.Scenes.Find(scene =>
+                        scene.Stage.Name == name && scene.Stage.Scenario == scenario
+                    );
 
-                    if (scene is not null)
-                        context.CurrentScene = scene;
+                    if (scene is not null) // Stage already opened
+                        window.CurrentScene = scene;
                     else
                     {
-                        scene = new(stage);
+                        window.BackgroundManager.Add(
+                            $"Loading stage \"{name + scenario}\"...",
+                            manager =>
+                            {
+                                Stage stage = window.ContextHandler.FSHandler.ReadStage(
+                                    name,
+                                    scenario
+                                );
 
-                        if (!scene.IsReady)
-                            context.BackgroundManager.Add(
-                                $"Loading stage \"{stage.Name + stage.Scenario}\"...",
-                                manager =>
-                                {
-                                    if (!stage.Loaded)
-                                        StageHandler.LoadProjectStage(stage);
+                                Scene newScene =
+                                    new(
+                                        stage,
+                                        window.ContextHandler.FSHandler,
+                                        window.GL!,
+                                        ref manager.StatusMessageSecondary
+                                    )
+                                    {
+                                        IsSaved = true
+                                    };
 
-                                    scene.GenerateSceneObjects(ref manager.StatusMessageSecondary);
-
-                                    scene.ResetCamera();
-                                }
-                            );
-
-                        stage.Saved = true;
-
-                        context.Scenes.Add(scene);
+                                newScene.ResetCamera();
+                                window.Scenes.Add(newScene);
+                            }
+                        );
                     }
 
                     ImGui.SetWindowFocus("Scene");
@@ -74,7 +77,7 @@ internal class StageWindow
 
                 ImGui.TableNextColumn();
 
-                ImGui.Text(stage.Scenario.ToString() ?? string.Empty);
+                ImGui.Text(scenario.ToString());
             }
 
             ImGui.EndTable();

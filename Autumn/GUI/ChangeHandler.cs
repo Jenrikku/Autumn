@@ -1,6 +1,6 @@
 using System.Reflection;
 using Autumn.History;
-using Autumn.Scene;
+using Autumn.Rendering;
 
 namespace Autumn.GUI;
 

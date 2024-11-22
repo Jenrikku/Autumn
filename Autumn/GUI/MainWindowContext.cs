@@ -1,16 +1,13 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Autumn.Background;
-using Autumn.Commands;
+using Autumn.Context;
 using Autumn.Enums;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
-using Autumn.IO;
-using Autumn.Scene;
-using Autumn.Scene.Gizmo;
-using Autumn.Storage;
+using Autumn.Rendering;
+using Autumn.Rendering.Gizmo;
 using ImGuiNET;
 using SceneGL.GLHelpers;
-using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -19,52 +16,41 @@ namespace Autumn.GUI;
 
 internal class MainWindowContext : WindowContext
 {
-    public List<Scene.Scene> Scenes { get; } = new();
-    public Scene.Scene? CurrentScene { get; set; }
+    public List<Scene> Scenes { get; } = new();
+    public Scene? CurrentScene { get; set; }
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
+    public BackgroundManager BackgroundManager { get; } = new();
+
     private bool _isFirstFrame = true;
 
-    private AddStageDialog _addStageDialog;
-    private ClosingDialog _closingDialog;
-    private ProjectPropertiesDialog _projectPropertiesDialog;
+    private readonly AddStageDialog _addStageDialog;
+    private readonly ClosingDialog _closingDialog;
+    private readonly NewStageObjDialog _newStageObjDialog;
 
-    private bool _newObjectOpened = false;
-    private string _newObjectName = "";
-    private string _newObjectClass = "";
-    private string _newObjectClassSearchQuery = "";
-    private bool _newObjectPrevClassValid = false;
-    private int[] _newObjectArgs = new int[8] { -1, -1, -1, -1, -1, -1, -1, -1 };
-    private int _newObjectStageObjObjectType = 0;
-    private string[] _newObjectStageObjObjectTypeNames = new string[]
-    {
-        "Obj",
-        "Goal",
-        "Start",
-        "StartEvent",
-        "DemoScene"
-    };
-    private const ImGuiTableFlags _newObjectClassTableFlags =
-        ImGuiTableFlags.ScrollY
-        | ImGuiTableFlags.RowBg
-        | ImGuiTableFlags.BordersOuter
-        | ImGuiTableFlags.BordersV
-        | ImGuiTableFlags.Resizable;
+    private readonly StageWindow _stageWindow;
+    private readonly ObjectWindow _objectWindow;
+    private readonly PropertiesWindow _propertiesWindow;
+    private readonly SceneWindow _sceneWindow;
 
 #if DEBUG
     private bool _showDemoWindow = false;
 #endif
 
-    public MainWindowContext()
-        : base()
+    public MainWindowContext(ContextHandler contextHandler, WindowManager windowManager)
+        : base(contextHandler, windowManager)
     {
         // Initialize dialogs:
         _addStageDialog = new(this);
         _closingDialog = new(this);
-        _projectPropertiesDialog = new(this);
+        _newStageObjDialog = new(this);
 
-        ProjectHandler.ProjectCreatedEvent += _projectPropertiesDialog.Open;
+        // Initialize editors:
+        _stageWindow = new(this);
+        _objectWindow = new(this);
+        _propertiesWindow = new(this);
+        _sceneWindow = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -146,10 +132,15 @@ internal class MainWindowContext : WindowContext
 
             #endregion
 
-            if (!ProjectHandler.ProjectLoaded)
+            if (!ContextHandler.IsProjectLoaded)
                 RenderNoProjectScreen();
             else
-                RenderEditors(deltaSeconds);
+            {
+                _stageWindow.Render();
+                _objectWindow.Render();
+                _propertiesWindow.Render();
+                _sceneWindow.Render(deltaSeconds);
+            }
 
 #if DEBUG
             if (_showDemoWindow)
@@ -161,10 +152,7 @@ internal class MainWindowContext : WindowContext
 
             _addStageDialog.Render();
             _closingDialog.Render();
-            _projectPropertiesDialog.Render();
-
-            if (_newObjectOpened)
-                RenderNewObjectPopup();
+            _newStageObjDialog.Render();
 
             # endregion
 
@@ -180,7 +168,9 @@ internal class MainWindowContext : WindowContext
                 return;
 
             string path = paths[0];
-            ProjectHandler.LoadProject(path);
+
+            if (Directory.Exists(path))
+                ContextHandler.OpenProject(path);
         };
     }
 
@@ -198,7 +188,8 @@ internal class MainWindowContext : WindowContext
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
 
-    public void OpenProjectProperties() => _projectPropertiesDialog.Open();
+    public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
+        _sceneWindow.AddMouseClickAction(action);
 
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
@@ -216,27 +207,27 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginMenu("Project"))
         {
-            ImGuiWidgets.CommandMenuItem(CommandID.NewProject, this);
-            ImGuiWidgets.CommandMenuItem(CommandID.OpenProject, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.NewProject, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.OpenProject, ContextHandler.ActionHandler, this);
 
             // Menu that displays the recently opened projects' list.
             if (ImGui.BeginMenu("Recent"))
             {
-                if (RecentHandler.RecentOpenedPaths.Count <= 0)
+                if (ContextHandler.SystemSettings.RecentlyOpenedPaths.Count <= 0)
                     ImGui.TextDisabled("There are no recent entries.");
                 else
                 {
-                    foreach (string path in RecentHandler.RecentOpenedPaths)
+                    foreach (string path in ContextHandler.SystemSettings.RecentlyOpenedPaths)
                         if (ImGui.Selectable(path))
                         {
-                            ProjectHandler.LoadProject(path);
+                            ContextHandler.OpenProject(path);
                             break;
                         }
 
                     ImGui.Separator();
 
                     if (ImGui.Selectable("Clear all"))
-                        RecentHandler.RecentOpenedPaths.Clear();
+                        ContextHandler.SystemSettings.RecentlyOpenedPaths.Clear();
                 }
 
                 ImGui.EndMenu();
@@ -244,63 +235,57 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            ImGuiWidgets.CommandMenuItem(CommandID.AddStage, this);
-            ImGuiWidgets.CommandMenuItem(CommandID.SaveStage, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.AddStage, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.SaveStage, ContextHandler.ActionHandler, this);
 
             ImGui.Separator();
 
-            ImGuiWidgets.CommandMenuItem(CommandID.Exit, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.Exit, ContextHandler.ActionHandler, this);
 
             ImGui.EndMenu();
         }
 
         if (ImGui.BeginMenu("Edit"))
         {
-            ImGuiWidgets.CommandMenuItem(CommandID.Undo, this);
-            ImGuiWidgets.CommandMenuItem(CommandID.Redo, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.Undo, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.Redo, ContextHandler.ActionHandler, this);
 
             ImGui.Separator();
 
             if (ImGui.MenuItem("Add object", CurrentScene is not null))
-                _newObjectOpened = true;
-
-            ImGuiWidgets.CommandMenuItem(CommandID.ProjectProperties, this);
+                _newStageObjDialog.Open();
 
             ImGui.EndMenu();
         }
-
-        if (ImGui.BeginMenu("Help"))
-        {
-            if (ImGui.MenuItem("Show welcome window"))
-                WindowManager.Add(new WelcomeWindowContext());
 
 #if DEBUG
+        if (ImGui.BeginMenu("Debug"))
+        {
             if (ImGui.MenuItem("Show demo window"))
                 _showDemoWindow = true;
-#endif
 
             ImGui.EndMenu();
         }
+#endif
 
         #region SceneTabs
         // Opened stages are displayed in tabs in the main menu bar.
 
         ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
-        int sceneCount = Scenes.Count;
 
-        if (sceneCount > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
+        if (Scenes.Count > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
         {
-            for (int i = 0; i < sceneCount; i++)
+            for (int i = 0; i < Scenes.Count; i++)
             {
                 ImGuiTabItemFlags flags = ImGuiTabItemFlags.NoPushId;
 
-                Scene.Scene scene = Scenes[i];
+                Scene scene = Scenes[i];
 
-                if (!scene.Stage.Saved)
+                if (!scene.IsSaved)
                     flags |= ImGuiTabItemFlags.UnsavedDocument;
 
                 bool opened = true;
-                string displayName = scene.Stage.Name + scene.Stage.Scenario;
+                string displayName = scene.Stage!.Name + scene.Stage.Scenario;
 
                 ImGui.PushID(displayName);
 
@@ -318,7 +303,6 @@ internal class MainWindowContext : WindowContext
                     // TO-DO: Check whether the stage is not saved.
 
                     i--;
-                    sceneCount = Scenes.Count;
 
                     // Set the scene to the one before if possible.
                     if (i < 0)
@@ -365,14 +349,6 @@ internal class MainWindowContext : WindowContext
         ImGui.PopStyleVar();
     }
 
-    private void RenderEditors(double deltaSeconds)
-    {
-        StageWindow.Render(this);
-        ObjectWindow.Render(this);
-        PropertiesWindow.Render(this);
-        SceneWindow.Render(this, deltaSeconds);
-    }
-
     /// <summary>
     /// Renders the screen that appears when no project has been loaded.
     /// </summary>
@@ -394,280 +370,8 @@ internal class MainWindowContext : WindowContext
         if (!ImGui.Begin("##", flags))
             return;
 
-        ImGui.TextDisabled("Please open a project from the menu or drop a project file here.");
+        ImGui.TextDisabled("Please open a project from the menu or drop a project directory here.");
 
         ImGui.End();
-    }
-
-    private void AddQueuedObject(Vector4 trans)
-    {
-        StageObjType type;
-        switch (_newObjectStageObjObjectType)
-        {
-            case 0:
-                type = StageObjType.Regular;
-                break;
-            case 1:
-                type = StageObjType.Goal;
-                break;
-            case 2:
-                type = StageObjType.Start;
-                break;
-            case 3:
-                type = StageObjType.StartEvent;
-                break;
-            case 4:
-                type = StageObjType.DemoScene;
-                break;
-            default:
-                type = StageObjType.Regular;
-                break;
-        }
-
-        StageObj newObj =
-            new()
-            {
-                Type = type,
-                Name = _newObjectName,
-                ClassName = _newObjectClass,
-                Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100)
-            };
-        for (int i = 0; i < 8; i++)
-            newObj.Properties.Add($"Arg{i}", _newObjectArgs[i]);
-
-        CurrentScene?.Stage.StageData?.Add(newObj);
-        CurrentScene?.GenerateSceneObject(newObj);
-
-        if (Keyboard?.IsKeyPressed(Key.ShiftLeft) ?? false)
-            SceneWindow.AddMouseClickAction(new Action<Vector4>(AddQueuedObject));
-    }
-
-    private void ResetNewObjectArgs()
-    {
-        for (int i = 0; i < 8; i++)
-            _newObjectArgs[i] = -1;
-    }
-
-    /// <summary>
-    /// Renders a dialog that has options for creating an Object
-    /// </summary>
-    private void RenderNewObjectPopup()
-    {
-        ImGui.OpenPopup("Add new object");
-
-        Vector2 dimensions = new(800, 0);
-        ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
-
-        if (
-            !ImGui.BeginPopupModal(
-                "Add new object",
-                ref _newObjectOpened,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoSavedSettings
-            )
-        )
-            return;
-
-        if (ImGui.BeginTabBar("ObjectType"))
-        {
-            if (ImGui.BeginTabItem("Object"))
-            {
-                bool databaseHasEntry = ClassDatabaseHandler.DatabaseEntries.TryGetValue(
-                    _newObjectClass,
-                    out ClassDatabaseHandler.DatabaseEntry dbEntry
-                );
-
-                ImGui.SetNextItemWidth(400);
-                ImGui.InputText("Search", ref _newObjectClassSearchQuery, 128);
-                if (
-                    ImGui.BeginTable(
-                        "ClassTable",
-                        2,
-                        _newObjectClassTableFlags,
-                        new Vector2(400, 200)
-                    )
-                )
-                {
-                    ImGui.TableSetupColumn("ClassName", ImGuiTableColumnFlags.None, 0.5f);
-                    ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.None, 0.5f);
-                    ImGui.TableHeadersRow();
-
-                    foreach (var pair in ClassDatabaseHandler.DatabaseEntries)
-                    {
-                        if (
-                            _newObjectClassSearchQuery != string.Empty
-                            && !pair.Key.ToLower().Contains(_newObjectClassSearchQuery.ToLower())
-                            && !pair.Value.Name.Contains(_newObjectClassSearchQuery.ToLower())
-                        )
-                            continue;
-                        ImGui.TableNextRow();
-
-                        ImGui.TableSetColumnIndex(0);
-                        if (ImGui.Selectable(pair.Key))
-                        {
-                            _newObjectClass = pair.Key;
-                            databaseHasEntry = false;
-                            ResetNewObjectArgs();
-                        }
-                        ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(pair.Value.Name);
-                    }
-
-                    ImGui.EndTable();
-                }
-                ImGui.SameLine();
-
-                {
-                    ImGui.BeginChild("##Desc_Args", new Vector2(380, 210));
-                    string description = dbEntry.Description ?? "No Description";
-                    if (dbEntry.DescriptionAdditional is not null)
-                        description += $"\n{dbEntry.DescriptionAdditional}";
-                    ImGui.SetWindowFontScale(1.3f);
-                    if (databaseHasEntry)
-                        ImGui.Text(dbEntry.Name == " " ? _newObjectClass : dbEntry.Name);
-                    else
-                        ImGui.Text(_newObjectClass);
-                    ImGui.SetWindowFontScale(1.0f);
-                    ImGui.SameLine();
-                    ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1.0f), _newObjectClass);
-
-                    ImGui.BeginChild(
-                        "##Description",
-                        new Vector2(380, 40),
-                        ImGuiChildFlags.None,
-                        ImGuiWindowFlags.AlwaysVerticalScrollbar
-                    );
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    ImGui.TextWrapped(description);
-                    ImGui.EndChild();
-                    if (
-                        ImGui.BeginTable(
-                            "ArgTable",
-                            4,
-                            _newObjectClassTableFlags,
-                            new Vector2(380, 130)
-                        )
-                    )
-                    {
-                        ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
-                        ImGui.TableSetupColumn("Val", ImGuiTableColumnFlags.None, 0.35f);
-                        ImGui.TableSetupColumn("Name");
-                        ImGui.TableSetupColumn("Desc");
-                        ImGui.TableHeadersRow();
-
-                        for (int i = 0; i < 8; i++)
-                        {
-                            string arg = $"Arg{i}";
-                            string name = "";
-                            string argDescription = "";
-                            if (
-                                databaseHasEntry
-                                && dbEntry.Args is not null
-                                && dbEntry.Args.TryGetValue(arg, out var argData)
-                            )
-                            {
-                                if (argData.Name is not null)
-                                    name = argData.Name;
-                                if (argData.Description is not null)
-                                    argDescription = argData.Description;
-                                if (!_newObjectPrevClassValid)
-                                    _newObjectArgs[i] = (int)argData.Default;
-                            }
-
-                            ImGui.TableNextRow();
-
-                            ImGui.TableSetColumnIndex(0);
-                            ImGui.Text(arg);
-                            ImGui.TableSetColumnIndex(1);
-                            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                            ImGui.DragInt($"##{arg}", ref _newObjectArgs[i]);
-                            ImGui.TableSetColumnIndex(2);
-                            ImGui.Text(name);
-                            ImGui.TableSetColumnIndex(3);
-                            bool needScrollbar =
-                                ImGui.CalcTextSize(argDescription).X
-                                > ImGui.GetContentRegionAvail().X;
-                            float ysize =
-                                ImGui.GetFont().FontSize
-                                * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
-                            ImGui.BeginChild(
-                                $"##ArgDescription{i}",
-                                new Vector2(0, ysize),
-                                ImGuiChildFlags.None,
-                                ImGuiWindowFlags.HorizontalScrollbar
-                            );
-                            ImGui.Text(argDescription);
-                            ImGui.EndChild();
-                        }
-
-                        ImGui.EndTable();
-                    }
-
-                    ImGui.EndChild();
-                }
-
-                float width = ImGui.GetContentRegionAvail().X;
-                float spacingX = ImGui.GetStyle().ItemSpacing.X;
-                float paddingX = ImGui.GetStyle().FramePadding.X;
-                ImGui.PushItemWidth(width * 0.5f);
-                ImGui.Text("ObjectName");
-                ImGui.SameLine();
-                ImGui.SetCursorPosX(width * 0.5f);
-                ImGui.Text("ClassName");
-                ImGui.PopItemWidth();
-
-                float buttonTextSizeX = ImGui.CalcTextSize("<-").X;
-                float objectNameWidth =
-                    width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
-                ImGui.PushItemWidth(objectNameWidth);
-                ImGuiWidgets.InputTextRedWhenEmpty("##ObjectName", ref _newObjectName, 128);
-                ImGui.PopItemWidth();
-                ImGui.SameLine();
-                if (ImGui.Button("<-"))
-                    _newObjectName = _newObjectClass;
-                ImGui.SameLine();
-                ImGui.PushItemWidth(width * 0.5f);
-                if (ImGuiWidgets.InputTextRedWhenEmpty("##ClassName", ref _newObjectClass, 128))
-                    ResetNewObjectArgs();
-                ImGui.PopItemWidth();
-
-                ImGui.SetNextItemWidth(100);
-                ImGui.Combo(
-                    "Object Type",
-                    ref _newObjectStageObjObjectType,
-                    _newObjectStageObjObjectTypeNames,
-                    _newObjectStageObjObjectTypeNames.Length
-                );
-
-                _newObjectPrevClassValid = databaseHasEntry;
-                bool canCreate = _newObjectName != string.Empty && _newObjectClass != string.Empty;
-                if (canCreate)
-                    ImGui.SameLine();
-                if (canCreate && ImGui.Button("Add"))
-                {
-                    SceneWindow.AddMouseClickAction(new Action<Vector4>(AddQueuedObject));
-
-                    _newObjectOpened = false;
-                }
-
-                ImGui.EndTabItem();
-            }
-            if (ImGui.BeginTabItem("Area"))
-            {
-                ImGui.Text("Currently unsupported");
-                ImGui.EndTabItem();
-            }
-            if (ImGui.BeginTabItem("Rail"))
-            {
-                ImGui.Text("Currently unsupported");
-                ImGui.EndTabItem();
-            }
-            ImGui.EndTabBar();
-        }
     }
 }

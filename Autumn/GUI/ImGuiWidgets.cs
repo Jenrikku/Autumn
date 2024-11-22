@@ -1,5 +1,6 @@
 using System.Numerics;
-using Autumn.Commands;
+using Autumn.ActionSystem;
+using Autumn.Enums;
 using ImGuiNET;
 using TinyFileDialogsSharp;
 
@@ -50,16 +51,20 @@ internal static class ImGuiWidgets
         }
     }
 
-    public static void CommandMenuItem(CommandID id, WindowContext context)
+    public static void CommandMenuItem(
+        CommandID id,
+        ActionHandler actionHandler,
+        WindowContext context
+    )
     {
-        Command? command = CommandHandler.GetCommand(id);
+        var (command, shortcut) = actionHandler.GetAction(id);
 
         if (command is null)
             return;
 
         bool clicked = ImGui.MenuItem(
             command.DisplayName,
-            command.DisplayShortcut,
+            shortcut?.DisplayString ?? string.Empty,
             false,
             command.Enabled(context)
         );

@@ -1,13 +1,13 @@
-using Autumn.Scene;
+using Autumn.Rendering;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
 
-internal class ObjectWindow
+internal class ObjectWindow(MainWindowContext window)
 {
-    private static int _objectFilterCurrent = 0;
+    private int _objectFilterCurrent = 0;
 
     private const ImGuiTableFlags _objectTableFlags =
         ImGuiTableFlags.ScrollY
@@ -16,12 +16,12 @@ internal class ObjectWindow
         | ImGuiTableFlags.BordersV
         | ImGuiTableFlags.Resizable;
 
-    public static void Render(MainWindowContext context)
+    public void Render()
     {
         if (!ImGui.Begin("Objects"))
             return;
 
-        if (context.CurrentScene is null)
+        if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");
             return;
@@ -43,17 +43,7 @@ internal class ObjectWindow
             ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
 
-            if (
-                (!context.CurrentScene?.Stage.Loaded ?? false)
-                || (!context.CurrentScene?.IsReady ?? false)
-            )
-            {
-                ImGui.EndTable();
-                ImGui.End();
-                return;
-            }
-
-            foreach (SceneObj obj in context.CurrentScene!.SceneObjects)
+            foreach (SceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
                 StageObj stageObj = obj.StageObj;
 
@@ -67,10 +57,10 @@ internal class ObjectWindow
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
                 if (ImGui.Selectable(stageObj.Name, obj.Selected))
                     ChangeHandler.ToggleObjectSelection(
-                        context,
-                        context.CurrentScene.History,
+                        window,
+                        window.CurrentScene.History,
                         obj,
-                        !context.Keyboard?.IsCtrlPressed() ?? true
+                        !window.Keyboard?.IsCtrlPressed() ?? true
                     );
 
                 ImGui.TableNextColumn();

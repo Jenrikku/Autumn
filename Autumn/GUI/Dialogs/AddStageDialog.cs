@@ -1,5 +1,6 @@
 using System.Numerics;
-using Autumn.IO;
+using Autumn.FileSystems;
+using Autumn.Rendering;
 using Autumn.Storage;
 using ImGuiNET;
 
@@ -10,7 +11,7 @@ namespace Autumn.GUI.Dialogs;
 /// </summary>
 internal class AddStageDialog
 {
-    private WindowContext _context;
+    private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
 
@@ -27,9 +28,9 @@ internal class AddStageDialog
     /// </summary>
     public bool ResetOnDone;
 
-    public AddStageDialog(WindowContext context, bool resetOnDone = true)
+    public AddStageDialog(MainWindowContext window, bool resetOnDone = true)
     {
-        _context = context;
+        _window = window;
         ResetOnDone = resetOnDone;
         Reset();
     }
@@ -49,7 +50,7 @@ internal class AddStageDialog
 
     public void Render()
     {
-        if (!RomFSHandler.RomFSAvailable)
+        if (_window.ContextHandler.Settings.RomFSPath is null)
             _isOpened = false;
 
         if (!_isOpened)
@@ -57,7 +58,7 @@ internal class AddStageDialog
 
         ImGui.OpenPopup("Add New Stage");
 
-        Vector2 dimensions = new(450 * _context.ScalingFactor, 0);
+        Vector2 dimensions = new(450 * _window.ScalingFactor, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
         ImGui.SetNextWindowPos(
@@ -83,7 +84,7 @@ internal class AddStageDialog
 
         # region Name and Scenario
 
-        float scenarioFieldWidth = 30 * _context.ScalingFactor;
+        float scenarioFieldWidth = 30 * _window.ScalingFactor;
 
         ImGui.SetNextItemWidth(contentAvail.X - scenarioFieldWidth - style.ItemSpacing.X);
         if (ImGui.InputTextWithHint("##name", "Name", ref _name, 100))
@@ -101,13 +102,16 @@ internal class AddStageDialog
 
         if (_stageListNeedsRebuild)
         {
-            _foundStages = RomFSHandler.StageNames.FindAll(
-                (t) => t.Name.Contains(_name, StringComparison.InvariantCultureIgnoreCase)
-            );
+            RomFSHandler romFSHandler = new(_window.ContextHandler.Settings.RomFSPath!);
+
+            _foundStages = romFSHandler
+                .EnumerateStages()
+                .Where(t => t.Name.Contains(_name))
+                .ToList();
 
             // Remove already opened stages:
-            foreach (Stage stage in ProjectHandler.Stages)
-                _foundStages.RemoveAll((t) => t.Name == stage.Name && t.Scenario == stage.Scenario);
+            foreach (var stage in _window.ContextHandler.ProjectStages)
+                _foundStages.Remove(stage);
 
             _foundStages.Sort();
             _stageListNeedsRebuild = false;
@@ -142,9 +146,9 @@ internal class AddStageDialog
 
         # region Bottom bar
 
-        float okButtonWidth = 50 * _context.ScalingFactor;
+        float okButtonWidth = 50 * _window.ScalingFactor;
 
-        if (!RomFSHandler.StageNames.Contains((_name, scenarioNo)))
+        if (!_foundStages?.Contains((_name, scenarioNo)) ?? true)
         {
             ImGui.BeginDisabled();
             _useRomFSComboCurrent = 1;
@@ -162,8 +166,7 @@ internal class AddStageDialog
 
         ImGui.SameLine();
 
-        Predicate<Stage> predicate = (stage) => stage.Name == _name && stage.Scenario == scenarioNo;
-        bool stageExists = ProjectHandler.Stages.Find(predicate) is not null;
+        bool stageExists = _window.ContextHandler.ProjectStages.Contains((_name, scenarioNo));
 
         if (string.IsNullOrEmpty(_name) || stageExists)
             ImGui.BeginDisabled();
@@ -172,12 +175,20 @@ internal class AddStageDialog
         {
             if (_useRomFSComboCurrent == 0)
             {
-                _context.BackgroundManager.Add(
+                _window.BackgroundManager.Add(
                     $"Importing stage \"{_name + scenarioNo}\" from RomFS...",
                     manager =>
                     {
-                        if (StageHandler.TryImportStage(_name, scenarioNo, out Stage stage))
-                            ProjectHandler.Stages.Add(stage);
+                        Stage stage = _window.ContextHandler.FSHandler.ReadStage(_name, scenarioNo);
+                        Scene scene =
+                            new(
+                                stage,
+                                _window.ContextHandler.FSHandler,
+                                _window.GL!,
+                                ref manager.StatusMessageSecondary
+                            );
+
+                        _window.Scenes.Add(scene);
 
                         if (ResetOnDone)
                             Reset();
@@ -186,12 +197,20 @@ internal class AddStageDialog
             }
             else
             {
-                _context.BackgroundManager.Add(
+                _window.BackgroundManager.Add(
                     $"Creating the stage \"{_name + scenarioNo}\"...",
                     manager =>
                     {
-                        Stage stage = StageHandler.CreateNewStage(_name, scenarioNo);
-                        ProjectHandler.Stages.Add(stage);
+                        Stage stage = new() { Name = _name, Scenario = scenarioNo };
+                        Scene scene =
+                            new(
+                                stage,
+                                _window.ContextHandler.FSHandler,
+                                _window.GL!,
+                                ref manager.StatusMessageSecondary
+                            );
+
+                        _window.Scenes.Add(scene);
 
                         if (ResetOnDone)
                             Reset();
