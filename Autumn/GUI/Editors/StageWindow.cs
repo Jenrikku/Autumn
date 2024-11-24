@@ -59,7 +59,7 @@ internal class StageWindow(MainWindowContext window)
                                     new(
                                         stage,
                                         window.ContextHandler.FSHandler,
-                                        window.GL!,
+                                        window.GLTaskScheduler,
                                         ref manager.StatusMessageSecondary
                                     )
                                     {

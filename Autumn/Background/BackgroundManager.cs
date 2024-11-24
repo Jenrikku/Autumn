@@ -40,7 +40,8 @@ internal class BackgroundManager
     /// </summary>
     public void Add(BackgroundTask task)
     {
-        _tasks.Add(task);
+        lock (_tasks)
+            _tasks.Add(task);
 
         Run();
     }
@@ -102,14 +103,15 @@ internal class BackgroundManager
 
             BackgroundTask nextTask = _tasks[0];
 
-            foreach (BackgroundTask task in _tasks)
-            {
-                if (task.Priority > nextTask.Priority)
-                    nextTask = task;
+            lock (_tasks)
+                foreach (BackgroundTask task in _tasks)
+                {
+                    if (task.Priority > nextTask.Priority)
+                        nextTask = task;
 
-                if (nextTask.Priority == BackgroundTaskPriority.Highest)
-                    break;
-            }
+                    if (nextTask.Priority == BackgroundTaskPriority.Highest)
+                        break;
+                }
 
             StatusMessage = nextTask.Message;
             nextTask.Action.Invoke(this);

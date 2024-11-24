@@ -23,6 +23,8 @@ internal class MainWindowContext : WindowContext
 
     public BackgroundManager BackgroundManager { get; } = new();
 
+    public GLTaskScheduler GLTaskScheduler { get; } = new();
+
     private bool _isFirstFrame = true;
 
     private readonly AddStageDialog _addStageDialog;
@@ -147,14 +149,11 @@ internal class MainWindowContext : WindowContext
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
 
-            # region Dialogs and popups
-            // These dialogs are only rendered when their corresponding variables are set to true.
-
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
 
-            # endregion
+            GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
@@ -340,10 +339,23 @@ internal class MainWindowContext : WindowContext
         if (!ImGui.Begin("StatusBar", flags))
             return;
 
+        ImGui.SetCursorPosX(10);
+
         string msg = BackgroundManager.StatusMessage;
-        if (BackgroundManager.StatusMessageSecondary != string.Empty)
+        if (!string.IsNullOrEmpty(BackgroundManager.StatusMessageSecondary))
             msg += " | " + BackgroundManager.StatusMessageSecondary;
         ImGui.Text(msg);
+
+        if (GLTaskScheduler.TasksLeft > 0)
+        {
+            ImGui.SameLine();
+
+            string glMessage = "GL tasks left: " + GLTaskScheduler.TasksLeft;
+            Vector2 textSize = ImGui.CalcTextSize(glMessage);
+
+            ImGui.SetCursorPosX(viewportSize.X - textSize.X - 10);
+            ImGui.Text("GL tasks left: ");
+        }
 
         ImGui.End();
         ImGui.PopStyleVar();

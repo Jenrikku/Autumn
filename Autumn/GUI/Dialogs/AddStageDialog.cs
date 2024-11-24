@@ -184,7 +184,7 @@ internal class AddStageDialog
                             new(
                                 stage,
                                 _window.ContextHandler.FSHandler,
-                                _window.GL!,
+                                _window.GLTaskScheduler,
                                 ref manager.StatusMessageSecondary
                             );
 
@@ -206,7 +206,7 @@ internal class AddStageDialog
                             new(
                                 stage,
                                 _window.ContextHandler.FSHandler,
-                                _window.GL!,
+                                _window.GLTaskScheduler,
                                 ref manager.StatusMessageSecondary
                             );
 

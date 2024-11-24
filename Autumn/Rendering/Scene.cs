@@ -1,4 +1,5 @@
 using System.Numerics;
+using Autumn.Background;
 using Autumn.Enums;
 using Autumn.FileSystems;
 using Autumn.History;
@@ -20,15 +21,26 @@ internal class Scene
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
 
+    /// <summary>
+    /// Specifies whether the scene is ready to be rendered.
+    /// </summary>
+    public bool IsReady { get; set; } = false;
+
     private readonly List<SceneObj> _sceneObjects = new();
 
     private uint _lastPickingId = 0;
     private readonly Dictionary<uint, SceneObj> _pickableObjs = new();
 
-    public Scene(Stage stage, LayeredFSHandler fsHandler, GL gl, ref string status)
+    public Scene(
+        Stage stage,
+        LayeredFSHandler fsHandler,
+        GLTaskScheduler scheduler,
+        ref string status
+    )
     {
         Stage = stage;
-        GenerateSceneObjects(fsHandler, gl, ref status);
+        GenerateSceneObjects(fsHandler, scheduler, ref status);
+        scheduler.EnqueueGLTask(gl => IsReady = true);
     }
 
     public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection)
@@ -83,10 +95,10 @@ internal class Scene
             yield return sceneObj;
     }
 
-    public void AddObject(StageObj stageObj, LayeredFSHandler layeredFS, GL gl)
+    public void AddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         Stage.AddStageObj(stageObj);
-        GenerateSceneObject(stageObj, layeredFS, gl);
+        GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
 
     public void ResetCamera()
@@ -123,7 +135,11 @@ internal class Scene
         Camera.LookAt(eye, marioPos);
     }
 
-    private void GenerateSceneObjects(LayeredFSHandler fsHandler, GL gl, ref string status)
+    private void GenerateSceneObjects(
+        LayeredFSHandler fsHandler,
+        GLTaskScheduler scheduler,
+        ref string status
+    )
     {
         _sceneObjects.Clear();
         _selectedObjects.Clear();
@@ -131,14 +147,24 @@ internal class Scene
         if (Stage is null)
             return;
 
-        foreach (StageObjType objType in Enum.GetValues<StageObjType>())
-            GenerateSceneObjects(Stage.EnumerateStageObjs(objType), fsHandler, gl, ref status);
+        IEnumerable<StageObjType> types = Enum.GetValues<StageObjType>()
+            .Where(t =>
+                t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child
+            );
+
+        foreach (StageObjType objType in types)
+            GenerateSceneObjects(
+                Stage.EnumerateStageObjs(objType),
+                fsHandler,
+                scheduler,
+                ref status
+            );
     }
 
     private void GenerateSceneObjects(
         IEnumerable<StageObj>? stageObjs,
         LayeredFSHandler fsHandler,
-        GL gl,
+        GLTaskScheduler scheduler,
         ref string status
     )
     {
@@ -150,15 +176,19 @@ internal class Scene
         {
             status = $"Loading model for {stageObj.Name}";
 
-            GenerateSceneObject(stageObj, fsHandler, gl);
-            GenerateSceneObjects(stageObj.Children, fsHandler, gl, ref status);
+            GenerateSceneObject(stageObj, fsHandler, scheduler);
+            GenerateSceneObjects(stageObj.Children, fsHandler, scheduler, ref status);
             ++curObj;
         }
 
         status = string.Empty;
     }
 
-    private void GenerateSceneObject(StageObj stageObj, LayeredFSHandler fsHandler, GL gl)
+    private void GenerateSceneObject(
+        StageObj stageObj,
+        LayeredFSHandler fsHandler,
+        GLTaskScheduler scheduler
+    )
     {
         string actorName = stageObj.Name;
 
@@ -169,7 +199,7 @@ internal class Scene
         )
             actorName = modelNameString;
 
-        Actor actor = fsHandler.ReadActor(actorName, gl);
+        Actor actor = fsHandler.ReadActor(actorName, scheduler);
         SceneObj sceneObj = new(stageObj, actor, _lastPickingId);
 
         _sceneObjects.Add(sceneObj);

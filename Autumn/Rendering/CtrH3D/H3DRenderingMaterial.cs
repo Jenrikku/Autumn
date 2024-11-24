@@ -458,31 +458,37 @@ internal class H3DRenderingMaterial
         textureSamplers[2] = CreateTextureSampler(material.Texture2Name, 2);
 
         textureSamplers[4] = actor.GetLUTTexture(
+            gl,
             matParams.LUTDist0TableName,
             matParams.LUTDist0SamplerName
         );
 
         textureSamplers[5] = actor.GetLUTTexture(
+            gl,
             matParams.LUTDist1TableName,
             matParams.LUTDist1SamplerName
         );
 
         textureSamplers[6] = actor.GetLUTTexture(
+            gl,
             matParams.LUTFresnelTableName,
             matParams.LUTFresnelSamplerName
         );
 
         textureSamplers[7] = actor.GetLUTTexture(
+            gl,
             matParams.LUTReflecRTableName,
             matParams.LUTReflecRSamplerName
         );
 
         textureSamplers[8] = actor.GetLUTTexture(
+            gl,
             matParams.LUTReflecGTableName,
             matParams.LUTReflecGSamplerName
         );
 
         textureSamplers[9] = actor.GetLUTTexture(
+            gl,
             matParams.LUTReflecBTableName,
             matParams.LUTReflecBSamplerName
         );
@@ -492,7 +498,7 @@ internal class H3DRenderingMaterial
             if (string.IsNullOrEmpty(name))
                 return null;
 
-            uint texture = actor.GetTexture(name);
+            uint texture = actor.GetTexture(gl, name);
 
             H3DTextureMapper mapper = material.TextureMappers[position];
 

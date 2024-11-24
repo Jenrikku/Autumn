@@ -18,8 +18,6 @@ internal class Actor
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
 
-    private readonly GL _gl;
-
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.
     /// </summary>
@@ -32,12 +30,10 @@ internal class Actor
 
     private readonly Dictionary<string, TextureSampler> _lutSamplers;
 
-    public Actor(string name, GL gl)
+    public Actor(string name)
     {
         Name = name;
         IsEmptyModel = true;
-
-        _gl = gl;
 
         _meshes = new List<(H3DRenderingMesh, H3DRenderingMaterial)>[4];
 
@@ -53,6 +49,7 @@ internal class Actor
     /// Make sure to add the textures first.
     /// </summary>
     public void AddMesh(
+        GL gl,
         H3DMeshLayer layer,
         H3DMesh mesh,
         H3DSubMeshCulling? subMeshCulling,
@@ -62,18 +59,18 @@ internal class Actor
     {
         H3DSkeletalAnimator animator = new(skeleton);
 
-        H3DRenderingMesh renderingMesh = new(_gl, mesh, subMeshCulling);
-        H3DRenderingMaterial renderingMaterial = new(_gl, material, mesh, animator, this);
+        H3DRenderingMesh renderingMesh = new(gl, mesh, subMeshCulling);
+        H3DRenderingMaterial renderingMaterial = new(gl, material, mesh, animator, this);
 
         _meshes[(int)layer].Add((renderingMesh, renderingMaterial));
     }
 
-    public void AddTexture(H3DTexture texture)
+    public void AddTexture(GL gl, H3DTexture texture)
     {
         byte[] textureData = texture.ToRGBA();
 
         uint glTexture = TextureHelper.CreateTexture2D<byte>(
-            _gl,
+            gl,
             SceneGL.PixelFormat.R8_G8_B8_A8_UNorm,
             (uint)texture.Width,
             (uint)texture.Height,
@@ -84,7 +81,7 @@ internal class Actor
         _textures.Add(texture.Name, glTexture);
     }
 
-    public void AddLUTTexture(string tableName, H3DLUTSampler sampler)
+    public void AddLUTTexture(GL gl, string tableName, H3DLUTSampler sampler)
     {
         string name = tableName + sampler.Name;
 
@@ -113,7 +110,7 @@ internal class Actor
         }
 
         uint glTexture = TextureHelper.CreateTexture2D<float>(
-            _gl,
+            gl,
             SceneGL.PixelFormat.R32_Float,
             (uint)table.Length,
             1,
@@ -121,31 +118,31 @@ internal class Actor
             false
         );
 
-        uint glSampler = SamplerHelper.GetOrCreate(_gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+        uint glSampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
 
         TextureSampler textureSampler = new(glTexture, glSampler);
 
         _lutSamplers.Add(name, textureSampler);
     }
 
-    public uint GetTexture(string name)
+    public uint GetTexture(GL gl, string name)
     {
         if (!_textures.TryGetValue(name, out uint result))
         {
             // Default to black texture when it does not exist.
-            return TextureHelper.GetOrCreate(_gl, TextureHelper.DefaultTextureKey.BLACK);
+            return TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
         }
 
         return result;
     }
 
-    public TextureSampler GetLUTTexture(string tableName, string samplerName)
+    public TextureSampler GetLUTTexture(GL gl, string tableName, string samplerName)
     {
         if (!_lutSamplers.TryGetValue(tableName + samplerName, out TextureSampler result))
         {
             // Default values for non-existing luts.
-            uint texture = TextureHelper.GetOrCreate(_gl, TextureHelper.DefaultTextureKey.BLACK);
-            uint sampler = SamplerHelper.GetOrCreate(_gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+            uint texture = TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
+            uint sampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
 
             return new(texture, sampler);
         }

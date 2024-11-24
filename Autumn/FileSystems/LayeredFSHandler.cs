@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Autumn.Background;
 using Autumn.Storage;
 using Silk.NET.OpenGL;
 
@@ -38,17 +39,17 @@ internal class LayeredFSHandler
         return new();
     }
 
-    public Actor ReadActor(string name, GL gl)
+    public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
         foreach (RomFSHandler romFSHandler in _romFSHandlers)
         {
             if (!romFSHandler.ExistsActor(name))
                 continue;
 
-            return romFSHandler.ReadActor(name, gl);
+            return romFSHandler.ReadActor(name, scheduler);
         }
 
-        return new(name, gl);
+        return new(name);
     }
 
     public bool WriteStage(Stage stage)

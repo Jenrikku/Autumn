@@ -2,12 +2,12 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Autumn.Background;
 using Autumn.Enums;
 using Autumn.Storage;
 using Autumn.Wrappers;
 using BYAMLSharp;
 using NARCSharp;
-using Silk.NET.OpenGL;
 using SPICA.Formats.CtrGfx;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.LUT;
@@ -147,7 +147,7 @@ internal partial class RomFSHandler
         return false; // TODO
     }
 
-    public Actor ReadActor(string name, GL gl)
+    public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
         string path = Path.Join(_actorsPath, name + ".szs");
 
@@ -163,7 +163,7 @@ internal partial class RomFSHandler
                 return cachedActor;
         }
 
-        Actor actor = new(name, gl);
+        Actor actor = new(name);
 
         // The actor will result in an empty model if the narc is null (not found or
         // not a narc) or if the narc does not contain the properly-named cgfx file.
@@ -196,13 +196,13 @@ internal partial class RomFSHandler
 
         foreach (H3DTexture texture in h3D.Textures)
         {
-            actor.AddTexture(texture);
+            scheduler.EnqueueGLTask(gl => actor.AddTexture(gl, texture));
         }
 
         foreach (H3DLUT lut in h3D.LUTs)
         foreach (H3DLUTSampler sampler in lut.Samplers)
         {
-            actor.AddLUTTexture(lut.Name, sampler);
+            scheduler.EnqueueGLTask(gl => actor.AddLUTTexture(gl, lut.Name, sampler));
         }
 
         foreach (H3DModel model in h3D.Models)
@@ -233,7 +233,11 @@ internal partial class RomFSHandler
 
                     var skeleton = model.Skeleton;
 
-                    actor.AddMesh((H3DMeshLayer)i, mesh, subMeshCulling, material, skeleton);
+                    H3DMeshLayer meshLayer = (H3DMeshLayer)i;
+
+                    scheduler.EnqueueGLTask(gl =>
+                        actor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
+                    );
                 }
             }
         }

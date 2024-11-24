@@ -273,7 +273,11 @@ internal class NewStageObjDialog(MainWindowContext window)
         for (int i = 0; i < 8; i++)
             newObj.Properties.Add($"Arg{i}", _args[i]);
 
-        window.CurrentScene.AddObject(newObj, window.ContextHandler.FSHandler, window.GL);
+        window.CurrentScene.AddObject(
+            newObj,
+            window.ContextHandler.FSHandler,
+            window.GLTaskScheduler
+        );
 
         if (window.Keyboard?.IsShiftPressed() ?? false)
             window.AddSceneMouseClickAction(AddQueuedObject);
