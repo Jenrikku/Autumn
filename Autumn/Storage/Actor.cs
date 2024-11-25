@@ -63,6 +63,8 @@ internal class Actor
         H3DRenderingMaterial renderingMaterial = new(gl, material, mesh, animator, this);
 
         _meshes[(int)layer].Add((renderingMesh, renderingMaterial));
+
+        IsEmptyModel = false;
     }
 
     public void AddTexture(GL gl, H3DTexture texture)
