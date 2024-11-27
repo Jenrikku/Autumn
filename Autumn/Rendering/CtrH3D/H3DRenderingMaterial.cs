@@ -481,17 +481,37 @@ internal class H3DRenderingMaterial
             matParams.LUTReflecRSamplerName
         );
 
-        textureSamplers[8] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTReflecGTableName,
-            matParams.LUTReflecGSamplerName
-        );
+        TextureSampler lut;
 
-        textureSamplers[9] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTReflecBTableName,
-            matParams.LUTReflecBSamplerName
-        );
+        if (
+            actor.TryGetLUTTexture(
+                matParams.LUTReflecGTableName,
+                matParams.LUTReflecGSamplerName,
+                out lut
+            )
+        )
+        {
+            textureSamplers[8] = lut;
+        }
+        else
+        {
+            textureSamplers[8] = textureSamplers[7];
+        }
+
+        if (
+            actor.TryGetLUTTexture(
+                matParams.LUTReflecBTableName,
+                matParams.LUTReflecBSamplerName,
+                out lut
+            )
+        )
+        {
+            textureSamplers[9] = lut;
+        }
+        else
+        {
+            textureSamplers[9] = textureSamplers[7];
+        }
 
         TextureSampler? CreateTextureSampler(string name, byte position)
         {

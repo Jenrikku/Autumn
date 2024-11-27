@@ -111,6 +111,8 @@ internal class Actor
             }
         }
 
+        uint glSampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+
         uint glTexture = TextureHelper.CreateTexture2D<float>(
             gl,
             SceneGL.PixelFormat.R32_Float,
@@ -120,9 +122,7 @@ internal class Actor
             false
         );
 
-        uint glSampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
-
-        TextureSampler textureSampler = new(glTexture, glSampler);
+        TextureSampler textureSampler = new(glSampler, glTexture);
 
         _lutSamplers.Add(name, textureSampler);
     }
@@ -143,14 +143,17 @@ internal class Actor
         if (!_lutSamplers.TryGetValue(tableName + samplerName, out TextureSampler result))
         {
             // Default values for non-existing luts.
-            uint texture = TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
             uint sampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+            uint texture = TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
 
-            return new(texture, sampler);
+            return new(sampler, texture);
         }
 
         return result;
     }
+
+    public bool TryGetLUTTexture(string tableName, string samplerName, out TextureSampler result) =>
+        _lutSamplers.TryGetValue(tableName + samplerName, out result);
 
     public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(
         H3DMeshLayer layer
