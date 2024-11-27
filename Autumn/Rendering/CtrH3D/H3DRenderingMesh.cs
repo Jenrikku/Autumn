@@ -13,7 +13,8 @@ internal class H3DRenderingMesh : IDisposable
     private readonly uint _vertexArrayHandle;
 
     // Indices for all submeshes.
-    private readonly ushort[][] _subMeshesIndices;
+    private readonly uint _elementBufferHandle;
+    private readonly (uint Start, uint Count)[] _elementInfo; // One per submesh
 
     private bool _disposed = false;
 
@@ -22,30 +23,12 @@ internal class H3DRenderingMesh : IDisposable
         if (mesh.VertexStride <= 0)
             throw new ArgumentException("The mesh has an invalid vertex stride.");
 
-        // Get indices:
-        if (mesh.SubMeshes.Count == 0 && subMeshCulling.HasValue)
-        {
-            // Get indices by submesh culling
-            _subMeshesIndices = new ushort[subMeshCulling.Value.SubMeshes.Count][];
-
-            for (int i = 0; i < subMeshCulling.Value.SubMeshes.Count; i++)
-                _subMeshesIndices[i] = subMeshCulling.Value.SubMeshes[i].Indices;
-        }
-        else
-        {
-            // Get indices by submeshes
-            _subMeshesIndices = new ushort[mesh.SubMeshes.Count][];
-
-            for (int i = 0; i < mesh.SubMeshes.Count; i++)
-                _subMeshesIndices[i] = mesh.SubMeshes[i].Indices;
-        }
-
         _gl = gl;
 
         int vertexCount = mesh.RawBuffer.Length / mesh.VertexStride;
         int fixedAttributesOffset = mesh.RawBuffer.Length;
 
-        byte[] buffer;
+        byte[] vertexBuffer;
 
         using (MemoryStream stream = new())
         {
@@ -69,21 +52,23 @@ internal class H3DRenderingMesh : IDisposable
                 }
             }
 
-            buffer = stream.ToArray();
+            vertexBuffer = stream.ToArray();
         }
 
         Debug.Assert(
-            buffer.Length == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount
+            vertexBuffer.Length
+                == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount
         );
 
         _vertexBufferHandle = gl.GenBuffer();
+        _elementBufferHandle = gl.GenBuffer();
         _vertexArrayHandle = gl.GenVertexArray();
 
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
-        gl.BufferData<byte>(BufferTargetARB.ArrayBuffer, buffer, BufferUsageARB.StaticDraw);
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-
         gl.BindVertexArray(_vertexArrayHandle);
+
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
+        gl.BufferData<byte>(BufferTargetARB.ArrayBuffer, vertexBuffer, BufferUsageARB.StaticDraw);
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
 
         for (uint i = 0; i < 16; i++)
             gl.DisableVertexAttribArray(i);
@@ -144,30 +129,80 @@ internal class H3DRenderingMesh : IDisposable
             fixedAttributesOffset += 0x10 * vertexCount;
         }
 
+        // Get indices:
+        ushort[][] allIndices;
+        int totalIndexAmount = 0;
+
+        if (mesh.SubMeshes.Count == 0 && subMeshCulling.HasValue)
+        {
+            // Get indices from submesh culling
+            int count = subMeshCulling.Value.SubMeshes.Count;
+            allIndices = new ushort[count][];
+
+            for (int i = 0; i < count; i++)
+            {
+                allIndices[i] = subMeshCulling.Value.SubMeshes[i].Indices;
+                totalIndexAmount += allIndices[i].Length;
+            }
+        }
+        else
+        {
+            // Get indices from submeshes
+            uint count = (uint)mesh.SubMeshes.Count;
+            allIndices = new ushort[count][];
+
+            for (int i = 0; i < count; i++)
+            {
+                allIndices[i] = mesh.SubMeshes[i].Indices;
+                totalIndexAmount += allIndices[i].Length;
+            }
+        }
+
+        _elementInfo = new (uint, uint)[allIndices.Length];
+
+        ushort[] indexBuffer = new ushort[totalIndexAmount];
+        uint lastIndexOffset = 0;
+
+        for (int i = 0; i < allIndices.Length; i++)
+        {
+            ushort[] indices = allIndices[i];
+
+            _elementInfo[i] = (lastIndexOffset * sizeof(ushort), (uint)indices.Length);
+
+            Array.Copy(indices, 0, indexBuffer, lastIndexOffset, indices.Length);
+            lastIndexOffset += (uint)indices.Length;
+        }
+
+        gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _elementBufferHandle);
+        gl.BufferData<ushort>(
+            BufferTargetARB.ElementArrayBuffer,
+            indexBuffer,
+            BufferUsageARB.StaticDraw
+        );
+
         gl.BindVertexArray(0);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+        gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
     }
 
-    public void Draw()
+    public unsafe void Draw()
     {
         if (_disposed)
             return;
 
-        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
         _gl.BindVertexArray(_vertexArrayHandle);
 
-        foreach (ushort[] indices in _subMeshesIndices)
+        foreach (var (start, lenght) in _elementInfo)
         {
-            _gl.DrawElements<ushort>(
+            _gl.DrawElements(
                 PrimitiveType.Triangles,
-                (uint)indices.Length,
+                lenght,
                 DrawElementsType.UnsignedShort,
-                indices
+                (void*)start
             );
         }
 
         _gl.BindVertexArray(0);
-        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
     }
 
     public void Dispose()
@@ -176,6 +211,7 @@ internal class H3DRenderingMesh : IDisposable
             return;
 
         _gl.DeleteBuffer(_vertexBufferHandle);
+        _gl.DeleteBuffer(_elementBufferHandle);
         _gl.DeleteVertexArray(_vertexArrayHandle);
 
         _disposed = true;
