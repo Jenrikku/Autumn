@@ -107,12 +107,12 @@ internal class H3DRenderingMesh : IDisposable
 
             switch (attribute.Format)
             {
-                case PICAAttributeFormat.Float:
+                case PICAAttributeFormat.Short:
                     size <<= 1;
                     offset += offset & 1;
                     break;
 
-                case PICAAttributeFormat.Short:
+                case PICAAttributeFormat.Float:
                     size <<= 2;
                     offset += offset & 1;
                     break;
