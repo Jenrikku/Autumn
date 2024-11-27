@@ -150,6 +150,10 @@ internal class H3DRenderingMesh : IDisposable
 
     public void Draw()
     {
+        if (_disposed)
+            return;
+
+        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
         _gl.BindVertexArray(_vertexArrayHandle);
 
         foreach (ushort[] indices in _subMeshesIndices)
@@ -163,6 +167,7 @@ internal class H3DRenderingMesh : IDisposable
         }
 
         _gl.BindVertexArray(0);
+        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
     }
 
     public void Dispose()
