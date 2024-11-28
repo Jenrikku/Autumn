@@ -6,6 +6,10 @@ using Autumn.GUI;
 // See System.Text.Encoding.CodePages package.
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+// Sets the working directory to the one where the program is stored.
+// This is required to properly find the resources.
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+
 // Get Autumn's config path.
 string configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 configPath = Path.Join(configPath, "autumn");
