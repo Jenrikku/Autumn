@@ -50,14 +50,14 @@ internal class H3DSkeletalAnimator : H3DAnimationControl
         }
     }
 
-    public Bone[] FrameSkeleton;
+    public H3DDict<H3DBone> Skeleton { get; }
+    public Bone[] FrameSkeleton { get; }
 
     private readonly Matrix4x4[] _transforms;
-    private readonly H3DDict<H3DBone> _skeleton;
 
     public H3DSkeletalAnimator(H3DDict<H3DBone> skeleton)
     {
-        _skeleton = skeleton;
+        Skeleton = skeleton;
 
         FrameSkeleton = new Bone[skeleton.Count];
 
@@ -79,18 +79,18 @@ internal class H3DSkeletalAnimator : H3DAnimationControl
 
     public override void SetAnimations(IEnumerable<H3DAnimation> animations)
     {
-        for (int i = 0; i < _skeleton.Count; i++)
+        for (int i = 0; i < Skeleton.Count; i++)
         {
-            FrameSkeleton[i].Scale = _skeleton[i].Scale;
-            FrameSkeleton[i].EulerRotation = _skeleton[i].Rotation;
-            FrameSkeleton[i].Translation = _skeleton[i].Translation;
+            FrameSkeleton[i].Scale = Skeleton[i].Scale;
+            FrameSkeleton[i].EulerRotation = Skeleton[i].Rotation;
+            FrameSkeleton[i].Translation = Skeleton[i].Translation;
 
             FrameSkeleton[i].CalculateQuaternion();
         }
 
         ResetTransforms();
 
-        SetAnimations(animations, _skeleton);
+        SetAnimations(animations, Skeleton);
     }
 
     public Matrix4x4[] GetSkeletonTransforms()
@@ -140,8 +140,7 @@ internal class H3DSkeletalAnimator : H3DAnimationControl
 
             Bone bone = FrameSkeleton[i];
 
-            bool scaleCompensate =
-                (_skeleton[i].Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0;
+            bool scaleCompensate = (Skeleton[i].Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0;
 
             scaleCompensate &= bone.Parent != null;
 
@@ -170,9 +169,9 @@ internal class H3DSkeletalAnimator : H3DAnimationControl
 
     private unsafe void ResetTransforms()
     {
-        for (int i = 0; i < _skeleton.Count; i++)
+        for (int i = 0; i < Skeleton.Count; i++)
         {
-            Matrix4X3<float> mtx = _skeleton[i].InverseTransform.ToSilkNetMtx();
+            Matrix4X3<float> mtx = Skeleton[i].InverseTransform.ToSilkNetMtx();
 
             Matrix4x4 inverseTranform = new();
             MathUtils.Unpack3dTransformMatrix(in mtx, ref inverseTranform);

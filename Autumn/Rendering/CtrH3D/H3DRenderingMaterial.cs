@@ -428,11 +428,17 @@ internal class H3DRenderingMaterial
                     {
                         boneTable[i].X = boneIndex;
 
-                        if (subMesh.Skinning != H3DSubMeshSkinning.Smooth)
-                            MathUtils.Pack3dTransformMatrix(
-                                in transforms[boneIndex],
-                                ref packedTransforms[i]
-                            );
+                        if (subMesh.Skinning == H3DSubMeshSkinning.Smooth)
+                        {
+                            transforms[boneIndex] =
+                                animator.Skeleton[boneIndex].InverseTransform
+                                * transforms[boneIndex];
+                        }
+
+                        MathUtils.Pack3dTransformMatrix(
+                            in transforms[boneIndex],
+                            ref packedTransforms[i]
+                        );
                     }
                 }
             }
