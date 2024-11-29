@@ -68,7 +68,6 @@ internal class H3DRenderingMesh : IDisposable
 
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
         gl.BufferData<byte>(BufferTargetARB.ArrayBuffer, vertexBuffer, BufferUsageARB.StaticDraw);
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
 
         for (uint i = 0; i < 16; i++)
             gl.DisableVertexAttribArray(i);
@@ -104,8 +103,7 @@ internal class H3DRenderingMesh : IDisposable
             }
 
             gl.EnableVertexAttribArray(index);
-            gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
-            gl.VertexAttribPointer(index, size, type, false, stride, (void*)offset);
+            gl.VertexAttribPointer(index, attribute.Elements, type, false, stride, (void*)offset);
 
             offset += size;
         }
@@ -115,8 +113,6 @@ internal class H3DRenderingMesh : IDisposable
             uint index = (uint)attribute.Name;
 
             gl.EnableVertexAttribArray(index);
-            gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
-
             gl.VertexAttribPointer(
                 index,
                 sizeof(float),
