@@ -9,6 +9,7 @@ internal class SystemSettings
 {
     public List<string> RecentlyOpenedPaths = new();
     public string LastProjectOpenPath = string.Empty;
+    public bool SkipWelcomeDialog = false;
 
     public void AddRecentlyOpenedPath(string path)
     {

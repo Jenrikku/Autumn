@@ -35,6 +35,7 @@ internal class MainWindowContext : WindowContext
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
     private readonly SceneWindow _sceneWindow;
+    private readonly WelcomeDialog _welcomeDialog;
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -53,6 +54,7 @@ internal class MainWindowContext : WindowContext
         _objectWindow = new(this);
         _propertiesWindow = new(this);
         _sceneWindow = new(this);
+        _welcomeDialog = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -97,10 +99,14 @@ internal class MainWindowContext : WindowContext
 
             ImGuiController.MakeCurrent();
 
-            // Fix docking settings not loading properly:
             if (_isFirstFrame)
             {
+                // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
+
+                if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
+                    _welcomeDialog.Open();
+
                 _isFirstFrame = false;
             }
 
@@ -152,6 +158,7 @@ internal class MainWindowContext : WindowContext
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
+            _welcomeDialog.Render();
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 

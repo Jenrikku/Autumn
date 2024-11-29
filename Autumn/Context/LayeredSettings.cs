@@ -5,7 +5,6 @@ internal class LayeredSettings(params Dictionary<string, object?>[] settings)
     #region Setting definition
 
     public bool UseClassNames => GetSetting<bool>("UseClassNames");
-    public bool SkipWelcomeWindow => GetSetting<bool>("SkipWelcomeGuide");
     public string? RomFSPath => GetSetting<string>("RomFSPath");
 
     #endregion
