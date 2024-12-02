@@ -22,6 +22,9 @@ ContextHandler contextHandler = new(configPath);
 // It will do nothing if the argument is not a proper project.
 if (args.Length > 0)
     contextHandler.OpenProject(args[0]);
+else if (contextHandler.SystemSettings.OpenLastProject)
+    // Load last opened project. Does nothing if empty.
+    contextHandler.OpenProject(contextHandler.SystemSettings.LastOpenedProject);
 
 // Set up the window manager:
 
@@ -33,4 +36,5 @@ windowManager.Run(contextHandler.ActionHandler);
 
 // Everything past this point is executed when all windows are closed:
 
+contextHandler.SetCurrentProjectAsLastOpened();
 contextHandler.SaveSettings();

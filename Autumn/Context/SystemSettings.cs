@@ -10,6 +10,8 @@ internal class SystemSettings
     public List<string> RecentlyOpenedPaths = new();
     public string LastProjectOpenPath = string.Empty;
     public bool SkipWelcomeDialog = false;
+    public bool OpenLastProject = false;
+    public string LastOpenedProject = string.Empty;
 
     public void AddRecentlyOpenedPath(string path)
     {

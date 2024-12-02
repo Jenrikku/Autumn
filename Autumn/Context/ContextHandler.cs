@@ -169,4 +169,7 @@ internal class ContextHandler
 
         YAMLWrapper.Serialize(Path.Join(SettingsPath, actionsConfFile), actions);
     }
+
+    public void SetCurrentProjectAsLastOpened() =>
+        SystemSettings.LastOpenedProject = _project?.SavePath ?? string.Empty;
 }
