@@ -79,6 +79,9 @@ internal class ContextHandler
     /// <returns>Whether the project was opened correctly.</returns>
     public bool OpenProject(string projectDir)
     {
+        if (!Directory.Exists(projectDir))
+            return false;
+
         Project project = new(projectDir);
         string projectFile = project.ProjectFile;
 

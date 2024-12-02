@@ -6,10 +6,6 @@ using Autumn.GUI;
 // See System.Text.Encoding.CodePages package.
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-// Sets the working directory to the one where the program is stored.
-// This is required to properly find the resources.
-Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-
 // Get Autumn's config path.
 string configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 configPath = Path.Join(configPath, "autumn");
@@ -25,6 +21,10 @@ if (args.Length > 0)
 else if (contextHandler.SystemSettings.OpenLastProject)
     // Load last opened project. Does nothing if empty.
     contextHandler.OpenProject(contextHandler.SystemSettings.LastOpenedProject);
+
+// Sets the working directory to the one where the program is stored.
+// This is required to properly find the resources.
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
 // Set up the window manager:
 

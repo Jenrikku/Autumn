@@ -9,5 +9,5 @@ internal class Project
 
     public Dictionary<string, object?> ProjectSettings { get; set; } = new();
 
-    public Project(string savePath) => SavePath = savePath;
+    public Project(string savePath) => SavePath = Path.GetFullPath(savePath);
 }
