@@ -9,19 +9,19 @@ internal class WindowManager
 {
     public IGLContext? SharedContext { get; private set; } = null;
 
-    private bool s_isRunning = false;
+    private bool _isRunning = false;
 
-    private readonly List<WindowContext> s_contexts = new();
-    private readonly List<WindowContext> s_pendingInits = new();
+    private readonly List<WindowContext> _contexts = new();
+    private readonly List<WindowContext> _pendingInits = new();
 
-    public bool IsEmpty => s_contexts.Count <= 0 && s_pendingInits.Count <= 0;
-    public int Count => s_contexts.Count + s_pendingInits.Count;
+    public bool IsEmpty => _contexts.Count <= 0 && _pendingInits.Count <= 0;
+    public int Count => _contexts.Count + _pendingInits.Count;
 
     public bool Add(WindowContext context)
     {
-        if (!s_contexts.Contains(context))
+        if (!_contexts.Contains(context))
         {
-            s_pendingInits.Add(context);
+            _pendingInits.Add(context);
             return true;
         }
 
@@ -30,10 +30,10 @@ internal class WindowManager
 
     public void Remove(WindowContext context)
     {
-        s_contexts.Remove(context);
+        _contexts.Remove(context);
 
-        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
-            SharedContext = s_contexts[0].Window.GLContext;
+        if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
+            SharedContext = _contexts[0].Window.GLContext;
 
         context.Window.DoEvents();
         context.Window.Reset();
@@ -41,12 +41,12 @@ internal class WindowManager
 
     public void RemoveAt(int index)
     {
-        WindowContext context = s_contexts[index];
+        WindowContext context = _contexts[index];
 
-        s_contexts.RemoveAt(index);
+        _contexts.RemoveAt(index);
 
-        if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
-            SharedContext = s_contexts[0].Window.GLContext;
+        if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
+            SharedContext = _contexts[0].Window.GLContext;
 
         context.Window.DoEvents();
         context.Window.Reset();
@@ -54,29 +54,29 @@ internal class WindowManager
 
     public void Run(ActionHandler actionHandler)
     {
-        if (s_isRunning)
+        if (_isRunning)
             return;
 
-        s_isRunning = true;
+        _isRunning = true;
 
-        while (Count > 0)
+        while (Count > 0 && _isRunning)
         {
-            if (s_pendingInits.Count > 0)
+            if (_pendingInits.Count > 0)
             {
-                foreach (WindowContext context in s_pendingInits)
+                foreach (WindowContext context in _pendingInits)
                 {
                     context.Window.Initialize();
-                    s_contexts.Add(context);
+                    _contexts.Add(context);
 
                     SharedContext ??= context.Window.GLContext;
                 }
 
-                s_pendingInits.Clear();
+                _pendingInits.Clear();
             }
 
-            for (int i = 0; i < s_contexts.Count; i++)
+            for (int i = 0; i < _contexts.Count; i++)
             {
-                WindowContext context = s_contexts[i];
+                WindowContext context = _contexts[i];
 
                 context.Window.DoEvents();
 
@@ -87,10 +87,10 @@ internal class WindowManager
                 }
                 else
                 {
-                    s_contexts.RemoveAt(i);
+                    _contexts.RemoveAt(i);
 
-                    if (context.Window.GLContext == SharedContext && s_contexts.Count > 0)
-                        SharedContext = s_contexts[0].Window.GLContext;
+                    if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
+                        SharedContext = _contexts[0].Window.GLContext;
 
                     context.Window.DoEvents();
                     context.Window.Reset();
@@ -102,28 +102,29 @@ internal class WindowManager
             if (!ImGui.GetIO().WantTextInput)
                 actionHandler.ExecuteShortcuts(GetFocusedWindow());
         }
+
+        while (Count > 0)
+            RemoveAt(Count - 1);
     }
 
     public void Stop()
     {
-        if (!s_isRunning)
+        if (!_isRunning)
             return;
 
-        while (s_contexts.Count > 0)
+        foreach (WindowContext windowContext in _contexts)
         {
-            WindowContext context = s_contexts[0];
-
-            if (!context.Close())
-                break;
-
-            RemoveAt(0);
+            if (!windowContext.Close())
+                return;
         }
+
+        _isRunning = false;
     }
 
     /// <returns>The context of the focused Window.</returns>
     public WindowContext? GetFocusedWindow()
     {
-        foreach (WindowContext context in s_contexts)
+        foreach (WindowContext context in _contexts)
         {
             if (context.IsFocused)
                 return context;
@@ -134,7 +135,7 @@ internal class WindowManager
 
     public IEnumerable<WindowContext> EnumerateContexts()
     {
-        foreach (WindowContext context in s_contexts)
+        foreach (WindowContext context in _contexts)
             yield return context;
     }
 }
