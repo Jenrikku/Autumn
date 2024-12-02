@@ -9,6 +9,7 @@ using Autumn.Wrappers;
 using BYAMLSharp;
 using NARCSharp;
 using SPICA.Formats.CtrGfx;
+using SPICA.Formats.CtrGfx.Model.Mesh;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.LUT;
 using SPICA.Formats.CtrH3D.Model;
@@ -238,6 +239,16 @@ internal partial class RomFSHandler
                     scheduler.EnqueueGLTask(gl =>
                         actor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
                     );
+                    if (mesh.MetaData != null)
+                    { 
+                        for (int _m = 0; _m < mesh.MetaData.Count; _m++)
+                        {
+                            if (mesh.MetaData[_m].Name == "OBBox")
+                            {
+                                actor.BoundBox((H3DBoundingBox)mesh.MetaData[_m].Values[0]);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -408,8 +419,7 @@ internal partial class RomFSHandler
                         && i.Key != "name"
                         && i.Key != "LayerName"
                         && i.Key != "l_id"
-                    )
-                    .ToDictionary(i => i.Key, i => i.Value.Value)
+                    ).ToDictionary(i => i.Key, i => i.Value.Value)
             };
 
         // Rail point reading:

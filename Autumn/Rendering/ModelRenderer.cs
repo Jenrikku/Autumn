@@ -108,6 +108,7 @@ internal static class ModelRenderer
                 "BugFixBalanceTruckArea" => new Vector4(1.0f, 0.4f, 0.0f, 1.0f),
                 _ => throw new ArgumentException("Invalid area name")
             };
+            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(20f);
 
             gl.CullFace(TriangleFace.Back);
 
@@ -119,7 +120,7 @@ internal static class ModelRenderer
         {
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
-            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(Vector3.One, -Vector3.One);
+            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(2f);
             gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(

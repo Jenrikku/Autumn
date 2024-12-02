@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 using Autumn.Rendering;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.Gizmo;
 using Autumn.Utils;
 using ImGuiNET;
@@ -138,7 +139,8 @@ internal class SceneWindow(MainWindowContext window)
             if (window.Keyboard?.IsKeyPressed(Key.Pause) ?? false)
                 camera.LookAt(new(0, 1, 5), camera.Eye + new Vector3(0, 0, -1));
             if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
-                camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
+                AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().Actor.AABB * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f, aabb.GetDiagonal()*0.01f );
             }
         }
 

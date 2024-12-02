@@ -4,12 +4,14 @@ using Autumn.Rendering.CtrH3D.Animation;
 using SceneGL.GLHelpers;
 using SceneGL.Materials.Common;
 using Silk.NET.OpenGL;
+using SPICA.Formats.CtrGfx.Model.Mesh;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.LUT;
 using SPICA.Formats.CtrH3D.Model;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Texture;
+using System;
 
 namespace Autumn.Storage;
 
@@ -18,7 +20,16 @@ internal class Actor
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
 
-    public AxisAlignedBoundingBox AABB;
+    public AxisAlignedBoundingBox AABB = new AxisAlignedBoundingBox();
+
+    public void BoundBox( H3DBoundingBox Box){
+       AABB.Min.X = Math.Min(AABB.Min.X, -Box.Size.X);
+       AABB.Max.X = Math.Max(AABB.Max.X, Box.Size.X);
+       AABB.Min.Y = Math.Min(AABB.Min.Y, -Box.Size.Y);
+       AABB.Max.Y = Math.Max(AABB.Max.Y, Box.Size.Y);
+       AABB.Min.Z = Math.Min(AABB.Min.Z, -Box.Size.Z);
+       AABB.Max.Z = Math.Max(AABB.Max.Z, Box.Size.Z);
+    }
 
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.
@@ -62,14 +73,12 @@ internal class Actor
         H3DSkeletalAnimator animator = new(skeleton);
 
         H3DRenderingMesh renderingMesh = new(gl, mesh, subMeshCulling);
-        AABB = renderingMesh.AABB;
         H3DRenderingMaterial renderingMaterial = new(gl, material, mesh, animator, this);
 
         _meshes[(int)layer].Add((renderingMesh, renderingMaterial));
 
         IsEmptyModel = false;
     }
-
     public void AddTexture(GL gl, H3DTexture texture)
     {
         byte[] textureData = texture.ToRGBA();
