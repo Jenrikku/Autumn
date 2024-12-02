@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Autumn.Enums;
 using Autumn.Rendering.Area;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.DefaultCube;
 using Autumn.Storage;
 using SceneGL;
@@ -118,7 +119,7 @@ internal static class ModelRenderer
         {
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
-
+            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(Vector3.One, -Vector3.One);
             gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(

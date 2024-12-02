@@ -55,13 +55,17 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableSetColumnIndex(0);
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
-                if (ImGui.Selectable(stageObj.Name, obj.Selected))
+                if (ImGui.Selectable(stageObj.Name, obj.Selected)) {
                     ChangeHandler.ToggleObjectSelection(
                         window,
                         window.CurrentScene.History,
                         obj,
                         !window.Keyboard?.IsCtrlPressed() ?? true
                     );
+                }
+                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) {
+                    window.CurrentScene!.Camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
+                }
 
                 ImGui.TableNextColumn();
 

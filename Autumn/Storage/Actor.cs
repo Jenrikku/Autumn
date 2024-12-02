@@ -18,6 +18,8 @@ internal class Actor
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
 
+    public AxisAlignedBoundingBox AABB;
+
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.
     /// </summary>
@@ -60,6 +62,7 @@ internal class Actor
         H3DSkeletalAnimator animator = new(skeleton);
 
         H3DRenderingMesh renderingMesh = new(gl, mesh, subMeshCulling);
+        AABB = renderingMesh.AABB;
         H3DRenderingMaterial renderingMaterial = new(gl, material, mesh, animator, this);
 
         _meshes[(int)layer].Add((renderingMesh, renderingMaterial));

@@ -1,9 +1,28 @@
 using System.Diagnostics;
+using System.Numerics;
 using Silk.NET.OpenGL;
+using Silk.NET.SDL;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.PICA.Commands;
 
 namespace Autumn.Rendering.CtrH3D;
+
+class AxisAlignedBoundingBox {
+    private Vector3 Max = Vector3.Zero;
+    private Vector3 Min = Vector3.Zero;
+    public AxisAlignedBoundingBox(){
+
+    }
+    public AxisAlignedBoundingBox(Vector3 mx, Vector3 mn){
+        Max = mx;
+        Min = mn;
+    }
+
+    public float GetDiagonal(){
+        return Vector3.Distance(Max, Min);
+    }
+
+}
 
 internal class H3DRenderingMesh : IDisposable
 {
@@ -18,6 +37,8 @@ internal class H3DRenderingMesh : IDisposable
 
     private bool _disposed = false;
 
+    public AxisAlignedBoundingBox AABB;
+
     public unsafe H3DRenderingMesh(GL gl, H3DMesh mesh, H3DSubMeshCulling? subMeshCulling)
     {
         if (mesh.VertexStride <= 0)
@@ -29,6 +50,8 @@ internal class H3DRenderingMesh : IDisposable
         int fixedAttributesOffset = mesh.RawBuffer.Length;
 
         byte[] vertexBuffer;
+        Vector3 min = Vector3.Zero;
+        Vector3 max = Vector3.One;
 
         using (MemoryStream stream = new())
         {

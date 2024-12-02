@@ -39,6 +39,12 @@ internal class Camera
         Rotation = rotation;
     }
 
+    public void LookFrom(Vector3 eye, float distance = 3f)
+    {
+        eye += Vector3.Transform(Vector3.UnitZ* distance, Rotation);
+        Eye = eye + new Vector3(0,0.5f,0);
+    }
+
     public void Animate(double deltaTime, out Vector3 eyeAnimated, out Quaternion rotAnimated)
     {
         _rotAnimated = Quaternion.Slerp(

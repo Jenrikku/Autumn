@@ -137,6 +137,9 @@ internal class SceneWindow(MainWindowContext window)
 
             if (window.Keyboard?.IsKeyPressed(Key.Pause) ?? false)
                 camera.LookAt(new(0, 1, 5), camera.Eye + new Vector3(0, 0, -1));
+            if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
+                camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
+            }
         }
 
         #endregion
