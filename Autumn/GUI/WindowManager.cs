@@ -59,7 +59,7 @@ internal class WindowManager
 
         s_isRunning = true;
 
-        while (Count > 0)
+        while (Count > 0 && s_isRunning)
         {
             if (s_pendingInits.Count > 0)
             {
@@ -102,6 +102,9 @@ internal class WindowManager
             if (!ImGui.GetIO().WantTextInput)
                 actionHandler.ExecuteShortcuts(GetFocusedWindow());
         }
+
+        while (Count > 0)
+            RemoveAt(Count - 1);
     }
 
     public void Stop()
@@ -109,15 +112,13 @@ internal class WindowManager
         if (!s_isRunning)
             return;
 
-        while (s_contexts.Count > 0)
+        foreach (WindowContext windowContext in s_contexts)
         {
-            WindowContext context = s_contexts[0];
-
-            if (!context.Close())
-                break;
-
-            RemoveAt(0);
+            if (!windowContext.Close())
+                return;
         }
+
+        s_isRunning = false;
     }
 
     /// <returns>The context of the focused Window.</returns>
