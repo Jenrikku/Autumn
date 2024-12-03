@@ -12,7 +12,7 @@ using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Autumn.GUI;
+namespace Autumn.GUI.Windows;
 
 internal class MainWindowContext : WindowContext
 {
