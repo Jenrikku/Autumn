@@ -16,7 +16,7 @@ internal class StageObj
     public string? ClassName = null; // Only set when using custom classnames
     public string Layer = "共通";
 
-    public StageObj? Parent { get; }
+    public StageObj? Parent { get; set; }
     public RailObj? Rail { get; set; }
 
     public List<StageObj>? Children { get; set; }

@@ -269,7 +269,14 @@ internal class NewStageObjDialog(MainWindowContext window)
                 ClassName = _class,
                 Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100)
             };
-
+        
+        List<string> DesignList = ["LightArea", "FogAreaCameraPos", "FogArea"];
+        List<string> SoundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
+        
+        if (DesignList.Contains(newObj.Name)) newObj.FileType = StageFileType.Design;
+        else if (SoundList.Contains(newObj.Name)) newObj.FileType = StageFileType.Sound;
+        else newObj.FileType = StageFileType.Map;
+        
         for (int i = 0; i < 8; i++)
             newObj.Properties.Add($"Arg{i}", _args[i]);
 

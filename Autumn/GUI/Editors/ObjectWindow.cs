@@ -1,4 +1,6 @@
+using Autumn.Enums;
 using Autumn.Rendering;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
@@ -66,7 +68,8 @@ internal class ObjectWindow(MainWindowContext window)
                 }
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) 
                     {
-                        window.CurrentScene!.Camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
+                        AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().Actor.AABB * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                        window.CurrentScene!.Camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f, aabb.GetDiagonal()*0.01f);
                     }
                 }
 

@@ -30,6 +30,7 @@ internal class MainWindowContext : WindowContext
     private readonly AddStageDialog _addStageDialog;
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
+    public EditChildrenDialog _editChildrenDialog;
 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
@@ -158,6 +159,7 @@ internal class MainWindowContext : WindowContext
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
+            _editChildrenDialog?.Render();
             _welcomeDialog.Render();
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);

@@ -145,6 +145,7 @@ internal class SceneWindow(MainWindowContext window)
         if (isSceneHovered || isSceneWindowFocused)
         {
             float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
+            camMoveSpeed *= !ImGui.IsKeyPressed(ImGuiKey.LeftShift)  ? 1 : 10;
 
             if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
                 camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
@@ -305,7 +306,7 @@ internal class SceneWindow(MainWindowContext window)
                     !(window.Keyboard?.IsCtrlPressed() ?? false)
                 );
             }
-            else if (window.CurrentScene.SelectedObjects.Any())
+            else if ((isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || isTranslationActive || isScaleActive || isRotationActive)
             {
                 Vector3 _ndcMousePos3D = new(ndcMousePos.X * sceneImageSize.X/2, ndcMousePos.Y *sceneImageSize.Y/2, (normPickingDepth * 10 - 1)/10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);

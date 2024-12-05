@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using Autumn.Background;
+using Autumn.FileSystems;
 using Autumn.Storage;
 using Autumn.Utils;
 
@@ -29,4 +31,22 @@ internal class SceneObj
             StageObj.Scale,
             StageObj.Rotation
         );
+    
+
+    public void UpdateActor(
+        LayeredFSHandler fsHandler,
+        GLTaskScheduler scheduler
+    )
+    {
+        string actorName = StageObj.Name;
+        if (
+            StageObj.Properties.TryGetValue("ModelName", out object? modelName)
+            && modelName is string modelNameString
+            && !string.IsNullOrEmpty(modelNameString)
+        )
+            actorName = modelNameString;
+
+        Actor = fsHandler.ReadActor(actorName, scheduler);
+    }
+    
 }
