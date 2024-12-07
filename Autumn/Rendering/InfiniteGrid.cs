@@ -231,6 +231,7 @@ namespace Autumn.Rendering
 
                 gl.Enable(EnableCap.Blend);
                 gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                gl.ColorMask(1, false, false, false, false);
 
                 gl.Disable(EnableCap.CullFace);
 
@@ -240,6 +241,7 @@ namespace Autumn.Rendering
                 gl.UseProgram(0);
 
                 gl.Enable(EnableCap.CullFace);
+                gl.ColorMask(1, true, true, true, true);
             }
             else
                 Debugger.Break();
