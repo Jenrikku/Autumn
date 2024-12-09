@@ -110,7 +110,8 @@ internal static class ModelRenderer
             };
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(20f);
 
-            gl.CullFace(TriangleFace.Back);
+            if (!sceneObj.isVisible) return;
+            else gl.CullFace(TriangleFace.Back);
 
             AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams, sceneObj.PickingId);
             return;
@@ -121,7 +122,9 @@ internal static class ModelRenderer
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(2f);
-            gl.CullFace(TriangleFace.Back);
+
+            if (!sceneObj.isVisible) return;
+            else gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(
                 gl,
@@ -132,6 +135,7 @@ internal static class ModelRenderer
         }
         else
         {
+            if (!sceneObj.isVisible) return;
             foreach (H3DMeshLayer layer in Enum.GetValues<H3DMeshLayer>())
             foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
             {
