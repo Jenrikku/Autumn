@@ -36,7 +36,7 @@ internal class StageWindow(MainWindowContext window)
 
                 ImGui.TableSetColumnIndex(0);
 
-                if (ImGui.Selectable(name, false))
+                if (ImGui.Selectable(name, false, ImGuiSelectableFlags.SpanAllColumns))
                 {
                     Scene? scene = window.Scenes.Find(scene =>
                         scene.Stage.Name == name && scene.Stage.Scenario == scenario
