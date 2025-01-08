@@ -8,6 +8,7 @@ namespace Autumn;
 
 internal class PropertiesWindow(MainWindowContext window)
 {
+    string _classNameBuffer = "";
     public void Render()
     {
         if (!ImGui.Begin("Properties"))
@@ -41,14 +42,14 @@ internal class PropertiesWindow(MainWindowContext window)
             {
                 if (window.ContextHandler.Settings.UseClassNames)
                 {
-                    string hint = string.Empty;
+                    string ccntClass = GetClassFromCCNT(stageObj.Name);
 
-                    if (string.IsNullOrEmpty(stageObj.ClassName))
-                        hint = GetClassFromCCNT(stageObj.Name);
+                    _classNameBuffer = string.IsNullOrEmpty(stageObj.ClassName) ? "" : stageObj.ClassName;
 
-                    stageObj.ClassName ??= ""; // So that input text works well.
-
-                    ImGui.InputTextWithHint("ClassName", hint, ref stageObj.ClassName, 128);
+                    if (ImGui.InputTextWithHint("ClassName", ccntClass, ref _classNameBuffer, 128))
+                    {
+                        stageObj.ClassName = ccntClass == _classNameBuffer ? null : _classNameBuffer;
+                    }
                 }
                 else
                 {
