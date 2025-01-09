@@ -2,12 +2,14 @@ using System.Diagnostics;
 using Autumn.GUI;
 using Autumn.Rendering;
 using Autumn.Storage;
+using Autumn.Wrappers;
 using ImGuiNET;
 
 namespace Autumn;
 
 internal class PropertiesWindow(MainWindowContext window)
 {
+    string _classNameBuffer = "";
     public void Render()
     {
         if (!ImGui.Begin("Properties"))
@@ -36,19 +38,41 @@ internal class PropertiesWindow(MainWindowContext window)
             SceneObj sceneObj = selectedObjects.First();
             StageObj stageObj = sceneObj.StageObj;
 
+            bool databaseHasEntry = ClassDatabaseWrapper.DatabaseEntries.TryGetValue(
+                !string.IsNullOrEmpty(stageObj.ClassName) ? stageObj.ClassName : GetClassFromCCNT(stageObj.Name),
+                out ClassDatabaseWrapper.DatabaseEntry dbEntry
+            );
+
+            if (databaseHasEntry)
+            {
+                if (!string.IsNullOrEmpty(dbEntry.Name))
+                    ImGui.Text(dbEntry.Name);
+
+                string tooltip = "";
+                if (dbEntry.Description != null)
+                    tooltip += dbEntry.Description + "\n";
+                if (dbEntry.DescriptionAdditional != null)
+                    tooltip += dbEntry.DescriptionAdditional;
+                if (!string.IsNullOrEmpty(tooltip))
+                {
+                    ImGui.SameLine();
+                    ImGuiWidgets.HelpTooltip(tooltip);
+                }
+            }
+
             ImGui.InputText(stageObj is RailObj ? "Name" : "ObjectName", ref stageObj.Name, 128);
             if (stageObj is not RailObj)
             {
                 if (window.ContextHandler.Settings.UseClassNames)
                 {
-                    string hint = string.Empty;
+                    string ccntClass = GetClassFromCCNT(stageObj.Name);
 
-                    if (string.IsNullOrEmpty(stageObj.ClassName))
-                        hint = GetClassFromCCNT(stageObj.Name);
+                    _classNameBuffer = string.IsNullOrEmpty(stageObj.ClassName) ? "" : stageObj.ClassName;
 
-                    stageObj.ClassName ??= ""; // So that input text works well.
-
-                    ImGui.InputTextWithHint("ClassName", hint, ref stageObj.ClassName, 128);
+                    if (ImGui.InputTextWithHint("ClassName", ccntClass, ref _classNameBuffer, 128))
+                    {
+                        stageObj.ClassName = ccntClass == _classNameBuffer ? null : string.IsNullOrEmpty(_classNameBuffer) ? null : _classNameBuffer;
+                    }
                 }
                 else
                 {
@@ -83,19 +107,48 @@ internal class PropertiesWindow(MainWindowContext window)
                     return;
                 }
 
+                string displayName = name;
+                string tooltip = "";
+
+                if (databaseHasEntry)
+                {
+                    if (dbEntry.Args != null && dbEntry.Args.TryGetValue(name, out var argEntry) && argEntry.Name != null)
+                    {
+                        displayName = argEntry.Name;
+                        if (argEntry.Default != null)
+                            tooltip += "Default Value: " + argEntry.Default.ToString() + "\n";
+                        if (argEntry.Default != null)
+                            tooltip += "Is Required: " + (argEntry.Required ? "Yes" : "No") + "\n";
+                        if (argEntry.Description != null)
+                            tooltip += argEntry.Description;
+                    }
+                }
+
                 switch (property)
                 {
                     case object p when p is int:
                         int intBuf = (int)(p ?? -1);
-                        if (ImGui.InputInt(name, ref intBuf))
+                        if (ImGui.InputInt(displayName, ref intBuf))
                             stageObj.Properties[name] = intBuf;
+
+                        if (!string.IsNullOrEmpty(tooltip))
+                        {
+                            ImGui.SameLine();
+                            ImGuiWidgets.HelpTooltip(tooltip);
+                        }
 
                         break;
 
                     case object p when p is string:
                         string strBuf = (string)(p ?? string.Empty);
-                        if (ImGui.InputText(name, ref strBuf, 128))
+                        if (ImGui.InputText(displayName, ref strBuf, 128))
                             stageObj.Properties[name] = strBuf;
+
+                        if (!string.IsNullOrEmpty(tooltip))
+                        {
+                            ImGui.SameLine();
+                            ImGuiWidgets.HelpTooltip(tooltip);
+                        }
 
                         break;
 
