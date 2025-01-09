@@ -215,4 +215,29 @@ internal static class MathUtils
         var prod3 = prod1 / prod2;
         return rayPoint - rayVector * prod3;
     }
+
+    /// <summary>
+    /// Calculates the nearest size unit (KB, MB, GB or TB) and returns a
+    /// string with the converted value followed by the unit suffix.
+    /// All units are in base 2.
+    /// </summary>
+    /// <param name="size">The size in bytes</param>
+    /// <returns>A string with the representation in a size unit</returns>
+    public static string ToNearestSizeUnit(double size)
+    {
+        int i = 0;
+
+        for (; i < 4 && size > 1024; i++)
+            size /= 1024;
+
+        return i switch
+        {
+            0 => size.ToString("0") + " B",
+            1 => size.ToString("0.##") + " KB",
+            2 => size.ToString("0.##") + " MB",
+            3 => size.ToString("0.##") + " GB",
+            4 => size.ToString("0.##") + " TB",
+            _ => throw new("Incorrect size unit")
+        };
+    }
 }
