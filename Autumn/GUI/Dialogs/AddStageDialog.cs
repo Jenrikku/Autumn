@@ -106,7 +106,7 @@ internal class AddStageDialog
 
             _foundStages = romFSHandler
                 .EnumerateStages()
-                .Where(t => t.Name.ToLower().Contains(_name.ToLower()))
+                .Where(t => t.Name.Contains(_name, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
 
             // Remove already opened stages:
