@@ -81,9 +81,10 @@ internal class NewStageObjDialog(MainWindowContext window)
                         if (
                             _classSearchQuery != string.Empty
                             && !pair.Key.ToLower().Contains(_classSearchQuery.ToLower())
-                            && !pair.Value.Name.Contains(_classSearchQuery.ToLower())
                         )
-                            continue;
+                            if (pair.Value.Name == null ||
+                            !pair.Value.Name.Contains(_classSearchQuery.ToLower()))
+                                continue;
                         ImGui.TableNextRow();
 
                         ImGui.TableSetColumnIndex(0);
@@ -94,7 +95,7 @@ internal class NewStageObjDialog(MainWindowContext window)
                             ResetArgs();
                         }
                         ImGui.TableSetColumnIndex(1);
-                        ImGui.Text(pair.Value.Name);
+                        ImGui.Text(pair.Value.Name ?? "");
                     }
 
                     ImGui.EndTable();
@@ -108,7 +109,7 @@ internal class NewStageObjDialog(MainWindowContext window)
                         description += $"\n{dbEntry.DescriptionAdditional}";
                     ImGui.SetWindowFontScale(1.3f);
                     if (databaseHasEntry)
-                        ImGui.Text(dbEntry.Name == " " ? _class : dbEntry.Name);
+                        ImGui.Text(dbEntry.Name ?? _class);
                     else
                         ImGui.Text(_class);
                     ImGui.SetWindowFontScale(1.0f);
