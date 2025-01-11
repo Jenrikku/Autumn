@@ -2,6 +2,7 @@ using Autumn.ActionSystem;
 using Autumn.Enums;
 using Autumn.FileSystems;
 using Autumn.Wrappers;
+using ImGuiNET;
 
 namespace Autumn.Context;
 
@@ -44,10 +45,46 @@ internal class ContextHandler
 
         SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
 
-        var actions =
-            YAMLWrapper.Deserialize<Dictionary<CommandID, Shortcut>>(actionsFile) ?? new();
+        var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile) ?? new();
 
-        ActionHandler = new(actions);
+        // Convert to Dictionary<CommandID, Shortcut>
+
+        Dictionary<CommandID, Shortcut> parsedActions = new();
+
+        foreach (var (key, value) in actions)
+        {
+            if (!Enum.TryParse(key, out CommandID id))
+                continue;
+
+            if (value is not Dictionary<object, object> dict)
+                continue;
+
+            bool ctrl = false;
+            bool shift = false;
+            bool alt = false;
+            ImGuiKey imGuiKey = ImGuiKey.None;
+
+            dict.TryGetValue("Ctrl", out object? ctrlVal);
+            dict.TryGetValue("Shift", out object? shiftVal);
+            dict.TryGetValue("Alt", out object? altVal);
+            dict.TryGetValue("Key", out object? imGuiKeyVal);
+
+            if (ctrlVal is bool v0)
+                ctrl = v0;
+
+            if (shiftVal is bool v1)
+                shift = v1;
+
+            if (altVal is bool v2)
+                alt = v2;
+
+            if (imGuiKeyVal is string v3 && Enum.TryParse(v3, out ImGuiKey v4))
+                imGuiKey = v4;
+
+            parsedActions.Add(id, new(ctrl, shift, alt, imGuiKey));
+        }
+
+        ActionHandler = new(parsedActions);
     }
 
     /// <summary>
