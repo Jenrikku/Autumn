@@ -20,12 +20,15 @@ internal abstract class FileChooserWindowContext : WindowContext
         | ImGuiWindowFlags.NoScrollWithMouse
         | ImGuiWindowFlags.NoSavedSettings;
 
+    private const float _bottomPanelBaseHeight = 60;
+
     protected static readonly string Root = OperatingSystem.IsWindows() ? "C:\\" : "/";
     protected static readonly string Home = Environment.GetFolderPath(
         Environment.SpecialFolder.UserProfile
     );
 
     protected string SearchString = "";
+    protected string SelectedFile = "";
     protected string CurrentDirectory = Home;
 
     /// <summary>
@@ -178,9 +181,46 @@ internal abstract class FileChooserWindowContext : WindowContext
 
             ImGui.SameLine();
 
-            if (ImGui.BeginChild("##Files", ImGui.GetContentRegionAvail(), ImGuiChildFlags.Border))
+            if (ImGui.BeginChild("##Main", ImGui.GetContentRegionAvail()))
             {
-                RenderFileChoosePanel();
+                Vector2 fileChooseSize = ImGui.GetContentRegionAvail();
+                fileChooseSize.Y -= _bottomPanelBaseHeight * ScalingFactor;
+
+                if (ImGui.BeginChild("##FileChoose", fileChooseSize, ImGuiChildFlags.Border))
+                {
+                    RenderFileChoosePanel();
+                    ImGui.EndChild();
+                }
+
+                if (ImGui.BeginChild("##Bottom", ImGui.GetContentRegionAvail()))
+                {
+                    float width = ImGui.GetContentRegionAvail().X;
+
+                    ImGui.SetNextItemWidth(width);
+
+                    bool enterPressed = ImGui.InputText(
+                        "",
+                        ref SelectedFile,
+                        1024,
+                        ImGuiInputTextFlags.EnterReturnsTrue
+                    );
+
+                    float buttonWidth = 60 * ScalingFactor;
+                    Vector2 buttonSize = new(buttonWidth, 0);
+
+                    ImGui.SetCursorPosX(width - 2 * buttonWidth - ImGui.GetStyle().CellPadding.X);
+
+                    if (ImGui.Button("Cancel", buttonSize))
+                        Window.Close();
+
+                    ImGui.SameLine();
+
+                    if (
+                        (ImGui.Button("Ok", buttonSize) || enterPressed)
+                        && !string.IsNullOrEmpty(SelectedFile)
+                    ) { }
+                }
+
                 ImGui.EndChild();
             }
 
