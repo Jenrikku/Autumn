@@ -53,7 +53,7 @@ internal abstract class WindowContext
 
         WindowOptions options = WindowOptions.Default;
 
-        options.VSync = true;
+        options.VSync = contextHandler.SystemSettings.EnableVSync;
         options.SharedContext = WindowManager.SharedContext;
 
         ContextFlags contextFlags = ContextFlags.ForwardCompatible;
