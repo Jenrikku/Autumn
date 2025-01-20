@@ -1,6 +1,8 @@
+using System.Numerics;
 using System.Reflection;
 using Autumn.History;
 using Autumn.Rendering;
+using Autumn.Storage;
 
 namespace Autumn.GUI;
 
@@ -119,4 +121,91 @@ internal static class ChangeHandler
         history.Add(change);
         return true;
     }
+
+    public static bool ChangeDictionaryValue<T1>(
+        ChangeHistory history,
+        Dictionary<string, T1> dict,
+        string name,
+        T1 old,
+        T1 val
+    )
+    {
+        Change change =
+            new(
+                Undo: () => { if (dict.ContainsKey(name)) dict[name] = old; },
+                Redo: () => { if (dict.ContainsKey(name)) dict[name] = val; }
+            );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    // See method above.
+    public static bool ChangeTransform(
+        ChangeHistory history,
+        SceneObj obj,
+        string transform,
+        Vector3 prior,
+        Vector3 final
+    )
+    {
+        FieldInfo? field = obj.StageObj.GetType().GetField(transform);
+        if (field == null) return false;
+        Change change =
+        new(
+            Undo: () =>
+            {
+                field.SetValue(obj.StageObj, prior);
+                obj.UpdateTransform();
+            },
+            Redo: () =>
+            {
+                field.SetValue(obj.StageObj, final);
+                obj.UpdateTransform();
+            }
+        );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+
+    public static bool ChangeMultiTransform(
+        ChangeHistory history,
+        Dictionary<SceneObj, Vector3> sobjL,
+        string transform
+    )
+    {
+        FieldInfo? field = new StageObj().GetType().GetField(transform); // These fields are there no matter what
+
+        if (field == null) return false;
+        List<Vector3> current = new();
+        foreach (SceneObj obj in sobjL.Keys)
+        {
+            current.Add((Vector3)field.GetValue(obj.StageObj));
+        }
+        Change change =
+        new(
+            Undo: () =>
+            {
+                foreach (SceneObj obj in sobjL.Keys)
+                {
+                    field.SetValue(obj.StageObj, sobjL[obj]);
+                    obj.UpdateTransform();
+                }
+            },
+            Redo: () =>
+            {
+                int i = 0;
+                foreach (SceneObj obj in sobjL.Keys)
+                {
+                    field.SetValue(obj.StageObj, current[i]);
+                    obj.UpdateTransform();
+                    i++;
+                }
+            }
+        );
+        history.Add(change);
+        return true;
+    }
+
 }

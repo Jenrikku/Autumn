@@ -32,11 +32,12 @@ internal class StageWindow(MainWindowContext window)
 
             foreach (var (name, scenario) in window.ContextHandler.ProjectStages)
             {
+                if (scenario == 0) continue;
                 ImGui.TableNextRow();
 
                 ImGui.TableSetColumnIndex(0);
 
-                if (ImGui.Selectable(name, false))
+                if (ImGui.Selectable(name+scenario, false))
                 {
                     Scene? scene = window.Scenes.Find(scene =>
                         scene.Stage.Name == name && scene.Stage.Scenario == scenario
@@ -72,7 +73,7 @@ internal class StageWindow(MainWindowContext window)
                         );
                     }
 
-                    ImGui.SetWindowFocus("Scene");
+                    ImGui.SetWindowFocus("Objects");
                 }
 
                 ImGui.TableNextColumn();

@@ -15,8 +15,8 @@ internal class NewStageObjDialog(MainWindowContext window)
     private string _class = "";
     private string _classSearchQuery = "";
     private bool _prevClassValid = false;
-    private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1];
-    private int _objectType = 0;
+    private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+    private int _objectType = 2;
     private string[] _objectTypeNames = Enum.GetNames<StageObjType>();
     private const ImGuiTableFlags _newObjectClassTableFlags =
         ImGuiTableFlags.ScrollY
@@ -207,7 +207,7 @@ internal class NewStageObjDialog(MainWindowContext window)
                 ImGuiWidgets.InputTextRedWhenEmpty("##ObjectName", ref _name, 128);
                 ImGui.PopItemWidth();
                 ImGui.SameLine();
-                if (ImGui.Button("<-"))
+                if (ImGui.ArrowButton("l", ImGuiDir.Left))
                     _name = _class;
                 ImGui.SameLine();
                 ImGui.PushItemWidth(width * 0.5f);
@@ -220,7 +220,7 @@ internal class NewStageObjDialog(MainWindowContext window)
                     "Object Type",
                     ref _objectType,
                     _objectTypeNames,
-                    _objectTypeNames.Length
+                    _objectTypeNames.Length-3 // no rail or child types
                 );
 
                 _prevClassValid = databaseHasEntry;
@@ -266,8 +266,8 @@ internal class NewStageObjDialog(MainWindowContext window)
             {
                 Type = (StageObjType)_objectType,
                 Name = _name,
-                ClassName = _class,
-                Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100)
+                ClassName = window.ContextHandler.Settings.UseClassNames ? _class : null,
+                Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100),
             };
         
         List<string> DesignList = ["LightArea", "FogAreaCameraPos", "FogArea"];
@@ -276,9 +276,22 @@ internal class NewStageObjDialog(MainWindowContext window)
         if (DesignList.Contains(newObj.Name)) newObj.FileType = StageFileType.Design;
         else if (SoundList.Contains(newObj.Name)) newObj.FileType = StageFileType.Sound;
         else newObj.FileType = StageFileType.Map;
-        
-        for (int i = 0; i < 8; i++)
+
+        // set up arguments
+        int argNum = 10;
+        if (newObj.Type == StageObjType.Area) argNum = 8;
+        else if (newObj.Type != StageObjType.Regular) argNum = 0;
+        for (int i = 0; i < argNum; i++)
             newObj.Properties.Add($"Arg{i}", _args[i]);
+
+        // set up 
+        if (newObj.Type == StageObjType.Area || newObj.Type == StageObjType.CameraArea) 
+        {
+            newObj.Properties.Add("Priority", -1);
+            newObj.Properties.Add("ShapeModelNo", 0);
+        }
+        else if (newObj.Type == StageObjType.Start) 
+            newObj.Properties.Add("MarioNo", 0);
 
         window.CurrentScene.AddObject(
             newObj,

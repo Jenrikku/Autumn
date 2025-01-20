@@ -159,7 +159,7 @@ internal class AddStageDialog
         ImGui.Combo(
             "##useRomFSCombo",
             ref _useRomFSComboCurrent,
-            "Import the stage from the RomFS\0Create a new empty stage"
+            ["Import the stage from the RomFS", "Create a new empty stage"], 2
         );
 
         ImGui.EndDisabled();

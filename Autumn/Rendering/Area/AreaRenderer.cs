@@ -8,7 +8,7 @@ internal static class AreaRenderer
 {
     private static RenderableModel? s_model;
 
-    public static void Initialize(GL gl) => s_model = DefaultCubeRenderer.GenerateCubeModel(gl, 10);
+    public static void Initialize(GL gl) => s_model = DefaultCubeRenderer.GenerateCubeModel(gl, 10.15f);
 
     public static void Render(
         GL gl,

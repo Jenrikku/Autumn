@@ -195,9 +195,13 @@ internal class MainWindowContext : WindowContext
     }
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
+    public bool isTransformActive => _sceneWindow.isTransformActive;
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
+
+    public void SetSceneDuplicateTranslation() =>
+        _sceneWindow.isTranslationFromDuplicate = true;
 
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.

@@ -25,6 +25,7 @@ internal abstract class WindowContext
 
     public IInputContext? InputContext { get; protected set; }
     public IKeyboard? Keyboard { get; protected set; }
+    public IMouse? Mouse { get; protected set; }
 
     public bool IsFocused { get; private set; }
 
@@ -78,6 +79,7 @@ internal abstract class WindowContext
 
             InputContext = Window.CreateInput();
             Keyboard = InputContext.Keyboards[0];
+            Mouse = InputContext.Mice[0];
 
             # region Load icons
 

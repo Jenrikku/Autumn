@@ -9,12 +9,13 @@ namespace Autumn.Rendering;
 internal class SceneObj
 {
     public StageObj StageObj { get; }
-    public Actor Actor { get; }
+    public Actor Actor { get; set;}
 
-    public Matrix4x4 Transform;
+    public Matrix4x4 Transform { get; set;}
 
-    public uint PickingId { get; private set; }
+    public uint PickingId { get; set; }
     public bool Selected { get; set; }
+    public bool isVisible = true;
 
     public SceneObj(StageObj stageObj, Actor actorObj, uint pickingId)
     {
@@ -48,5 +49,4 @@ internal class SceneObj
 
         Actor = fsHandler.ReadActor(actorName, scheduler);
     }
-    
 }
