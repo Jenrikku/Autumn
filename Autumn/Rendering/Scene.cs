@@ -13,6 +13,7 @@ internal class Scene
     public Stage Stage { get; }
 
     public bool IsSaved { get; set; } = false;
+    public uint SaveUndoCount { get; set; } = 0;
 
     public ChangeHistory History { get; } = new();
 
@@ -50,6 +51,8 @@ internal class Scene
         foreach (SceneObj obj in _sceneObjects)
             ModelRenderer.Draw(gl, obj);
     }
+
+#region Object selection
 
     public bool IsObjectSelected(uint id)
     {
@@ -95,10 +98,55 @@ internal class Scene
             yield return sceneObj;
     }
 
+    public int CountSceneObjs()
+    {
+        return _sceneObjects.Count;
+    }
+
+#endregion
     public void AddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         Stage.AddStageObj(stageObj);
         GenerateSceneObject(stageObj, fsHandler, scheduler);
+    }
+    public uint DuplicateObj(StageObj clonedObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
+    {
+        uint pickingId = 0;
+        if (clonedObj.Type == StageObjType.Child || clonedObj.Type == StageObjType.AreaChild)
+        {
+            clonedObj.Parent.Children.Add(clonedObj);
+            DuplicateChild(clonedObj, fsHandler, scheduler);
+            return pickingId;
+        }
+        Stage.AddStageObj(clonedObj);
+        GenerateSceneObject(clonedObj, fsHandler, scheduler);
+        pickingId = _lastPickingId - 1;
+        if(clonedObj.Children!= null && clonedObj.Children.Count > 0)
+        {
+            foreach (StageObj ch in clonedObj.Children)
+            {
+                pickingId = DuplicateChild(ch, fsHandler, scheduler);
+            }
+        }
+        return pickingId;
+    }
+    public uint DuplicateChild(StageObj clonedObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
+    {
+        GenerateSceneObject(clonedObj, fsHandler, scheduler);
+        uint pickingId = _lastPickingId - 1;
+        if(clonedObj.Children!= null && clonedObj.Children.Count > 0)
+        {
+            foreach (StageObj ch in clonedObj.Children)
+            {
+                pickingId = DuplicateChild(ch, fsHandler, scheduler);
+            }
+        }
+        return pickingId;
+    }
+    public void RemoveObject(SceneObj sceneObj)
+    {
+        Stage.RemoveStageObj(sceneObj.StageObj);
+        DestroySceneObject(sceneObj);
     }
 
     public void ResetCamera()
@@ -205,4 +253,12 @@ internal class Scene
         _sceneObjects.Add(sceneObj);
         _pickableObjs.Add(_lastPickingId++, sceneObj);
     }
+    private void DestroySceneObject(
+        SceneObj sceneObj
+    )
+    {
+        _sceneObjects.Remove(sceneObj);
+        _pickableObjs.Remove(sceneObj.PickingId++);
+    }
+
 }

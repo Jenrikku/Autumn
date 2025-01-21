@@ -11,6 +11,7 @@ internal class ContextHandler
     private const string systemConfFile = "system.yml";
     private const string actionsConfFile = "actions.yml";
 
+    public bool ProjectChanged { get; set; } = false;
     public LayeredSettings Settings { get; private set; }
     public SystemSettings SystemSettings { get; }
     public string SettingsPath { get; }
@@ -43,6 +44,10 @@ internal class ContextHandler
             FSHandler = new();
 
         SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
+        if (!File.Exists(actionsFile))
+        {
+            File.Copy(Path.Join("Resources", "DefaultActions.yml"), actionsFile);
+        }
 
         var actions =
             YAMLWrapper.Deserialize<Dictionary<CommandID, Shortcut>>(actionsFile) ?? new();
@@ -70,6 +75,7 @@ internal class ContextHandler
 
         SystemSettings.AddRecentlyOpenedPath(projectDir);
         SaveSettings();
+        ProjectChanged = true;
     }
 
     /// <summary>
@@ -107,6 +113,7 @@ internal class ContextHandler
         SaveSettings();
 
         UpdateProjectStages();
+        ProjectChanged = true;
 
         return true;
     }

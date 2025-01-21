@@ -12,6 +12,7 @@ internal class SystemSettings
     public bool SkipWelcomeDialog = false;
     public bool OpenLastProject = false;
     public string LastOpenedProject = string.Empty;
+    public int Theme = 0;
 
     public void AddRecentlyOpenedPath(string path)
     {

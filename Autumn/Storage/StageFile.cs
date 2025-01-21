@@ -46,6 +46,35 @@ internal class StageFile
         list.Add(stageObj);
     }
 
+    public void RemoveStageObj(StageObj stageObj)
+    {
+        if (stageObj is RailObj railObj)
+        {
+            _railInfo.Remove(railObj);
+            return;
+        }
+
+        if (stageObj.Type == StageObjType.Child || stageObj.Type == StageObjType.AreaChild)
+        {
+            stageObj.Parent.Children.Remove(stageObj);
+            stageObj.Parent = null;
+            return;
+        }
+
+        List<StageObj> list = stageObj.Type switch
+        {
+            StageObjType.Regular => _objInfo,
+            StageObjType.Area => _areaObjInfo,
+            StageObjType.CameraArea => _cameraAreaInfo,
+            StageObjType.Goal => _goalObjInfo,
+            StageObjType.StartEvent => _startEventObjInfo,
+            StageObjType.Start => _startInfo,
+            StageObjType.DemoScene => _demoSceneObjInfo,
+            _ => throw new NotImplementedException("Incorrect object type read.")
+        };
+
+        list.Remove(stageObj);
+    }
     public void AddAdditionalFile(string name, byte[] contents)
     {
         if (!_additionalFiles.TryAdd(name, contents))

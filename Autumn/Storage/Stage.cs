@@ -45,6 +45,18 @@ internal class Stage
 
         stageFile.AddStageObj(stageObj);
     }
+    public void RemoveStageObj(StageObj stageObj)
+    {
+        StageFile stageFile = stageObj.FileType switch
+        {
+            StageFileType.Design => _design,
+            StageFileType.Map => _map,
+            StageFileType.Sound => _sound,
+            _ => throw new NotImplementedException("Unknown stage file.")
+        };
+
+        stageFile.RemoveStageObj(stageObj);
+    }
 
     public void AddStageObjs(IEnumerable<StageObj> stageObjs)
     {
