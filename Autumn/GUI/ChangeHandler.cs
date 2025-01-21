@@ -13,39 +13,60 @@ internal static class ChangeHandler
         ChangeHistory history,
         SceneObj obj,
         bool clear
-    ) => ToggleObjectSelection(context, history, obj.PickingId, clear);
+    ) => ToggleObjectSelection(context, history, obj.PickingId, obj.GetType(), clear);
 
     public static void ToggleObjectSelection(
         MainWindowContext context,
         ChangeHistory history,
         uint id,
+        Type type,
         bool clear
     )
     {
-        if (context.CurrentScene is null)
-            return;
-
         SceneObj[]? cleared = null;
-        bool isSelected = context.CurrentScene.IsObjectSelected(id);
+        if (context.CurrentScene is null) return;
 
-        // If the only selected object is the one that has been clicked, then nothing is done.
-        if (context.CurrentScene.SelectedObjects.Count() == 1 && isSelected)
-            return;
+        if (type == typeof(SceneObj))
+        {
 
-        if (clear)
-            cleared = context.CurrentScene.SelectedObjects.ToArray();
+            bool isSelected = context.CurrentScene.IsObjectSelected(id);
 
-        Change change =
-            new(
-                Undo: () =>
-                {
-                    if (cleared is not null)
+            // If the only selected object is the one that has been clicked, then nothing is done.
+            if (context.CurrentScene.SelectedObjects.Count() == 1 && isSelected && clear)
+                return;
+
+            if (clear)
+            {
+                cleared = context.CurrentScene.SelectedObjects.ToArray();
+
+                if (context.CurrentScene.SelectedObjects.Count() > 1 && isSelected) // prevent it getting unselected when clicking on 1 of the multiselected
+                    isSelected = false;
+
+            }
+            Change change =
+                new(
+                    Undo: () =>
                     {
-                        context.CurrentScene.SetSelectedObjects(cleared);
-                        return;
-                    }
+                        if (cleared is not null)
+                        {
+                            context.CurrentScene.SetSelectedObjects(cleared);
+                            return;
+                        }
 
-                    context.CurrentScene.SetObjectSelected(id, isSelected);
+                        context.CurrentScene.SetObjectSelected(id, isSelected);
+                    },
+                    Redo: () =>
+                    {
+                        if (cleared is not null)
+                            context.CurrentScene.UnselectAllObjects();
+
+                        context.CurrentScene.SetObjectSelected(id, !isSelected);
+                    }
+                );
+
+            change.Redo();
+            history.Add(change);
+        }
                 },
                 Redo: () =>
                 {
