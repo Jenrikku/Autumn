@@ -226,7 +226,8 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ChangeHandler.ToggleObjectSelection(
                                                 window,
                                                 window.CurrentScene.History,
-                                                s,
+                                                s.PickingId,
+                                                typeof(SceneObj),
                                                 !(window.Keyboard?.IsCtrlPressed() ?? false)
                                                 );
                                             AxisAlignedBoundingBox aabb = s.Actor.AABB * s.StageObj.Scale;
