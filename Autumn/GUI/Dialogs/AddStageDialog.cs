@@ -50,8 +50,8 @@ internal class AddStageDialog
 
     public void Render()
     {
-        if (_window.ContextHandler.Settings.RomFSPath is null)
-            _isOpened = false;
+        if (_window.ContextHandler.FSHandler.OriginalFS == null)
+            return;
 
         if (!_isOpened)
             return;
@@ -102,9 +102,7 @@ internal class AddStageDialog
 
         if (_stageListNeedsRebuild)
         {
-            RomFSHandler romFSHandler = new(_window.ContextHandler.Settings.RomFSPath!);
-
-            _foundStages = romFSHandler
+            _foundStages = _window.ContextHandler.FSHandler.OriginalFS
                 .EnumerateStages()
                 .Where(t => t.Name.Contains(_name))
                 .ToList();

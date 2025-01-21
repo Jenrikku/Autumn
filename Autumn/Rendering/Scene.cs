@@ -246,8 +246,8 @@ internal class Scene
             && !string.IsNullOrEmpty(modelNameString)
         )
             actorName = modelNameString;
-
-        Actor actor = fsHandler.ReadActor(actorName, scheduler);
+        fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
+        Actor actor = fsHandler.ReadActor(actorName, fallback, scheduler);
         SceneObj sceneObj = new(stageObj, actor, _lastPickingId);
 
         _sceneObjects.Add(sceneObj);

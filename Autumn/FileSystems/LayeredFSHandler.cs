@@ -1,102 +1,105 @@
 using System.Collections.ObjectModel;
 using Autumn.Background;
 using Autumn.Storage;
-using Silk.NET.OpenGL;
 
 namespace Autumn.FileSystems;
 
 /// <summary>
 /// A class that simulates a romfs in layers.<br/>
-/// When reading, if a file exists in more than one filesystem,
-/// the file from the filesystem that comes first in the list will be read.<br/>
-/// When writing, the file will be written to the first filesystem in the list.
+/// When getting specific files or variables through methods we try to
+/// find them in the modified FS first, then in the original FS. <br/>
+/// For specific filesystem checks we can just access <b> OriginalFS </b> or <b> ModFs </b> 
 /// </summary>
 internal class LayeredFSHandler
 {
-    private readonly List<RomFSHandler> _romFSHandlers;
+    /// <summary>
+    /// Original, unmodified romfs of the game, used to obtain base assets, but should not be written into.
+    /// </summary>
+    public RomFSHandler? OriginalFS;
+
+    /// <summary>
+    /// Modified romfs, where our project file will be found.
+    /// All changes made will be saved here.
+    /// </summary>
+    public RomFSHandler? ModFS;
 
     /// <summary>
     /// Creates a new instance of <see cref="LayeredFSHandler"/> where the passed
     /// strings are used to create the RomFSHandlers.
     /// </summary>
-    /// <param name="paths">The strings used to create the RomFSHandlers.</param>
-    public LayeredFSHandler(params string[] paths)
+    /// <param name="original">Path to the unmodified romfs.</param>
+    /// <param name="modified">Path to the modified romfs.</param>
+    public LayeredFSHandler(string? original, string? modified = null)
     {
-        _romFSHandlers = new(paths.Length);
-        SetPaths(paths);
+        OriginalFS = string.IsNullOrEmpty(original) ? null : new(original);
+        ModFS = string.IsNullOrEmpty(modified) ? null : new(modified);
     }
 
     public Stage ReadStage(string name, byte scenario)
     {
-        foreach (RomFSHandler romFSHandler in _romFSHandlers)
-        {
-            if (!romFSHandler.ExistsStage(name, scenario))
-                continue;
-
-            return romFSHandler.ReadStage(name, scenario);
-        }
-
+        if (ModFS != null && ModFS.ExistsStage(name, scenario))
+            return ModFS.ReadStage(name, scenario);
+        else if (OriginalFS != null && OriginalFS.ExistsStage(name, scenario))
+            return OriginalFS.ReadStage(name, scenario);
         return new();
     }
 
     public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
-        foreach (RomFSHandler romFSHandler in _romFSHandlers)
+        if (ModFS != null && ModFS.ExistsActor(name))
+            return ModFS.ReadActor(name, scheduler);
+        else if (OriginalFS != null && OriginalFS.ExistsActor(name))
+            return OriginalFS.ReadActor(name, scheduler);
+        return new(name);
+    }
+
+    public Actor ReadActor(string name, string? fallback, GLTaskScheduler scheduler)
+    {
+        if (fallback == null) return ReadActor(name, scheduler);
+
+        if (ModFS != null)
         {
-            if (!romFSHandler.ExistsActor(name))
-                continue;
-
-            return romFSHandler.ReadActor(name, scheduler);
+            if (!ModFS.ExistsActor(name))
+            {
+                if (ModFS.ExistsActor(fallback))
+                    return ModFS.ReadActor(fallback, scheduler);
+            }
+            else
+                return ModFS.ReadActor(name, scheduler);
         }
-
+        if (OriginalFS != null)
+        {
+            if (!OriginalFS.ExistsActor(name))
+            {
+                if (OriginalFS.ExistsActor(fallback))
+                    return OriginalFS.ReadActor(fallback, scheduler);
+            }
+            else
+                return OriginalFS.ReadActor(name, scheduler);
+        }
         return new(name);
     }
 
     public bool WriteStage(Stage stage)
     {
-        if (_romFSHandlers.Count < 1)
-            return false;
-
-        return _romFSHandlers[0].WriteStage(stage);
+        if (ModFS == null) return false;
+        return ModFS.WriteStage(stage);
     }
 
     public ReadOnlyDictionary<string, string> ReadCreatorClassNameTable()
     {
-        foreach (RomFSHandler romFSHandler in _romFSHandlers)
-        {
-            if (!romFSHandler.ExistsCreatorClassNameTable())
-                continue;
-
-            return romFSHandler.ReadCreatorClassNameTable();
-        }
-
+        if (ModFS != null && ModFS.ExistsCreatorClassNameTable())
+            return ModFS.ReadCreatorClassNameTable();
+        else if (OriginalFS != null && OriginalFS.ExistsCreatorClassNameTable())
+            return OriginalFS.ReadCreatorClassNameTable();
         return new(new Dictionary<string, string>());
     }
 
-    public IEnumerable<string> EnuemeratePaths()
+    public IEnumerable<string> EnumeratePaths()
     {
-        foreach (RomFSHandler handler in _romFSHandlers)
-            yield return handler.Root;
-    }
-
-    public string[] GetPaths()
-    {
-        string[] result = new string[_romFSHandlers.Count];
-
-        for (int i = 0; i < _romFSHandlers.Count; i++)
-            result[i] = _romFSHandlers[i].Root;
-
-        return result;
-    }
-
-    public void SetPaths(params string[] paths)
-    {
-        _romFSHandlers.Clear();
-
-        foreach (string path in paths)
-        {
-            RomFSHandler handler = new(path);
-            _romFSHandlers.Add(handler);
-        }
+        if (ModFS != null)
+            yield return ModFS.Root;
+        if (OriginalFS != null)
+            yield return OriginalFS.Root;
     }
 }

@@ -47,6 +47,7 @@ internal class SceneObj
         )
             actorName = modelNameString;
 
-        Actor = fsHandler.ReadActor(actorName, scheduler);
+        fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
+        Actor = fsHandler.ReadActor(actorName, fallback, scheduler);
     }
 }

@@ -559,11 +559,35 @@ internal partial class RomFSHandler
         dict.TryGetValue("AreaChildren", out BYAMLNode? areaChildren);
         dict.TryGetValue("GenerateChildren", out BYAMLNode? generateChildren);
 
+        dict.TryGetValue("SwitchA", out BYAMLNode? switchA);
+        dict.TryGetValue("SwitchB", out BYAMLNode? switchB);
+        dict.TryGetValue("SwitchDeadOn", out BYAMLNode? switchDead);
+        dict.TryGetValue("SwitchAppear", out BYAMLNode? switchAppear);
+        dict.TryGetValue("SwitchKill", out BYAMLNode? switchK);
+
+        dict.TryGetValue("ViewId", out BYAMLNode? vId);
+        dict.TryGetValue("CameraId", out BYAMLNode? camId);
+        dict.TryGetValue("ClippingGroupId", out BYAMLNode? cgId);
+
         RailObj? railObj = null;
 
         if (rail is not null && rail.NodeType == BYAMLNodeType.Dictionary)
+        {
             processedRails.TryGetValue(rail, out railObj);
+            if (railObj is null)
+            {
+                var rO = ReadRailObj(rail, fileType);
+                foreach (RailObj r in processedRails.Values)
+                {
+                    if (rO == r)
+                    {
+                        railObj = r;
 
+                    }
+                }
+                if (railObj is null) throw new("The rail inside " + name.GetValueAs<string>() + " is not referenced in AllRailInfos, please report this issue.");
+            }
+        }
         List<StageObj> children = new();
 
         StageObj stageObj =
@@ -588,6 +612,14 @@ internal partial class RomFSHandler
                 ),
                 Name = name?.GetValueAs<string>() ?? "StageObj",
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
+                SwitchA = switchA != null ? switchA.GetValueAs<int>() : -1,
+                SwitchB = switchB != null ? switchB.GetValueAs<int>() : -1,
+                SwitchAppear = switchAppear != null ? switchAppear.GetValueAs<int>() : -1,
+                SwitchDeadOn = switchDead != null ? switchDead.GetValueAs<int>() : -1,
+                SwitchKill = switchK != null ? switchK.GetValueAs<int>() : -1,
+                ViewId = vId != null ? vId.GetValueAs<int>() : -1,
+                CameraId = camId != null ? camId.GetValueAs<int>() : -1,
+                ClippingGroupId = cgId != null ? cgId.GetValueAs<int>() : -1,
                 Rail = railObj,
                 Children = children,
                 Properties = dict.Where(i =>
@@ -608,6 +640,10 @@ internal partial class RomFSHandler
                         && i.Key != "GenerateChildren"
                         && i.Key != "GenerateParent"
                         && i.Key != "AreaParent"
+                        && i.Key != "CameraId"
+                        && i.Key != "ClippingGroupId"
+                        && i.Key != "ViewId"
+                        && !i.Key.Contains("Switch")
                     )
                     .ToDictionary(i => i.Key, i => i.Value.Value)
             };
