@@ -67,18 +67,6 @@ internal static class ChangeHandler
             change.Redo();
             history.Add(change);
         }
-                },
-                Redo: () =>
-                {
-                    if (cleared is not null)
-                        context.CurrentScene.UnselectAllObjects();
-
-                    context.CurrentScene.SetObjectSelected(id, !isSelected);
-                }
-            );
-
-        change.Redo();
-        history.Add(change);
     }
 
     /// <summary>
