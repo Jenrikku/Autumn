@@ -35,6 +35,7 @@ internal class Shortcut
 
     public bool IsTriggered()
     {
+        if (Ctrl != ImGui.IsKeyDown(ImGuiKey.ModCtrl))
             return false;
 
         if (Shift != ImGui.IsKeyDown(ImGuiKey.ModShift))
