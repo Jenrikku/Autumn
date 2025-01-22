@@ -103,7 +103,7 @@ internal class SettingsDialog
                     ImGui.StyleColorsDark();
                     break;
 
-                case 1:
+                case 2:
                     ImGui.StyleColorsLight();
                     break;
             }
