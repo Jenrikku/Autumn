@@ -146,11 +146,15 @@ internal class AddStageDialog
 
         float okButtonWidth = 50 * _window.ScalingFactor;
 
+        bool _disable = false;
+
         if (!_foundStages?.Contains((_name, scenarioNo)) ?? true)
         {
-            ImGui.BeginDisabled();
+            _disable = true;
             _useRomFSComboCurrent = 1;
         }
+        if (_disable)
+            ImGui.BeginDisabled();
 
         ImGui.SetNextItemWidth(contentAvail.X - okButtonWidth - style.ItemSpacing.X);
 
@@ -160,13 +164,19 @@ internal class AddStageDialog
             ["Import the stage from the RomFS", "Create a new empty stage"], 2
         );
 
-        ImGui.EndDisabled();
+        if (_disable)
+            ImGui.EndDisabled();
 
         ImGui.SameLine();
 
         bool stageExists = _window.ContextHandler.ProjectStages.Contains((_name, scenarioNo));
 
+        _disable = false;
+
         if (string.IsNullOrEmpty(_name) || stageExists)
+            _disable = true;
+
+        if (_disable)
             ImGui.BeginDisabled();
 
         if (ImGui.Button("Ok", new(okButtonWidth, 0)))
@@ -220,7 +230,8 @@ internal class AddStageDialog
             ImGui.CloseCurrentPopup();
         }
 
-        ImGui.EndDisabled();
+        if (_disable)
+            ImGui.EndDisabled();
 
         // Warn the user if the stage already exists:
         if (stageExists)
