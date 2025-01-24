@@ -46,10 +46,7 @@ internal abstract class WindowContext
         ContextHandler = contextHandler;
         WindowManager = windowManager;
 
-        ImguiSettingsFile = Path.Join(
-            Path.GetDirectoryName(contextHandler.SettingsPath),
-            "imgui.ini"
-        );
+        ImguiSettingsFile = Path.Join(contextHandler.SettingsPath, "imgui.ini");
 
         WindowOptions options = WindowOptions.Default;
 
