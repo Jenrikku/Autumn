@@ -34,6 +34,16 @@ internal abstract class FileChooserWindowContext : WindowContext
 
     private const float _bottomPanelBaseHeight = 60;
 
+    /// <summary>
+    /// The active file comparisons available.
+    /// </summary>
+    private Comparison<FileSystemInfo>[] _activeComparisons = [CompareByName];
+
+    private Comparison<FileSystemInfo>[] _invertedComparisons = [CompareByName];
+
+    private int _comparisonIndex = 0;
+    private bool _isComparisonInverted = false;
+
     protected static readonly string Root = OperatingSystem.IsWindows() ? "C:\\" : "/";
     protected static readonly string Home = Environment.GetFolderPath(
         Environment.SpecialFolder.UserProfile
@@ -51,11 +61,6 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// Updated every time the window is focused.
     /// </summary>
     protected readonly List<FileSystemInfo> DirectoryEntries = new();
-
-    /// <summary>
-    /// The comparison used to sort files and directories.
-    /// </summary>
-    protected Comparison<FileSystemInfo> CurrentComparison = CompareByName;
 
     public FileChooserWindowContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
@@ -285,7 +290,37 @@ internal abstract class FileChooserWindowContext : WindowContext
         DirectoryInfo dirInfo = new(directory);
         DirectoryEntries.AddRange(dirInfo.EnumerateFileSystemInfos());
 
-        DirectoryEntries.Sort(CurrentComparison);
+        Comparison<FileSystemInfo> comparison;
+
+        if (_isComparisonInverted)
+            comparison = _invertedComparisons[_comparisonIndex];
+        else
+            comparison = _activeComparisons[_comparisonIndex];
+
+        DirectoryEntries.Sort(comparison);
+    }
+
+    protected void SetupFileComparisons(params Comparison<FileSystemInfo>[] comparisons)
+    {
+        _activeComparisons = comparisons;
+
+        List<Comparison<FileSystemInfo>> inverted = new(comparisons.Length);
+
+        foreach(var comparison in comparisons)
+            inverted.Add((info1, info2) => -comparison(info1, info2));
+
+        _invertedComparisons = inverted.ToArray();
+    }
+
+    protected void UpdateFileSortByTable(ImGuiTableSortSpecsPtr specs)
+    {
+        if (!specs.SpecsDirty)
+            return;
+
+        _comparisonIndex = specs.Specs.ColumnIndex;
+        _isComparisonInverted = specs.Specs.SortDirection == ImGuiSortDirection.Descending;
+        ChangeDirectory(CurrentDirectory, updateHistory: false);
+        specs.SpecsDirty = false;
     }
 
     protected void InvokeCancelCallback() => CancelCallback.Invoke();
@@ -306,7 +341,7 @@ internal abstract class FileChooserWindowContext : WindowContext
     }
 
     protected static int CompareByDate(FileSystemInfo i1, FileSystemInfo i2) =>
-        DateTime.Compare(i1.LastWriteTime, i2.LastAccessTime);
+        DateTime.Compare(i1.LastWriteTime, i2.LastWriteTime);
 
     protected static int CompareBySize(FileSystemInfo i1, FileSystemInfo i2)
     {
@@ -317,7 +352,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             return 1;
 
         if (i1 is FileInfo file1 && i2 is FileInfo file2)
-            return file1.Length.CompareTo(file2.Length);
+            return -file1.Length.CompareTo(file2.Length);
 
         return string.Compare(i1.Name, i2.Name, ignoreCase: true); // Directories
     }

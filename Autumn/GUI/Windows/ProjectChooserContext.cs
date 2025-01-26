@@ -8,21 +8,24 @@ internal class ProjectChooserContext : FileChooserWindowContext
     private const ImGuiTableFlags _fileChooseFlags =
         ImGuiTableFlags.ScrollY
         | ImGuiTableFlags.BordersOuterH
-        | ImGuiTableFlags.Reorderable
+        | ImGuiTableFlags.Sortable
         | ImGuiTableFlags.NoSavedSettings;
 
     private const ImGuiSelectableFlags _fileSelectableFlags =
         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick;
 
     public ProjectChooserContext(ContextHandler contextHandler, WindowManager windowManager)
-        : base(contextHandler, windowManager) { }
+        : base(contextHandler, windowManager)
+    {
+        SetupFileComparisons(CompareByName, CompareByDate);
+    }
 
     protected override void RenderFileChoosePanel()
     {
         if (!ImGui.BeginTable("FileChoose", 2, _fileChooseFlags))
             return;
 
-        float tableWidth = ImGui.CalcItemWidth();
+        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
 
         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
         ImGui.TableSetupColumn(" Name");
@@ -38,8 +41,6 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
             ImGui.TableSetColumnIndex(0);
 
-            ImGui.SetNextItemWidth(tableWidth);
-
             if (ImGui.Selectable(info.Name, false, _fileSelectableFlags))
             {
                 if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
@@ -52,7 +53,6 @@ internal class ProjectChooserContext : FileChooserWindowContext
             ImGui.TableNextColumn();
 
             ImGui.Text(dir.LastWriteTime.ToString());
-            ImGui.TableNextColumn();
         }
 
         ImGui.EndTable();

@@ -9,21 +9,24 @@ internal class SingleFileChooserContext : FileChooserWindowContext
     private const ImGuiTableFlags _fileChooseFlags =
         ImGuiTableFlags.ScrollY
         | ImGuiTableFlags.BordersOuterH
-        | ImGuiTableFlags.Reorderable
+        | ImGuiTableFlags.Sortable
         | ImGuiTableFlags.NoSavedSettings;
 
     private const ImGuiSelectableFlags _fileSelectableFlags =
         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick;
 
     public SingleFileChooserContext(ContextHandler contextHandler, WindowManager windowManager)
-        : base(contextHandler, windowManager) { }
+        : base(contextHandler, windowManager)
+    {
+        SetupFileComparisons(CompareByName, CompareBySize, CompareByDate);
+    }
 
-    protected override void RenderFileChoosePanel()
+    protected unsafe override void RenderFileChoosePanel()
     {
         if (!ImGui.BeginTable("FileChoose", 3, _fileChooseFlags))
             return;
 
-        float tableWidth = ImGui.CalcItemWidth();
+        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
 
         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
         ImGui.TableSetupColumn(" Name");
@@ -36,8 +39,6 @@ internal class SingleFileChooserContext : FileChooserWindowContext
             ImGui.TableNextRow();
 
             ImGui.TableSetColumnIndex(0);
-
-            ImGui.SetNextItemWidth(tableWidth);
 
             if (ImGui.Selectable(info.Name, false, _fileSelectableFlags))
             {
@@ -60,11 +61,12 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
             if (info is FileInfo fileInfo)
                 ImGui.Text(MathUtils.ToNearestSizeUnit(fileInfo.Length));
+            else
+                ImGui.Text("N/A"); // ImGui crashes if removed
 
             ImGui.TableNextColumn();
 
             ImGui.Text(info.LastWriteTime.ToString());
-            ImGui.TableNextColumn();
         }
 
         ImGui.EndTable();
