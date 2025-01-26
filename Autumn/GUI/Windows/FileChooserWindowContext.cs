@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.Context;
+using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Windows;
@@ -8,6 +9,17 @@ internal abstract class FileChooserWindowContext : WindowContext
 {
     public string Title { get; set; } = "Autumn: File Chooser";
     public string DefaultPath { get; set; } = Home;
+
+    /// <summary>
+    /// Event that is triggered when the user selects a file.
+    /// The argument of the delegated is an array with the paths of the selected files.
+    /// </summary>
+    public event Action<string[]> SuccessCallback;
+
+    /// <summary>
+    /// Event that is triggered when the user cancels the file selection.
+    /// </summary>
+    public event Action CancelCallback;
 
     private readonly List<string> _history = new();
     private int _historyIndex = -1;
@@ -31,6 +43,9 @@ internal abstract class FileChooserWindowContext : WindowContext
     protected string SelectedFile = "";
     protected string CurrentDirectory = Home;
 
+    // Meant to be set in a constructor.
+    protected readonly bool IsMultiFileSelect = false;
+
     /// <summary>
     /// The current directory's file and subdirectory infos.<br>
     /// Updated every time the window is focused.
@@ -45,6 +60,9 @@ internal abstract class FileChooserWindowContext : WindowContext
     public FileChooserWindowContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {
+        SuccessCallback += _ => Window.Close();
+        CancelCallback += Window.Close;
+
         Window.Load += () =>
         {
             Window.Title = Title;
@@ -201,7 +219,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                     bool enterPressed = ImGui.InputText(
                         "",
                         ref SelectedFile,
-                        1024,
+                        4096,
                         ImGuiInputTextFlags.EnterReturnsTrue
                     );
 
@@ -211,14 +229,30 @@ internal abstract class FileChooserWindowContext : WindowContext
                     ImGui.SetCursorPosX(width - 2 * buttonWidth - ImGui.GetStyle().CellPadding.X);
 
                     if (ImGui.Button("Cancel", buttonSize))
-                        Window.Close();
+                        CancelCallback.Invoke();
 
                     ImGui.SameLine();
 
                     if (
                         (ImGui.Button("Ok", buttonSize) || enterPressed)
                         && !string.IsNullOrEmpty(SelectedFile)
-                    ) { }
+                    )
+                    {
+                        if (IsMultiFileSelect)
+                        {
+                            string[] result = SelectedFile.SplitExcept(';');
+
+                            for (int i = 0; i < result.Length; i++)
+                                result[i] = Path.Join(CurrentDirectory, result[i]);
+
+                            SuccessCallback.Invoke(result);
+                        }
+                        else
+                        {
+                            string[] result = [Path.Join(CurrentDirectory, SelectedFile)];
+                            SuccessCallback.Invoke(result);
+                        }
+                    }
                 }
 
                 ImGui.EndChild();
@@ -242,6 +276,8 @@ internal abstract class FileChooserWindowContext : WindowContext
                 _history.RemoveRange(_historyIndex, _history.Count - _historyIndex);
 
             _history.Add(directory);
+
+            SelectedFile = string.Empty;
         }
 
         DirectoryEntries.Clear();
@@ -251,6 +287,10 @@ internal abstract class FileChooserWindowContext : WindowContext
 
         DirectoryEntries.Sort(CurrentComparison);
     }
+
+    protected void InvokeCancelCallback() => CancelCallback.Invoke();
+
+    protected void InvokeSuccessCallback(string[] result) => SuccessCallback.Invoke(result);
 
     #region Comparisions
 
