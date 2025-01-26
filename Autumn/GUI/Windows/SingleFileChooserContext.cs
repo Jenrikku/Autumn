@@ -50,7 +50,7 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
                 if (info is FileInfo file)
                 {
-                    SelectedFile = file.Name;
+                    SelectedFile = file.Name.Replace(";", "\\;").Replace("\\", "\\\\");
 
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                         InvokeSuccessCallback([file.FullName]);
