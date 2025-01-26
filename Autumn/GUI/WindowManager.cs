@@ -38,6 +38,7 @@ internal class WindowManager
 
         context.Window.DoEvents();
         context.Window.Reset();
+        context.InputContext?.Dispose();
     }
 
     public void RemoveAt(int index)
@@ -51,6 +52,7 @@ internal class WindowManager
 
         context.Window.DoEvents();
         context.Window.Reset();
+        context.InputContext?.Dispose();
     }
 
     public void Run(ActionHandler actionHandler)
@@ -88,14 +90,7 @@ internal class WindowManager
                 }
                 else
                 {
-                    _contexts.RemoveAt(i);
-
-                    if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
-                        SharedContext = _contexts[0].Window.GLContext;
-
-                    context.Window.DoEvents();
-                    context.Window.Reset();
-
+                    RemoveAt(i);
                     i--;
                 }
             }
