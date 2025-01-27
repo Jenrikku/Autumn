@@ -352,7 +352,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             return 1;
 
         if (i1 is FileInfo file1 && i2 is FileInfo file2)
-            return -file1.Length.CompareTo(file2.Length);
+            return file1.Length.CompareTo(file2.Length);
 
         return string.Compare(i1.Name, i2.Name, ignoreCase: true); // Directories
     }
