@@ -199,6 +199,52 @@ internal abstract class FileChooserWindowContext : WindowContext
                 if (ImGui.Selectable("Home"))
                     ChangeDirectory(Home);
 
+                if (ImGui.Selectable("Documents"))
+                {
+                    string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    ChangeDirectory(dir);
+                }
+
+                if (ImGui.Selectable("Pictures"))
+                {
+                    string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+                    ChangeDirectory(dir);
+                }
+
+                if (ImGui.Selectable("Music"))
+                {
+                    string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+                    ChangeDirectory(dir);
+                }
+
+                if (ImGui.Selectable("Videos"))
+                {
+                    string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+                    ChangeDirectory(dir);
+                }
+
+                if (ImGui.Selectable("Desktop"))
+                {
+                    string dir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    ChangeDirectory(dir);
+                }
+
+                ImGui.Separator();
+
+                foreach (DriveInfo drive in DriveInfo.GetDrives())
+                {
+                    if (
+                        drive.DriveType == DriveType.Ram
+                        || drive.DriveType == DriveType.Unknown
+                        || drive.Name == "/"
+                        || drive.Name.StartsWith("/sys")
+                    )
+                        continue;
+
+                    if (ImGui.Selectable(drive.Name))
+                        ChangeDirectory(drive.RootDirectory.FullName);
+                }
+
                 ImGui.EndChild();
             }
 
@@ -272,6 +318,9 @@ internal abstract class FileChooserWindowContext : WindowContext
 
     protected void ChangeDirectory(string directory, bool updateHistory = true)
     {
+        if (string.IsNullOrEmpty(directory))
+            return;
+
         CurrentDirectory = directory;
         _parentDirectory = Directory.GetParent(directory)?.FullName ?? string.Empty;
 
@@ -306,7 +355,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
         List<Comparison<FileSystemInfo>> inverted = new(comparisons.Length);
 
-        foreach(var comparison in comparisons)
+        foreach (var comparison in comparisons)
             inverted.Add((info1, info2) => -comparison(info1, info2));
 
         _invertedComparisons = inverted.ToArray();
