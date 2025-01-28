@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Autumn.Context;
 using Autumn.Utils;
@@ -43,6 +44,12 @@ internal abstract class FileChooserWindowContext : WindowContext
 
     private int _comparisonIndex = 0;
     private bool _isComparisonInverted = false;
+
+    /// <summary>
+    /// When set to true, the top bar will display an input text for manual path change.
+    /// </summary>
+    private bool _inputtingPath = false;
+    private string _inputPathBuffer = "";
 
     protected static readonly string Root = OperatingSystem.IsWindows() ? "C:\\" : "/";
     protected static readonly string Home = Environment.GetFolderPath(
@@ -165,6 +172,50 @@ internal abstract class FileChooserWindowContext : WindowContext
                 )
             )
             {
+                if (_inputtingPath)
+                {
+                    float buttonWidth = 30 * ScalingFactor;
+                    float width = ImGui.GetContentRegionAvail().X;
+                    width -= buttonWidth * 2 + ImGui.GetStyle().CellPadding.X * 4;
+
+                    ImGui.SetNextItemWidth(width);
+
+                    bool enterPressed = ImGui.InputText(
+                        "",
+                        ref _inputPathBuffer,
+                        1024,
+                        ImGuiInputTextFlags.EnterReturnsTrue
+                    );
+
+                    ImGui.SameLine();
+
+                    if (ImGui.Button("Ok", new(buttonWidth, 0)) || enterPressed)
+                    {
+                        _inputtingPath = false;
+                        ChangeDirectory(
+                            _inputPathBuffer,
+                            updateHistory: CurrentDirectory != _inputPathBuffer
+                        );
+                    }
+
+                    ImGui.SameLine();
+
+                    if (ImGui.Button("X", new(buttonWidth, 0)))
+                        _inputtingPath = false;
+                }
+
+                Vector2 initCur = ImGui.GetCursorPos();
+
+                ImGui.SetNextItemAllowOverlap();
+
+                if (ImGui.InvisibleButton("ManualPath", ImGui.GetContentRegionAvail()))
+                {
+                    _inputtingPath = true;
+                    _inputPathBuffer = CurrentDirectory;
+                }
+
+                ImGui.SetCursorPos(initCur);
+
                 string[] tokens = CurrentDirectory.Split(Path.DirectorySeparatorChar);
                 tokens[0] = Path.GetPathRoot(CurrentDirectory)!;
 
@@ -343,7 +394,15 @@ internal abstract class FileChooserWindowContext : WindowContext
         DirectoryEntries.Clear();
 
         DirectoryInfo dirInfo = new(directory);
-        DirectoryEntries.AddRange(dirInfo.EnumerateFileSystemInfos());
+
+        try
+        {
+            DirectoryEntries.AddRange(dirInfo.EnumerateFileSystemInfos());
+        }
+        catch (Exception e)
+        {
+            Debug.Print(e.Message);
+        }
 
         Comparison<FileSystemInfo> comparison;
 
