@@ -53,6 +53,8 @@ internal abstract class FileChooserWindowContext : WindowContext
     protected string SelectedFile = "";
     protected string CurrentDirectory = Home;
 
+    protected DriveInfo[] Drives;
+
     // Meant to be set in a constructor.
     protected readonly bool IsMultiFileSelect = false;
 
@@ -67,6 +69,7 @@ internal abstract class FileChooserWindowContext : WindowContext
     {
         SuccessCallback += _ => Window.Close();
         CancelCallback += Window.Close;
+        Drives = DriveInfo.GetDrives();
 
         Window.Load += () =>
         {
@@ -80,6 +83,9 @@ internal abstract class FileChooserWindowContext : WindowContext
         {
             if (!focused)
                 return;
+
+            // Refresh drive list
+            Drives = DriveInfo.GetDrives();
 
             // Refresh contents
             ChangeDirectory(CurrentDirectory, updateHistory: false);
@@ -231,7 +237,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                 ImGui.Separator();
 
-                foreach (DriveInfo drive in DriveInfo.GetDrives())
+                foreach (DriveInfo drive in Drives)
                 {
                     if (
                         drive.DriveType == DriveType.Ram
