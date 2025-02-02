@@ -361,3 +361,6 @@ imgui.ini
 
 # tinyfiledialogs build files
 Libraries/tinyfiledialogs/build/
+
+# csharpier (formatter)
+.csharpierrc
