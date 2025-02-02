@@ -4,7 +4,7 @@ internal class Project
 {
     public string SavePath { get; set; }
 
-    public string ContentsPath => Path.Join(SavePath, "contents");
+    public string ContentsPath => SavePath;
     public string ProjectFile => Path.Join(SavePath, "autumnproj.yml");
 
     public Dictionary<string, object?> ProjectSettings { get; set; } = new();
