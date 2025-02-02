@@ -1,6 +1,6 @@
 using Autumn.Enums;
+using Autumn.GUI;
 using Autumn.GUI.Windows;
-using Autumn.History;
 using Autumn.Rendering;
 using Autumn.Storage;
 using TinyFileDialogsSharp;
@@ -225,8 +225,7 @@ internal class ActionHandler
                     }
                 );
             },
-            enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
 
     private static Command AddObj() =>
@@ -239,8 +238,7 @@ internal class ActionHandler
 
                 mainContext.OpenAddObjectDialog();
             },
-            enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
 
     private static Command RemoveObj() =>
@@ -278,13 +276,7 @@ internal class ActionHandler
 
                 foreach (SceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
-                    newPickIds.Add(
-                        ChangeHandler.ChangeDuplicate(
-                            mainContext,
-                            mainContext.CurrentScene.History,
-                            copy
-                        )
-                    );
+                    newPickIds.Add(ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy));
                 }
 
                 mainContext.CurrentScene.UnselectAllObjects();
@@ -332,8 +324,7 @@ internal class ActionHandler
 
                 mainContext.CurrentScene!.History.Undo();
                 mainContext.CurrentScene.IsSaved =
-                    mainContext.CurrentScene.SaveUndoCount
-                    == mainContext.CurrentScene.History.UndoSteps;
+                    mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
             },
             enabled: window =>
                 window is MainWindowContext mainContext
@@ -352,8 +343,7 @@ internal class ActionHandler
 
                 mainContext.CurrentScene!.History.Redo();
                 mainContext.CurrentScene.IsSaved =
-                    mainContext.CurrentScene.SaveUndoCount
-                    == mainContext.CurrentScene.History.UndoSteps;
+                    mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
             },
             enabled: window =>
                 window is MainWindowContext mainContext
