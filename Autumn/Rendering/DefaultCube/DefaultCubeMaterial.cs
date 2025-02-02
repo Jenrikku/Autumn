@@ -98,6 +98,7 @@ internal static class DefaultCubeMaterial
                 oColor = mix(oColor, uColor * 0.5, eval(d));
 
                 oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+                oColor.a = 1;
             }
             """
         );

@@ -23,8 +23,7 @@ internal static class AreaMaterial
             out vec3 vPos;
 
             void main() {
-                gl_Position = uViewProjection * uTransform * vec4(aPos, 1.0);
-
+                gl_Position = uViewProjection * uTransform * vec4(aPos.x, aPos.y + 10.0, aPos.z, 2.0);
                 vPos = aPos;
             }
             """

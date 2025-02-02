@@ -403,7 +403,10 @@ internal class H3DRenderingMaterial
                     Diffuse = new(0.4f, 0.4f, 0.4f, 1),
                     Specular0 = new(0.8f, 0.8f, 0.8f, 1),
                     Specular1 = new(0.4f, 0.4f, 0.4f, 1),
-                    TwoSidedDiffuse = 1
+                    Position = new(0,1,-0.1f),
+                    Direction = new(0,0,0),
+                    Directional = 1,
+                    TwoSidedDiffuse = 0
                 }
             };
 

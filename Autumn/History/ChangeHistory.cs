@@ -8,8 +8,11 @@ internal class ChangeHistory
     private readonly List<Change> _changes = new();
     private readonly List<Change> _undoneChanges = new();
 
-    public bool CanUndo => _changes.Count > 0;
-    public bool CanRedo => _undoneChanges.Count > 0;
+    public uint UndoSteps => (uint)_changes.Count;
+    public uint RedoSteps => (uint)_undoneChanges.Count;
+
+    public bool CanUndo => UndoSteps > 0;
+    public bool CanRedo => RedoSteps > 0;
 
     public void Add(Change change)
     {

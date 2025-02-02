@@ -12,6 +12,7 @@ internal class ContextHandler
     private const string systemConfFile = "system.yml";
     private const string actionsConfFile = "actions.yml";
 
+    public bool ProjectChanged { get; set; } = false;
     public LayeredSettings Settings { get; private set; }
     public SystemSettings SystemSettings { get; }
     public string SettingsPath { get; }
@@ -38,12 +39,12 @@ internal class ContextHandler
 
         Settings = new(_globalSettings);
 
-        if (Settings.RomFSPath is not null)
-            FSHandler = new(Settings.RomFSPath);
-        else
-            FSHandler = new();
-
+        FSHandler = new(Settings.RomFSPath);
         SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
+        if (!File.Exists(actionsFile))
+        {
+            File.Copy(Path.Join("Resources", "DefaultActions.yml"), actionsFile);
+        }
 
         var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile) ?? new();
 
@@ -100,13 +101,10 @@ internal class ContextHandler
 
         Settings = new(project.ProjectSettings, _globalSettings);
 
-        if (Settings.RomFSPath is not null)
-            FSHandler.SetPaths(project.ContentsPath, Settings.RomFSPath);
-        else
-            FSHandler.SetPaths(project.ContentsPath);
-
+        FSHandler.ModFS = string.IsNullOrEmpty(project.ContentsPath) ? null : new(project.ContentsPath);
         SystemSettings.AddRecentlyOpenedPath(projectDir);
         SaveSettings();
+        ProjectChanged = true;
     }
 
     /// <summary>
@@ -135,15 +133,12 @@ internal class ContextHandler
 
         Settings = new(projectSettings, _globalSettings);
 
-        if (Settings.RomFSPath is not null)
-            FSHandler.SetPaths(project.ContentsPath, Settings.RomFSPath);
-        else
-            FSHandler.SetPaths(project.ContentsPath);
-
+        FSHandler.ModFS = string.IsNullOrEmpty(project.ContentsPath) ? null : new(project.ContentsPath);
         SystemSettings.AddRecentlyOpenedPath(projectDir);
         SaveSettings();
 
         UpdateProjectStages();
+        ProjectChanged = true;
 
         return true;
     }
@@ -153,14 +148,12 @@ internal class ContextHandler
     /// </summary>
     public void UpdateProjectStages()
     {
-        if (!Directory.Exists(_project?.ContentsPath))
+        if (FSHandler.ModFS == null)
             return;
 
         ProjectStages.Clear();
 
-        RomFSHandler fSHandler = new(_project.ContentsPath);
-
-        foreach (var (name, scenario) in fSHandler.EnumerateStages())
+        foreach (var (name, scenario) in FSHandler.ModFS.EnumerateStages())
             ProjectStages.Add((name, scenario));
     }
 

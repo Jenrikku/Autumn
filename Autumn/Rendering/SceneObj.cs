@@ -1,4 +1,6 @@
 ﻿using System.Numerics;
+using Autumn.Background;
+using Autumn.FileSystems;
 using Autumn.Storage;
 using Autumn.Utils;
 
@@ -7,12 +9,13 @@ namespace Autumn.Rendering;
 internal class SceneObj
 {
     public StageObj StageObj { get; }
-    public Actor Actor { get; }
+    public Actor Actor { get; set;}
 
-    public Matrix4x4 Transform;
+    public Matrix4x4 Transform { get; set;}
 
-    public uint PickingId { get; private set; }
+    public uint PickingId { get; set; }
     public bool Selected { get; set; }
+    public bool isVisible = true;
 
     public SceneObj(StageObj stageObj, Actor actorObj, uint pickingId)
     {
@@ -29,4 +32,22 @@ internal class SceneObj
             StageObj.Scale,
             StageObj.Rotation
         );
+    
+
+    public void UpdateActor(
+        LayeredFSHandler fsHandler,
+        GLTaskScheduler scheduler
+    )
+    {
+        string actorName = StageObj.Name;
+        if (
+            StageObj.Properties.TryGetValue("ModelName", out object? modelName)
+            && modelName is string modelNameString
+            && !string.IsNullOrEmpty(modelNameString)
+        )
+            actorName = modelNameString;
+
+        fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
+        Actor = fsHandler.ReadActor(actorName, fallback, scheduler);
+    }
 }

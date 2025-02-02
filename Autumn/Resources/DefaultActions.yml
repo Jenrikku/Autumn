@@ -1,0 +1,40 @@
+OpenSettings:
+  Alt: true
+  Ctrl: false
+  Key: S
+  Shift: true
+SaveStage:
+  Alt: false
+  Ctrl: true
+  Key: S
+  Shift: false
+Undo:
+  Alt: false
+  Ctrl: true
+  Key: Z
+  Shift: false
+Redo:
+  Alt: false
+  Ctrl: true
+  Key: Z
+  Shift: true
+AddObject:
+  Alt: false
+  Ctrl: false
+  Key: A
+  Shift: true
+DuplicateObj:
+  Alt: false
+  Ctrl: false
+  Key: D
+  Shift: true
+RemoveObj:
+  Alt: false
+  Ctrl: false
+  Key: Delete
+  Shift: false
+HideObj:
+  Alt: false
+  Ctrl: false
+  Key: H
+  Shift: false

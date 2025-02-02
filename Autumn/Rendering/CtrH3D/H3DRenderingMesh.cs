@@ -1,9 +1,49 @@
 using System.Diagnostics;
+using System.Numerics;
 using Silk.NET.OpenGL;
+using Silk.NET.SDL;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.PICA.Commands;
 
 namespace Autumn.Rendering.CtrH3D;
+
+class AxisAlignedBoundingBox {
+    public Vector3 Max = new Vector3(50,50,50);
+    public Vector3 Min = new Vector3(-50,-50,-50);
+    public AxisAlignedBoundingBox(){ }
+    public AxisAlignedBoundingBox(Vector3 mx, Vector3 mn)
+    {
+        Max = mx;
+        Min = mn;
+    }
+    public AxisAlignedBoundingBox(float x)
+    {
+        Max *= x;
+        Min *= x;
+    }
+
+    public float GetDiagonal()
+    {
+        return Vector3.Distance(Max, Min);
+    }
+
+    public static AxisAlignedBoundingBox operator *(AxisAlignedBoundingBox _aabb, float t)
+    {
+        return new AxisAlignedBoundingBox(_aabb.Max * t, _aabb.Min * t);
+    }
+
+    public static AxisAlignedBoundingBox operator *(AxisAlignedBoundingBox _aabb, Vector3 v)
+    {
+        AxisAlignedBoundingBox rAABB = new AxisAlignedBoundingBox(_aabb.Max, _aabb.Min);
+        rAABB.Max.X *= v.X;
+        rAABB.Min.X *= v.X;
+        rAABB.Max.Y *= v.Y;
+        rAABB.Min.Y *= v.Y;
+        rAABB.Max.Z *= v.Z;
+        rAABB.Min.Z *= v.Z;
+        return rAABB;
+    }
+}
 
 internal class H3DRenderingMesh : IDisposable
 {
@@ -51,7 +91,6 @@ internal class H3DRenderingMesh : IDisposable
                     writer.Write(w);
                 }
             }
-
             vertexBuffer = stream.ToArray();
         }
 
@@ -74,6 +113,7 @@ internal class H3DRenderingMesh : IDisposable
 
         int offset = 0;
         uint stride = (uint)mesh.VertexStride;
+
 
         foreach (PICAAttribute attribute in mesh.Attributes)
         {
@@ -179,8 +219,8 @@ internal class H3DRenderingMesh : IDisposable
         gl.BindVertexArray(0);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-    }
 
+    }
     public unsafe void Draw()
     {
         if (_disposed)

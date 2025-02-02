@@ -1,4 +1,5 @@
 using System.Numerics;
+using Autumn.ActionSystem;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
@@ -18,7 +19,6 @@ internal class MainWindowContext : WindowContext
 {
     public List<Scene> Scenes { get; } = new();
     public Scene? CurrentScene { get; set; }
-
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
@@ -30,6 +30,8 @@ internal class MainWindowContext : WindowContext
     private readonly AddStageDialog _addStageDialog;
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
+    private SettingsDialog _settingsDialog;
+    public EditChildrenDialog _editChildrenDialog;
 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
@@ -48,13 +50,14 @@ internal class MainWindowContext : WindowContext
         _addStageDialog = new(this);
         _closingDialog = new(this);
         _newStageObjDialog = new(this);
+        _welcomeDialog = new(this);
+        _settingsDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
         _objectWindow = new(this);
         _propertiesWindow = new(this);
         _sceneWindow = new(this);
-        _welcomeDialog = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -103,7 +106,15 @@ internal class MainWindowContext : WindowContext
             {
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
-
+                switch (ContextHandler.SystemSettings.Theme)
+                {
+                    default:
+                        ImGui.StyleColorsDark();
+                        break;
+                    case 2:
+                        ImGui.StyleColorsLight();
+                        break;
+                }
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
 
@@ -144,10 +155,10 @@ internal class MainWindowContext : WindowContext
                 RenderNoProjectScreen();
             else
             {
-                _stageWindow.Render();
                 _objectWindow.Render();
                 _propertiesWindow.Render();
                 _sceneWindow.Render(deltaSeconds);
+                _stageWindow.Render();
             }
 
 #if DEBUG
@@ -158,7 +169,9 @@ internal class MainWindowContext : WindowContext
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
+            _editChildrenDialog?.Render();
             _welcomeDialog.Render();
+            _settingsDialog.Render();
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 
@@ -193,9 +206,15 @@ internal class MainWindowContext : WindowContext
     }
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
+    public void OpenAddObjectDialog() => _newStageObjDialog.Open();
+    public void OpenSettingsDialog() => _settingsDialog.Open();
+    public bool isTransformActive => _sceneWindow.isTransformActive;
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
+
+    public void SetSceneDuplicateTranslation() =>
+        _sceneWindow.isTranslationFromDuplicate = true;
 
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
@@ -246,6 +265,10 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
+            ImGuiWidgets.CommandMenuItem(CommandID.OpenSettings, ContextHandler.ActionHandler, this);
+
+            ImGui.Separator();
+
             ImGuiWidgets.CommandMenuItem(CommandID.Exit, ContextHandler.ActionHandler, this);
 
             ImGui.EndMenu();
@@ -258,8 +281,13 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("Add object", CurrentScene is not null))
-                _newStageObjDialog.Open();
+            ImGuiWidgets.CommandMenuItem(CommandID.AddObject, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.DuplicateObj, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.RemoveObj, ContextHandler.ActionHandler, this);
+
+            ImGui.Separator();
+
+            ImGuiWidgets.CommandMenuItem(CommandID.HideObj, ContextHandler.ActionHandler, this);
 
             ImGui.EndMenu();
         }
@@ -278,7 +306,12 @@ internal class MainWindowContext : WindowContext
         // Opened stages are displayed in tabs in the main menu bar.
 
         ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
-
+        if (ContextHandler.ProjectChanged)
+        {
+            CurrentScene = null;
+            Scenes.Clear();
+            ContextHandler.ProjectChanged = false;
+        }
         if (Scenes.Count > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
         {
             for (int i = 0; i < Scenes.Count; i++)

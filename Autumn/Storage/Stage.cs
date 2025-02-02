@@ -10,6 +10,7 @@ internal class Stage
     private StageFile _design = new(StageFileType.Design);
     private StageFile _map = new(StageFileType.Map);
     private StageFile _sound = new(StageFileType.Sound);
+    public StageParams StageParams { get; set; } = new();
 
     /// <summary>
     /// Creates a new stage.
@@ -33,6 +34,17 @@ internal class Stage
         _map.AddStageObj(mario);
     }
 
+    public StageFile GetStageFile(StageFileType FileType)
+    {
+        StageFile stageFile = FileType switch
+        {
+            StageFileType.Design => _design,
+            StageFileType.Map => _map,
+            StageFileType.Sound => _sound,
+            _ => throw new NotImplementedException("Unknown stage file.")
+        };
+        return stageFile;
+    }
     public void AddStageObj(StageObj stageObj)
     {
         StageFile stageFile = stageObj.FileType switch
@@ -44,6 +56,18 @@ internal class Stage
         };
 
         stageFile.AddStageObj(stageObj);
+    }
+    public void RemoveStageObj(StageObj stageObj)
+    {
+        StageFile stageFile = stageObj.FileType switch
+        {
+            StageFileType.Design => _design,
+            StageFileType.Map => _map,
+            StageFileType.Sound => _sound,
+            _ => throw new NotImplementedException("Unknown stage file.")
+        };
+
+        stageFile.RemoveStageObj(stageObj);
     }
 
     public void AddStageObjs(IEnumerable<StageObj> stageObjs)
@@ -102,6 +126,17 @@ internal class Stage
 
         return stageFile.EnumerateRails();
     }
+    public IEnumerable<RailObj> EnumerateRails()
+    {
+        foreach (RailObj stageRail in _design.EnumerateRails()) // probably not needed, never has rails
+            yield return stageRail;
+
+        foreach (RailObj stageRail in _map.EnumerateRails())
+            yield return stageRail;
+
+        foreach (RailObj stageRail in _sound.EnumerateRails()) // probably not needed, never has rails
+            yield return stageRail;
+    }
 
     public IEnumerable<KeyValuePair<string, byte[]>> EnumerateAdditionalFiles(StageFileType type)
     {
@@ -115,4 +150,33 @@ internal class Stage
 
         return stageFile.EnumerateAdditionalFiles();
     }
+}
+
+internal class StageParams
+{
+    public int Timer = -1; 
+    public int RestartTimer = -1; 
+    public int MaxPowerUps = -1; 
+    public FPrnt? FootPrint = null;
+
+    public class FPrnt
+    {
+        public string? AnimName = "Cream";
+        public string? AnimType = "Mcl"; // Always the same?
+        public string Material = "Sand";
+        public string Model = "FootPrint"; // Always the same?
+
+        enum animNames
+        {
+            Cream,
+            Snow
+        }
+        enum material
+        {
+            Sand,
+            Snow,
+            WaterBottomM,
+            WaterBottomL
+        }
+    } 
 }

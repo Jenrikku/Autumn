@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Autumn.Enums;
 using Autumn.Rendering.Area;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.DefaultCube;
 using Autumn.Storage;
 using SceneGL;
@@ -18,6 +19,9 @@ internal static class ModelRenderer
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
 
     private static Matrix4x4 s_h3DScale = Matrix4x4.CreateScale(0.01f);
+
+    public static bool visibleAreas = false;
+    public static bool visibleCameraAreas = true;
 
     public static void Initialize(GL gl)
     {
@@ -62,8 +66,6 @@ internal static class ModelRenderer
             || stageObj.Type == StageObjType.AreaChild
         )
         {
-            // TO-DO: Change color based on the name here.
-
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_areaMaterialParams.Selected = sceneObj.Selected;
 
@@ -105,10 +107,19 @@ internal static class ModelRenderer
                 "Guide3DArea" => new Vector4(0.0f, 0.6f, 0.8f, 1.0f),
                 "MessageArea" => new Vector4(0.0f, 0.6f, 0.6f, 1.0f),
                 "BugFixBalanceTruckArea" => new Vector4(1.0f, 0.4f, 0.0f, 1.0f),
-                _ => throw new ArgumentException("Invalid area name")
+                _ => new Vector4(1.0f)
             };
+            
+            if (!visibleAreas && !sceneObj.Selected && (sceneObj.StageObj.Type == StageObjType.Area || sceneObj.StageObj.Type == StageObjType.AreaChild))
+                return;
+            
+            if (!visibleCameraAreas && !sceneObj.Selected && sceneObj.StageObj.Type == StageObjType.CameraArea)
+                return;
+            
+            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(20f);
 
-            gl.CullFace(TriangleFace.Back);
+            if (!sceneObj.isVisible) return;
+            else gl.CullFace(TriangleFace.Back);
 
             AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams, sceneObj.PickingId);
             return;
@@ -118,8 +129,10 @@ internal static class ModelRenderer
         {
             s_commonSceneParams.Transform = sceneObj.Transform;
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
+            sceneObj.Actor.AABB = new AxisAlignedBoundingBox(2f);
 
-            gl.CullFace(TriangleFace.Back);
+            if (!sceneObj.isVisible) return;
+            else gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(
                 gl,
@@ -130,6 +143,7 @@ internal static class ModelRenderer
         }
         else
         {
+            if (!sceneObj.isVisible) return;
             foreach (H3DMeshLayer layer in Enum.GetValues<H3DMeshLayer>())
             foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
             {

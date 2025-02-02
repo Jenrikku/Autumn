@@ -38,12 +38,12 @@ internal class Shortcut
         if (Ctrl != ImGui.IsKeyDown(ImGuiKey.ModCtrl))
             return false;
 
-        if (Shift == ImGui.IsKeyDown(ImGuiKey.ModShift))
+        if (Shift != ImGui.IsKeyDown(ImGuiKey.ModShift))
             return false;
 
-        if (Alt == ImGui.IsKeyDown(ImGuiKey.ModAlt))
+        if (Alt != ImGui.IsKeyDown(ImGuiKey.ModAlt))
             return false;
 
-        return ImGui.IsKeyPressed(Key);
+        return ImGui.IsKeyPressed(Key, false);
     }
 }

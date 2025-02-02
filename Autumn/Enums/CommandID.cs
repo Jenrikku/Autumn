@@ -4,10 +4,14 @@ internal enum CommandID
 {
     NewProject,
     OpenProject,
+    OpenSettings,
     Exit,
     AddStage,
     SaveStage,
     Undo,
     Redo,
-    AddObject
+    AddObject,
+    DuplicateObj,
+    RemoveObj,
+    HideObj,
 }
