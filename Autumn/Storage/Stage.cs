@@ -43,8 +43,10 @@ internal class Stage
             StageFileType.Sound => _sound,
             _ => throw new NotImplementedException("Unknown stage file.")
         };
+
         return stageFile;
     }
+
     public void AddStageObj(StageObj stageObj)
     {
         StageFile stageFile = stageObj.FileType switch
@@ -57,6 +59,7 @@ internal class Stage
 
         stageFile.AddStageObj(stageObj);
     }
+
     public void RemoveStageObj(StageObj stageObj)
     {
         StageFile stageFile = stageObj.FileType switch
@@ -126,6 +129,7 @@ internal class Stage
 
         return stageFile.EnumerateRails();
     }
+
     public IEnumerable<RailObj> EnumerateRails()
     {
         foreach (RailObj stageRail in _design.EnumerateRails()) // probably not needed, never has rails
@@ -154,9 +158,9 @@ internal class Stage
 
 internal class StageParams
 {
-    public int Timer = -1; 
-    public int RestartTimer = -1; 
-    public int MaxPowerUps = -1; 
+    public int Timer = -1;
+    public int RestartTimer = -1;
+    public int MaxPowerUps = -1;
     public FPrnt? FootPrint = null;
 
     public class FPrnt
@@ -166,17 +170,18 @@ internal class StageParams
         public string Material = "Sand";
         public string Model = "FootPrint"; // Always the same?
 
-        enum animNames
+        enum AnimNames
         {
             Cream,
             Snow
         }
-        enum material
+
+        enum MaterialType
         {
             Sand,
             Snow,
             WaterBottomM,
             WaterBottomL
         }
-    } 
+    }
 }

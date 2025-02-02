@@ -8,7 +8,7 @@ namespace Autumn.FileSystems;
 /// A class that simulates a romfs in layers.<br/>
 /// When getting specific files or variables through methods we try to
 /// find them in the modified FS first, then in the original FS. <br/>
-/// For specific filesystem checks we can just access <b> OriginalFS </b> or <b> ModFs </b> 
+/// For specific filesystem checks we can just access <b> OriginalFS </b> or <b> ModFs </b>
 /// </summary>
 internal class LayeredFSHandler
 {
@@ -37,27 +37,30 @@ internal class LayeredFSHandler
 
     public Stage ReadStage(string name, byte scenario)
     {
-        if (ModFS != null && ModFS.ExistsStage(name, scenario))
+        if (ModFS is not null && ModFS.ExistsStage(name, scenario))
             return ModFS.ReadStage(name, scenario);
-        else if (OriginalFS != null && OriginalFS.ExistsStage(name, scenario))
+        else if (OriginalFS is not null && OriginalFS.ExistsStage(name, scenario))
             return OriginalFS.ReadStage(name, scenario);
+
         return new();
     }
 
     public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
-        if (ModFS != null && ModFS.ExistsActor(name))
+        if (ModFS is not null && ModFS.ExistsActor(name))
             return ModFS.ReadActor(name, scheduler);
-        else if (OriginalFS != null && OriginalFS.ExistsActor(name))
+        else if (OriginalFS is not null && OriginalFS.ExistsActor(name))
             return OriginalFS.ReadActor(name, scheduler);
+
         return new(name);
     }
 
     public Actor ReadActor(string name, string? fallback, GLTaskScheduler scheduler)
     {
-        if (fallback == null) return ReadActor(name, scheduler);
+        if (fallback is null)
+            return ReadActor(name, scheduler);
 
-        if (ModFS != null)
+        if (ModFS is not null)
         {
             if (!ModFS.ExistsActor(name))
             {
@@ -67,7 +70,8 @@ internal class LayeredFSHandler
             else
                 return ModFS.ReadActor(name, scheduler);
         }
-        if (OriginalFS != null)
+
+        if (OriginalFS is not null)
         {
             if (!OriginalFS.ExistsActor(name))
             {
@@ -77,45 +81,53 @@ internal class LayeredFSHandler
             else
                 return OriginalFS.ReadActor(name, scheduler);
         }
+
         return new(name);
     }
 
     public bool WriteStage(Stage stage)
     {
-        if (ModFS == null) return false;
+        if (ModFS is null)
+            return false;
+
         return ModFS.WriteStage(stage);
     }
 
     public ReadOnlyDictionary<string, string> ReadCreatorClassNameTable()
     {
-        if (ModFS != null && ModFS.ExistsCreatorClassNameTable())
+        if (ModFS is not null && ModFS.ExistsCreatorClassNameTable())
             return ModFS.ReadCreatorClassNameTable();
-        else if (OriginalFS != null && OriginalFS.ExistsCreatorClassNameTable())
+        else if (OriginalFS is not null && OriginalFS.ExistsCreatorClassNameTable())
             return OriginalFS.ReadCreatorClassNameTable();
+
         return new(new Dictionary<string, string>());
     }
+
     public BgmTable? ReadBgmTable()
     {
-        if (ModFS != null && ModFS.ExistsBgmTable())
+        if (ModFS is not null && ModFS.ExistsBgmTable())
             return ModFS.ReadBgmTable();
-        else if (OriginalFS != null && OriginalFS.ExistsBgmTable())
+        else if (OriginalFS is not null && OriginalFS.ExistsBgmTable())
             return OriginalFS.ReadBgmTable();
+
         return null;
     }
+
     public SystemDataTable? ReadGameSystemDataTable()
     {
-        if (ModFS != null && ModFS.ExistsGSDT())
+        if (ModFS is not null && ModFS.ExistsGSDT())
             return ModFS.ReadGSDTable();
-        else if (OriginalFS != null && OriginalFS.ExistsGSDT())
+        else if (OriginalFS is not null && OriginalFS.ExistsGSDT())
             return OriginalFS.ReadGSDTable();
+
         return null;
     }
 
     public IEnumerable<string> EnumeratePaths()
     {
-        if (ModFS != null)
+        if (ModFS is not null)
             yield return ModFS.Root;
-        if (OriginalFS != null)
+        if (OriginalFS is not null)
             yield return OriginalFS.Root;
     }
 }

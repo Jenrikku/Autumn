@@ -1,7 +1,7 @@
-using Silk.NET.Maths;
-using SPICA.Formats.CtrH3D.Model.Material;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Silk.NET.Maths;
+using SPICA.Formats.CtrH3D.Model.Material;
 
 namespace Autumn.Utils;
 
@@ -104,13 +104,9 @@ internal static class MathUtils
 
             case H3DTextureTransformType.Dcc3dsMax:
                 matrix.M14 =
-                    scale.X * rotCos * (-translation.X - 0.5f)
-                    - scale.X * rotSin * (translation.Y - 0.5f)
-                    + 0.5f;
+                    scale.X * rotCos * (-translation.X - 0.5f) - scale.X * rotSin * (translation.Y - 0.5f) + 0.5f;
                 matrix.M24 =
-                    scale.Y * rotSin * (-translation.X - 0.5f)
-                    + scale.Y * rotCos * (translation.Y - 0.5f)
-                    + 0.5f;
+                    scale.Y * rotSin * (-translation.X - 0.5f) + scale.Y * rotCos * (translation.Y - 0.5f) + 0.5f;
                 break;
         }
 
@@ -164,11 +160,15 @@ internal static class MathUtils
         bool s_ab = (b.X - a.X) * AP_y - (b.Y - a.Y) * AP_x > 0.0;
 
         if ( /*s_ac*/
-            (c.X - a.X) * AP_y - (c.Y - a.Y) * AP_x > 0.0 == s_ab)
+            (c.X - a.X) * AP_y - (c.Y - a.Y) * AP_x > 0.0
+            == s_ab
+        )
             return false;
 
         if ( /*s_cb*/
-            (c.X - b.X) * CP_y - (c.Y - b.Y) * CP_x > 0.0 != s_ab)
+            (c.X - b.X) * CP_y - (c.Y - b.Y) * CP_x > 0.0
+            != s_ab
+        )
             return false;
 
         return true;
@@ -186,27 +186,28 @@ internal static class MathUtils
         bool s_ab = (b.X - a.X) * AP_y - (b.Y - a.Y) * AP_x > 0.0;
 
         if ( /*s_ad*/
-            (d.X - a.X) * AP_y - (d.Y - a.Y) * AP_x > 0.0 == s_ab)
+            (d.X - a.X) * AP_y - (d.Y - a.Y) * AP_x > 0.0
+            == s_ab
+        )
             return false;
 
         if ( /*s_cb*/
-            (b.X - c.X) * CP_y - (b.Y - c.Y) * CP_x > 0.0 == s_ab)
+            (b.X - c.X) * CP_y - (b.Y - c.Y) * CP_x > 0.0
+            == s_ab
+        )
             return false;
 
         if ( /*s_cd*/
-            (d.X - c.X) * CP_y - (d.Y - c.Y) * CP_x > 0.0 != s_ab)
+            (d.X - c.X) * CP_y - (d.Y - c.Y) * CP_x > 0.0
+            != s_ab
+        )
             return false;
 
         return true;
     }
 
     // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
-    public static Vector3 IntersectPoint(
-        Vector3 rayVector,
-        Vector3 rayPoint,
-        Vector3 planeNormal,
-        Vector3 planePoint
-    )
+    public static Vector3 IntersectPoint(Vector3 rayVector, Vector3 rayPoint, Vector3 planeNormal, Vector3 planePoint)
     {
         //code from: https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane
         var diff = rayPoint - planePoint;
@@ -214,5 +215,21 @@ internal static class MathUtils
         var prod2 = Vector3.Dot(rayVector, planeNormal);
         var prod3 = prod1 / prod2;
         return rayPoint - rayVector * prod3;
+    }
+
+    public static Vector3 Floor(Vector3 a)
+    {
+        a.X = (float)Math.Floor(a.X);
+        a.Y = (float)Math.Floor(a.Y);
+        a.Z = (float)Math.Floor(a.Z);
+        return a;
+    }
+
+    public static Vector3 Round(Vector3 a)
+    {
+        a.X = (float)Math.Round(a.X);
+        a.Y = (float)Math.Round(a.Y);
+        a.Z = (float)Math.Round(a.Z);
+        return a;
     }
 }

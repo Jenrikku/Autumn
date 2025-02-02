@@ -34,22 +34,16 @@ internal class StageWindow
             "World 6",
             "World 7",
             "World 8 (Part 1)",
-            "World 8 (Part 2)"
+            "World 8 (Part 2)",
+            "Special 1",
+            "Special 2",
+            "Special 3",
+            "Special 4",
+            "Special 5",
+            "Special 6",
+            "Special 7",
+            "Special 8"
         ];
-        comboStrings = comboStrings
-            .Concat(
-                [
-                    "Special 1",
-                    "Special 2",
-                    "Special 3",
-                    "Special 4",
-                    "Special 5",
-                    "Special 6",
-                    "Special 7",
-                    "Special 8"
-                ]
-            )
-            .ToArray();
     }
 
     public void Render()
@@ -75,8 +69,8 @@ internal class StageWindow
                 {
                     if (scenario == 0)
                         continue;
-                    ImGui.TableNextRow();
 
+                    ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
 
                     if (ImGui.Selectable(name, false, ImGuiSelectableFlags.SpanAllColumns))
@@ -93,10 +87,7 @@ internal class StageWindow
                                 $"Loading stage \"{name + scenario}\"...",
                                 manager =>
                                 {
-                                    Stage stage = window.ContextHandler.FSHandler.ReadStage(
-                                        name,
-                                        scenario
-                                    );
+                                    Stage stage = window.ContextHandler.FSHandler.ReadStage(name, scenario);
 
                                     Scene newScene =
                                         new(
@@ -127,26 +118,21 @@ internal class StageWindow
             {
                 foreach (
                     SystemDataTable.StageDefine _stage in window
-                        .ContextHandler.FSHandler.ReadGameSystemDataTable()
+                        .ContextHandler.FSHandler.ReadGameSystemDataTable()!
                         .WorldList[currentItem - 1]
                         .StageList
                 )
                 {
-                    if (
-                        !window.ContextHandler.ProjectStages.Contains(
-                            (_stage.Stage, (byte)_stage.Scenario)
-                        )
-                    )
+                    if (!window.ContextHandler.ProjectStages.Contains((_stage.Stage, (byte)_stage.Scenario)))
                         continue;
-                    ImGui.TableNextRow();
 
+                    ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
 
                     if (ImGui.Selectable(_stage.Stage + _stage.Scenario, false))
                     {
                         Scene? scene = window.Scenes.Find(scene =>
-                            scene.Stage.Name == _stage.Stage
-                            && scene.Stage.Scenario == _stage.Scenario
+                            scene.Stage.Name == _stage.Stage && scene.Stage.Scenario == _stage.Scenario
                         );
 
                         if (scene is not null) // Stage already opened

@@ -9,7 +9,6 @@ internal class Shortcut
     public bool Alt;
     public ImGuiKey Key;
 
-    // May need [YamlIgnore]
     public string DisplayString { get; }
 
     public Shortcut(bool ctrl, bool shift, bool alt, ImGuiKey key)

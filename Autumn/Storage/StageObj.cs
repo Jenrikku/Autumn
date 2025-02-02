@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Numerics;
 using Autumn.Enums;
 
@@ -38,28 +37,33 @@ internal class StageObj
 
     public StageObj Clone(bool keepChildren = true)
     {
-        var clone = new StageObj();
-        clone.Type = Type;
-        clone.FileType = FileType;
-        clone.Layer = Layer;
-        clone.Name = Name;
-        clone.ClassName = ClassName;
-        clone.CameraId = CameraId;
-        clone.ViewId = ViewId;
-        clone.ClippingGroupId = ClippingGroupId;
-        clone.Translation = Translation;
-        clone.Scale = Scale;
-        clone.Rotation = Rotation;
-        clone.SwitchA = SwitchA;
-        clone.SwitchAppear = SwitchAppear;
-        clone.SwitchB = SwitchB;
-        clone.SwitchDeadOn = SwitchDeadOn;
-        clone.SwitchKill = SwitchKill;
-        clone.Parent = Parent;
+        StageObj clone =
+            new()
+            {
+                Type = Type,
+                FileType = FileType,
+                Layer = Layer,
+                Name = Name,
+                ClassName = ClassName,
+                CameraId = CameraId,
+                ViewId = ViewId,
+                ClippingGroupId = ClippingGroupId,
+                Translation = Translation,
+                Scale = Scale,
+                Rotation = Rotation,
+                SwitchA = SwitchA,
+                SwitchAppear = SwitchAppear,
+                SwitchB = SwitchB,
+                SwitchDeadOn = SwitchDeadOn,
+                SwitchKill = SwitchKill,
+                Parent = Parent
+            };
+
         foreach (string s in Properties.Keys)
         {
             clone.Properties.Add(s, Properties[s]);
         }
+
         if (keepChildren && Children != null && Children.Count > 0) // we would have repeat references otherwise
         {
             clone.Children = new();
@@ -68,12 +72,11 @@ internal class StageObj
                 StageObj clonedChild = child.Clone();
                 clonedChild.Parent = clone;
                 clone.Children.Add(clonedChild);
-
             }
         }
+
         clone.Rail = Rail;
 
         return clone;
     }
-
 }

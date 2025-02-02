@@ -7,15 +7,19 @@ using SPICA.PICA.Commands;
 
 namespace Autumn.Rendering.CtrH3D;
 
-class AxisAlignedBoundingBox {
-    public Vector3 Max = new Vector3(50,50,50);
-    public Vector3 Min = new Vector3(-50,-50,-50);
-    public AxisAlignedBoundingBox(){ }
+class AxisAlignedBoundingBox
+{
+    public Vector3 Max = new Vector3(50, 50, 50);
+    public Vector3 Min = new Vector3(-50, -50, -50);
+
+    public AxisAlignedBoundingBox() { }
+
     public AxisAlignedBoundingBox(Vector3 mx, Vector3 mn)
     {
         Max = mx;
         Min = mn;
     }
+
     public AxisAlignedBoundingBox(float x)
     {
         Max *= x;
@@ -91,13 +95,11 @@ internal class H3DRenderingMesh : IDisposable
                     writer.Write(w);
                 }
             }
+
             vertexBuffer = stream.ToArray();
         }
 
-        Debug.Assert(
-            vertexBuffer.Length
-                == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount
-        );
+        Debug.Assert(vertexBuffer.Length == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount);
 
         _vertexBufferHandle = gl.GenBuffer();
         _elementBufferHandle = gl.GenBuffer();
@@ -113,7 +115,6 @@ internal class H3DRenderingMesh : IDisposable
 
         int offset = 0;
         uint stride = (uint)mesh.VertexStride;
-
 
         foreach (PICAAttribute attribute in mesh.Attributes)
         {
@@ -210,17 +211,13 @@ internal class H3DRenderingMesh : IDisposable
         }
 
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _elementBufferHandle);
-        gl.BufferData<ushort>(
-            BufferTargetARB.ElementArrayBuffer,
-            indexBuffer,
-            BufferUsageARB.StaticDraw
-        );
+        gl.BufferData<ushort>(BufferTargetARB.ElementArrayBuffer, indexBuffer, BufferUsageARB.StaticDraw);
 
         gl.BindVertexArray(0);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-
     }
+
     public unsafe void Draw()
     {
         if (_disposed)
@@ -230,12 +227,7 @@ internal class H3DRenderingMesh : IDisposable
 
         foreach (var (start, lenght) in _elementInfo)
         {
-            _gl.DrawElements(
-                PrimitiveType.Triangles,
-                lenght,
-                DrawElementsType.UnsignedShort,
-                (void*)start
-            );
+            _gl.DrawElements(PrimitiveType.Triangles, lenght, DrawElementsType.UnsignedShort, (void*)start);
         }
 
         _gl.BindVertexArray(0);

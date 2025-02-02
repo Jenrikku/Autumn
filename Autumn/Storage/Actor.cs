@@ -4,14 +4,12 @@ using Autumn.Rendering.CtrH3D.Animation;
 using SceneGL.GLHelpers;
 using SceneGL.Materials.Common;
 using Silk.NET.OpenGL;
-using SPICA.Formats.CtrGfx.Model.Mesh;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.LUT;
 using SPICA.Formats.CtrH3D.Model;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Texture;
-using System;
 
 namespace Autumn.Storage;
 
@@ -22,13 +20,14 @@ internal class Actor
 
     public AxisAlignedBoundingBox AABB = new AxisAlignedBoundingBox();
 
-    public void BoundBox( H3DBoundingBox Box){
-       AABB.Min.X = Math.Min(AABB.Min.X, -Box.Size.X);
-       AABB.Max.X = Math.Max(AABB.Max.X, Box.Size.X);
-       AABB.Min.Y = Math.Min(AABB.Min.Y, -Box.Size.Y);
-       AABB.Max.Y = Math.Max(AABB.Max.Y, Box.Size.Y);
-       AABB.Min.Z = Math.Min(AABB.Min.Z, -Box.Size.Z);
-       AABB.Max.Z = Math.Max(AABB.Max.Z, Box.Size.Z);
+    public void BoundBox(H3DBoundingBox Box)
+    {
+        AABB.Min.X = Math.Min(AABB.Min.X, -Box.Size.X);
+        AABB.Max.X = Math.Max(AABB.Max.X, Box.Size.X);
+        AABB.Min.Y = Math.Min(AABB.Min.Y, -Box.Size.Y);
+        AABB.Max.Y = Math.Max(AABB.Max.Y, Box.Size.Y);
+        AABB.Min.Z = Math.Min(AABB.Min.Z, -Box.Size.Z);
+        AABB.Max.Z = Math.Max(AABB.Max.Z, Box.Size.Z);
     }
 
     /// <summary>
@@ -79,6 +78,7 @@ internal class Actor
 
         IsEmptyModel = false;
     }
+
     public void AddTexture(GL gl, H3DTexture texture)
     {
         byte[] textureData = texture.ToRGBA();
@@ -167,9 +167,7 @@ internal class Actor
     public bool TryGetLUTTexture(string tableName, string samplerName, out TextureSampler result) =>
         _lutSamplers.TryGetValue(tableName + samplerName, out result);
 
-    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(
-        H3DMeshLayer layer
-    )
+    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(H3DMeshLayer layer)
     {
         foreach (var tuple in _meshes[(int)layer])
             yield return tuple;

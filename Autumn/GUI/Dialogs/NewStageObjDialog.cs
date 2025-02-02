@@ -18,6 +18,7 @@ internal class NewStageObjDialog(MainWindowContext window)
     private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     private int _objectType = 2;
     private string[] _objectTypeNames = Enum.GetNames<StageObjType>();
+
     private const ImGuiTableFlags _newObjectClassTableFlags =
         ImGuiTableFlags.ScrollY
         | ImGuiTableFlags.RowBg
@@ -37,11 +38,7 @@ internal class NewStageObjDialog(MainWindowContext window)
         Vector2 dimensions = new(800, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
+        ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
 
         if (
             !ImGui.BeginPopupModal(
@@ -63,14 +60,7 @@ internal class NewStageObjDialog(MainWindowContext window)
 
                 ImGui.SetNextItemWidth(400);
                 ImGui.InputText("Search", ref _classSearchQuery, 128);
-                if (
-                    ImGui.BeginTable(
-                        "ClassTable",
-                        2,
-                        _newObjectClassTableFlags,
-                        new Vector2(400, 200)
-                    )
-                )
+                if (ImGui.BeginTable("ClassTable", 2, _newObjectClassTableFlags, new Vector2(400, 200)))
                 {
                     ImGui.TableSetupColumn("ClassName", ImGuiTableColumnFlags.None, 0.5f);
                     ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.None, 0.5f);
@@ -80,20 +70,27 @@ internal class NewStageObjDialog(MainWindowContext window)
                     {
                         if (
                             _classSearchQuery != string.Empty
-                            && !pair.Key.ToLower().Contains(_classSearchQuery.ToLower())
+                            && !pair.Key.Contains(_classSearchQuery, StringComparison.CurrentCultureIgnoreCase)
                         )
-                            if (pair.Value.Name == null ||
-                            !pair.Value.Name.Contains(_classSearchQuery.ToLower()))
+                            if (
+                                pair.Value.Name == null
+                                || !pair.Value.Name.Contains(
+                                    _classSearchQuery,
+                                    StringComparison.CurrentCultureIgnoreCase
+                                )
+                            )
                                 continue;
-                        ImGui.TableNextRow();
 
+                        ImGui.TableNextRow();
                         ImGui.TableSetColumnIndex(0);
+
                         if (ImGui.Selectable(pair.Key))
                         {
                             _class = pair.Key;
                             databaseHasEntry = false;
                             ResetArgs();
                         }
+
                         ImGui.TableSetColumnIndex(1);
                         ImGui.Text(pair.Value.Name ?? "");
                     }
@@ -104,35 +101,38 @@ internal class NewStageObjDialog(MainWindowContext window)
 
                 {
                     ImGui.BeginChild("##Desc_Args", new Vector2(380, 210));
+
                     string description = dbEntry.Description ?? "No Description";
+
                     if (dbEntry.DescriptionAdditional is not null)
                         description += $"\n{dbEntry.DescriptionAdditional}";
+
                     ImGui.SetWindowFontScale(1.3f);
+
                     if (databaseHasEntry)
                         ImGui.Text(dbEntry.Name ?? _class);
                     else
                         ImGui.Text(_class);
+
                     ImGui.SetWindowFontScale(1.0f);
                     ImGui.SameLine();
                     ImGui.TextColored(new Vector4(0.5f, 0.5f, 0.5f, 1.0f), _class);
 
-                    ImGui.BeginChild(
-                        "##Description",
-                        new Vector2(380, 40),
-                        ImGuiChildFlags.None,
-                        ImGuiWindowFlags.AlwaysVerticalScrollbar
-                    );
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    ImGui.TextWrapped(description);
-                    ImGui.EndChild();
                     if (
-                        ImGui.BeginTable(
-                            "ArgTable",
-                            4,
-                            _newObjectClassTableFlags,
-                            new Vector2(380, 130)
+                        ImGui.BeginChild(
+                            "##Description",
+                            new Vector2(380, 40),
+                            ImGuiChildFlags.None,
+                            ImGuiWindowFlags.AlwaysVerticalScrollbar
                         )
                     )
+                    {
+                        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                        ImGui.TextWrapped(description);
+                        ImGui.EndChild();
+                    }
+
+                    if (ImGui.BeginTable("ArgTable", 4, _newObjectClassTableFlags, new Vector2(380, 130)))
                     {
                         ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
                         ImGui.TableSetupColumn("Val", ImGuiTableColumnFlags.None, 0.35f);
@@ -169,20 +169,23 @@ internal class NewStageObjDialog(MainWindowContext window)
                             ImGui.TableSetColumnIndex(2);
                             ImGui.Text(name);
                             ImGui.TableSetColumnIndex(3);
-                            bool needScrollbar =
-                                ImGui.CalcTextSize(argDescription).X
-                                > ImGui.GetContentRegionAvail().X;
+
+                            bool needScrollbar = ImGui.CalcTextSize(argDescription).X > ImGui.GetContentRegionAvail().X;
                             float ysize =
-                                ImGui.GetFont().FontSize
-                                * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
-                            ImGui.BeginChild(
-                                $"##ArgDescription{i}",
-                                new Vector2(0, ysize),
-                                ImGuiChildFlags.None,
-                                ImGuiWindowFlags.HorizontalScrollbar
-                            );
-                            ImGui.Text(argDescription);
-                            ImGui.EndChild();
+                                ImGui.GetFont().FontSize * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
+
+                            if (
+                                ImGui.BeginChild(
+                                    $"##ArgDescription{i}",
+                                    new Vector2(0, ysize),
+                                    ImGuiChildFlags.None,
+                                    ImGuiWindowFlags.HorizontalScrollbar
+                                )
+                            )
+                            {
+                                ImGui.Text(argDescription);
+                                ImGui.EndChild();
+                            }
                         }
 
                         ImGui.EndTable();
@@ -202,18 +205,21 @@ internal class NewStageObjDialog(MainWindowContext window)
                 ImGui.PopItemWidth();
 
                 float buttonTextSizeX = ImGui.CalcTextSize("<-").X;
-                float objectNameWidth =
-                    width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
+                float objectNameWidth = width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
                 ImGui.PushItemWidth(objectNameWidth);
                 ImGuiWidgets.InputTextRedWhenEmpty("##ObjectName", ref _name, 128);
                 ImGui.PopItemWidth();
                 ImGui.SameLine();
+
                 if (ImGui.ArrowButton("l", ImGuiDir.Left))
                     _name = _class;
+
                 ImGui.SameLine();
                 ImGui.PushItemWidth(width * 0.5f);
+
                 if (ImGuiWidgets.InputTextRedWhenEmpty("##ClassName", ref _class, 128))
                     ResetArgs();
+
                 ImGui.PopItemWidth();
 
                 ImGui.SetNextItemWidth(100);
@@ -221,32 +227,36 @@ internal class NewStageObjDialog(MainWindowContext window)
                     "Object Type",
                     ref _objectType,
                     _objectTypeNames,
-                    _objectTypeNames.Length-3 // no rail or child types
+                    _objectTypeNames.Length - 3 // no rail or child types
                 );
 
                 _prevClassValid = databaseHasEntry;
                 bool canCreate = _name != string.Empty && _class != string.Empty;
+
                 if (canCreate)
                     ImGui.SameLine();
+
                 if (canCreate && ImGui.Button("Add"))
                 {
                     window.AddSceneMouseClickAction(AddQueuedObject);
-
                     _isOpened = false;
                 }
 
                 ImGui.EndTabItem();
             }
+
             if (ImGui.BeginTabItem("Area"))
             {
                 ImGui.Text("Currently unsupported");
                 ImGui.EndTabItem();
             }
+
             if (ImGui.BeginTabItem("Rail"))
             {
                 ImGui.Text("Currently unsupported");
                 ImGui.EndTabItem();
             }
+
             ImGui.EndTabBar();
         }
     }
@@ -270,28 +280,40 @@ internal class NewStageObjDialog(MainWindowContext window)
                 ClassName = window.ContextHandler.Settings.UseClassNames ? _class : null,
                 Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100),
             };
-        
+
         List<string> DesignList = ["LightArea", "FogAreaCameraPos", "FogArea"];
-        List<string> SoundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
-        
-        if (DesignList.Contains(newObj.Name)) newObj.FileType = StageFileType.Design;
-        else if (SoundList.Contains(newObj.Name)) newObj.FileType = StageFileType.Sound;
-        else newObj.FileType = StageFileType.Map;
+        List<string> SoundList =
+        [
+            "SoundEmitArea",
+            "SoundEmitObj",
+            "BgmChangeArea",
+            "AudioEffectChangeArea",
+            "AudioVolumeSettingArea"
+        ];
+
+        if (DesignList.Contains(newObj.Name))
+            newObj.FileType = StageFileType.Design;
+        else if (SoundList.Contains(newObj.Name))
+            newObj.FileType = StageFileType.Sound;
+        else
+            newObj.FileType = StageFileType.Map;
 
         // set up arguments
         int argNum = 10;
-        if (newObj.Type == StageObjType.Area) argNum = 8;
-        else if (newObj.Type != StageObjType.Regular) argNum = 0;
+        if (newObj.Type == StageObjType.Area)
+            argNum = 8;
+        else if (newObj.Type != StageObjType.Regular)
+            argNum = 0;
         for (int i = 0; i < argNum; i++)
             newObj.Properties.Add($"Arg{i}", _args[i]);
 
-        // set up 
-        if (newObj.Type == StageObjType.Area || newObj.Type == StageObjType.CameraArea) 
+        // set up
+        if (newObj.Type == StageObjType.Area || newObj.Type == StageObjType.CameraArea)
         {
             newObj.Properties.Add("Priority", -1);
             newObj.Properties.Add("ShapeModelNo", 0);
         }
-        else if (newObj.Type == StageObjType.Start) 
+        else if (newObj.Type == StageObjType.Start)
             newObj.Properties.Add("MarioNo", 0);
 
         ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newObj);

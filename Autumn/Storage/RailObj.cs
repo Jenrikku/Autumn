@@ -14,10 +14,11 @@ internal class RailObj : StageObj
 
     public static bool operator ==(RailObj r, RailObj rb)
     {
-        return r.RailNo == rb.RailNo && r.Closed == rb.Closed && r.Name == rb.Name; 
+        return r.RailNo == rb.RailNo && r.Closed == rb.Closed && r.Name == rb.Name;
     }
+
     public static bool operator !=(RailObj r, RailObj rb)
     {
-        return r.RailNo != rb.RailNo || r.Closed != rb.Closed || r.Name != rb.Name; 
-    } 
+        return r.RailNo != rb.RailNo || r.Closed != rb.Closed || r.Name != rb.Name;
+    }
 }

@@ -1,8 +1,5 @@
-using System.Diagnostics;
 using System.Numerics;
-using System.Reflection.Emit;
 using Autumn.Enums;
-using Autumn.FileSystems;
 using Autumn.GUI;
 using Autumn.Rendering;
 using Autumn.Rendering.CtrH3D;
@@ -74,19 +71,17 @@ internal class PropertiesWindow(MainWindowContext window)
             var style = ImGui.GetStyle();
             float prevW = ImGui.GetWindowWidth();
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImGui.GetColorU32(ImGuiCol.FrameBg));
+
             if (ImGui.CollapsingHeader("General Info", ImGuiTreeNodeFlags.DefaultOpen))
             {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild(
-                    "gen",
-                    default,
-                    ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                );
+                ImGui.BeginChild("gen", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
 
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                 //ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 3.1f);
                 ImGui.PushItemWidth(prevW - PROP_WIDTH);
                 InputText("Name", ref stageObj.Name, 128, ref stageObj);
+
                 if (stageObj is not RailObj)
                 {
                     if (window.ContextHandler.Settings.UseClassNames)
@@ -109,9 +104,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.Spacing();
                         ImGui.SameLine();
 
-                        ImGuiWidgets.HelpTooltip(
-                            "The class name is picked from CreatorClassNameTable.szs"
-                        );
+                        ImGuiWidgets.HelpTooltip("The class name is picked from CreatorClassNameTable.szs");
                     }
                     ImGui.Text("File type: ");
                     ImGui.SameLine();
@@ -120,13 +113,16 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.SameLine();
                     ImGui.Text(stageObj.Type.ToString());
                 }
+
                 InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
+
                 if (stageObj.Type != StageObjType.Start)
                 {
                     InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
                     InputInt("CameraId", ref stageObj.CameraId, 1, ref stageObj);
                     InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                 }
+
                 ImGui.PopItemWidth();
                 //ImGui.PopStyleVar();
                 ImGui.EndChild();
@@ -135,17 +131,11 @@ internal class PropertiesWindow(MainWindowContext window)
             if (ImGui.CollapsingHeader("Object Transform", ImGuiTreeNodeFlags.DefaultOpen))
             {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild(
-                    "trl",
-                    default,
-                    ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                );
+                ImGui.BeginChild("trl", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
 
                 //ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2.1f);
-                ImGui.PushItemWidth(
-                    ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2
-                );
+                ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                 DragFloat3("Translation", ref stageObj.Translation, ref sceneObj);
                 DragFloat3("Rotation", ref stageObj.Rotation, ref sceneObj);
                 ImGui.PopItemWidth();
@@ -163,18 +153,13 @@ internal class PropertiesWindow(MainWindowContext window)
                 if (ImGui.CollapsingHeader("Object Arguments", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild(
-                        "arg",
-                        default,
-                        ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                    );
+                    ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                     ImGui.PopStyleVar();
                     //ImGui.GetWindowWidth() - style.WindowPadding.X -
                     // prevW - PROP_WIDTH
-                    ImGui.PushItemWidth(
-                        ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2
-                    );
+                    ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+
                     foreach (var (name, property) in stageObj.Properties)
                     {
                         if (property is null)
@@ -200,32 +185,29 @@ internal class PropertiesWindow(MainWindowContext window)
 
                             default:
                                 throw new NotImplementedException(
-                                    "The property type " + property?.GetType().FullName
-                                        ?? "null" + " is not supported."
+                                    "The property type " + property?.GetType().FullName ?? "null" + " is not supported."
                                 );
                         }
                     }
+
                     ImGui.PopItemWidth();
                     ImGui.EndChild();
                 }
             }
+
             if (
                 stageObj.Type == StageObjType.Goal
                 || stageObj.Type == StageObjType.Area
                 || stageObj.Type == StageObjType.CameraArea
                 || stageObj.Type == StageObjType.Regular
-                || stageObj.Type == Enums.StageObjType.Child
-                || stageObj.Type == Enums.StageObjType.AreaChild
+                || stageObj.Type == StageObjType.Child
+                || stageObj.Type == StageObjType.AreaChild
             )
             {
                 if (ImGui.CollapsingHeader("Object Switches", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild(
-                        "swc",
-                        default,
-                        ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                    );
+                    ImGui.BeginChild("swc", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
                     InputInt("SwitchA", ref stageObj.SwitchA, 1, ref stageObj);
@@ -236,18 +218,13 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.PopItemWidth();
                     ImGui.EndChild();
                 }
+
                 if (stageObj.Type != StageObjType.CameraArea && stageObj.Type != StageObjType.Goal)
                 {
                     if (ImGui.CollapsingHeader("Object Relations", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                        if (
-                            ImGui.BeginChild(
-                                "pnt",
-                                default,
-                                ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                            )
-                        )
+                        if (ImGui.BeginChild("pnt", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle))
                         {
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                             ImGui.Text("Parent: ");
@@ -255,10 +232,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             if (stageObj.Parent != null)
                             {
                                 ImGui.GetColorU32(ImGuiCol.NavHighlight);
-                                ImGui.PushStyleColor(
-                                    ImGuiCol.Text,
-                                    ImGui.GetColorU32(ImGuiCol.HeaderActive)
-                                );
+                                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.HeaderActive));
                                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                                 ImGui.Text(stageObj.Parent.Name);
                                 ImGui.PopStyleColor();
@@ -275,8 +249,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 typeof(SceneObj),
                                                 !(window.Keyboard?.IsCtrlPressed() ?? false)
                                             );
-                                            AxisAlignedBoundingBox aabb =
-                                                s.Actor.AABB * s.StageObj.Scale;
+                                            AxisAlignedBoundingBox aabb = s.Actor.AABB * s.StageObj.Scale;
                                             window.CurrentScene!.Camera.LookFrom(
                                                 s.StageObj.Translation * 0.01f,
                                                 aabb.GetDiagonal() * 0.01f
@@ -291,17 +264,17 @@ internal class PropertiesWindow(MainWindowContext window)
                             }
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                             ImGui.Text("Children: ");
+
                             if (stageObj.Children != null && stageObj.Children.Any())
                             {
                                 ImGui.SameLine();
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 2);
+
                                 if (
                                     ImGui.Button(
                                         "Edit children",
                                         new Vector2(
-                                            ImGui.GetWindowWidth()
-                                                - ImGui.GetCursorPosX()
-                                                - style.WindowPadding.X,
+                                            ImGui.GetWindowWidth() - ImGui.GetCursorPosX() - style.WindowPadding.X,
                                             default
                                         )
                                     )
@@ -310,7 +283,9 @@ internal class PropertiesWindow(MainWindowContext window)
                                     window._editChildrenDialog = new(window, stageObj);
                                     window._editChildrenDialog.Open();
                                 }
+
                                 bool autoResize = stageObj.Children.Count < 6;
+
                                 if (
                                     ImGui.BeginTable(
                                         "childrenTable",
@@ -327,40 +302,29 @@ internal class PropertiesWindow(MainWindowContext window)
                                 )
                                 {
                                     ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                                    ImGui.TableSetupColumn(
-                                        "Object",
-                                        ImGuiTableColumnFlags.WidthStretch,
-                                        0.4f
-                                    );
+                                    ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.WidthStretch, 0.4f);
                                     ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None);
                                     ImGui.TableHeadersRow();
+
                                     if (autoResize)
                                         ImGui.SetScrollY(0);
-                                    foreach (
-                                        SceneObj obj in window.CurrentScene!.EnumerateSceneObjs()
-                                    )
+
+                                    foreach (SceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
                                     {
                                         StageObj sObj = obj.StageObj;
 
-                                        if (
-                                            sObj.Type != Enums.StageObjType.Child
-                                            && sObj.Type != Enums.StageObjType.AreaChild
-                                        )
+                                        if (sObj.Type != StageObjType.Child && sObj.Type != StageObjType.AreaChild)
                                             continue;
+
                                         if (sObj.Parent != stageObj)
                                             continue;
+
                                         ImGui.TableNextRow();
 
                                         ImGui.TableSetColumnIndex(0);
 
                                         ImGui.PushID("SceneChildSelectable" + obj.PickingId);
-                                        if (
-                                            ImGui.Selectable(
-                                                sObj.Name,
-                                                false,
-                                                ImGuiSelectableFlags.SpanAllColumns
-                                            )
-                                        )
+                                        if (ImGui.Selectable(sObj.Name, false, ImGuiSelectableFlags.SpanAllColumns))
                                         {
                                             ChangeHandler.ToggleObjectSelection(
                                                 window,
@@ -368,8 +332,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 obj,
                                                 !window.Keyboard?.IsCtrlPressed() ?? true
                                             );
-                                            AxisAlignedBoundingBox aabb =
-                                                obj.Actor.AABB * sObj.Scale;
+                                            AxisAlignedBoundingBox aabb = obj.Actor.AABB * sObj.Scale;
                                             window.CurrentScene!.Camera.LookFrom(
                                                 sObj.Translation * 0.01f,
                                                 aabb.GetDiagonal() * 0.01f
@@ -387,13 +350,12 @@ internal class PropertiesWindow(MainWindowContext window)
                             else
                             {
                                 ImGui.SameLine();
+
                                 if (
                                     ImGui.Button(
                                         "Add children",
                                         new Vector2(
-                                            ImGui.GetWindowWidth()
-                                                - ImGui.GetCursorPosX()
-                                                - style.WindowPadding.X,
+                                            ImGui.GetWindowWidth() - ImGui.GetCursorPosX() - style.WindowPadding.X,
                                             default
                                         )
                                     )
@@ -404,21 +366,18 @@ internal class PropertiesWindow(MainWindowContext window)
                                 }
                             }
                         }
+
                         ImGui.EndChild();
                     }
                 }
             }
 
-            if (stageObj.Type == Enums.StageObjType.Regular || stageObj.Type == StageObjType.Child)
+            if (stageObj.Type == StageObjType.Regular || stageObj.Type == StageObjType.Child)
             {
                 if (ImGui.CollapsingHeader("Rail", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild(
-                        "rl",
-                        default,
-                        ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                    );
+                    ImGui.BeginChild("rl", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                     //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
                     if (stageObj.Rail is not null)
                     {
@@ -430,6 +389,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SameLine();
                         ImGui.TextDisabled("No rail assigned.");
                     }
+
                     ImGui.EndChild();
                 }
             }
@@ -437,11 +397,7 @@ internal class PropertiesWindow(MainWindowContext window)
             if (ImGui.CollapsingHeader("Misc. Properties", ImGuiTreeNodeFlags.DefaultOpen))
             {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild(
-                    "prp",
-                    default,
-                    ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle
-                );
+                ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                 //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
                 ImGui.PushItemWidth(prevW - PROP_WIDTH);
                 foreach (var (name, property) in stageObj.Properties)
@@ -451,6 +407,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.TextDisabled(name);
                         return;
                     }
+
                     if (name.Contains("Arg"))
                         continue;
 
@@ -468,11 +425,11 @@ internal class PropertiesWindow(MainWindowContext window)
 
                         default:
                             throw new NotImplementedException(
-                                "The property type " + property?.GetType().FullName
-                                    ?? "null" + " is not supported."
+                                "The property type " + property?.GetType().FullName ?? "null" + " is not supported."
                             );
                     }
                 }
+
                 if (
                     ImGui.Button(
                         "Edit Misc Properties",
@@ -504,6 +461,7 @@ internal class PropertiesWindow(MainWindowContext window)
             InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
             InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
             InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
+
             foreach (SceneObj sceneObj in window.CurrentScene.SelectedObjects)
             {
                 if (multiselector.ViewId != mView)
@@ -521,50 +479,40 @@ internal class PropertiesWindow(MainWindowContext window)
     }
 
     #region Undoable Actions
+
     private bool DragFloat3(string str, ref Vector3 rf, ref SceneObj sto)
     {
         Vector3 v = rf;
+
         if (ImGui.InputFloat3(str, ref v, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeTransform(window.CurrentScene.History, sto, str, rf, v);
+            ChangeHandler.ChangeTransform(window.CurrentScene!.History, sto, str, rf, v);
             return true;
         }
+
         return false;
     }
 
-    private bool LinkedFloat3(
-        string str,
-        ref Vector3 rf,
-        float v_speed,
-        ref SceneObj sto,
-        ImGuiStylePtr style
-    )
+    private bool LinkedFloat3(string str, ref Vector3 rf, float v_speed, ref SceneObj sto, ImGuiStylePtr style)
     {
         float x = rf.X;
         float y = rf.Y;
         float z = rf.Z;
         bool change = false;
+
         ImGui.PushFont(window.FontPointers[1]);
+
         if (ImGui.Button(linkedScale ? "\uf0c1" : "\uf127"))
         {
             linkedScale = !linkedScale;
         }
+
         ImGui.PopFont();
 
-        ImGui.PushItemWidth(
-            (ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2) / 3.5f
-        );
+        ImGui.PushItemWidth((ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2) / 3.5f);
         ImGui.SameLine(default, style.ItemSpacing.X / 2);
-        if (
-            ImGui.InputFloat(
-                "##LX" + str,
-                ref x,
-                default,
-                default,
-                default,
-                ImGuiInputTextFlags.EnterReturnsTrue
-            )
-        )
+
+        if (ImGui.InputFloat("##LX" + str, ref x, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (linkedScale)
             {
@@ -572,48 +520,35 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             change = true;
         }
+
         ImGui.SameLine(default, style.ItemSpacing.X / 2);
-        if (
-            ImGui.InputFloat(
-                "##LY" + str,
-                ref y,
-                default,
-                default,
-                default,
-                ImGuiInputTextFlags.EnterReturnsTrue
-            )
-        )
+
+        if (ImGui.InputFloat("##LY" + str, ref y, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (linkedScale)
-            {
                 x = z = y;
-            }
+
             change = true;
         }
+
         ImGui.SameLine(default, style.ItemSpacing.X / 2);
+
         if (
-            ImGui.InputFloat(
-                str + "##LZ" + str,
-                ref z,
-                default,
-                default,
-                default,
-                ImGuiInputTextFlags.EnterReturnsTrue
-            )
+            ImGui.InputFloat(str + "##LZ" + str, ref z, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue)
         )
         {
             if (linkedScale)
-            {
                 x = y = z;
-            }
+
             change = true;
         }
 
         if (change)
         {
             Vector3 v = new(x, y, z);
-            ChangeHandler.ChangeTransform(window.CurrentScene.History, sto, str, rf, v);
+            ChangeHandler.ChangeTransform(window.CurrentScene?.History!, sto, str, rf, v);
         }
+
         ImGui.PopItemWidth();
         return false;
     }
@@ -621,52 +556,48 @@ internal class PropertiesWindow(MainWindowContext window)
     private bool InputText(string str, ref string rf, uint max, ref StageObj sto, string? hint = "")
     {
         string s = rf;
+
         if (ImGui.InputTextWithHint(str, hint, ref s, max, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeFieldValue(window.CurrentScene.History, sto, str, rf, s);
+            ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, sto, str, rf, s);
         }
+
         return false;
     }
 
     private bool InputInt(string str, ref int rf, int step, ref StageObj sto)
     {
         int i = rf;
+
         if (ImGui.InputInt(str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeFieldValue(window.CurrentScene.History, sto, str, rf, i);
+            ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, sto, str, rf, i);
         }
+
         return false;
     }
 
     private bool InputTextProperties(string str, ref string rf, uint max, ref StageObj sto)
     {
         string s = rf;
+
         if (ImGui.InputText(str, ref s, max, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeDictionaryValue(
-                window.CurrentScene.History,
-                sto.Properties,
-                str,
-                rf,
-                s
-            );
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, s);
         }
+
         return false;
     }
 
     private bool InputIntProperties(string str, ref int rf, int step, ref StageObj sto)
     {
         int i = rf;
+
         if (ImGui.InputInt(str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeDictionaryValue(
-                window.CurrentScene.History,
-                sto.Properties,
-                str,
-                rf,
-                i
-            );
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
         }
+
         return false;
     }
 
@@ -679,5 +610,6 @@ internal class PropertiesWindow(MainWindowContext window)
 
         return className;
     }
+
     #endregion
 }

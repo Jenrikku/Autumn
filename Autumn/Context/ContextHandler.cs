@@ -34,25 +34,23 @@ internal class ContextHandler
         string sysSettingsFile = Path.Join(settingsDir, systemConfFile);
         string actionsFile = Path.Join(settingsDir, actionsConfFile);
 
-        _globalSettings =
-            YAMLWrapper.Deserialize<Dictionary<string, object?>>(settingsFile) ?? new();
+        _globalSettings = YAMLWrapper.Deserialize<Dictionary<string, object?>>(settingsFile) ?? new();
 
         Settings = new(_globalSettings);
+        SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
 
         FSHandler = new(Settings.RomFSPath);
-        SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
-        if (!File.Exists(actionsFile))
-        {
-            File.Copy(Path.Join("Resources", "DefaultActions.yml"), actionsFile);
-        }
 
-        var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile) ?? new();
+        var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile);
+
+        if (actions is null)
+            YAMLWrapper.Deserialize<Dictionary<string, object>>(Path.Join("Resources", "DefaultActions.yml"));
 
         // Convert to Dictionary<CommandID, Shortcut>
 
         Dictionary<CommandID, Shortcut> parsedActions = new();
 
-        foreach (var (key, value) in actions)
+        foreach (var (key, value) in actions ?? [])
         {
             if (!Enum.TryParse(key, out CommandID id))
                 continue;
@@ -102,6 +100,7 @@ internal class ContextHandler
         Settings = new(project.ProjectSettings, _globalSettings);
 
         FSHandler.ModFS = string.IsNullOrEmpty(project.ContentsPath) ? null : new(project.ContentsPath);
+
         SystemSettings.AddRecentlyOpenedPath(projectDir);
         SaveSettings();
         ProjectChanged = true;
@@ -148,7 +147,7 @@ internal class ContextHandler
     /// </summary>
     public void UpdateProjectStages()
     {
-        if (FSHandler.ModFS == null)
+        if (FSHandler.ModFS is null)
             return;
 
         ProjectStages.Clear();
@@ -183,7 +182,6 @@ internal class ContextHandler
             YAMLWrapper.Serialize(_project.ProjectFile, _project.ProjectSettings);
 
         YAMLWrapper.Serialize(Path.Join(SettingsPath, mainConfFile), _globalSettings);
-
         YAMLWrapper.Serialize(Path.Join(SettingsPath, systemConfFile), SystemSettings);
 
         // Save actions:

@@ -48,11 +48,7 @@ internal static class ModelRenderer
 
     public static void Draw(GL gl, SceneObj sceneObj)
     {
-        if (
-            s_commonSceneParams is null
-            || s_defaultCubeMaterialParams is null
-            || s_areaMaterialParams is null
-        )
+        if (s_commonSceneParams is null || s_defaultCubeMaterialParams is null || s_areaMaterialParams is null)
             throw new InvalidOperationException(
                 $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(Draw)}"
             );
@@ -109,17 +105,23 @@ internal static class ModelRenderer
                 "BugFixBalanceTruckArea" => new Vector4(1.0f, 0.4f, 0.0f, 1.0f),
                 _ => new Vector4(1.0f)
             };
-            
-            if (!visibleAreas && !sceneObj.Selected && (sceneObj.StageObj.Type == StageObjType.Area || sceneObj.StageObj.Type == StageObjType.AreaChild))
+
+            if (
+                !visibleAreas
+                && !sceneObj.Selected
+                && (sceneObj.StageObj.Type == StageObjType.Area || sceneObj.StageObj.Type == StageObjType.AreaChild)
+            )
                 return;
-            
+
             if (!visibleCameraAreas && !sceneObj.Selected && sceneObj.StageObj.Type == StageObjType.CameraArea)
                 return;
-            
+
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(20f);
 
-            if (!sceneObj.isVisible) return;
-            else gl.CullFace(TriangleFace.Back);
+            if (!sceneObj.isVisible)
+                return;
+            else
+                gl.CullFace(TriangleFace.Back);
 
             AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams, sceneObj.PickingId);
             return;
@@ -131,29 +133,24 @@ internal static class ModelRenderer
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(2f);
 
-            if (!sceneObj.isVisible) return;
-            else gl.CullFace(TriangleFace.Back);
+            if (!sceneObj.isVisible)
+                return;
+            else
+                gl.CullFace(TriangleFace.Back);
 
-            DefaultCubeRenderer.Render(
-                gl,
-                s_commonSceneParams,
-                s_defaultCubeMaterialParams,
-                sceneObj.PickingId
-            );
+            DefaultCubeRenderer.Render(gl, s_commonSceneParams, s_defaultCubeMaterialParams, sceneObj.PickingId);
         }
         else
         {
-            if (!sceneObj.isVisible) return;
+            if (!sceneObj.isVisible)
+                return;
+
             foreach (H3DMeshLayer layer in Enum.GetValues<H3DMeshLayer>())
             foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
             {
                 material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.4f : 0));
 
-                material.SetMatrices(
-                    s_projectionMatrix,
-                    s_h3DScale * sceneObj.Transform,
-                    s_viewMatrix
-                );
+                material.SetMatrices(s_projectionMatrix, s_h3DScale * sceneObj.Transform, s_viewMatrix);
 
                 material.TryUse(gl, out ProgramUniformScope scope);
 
@@ -175,10 +172,7 @@ internal static class ModelRenderer
                             material.BlendingColor.W
                         );
 
-                        gl.BlendEquationSeparate(
-                            material.ColorBlendEquation,
-                            material.AlphaBlendEquation
-                        );
+                        gl.BlendEquationSeparate(material.ColorBlendEquation, material.AlphaBlendEquation);
 
                         gl.BlendFuncSeparate(
                             material.ColorSrcFact,
@@ -188,19 +182,11 @@ internal static class ModelRenderer
                         );
                     }
 
-                    gl.StencilFunc(
-                        material.StencilFunction,
-                        material.StencilRef,
-                        material.StencilMask
-                    );
+                    gl.StencilFunc(material.StencilFunction, material.StencilRef, material.StencilMask);
 
                     gl.StencilMask(material.StencilBufferMask);
 
-                    gl.StencilOp(
-                        material.StencilOps[0],
-                        material.StencilOps[1],
-                        material.StencilOps[2]
-                    );
+                    gl.StencilOp(material.StencilOps[0], material.StencilOps[1], material.StencilOps[2]);
 
                     gl.DepthFunc(material.DepthFunction);
                     gl.DepthMask(material.DepthMaskEnabled);

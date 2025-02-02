@@ -15,6 +15,8 @@ internal class SystemSettings
     public bool EnableVSync = false;
     public int Theme = 0;
     public int MouseSpeed = 20;
+    public bool UseWASD = false;
+    public bool UseMiddleMouse = false;
 
     public void AddRecentlyOpenedPath(string path)
     {

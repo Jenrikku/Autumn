@@ -9,9 +9,9 @@ namespace Autumn.Rendering;
 internal class SceneObj
 {
     public StageObj StageObj { get; }
-    public Actor Actor { get; set;}
+    public Actor Actor { get; set; }
 
-    public Matrix4x4 Transform { get; set;}
+    public Matrix4x4 Transform { get; set; }
 
     public uint PickingId { get; set; }
     public bool Selected { get; set; }
@@ -27,19 +27,12 @@ internal class SceneObj
     }
 
     public void UpdateTransform() =>
-        Transform = MathUtils.CreateTransform(
-            StageObj.Translation * 0.01f,
-            StageObj.Scale,
-            StageObj.Rotation
-        );
-    
+        Transform = MathUtils.CreateTransform(StageObj.Translation * 0.01f, StageObj.Scale, StageObj.Rotation);
 
-    public void UpdateActor(
-        LayeredFSHandler fsHandler,
-        GLTaskScheduler scheduler
-    )
+    public void UpdateActor(LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         string actorName = StageObj.Name;
+
         if (
             StageObj.Properties.TryGetValue("ModelName", out object? modelName)
             && modelName is string modelNameString

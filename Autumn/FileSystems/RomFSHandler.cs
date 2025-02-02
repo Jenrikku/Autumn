@@ -9,14 +9,13 @@ using Autumn.Wrappers;
 using BYAMLSharp;
 using NARCSharp;
 using SPICA.Formats.CtrGfx;
-using SPICA.Formats.CtrGfx.Model.Mesh;
 using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.LUT;
 using SPICA.Formats.CtrH3D.Model;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.Formats.CtrH3D.Texture;
-using static Autumn.BgmTable;
+using static Autumn.Storage.BgmTable;
 
 namespace Autumn.FileSystems;
 
@@ -53,15 +52,10 @@ internal partial class RomFSHandler
         _ccntPath = Path.Join(Root, "SystemData", "CreatorClassNameTable.szs");
 
         // Only really used in ModFS
-        CreateDirIfDoesntExist(_stagesPath);
-        CreateDirIfDoesntExist(_actorsPath);
-        CreateDirIfDoesntExist(_soundPath);
-        CreateDirIfDoesntExist(Path.Join(Root, "SystemData"));
-    }
-    private void CreateDirIfDoesntExist(string path)
-    {
-        if (!Directory.Exists(path))
-            Directory.CreateDirectory(path);
+        Directory.CreateDirectory(_stagesPath);
+        Directory.CreateDirectory(_actorsPath);
+        Directory.CreateDirectory(_soundPath);
+        Directory.CreateDirectory(Path.Join(Root, "SystemData"));
     }
 
     public bool ExistsStage(string name, byte scenario)
@@ -89,7 +83,9 @@ internal partial class RomFSHandler
     }
 
     public bool ExistsCreatorClassNameTable() => File.Exists(_ccntPath);
+
     public bool ExistsBgmTable() => File.Exists(Path.Join(_soundPath, "BgmTable.szs"));
+
     public bool ExistsGSDT() => File.Exists(Path.Join(_actorsPath, "GameSystemDataTable.szs"));
 
     public IEnumerable<(string Name, byte Scenario)> EnumerateStages()
@@ -118,7 +114,7 @@ internal partial class RomFSHandler
         }
     }
 
-    #region Stage Writing 
+    #region Stage Writing
 
     public Stage ReadStage(string name, byte scenario)
     {
@@ -155,11 +151,16 @@ internal partial class RomFSHandler
                         break;
 
                     case string s when s.Contains("StageInfo"):
-                        if (!s.Contains($"{scenario}") && s != "StageInfo.byml") break;
-                        BYAML stageInfoByaml = BYAMLParser.Read(contents, s_byamlEncoding);
-                        if (stageInfoByaml.RootNode == null || stageInfoByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+                        if (!s.Contains($"{scenario}") && s != "StageInfo.byml")
+                            break;
 
-                        Console.WriteLine(stageInfoByaml.RootNode.Value.GetType());
+                        BYAML stageInfoByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+
+                        if (
+                            stageInfoByaml.RootNode is null
+                            || stageInfoByaml.RootNode.NodeType != BYAMLNodeType.Dictionary
+                        )
+                            break;
 
                         var rootDict = stageInfoByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
                         rootDict.TryGetValue("StageTimer", out BYAMLNode? timerN);
@@ -170,17 +171,19 @@ internal partial class RomFSHandler
                         stage.StageParams.Timer = timerN?.GetValueAs<int>() ?? default;
                         stage.StageParams.RestartTimer = timerRN?.GetValueAs<int>() ?? -1;
                         stage.StageParams.MaxPowerUps = pupN?.GetValueAs<int>() ?? -1;
-                        if (fprnt != null)
+
+                        if (fprnt is not null)
                         {
                             stage.StageParams.FootPrint = new();
-                            var d = fprnt.GetValueAs<BYAMLNode[]>()?[0].GetValueAs<Dictionary<string, BYAMLNode>>();
-                            if (d != null)
-                            {
-                                d.TryGetValue("AnimName", out BYAMLNode? aN);
-                                d.TryGetValue("AnimType", out BYAMLNode? aT);
+                            var dict = fprnt.GetValueAs<BYAMLNode[]>()?[0].GetValueAs<Dictionary<string, BYAMLNode>>();
 
-                                stage.StageParams.FootPrint.Material = d["Material"].GetValueAs<string>();
-                                stage.StageParams.FootPrint.Model = d["Model"].GetValueAs<string>();
+                            if (dict is not null)
+                            {
+                                dict.TryGetValue("AnimName", out BYAMLNode? aN);
+                                dict.TryGetValue("AnimType", out BYAMLNode? aT);
+
+                                stage.StageParams.FootPrint.Material = dict["Material"].GetValueAs<string>()!;
+                                stage.StageParams.FootPrint.Model = dict["Model"].GetValueAs<string>()!;
                                 stage.StageParams.FootPrint.AnimName = aN?.GetValueAs<string>();
                                 stage.StageParams.FootPrint.AnimType = aT?.GetValueAs<string>();
                             }
@@ -193,7 +196,6 @@ internal partial class RomFSHandler
                         stage.AddAdditionalFile(fileType, filename, contents);
                         break;
                 }
-
             }
         }
 
@@ -209,10 +211,7 @@ internal partial class RomFSHandler
         {
             DateTime timestamp = File.GetLastWriteTime(path);
 
-            if (
-                _cachedActorsTimestamps.TryGetValue(path, out DateTime oldTimestamp)
-                && oldTimestamp == timestamp
-            )
+            if (_cachedActorsTimestamps.TryGetValue(path, out DateTime oldTimestamp) && oldTimestamp == timestamp)
                 return cachedActor;
         }
 
@@ -291,14 +290,13 @@ internal partial class RomFSHandler
                     scheduler.EnqueueGLTask(gl =>
                         actor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
                     );
-                    if (mesh.MetaData != null)
+
+                    if (mesh.MetaData is not null)
                     {
-                        for (int _m = 0; _m < mesh.MetaData.Count; _m++)
+                        for (int m = 0; m < mesh.MetaData.Count; m++)
                         {
-                            if (mesh.MetaData[_m].Name == "OBBox")
-                            {
-                                actor.BoundBox((H3DBoundingBox)mesh.MetaData[_m].Values[0]);
-                            }
+                            if (mesh.MetaData[m].Name == "OBBox")
+                                actor.BoundBox((H3DBoundingBox)mesh.MetaData[m].Values[0]!);
                         }
                     }
                 }
@@ -361,6 +359,7 @@ internal partial class RomFSHandler
 
         return _creatorClassNameTable;
     }
+
     public BgmTable ReadBgmTable()
     {
         if (_bgmTable is null)
@@ -368,13 +367,13 @@ internal partial class RomFSHandler
             NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(_soundPath, "BgmTable.szs"));
 
             _bgmTable = new();
+
             if (narc is not null)
             {
                 byte[] defaultListData = narc.GetFile("StageDefaultBgmList.byml");
                 byte[] listData = narc.GetFile("StageBgmList.byml");
                 BYAML defaultListByaml = BYAMLParser.Read(defaultListData, s_byamlEncoding);
                 BYAML listByaml = BYAMLParser.Read(listData, s_byamlEncoding);
-
 
                 if (defaultListByaml.RootNode.NodeType == BYAMLNodeType.Dictionary)
                 {
@@ -385,17 +384,21 @@ internal partial class RomFSHandler
                     {
                         if (node.NodeType != BYAMLNodeType.Dictionary)
                             continue;
-                        var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
-                        dict.TryGetValue("BgmLabel", out BYAMLNode? lbl);
-                        dict.TryGetValue("Scenario", out BYAMLNode? sc);
-                        dict.TryGetValue("StageName", out BYAMLNode? name);
-                        StageDefaultBgm bgm = new StageDefaultBgm()
-                        {
-                            Scenario = sc?.GetValueAs<int>() ?? 0,
-                            BgmLabel = lbl?.GetValueAs<string>() ?? "",
-                            StageName = name?.GetValueAs<string>() ?? "",
-                        };
+                        var d = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        d.TryGetValue("BgmLabel", out BYAMLNode? lbl);
+                        d.TryGetValue("Scenario", out BYAMLNode? sc);
+                        d.TryGetValue("StageName", out BYAMLNode? name);
+
+                        StageDefaultBgm bgm =
+                            new()
+                            {
+                                Scenario = sc?.GetValueAs<int>() ?? 0,
+                                BgmLabel = lbl?.GetValueAs<string>() ?? "",
+                                StageName = name?.GetValueAs<string>() ?? "",
+                            };
+
                         _bgmTable.StageDefaultBgmList.Add(bgm);
                     }
                 }
@@ -403,19 +406,24 @@ internal partial class RomFSHandler
                 if (listByaml.RootNode.NodeType == BYAMLNodeType.Dictionary)
                 {
                     var nd = listByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
                     foreach (string id in nd.Keys)
                     {
-                        if (nd[id].NodeType != BYAMLNodeType.Array) continue;
+                        if (nd[id].NodeType != BYAMLNodeType.Array)
+                            continue;
+
                         BYAMLNode[] nodes = nd[id].GetValueAs<BYAMLNode[]>()!;
 
                         if (id == "KindNumList")
                         {
                             foreach (BYAMLNode node in nodes)
                             {
-                                if (node.NodeType != BYAMLNodeType.Dictionary) continue;
-                                var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>();
+                                if (node.NodeType != BYAMLNodeType.Dictionary)
+                                    continue;
+
+                                var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
                                 // ignore idx for now
-                                _bgmTable.BgmTypes.Add(dict["Kind"].GetValueAs<string>());
+                                _bgmTable.BgmTypes.Add(dict["Kind"].GetValueAs<string>()!);
                             }
                         }
                         else
@@ -424,16 +432,18 @@ internal partial class RomFSHandler
                             {
                                 if (node.NodeType != BYAMLNodeType.Dictionary)
                                     continue;
+
                                 var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
                                 dict.TryGetValue("Scenario", out BYAMLNode? sc);
                                 dict.TryGetValue("StageName", out BYAMLNode? name);
-                                StageBgm bgm = new StageBgm()
-                                {
-                                    Scenario = sc?.GetValueAs<int>(),
-                                    StageName = name?.GetValueAs<string>() ?? "",
-                                };
 
+                                StageBgm bgm =
+                                    new()
+                                    {
+                                        Scenario = sc?.GetValueAs<int>(),
+                                        StageName = name?.GetValueAs<string>() ?? "",
+                                    };
 
                                 dict.TryGetValue("LineList", out BYAMLNode? list);
 
@@ -443,18 +453,32 @@ internal partial class RomFSHandler
                                     foreach (string item in d!.Keys)
                                     {
                                         List<KindDefine> e = new();
-                                        if (d[item].NodeType != BYAMLNodeType.Array) continue;
+
+                                        if (d[item].NodeType != BYAMLNodeType.Array)
+                                            continue;
+
                                         foreach (BYAMLNode bnode in d[item].GetValueAs<BYAMLNode[]>())
                                         {
-                                            if (bnode.NodeType != BYAMLNodeType.Dictionary) continue;
+                                            if (bnode.NodeType != BYAMLNodeType.Dictionary)
+                                                continue;
+
                                             KindDefine k = new();
-                                            k.Kind = bnode.GetValueAs<Dictionary<string, BYAMLNode>>()["Kind"].GetValueAs<string>();
-                                            k.Label = bnode.GetValueAs<Dictionary<string, BYAMLNode>>()["Label"].GetValueAs<string>();
+
+                                            k.Kind = bnode
+                                                .GetValueAs<Dictionary<string, BYAMLNode>>()!["Kind"]
+                                                .GetValueAs<string>()!;
+
+                                            k.Label = bnode
+                                                .GetValueAs<Dictionary<string, BYAMLNode>>()!["Label"]
+                                                .GetValueAs<string>()!;
+
                                             e.Add(k);
                                         }
+
                                         bgm.LineList.Add(item, e);
                                     }
                                 }
+
                                 _bgmTable.StageBgmList.Add(bgm);
                             }
                         }
@@ -462,12 +486,18 @@ internal partial class RomFSHandler
                 }
             }
 
-            _bgmTable.BgmFiles = Directory.EnumerateFiles(Path.Join(_soundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x)).Order().ToArray();
+            _bgmTable.BgmFiles = Directory
+                .EnumerateFiles(Path.Join(_soundPath, "stream"))
+                .Select(x => Path.GetFileNameWithoutExtension(x))
+                .Order()
+                .ToArray();
         }
+
         //var query = (from s in _bgmTable.StageDefaultBgmList where s.Scenario == 1 select s).ToList();
         //_bgmTable.StageDefaultBgmList.Where(x => x.StageName == "FirstStage").ToList();
         return _bgmTable;
     }
+
     public SystemDataTable ReadGSDTable()
     {
         if (_GSDTable is null)
@@ -480,7 +510,6 @@ internal partial class RomFSHandler
                 byte[] courselistData = narc.GetFile("CourseList.byml");
                 BYAML courselistByml = BYAMLParser.Read(courselistData, s_byamlEncoding);
 
-
                 if (courselistByml.RootNode.NodeType == BYAMLNodeType.Dictionary)
                 {
                     var nd = courselistByml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
@@ -492,10 +521,10 @@ internal partial class RomFSHandler
 
                         SystemDataTable.WorldDefine world = new();
                         var wdict = wnode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
-                        
-                        wdict.TryGetValue("Type", out BYAMLNode? wtp);
-                        world.WorldType = (SystemDataTable.WorldTypes)Enum.Parse(typeof(SystemDataTable.WorldTypes), wtp.GetValueAs<string>());
-                        
+
+                        if (wdict.TryGetValue("Type", out BYAMLNode? wtp))
+                            world.WorldType = Enum.Parse<SystemDataTable.WorldTypes>(wtp.GetValueAs<string>()!);
+
                         BYAMLNode[] stagenodes = wdict["Course"].GetValueAs<BYAMLNode[]>()!;
 
                         int lvlNum = 1;
@@ -503,6 +532,7 @@ internal partial class RomFSHandler
                         {
                             if (snode.NodeType != BYAMLNodeType.Dictionary)
                                 continue;
+
                             var dict = snode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
                             dict.TryGetValue("Type", out BYAMLNode? tp);
@@ -510,17 +540,22 @@ internal partial class RomFSHandler
                             dict.TryGetValue("Scenario", out BYAMLNode? sc);
                             dict.TryGetValue("Stage", out BYAMLNode? st);
                             dict.TryGetValue("CoinCollectNum", out BYAMLNode? ccn);
-                            
-                            SystemDataTable.StageDefine lvl = new()
-                            {
-                                StageType = (SystemDataTable.StageTypes)Enum.Parse(typeof(SystemDataTable.StageTypes), tp.GetValueAs<string>()),
-                                Scenario = sc?.GetValueAs<int>() ?? -1,
-                                Miniature = min?.GetValueAs<string>() ?? "",
-                                Stage = st?.GetValueAs<string>() ?? "",
-                                CollectCoinNum = ccn?.GetValueAs<int>() ?? -1,
-                            };
-                            
-                            if (lvl.StageType != SystemDataTable.StageTypes.Dokan && lvl.StageType != SystemDataTable.StageTypes.Empty)
+
+                            SystemDataTable.StageDefine lvl =
+                                new()
+                                {
+                                    StageType = (SystemDataTable.StageTypes)
+                                        Enum.Parse(typeof(SystemDataTable.StageTypes), tp.GetValueAs<string>()),
+                                    Scenario = sc?.GetValueAs<int>() ?? -1,
+                                    Miniature = min?.GetValueAs<string>() ?? "",
+                                    Stage = st?.GetValueAs<string>() ?? "",
+                                    CollectCoinNum = ccn?.GetValueAs<int>() ?? -1,
+                                };
+
+                            if (
+                                lvl.StageType != SystemDataTable.StageTypes.Dokan
+                                && lvl.StageType != SystemDataTable.StageTypes.Empty
+                            )
                             {
                                 lvl.StageNumber = lvlNum;
                                 lvlNum += 1;
@@ -531,10 +566,9 @@ internal partial class RomFSHandler
                         _GSDTable.WorldList.Add(world);
                     }
                 }
-
             }
-
         }
+
         return _GSDTable;
     }
 
@@ -646,13 +680,13 @@ internal partial class RomFSHandler
                         && i.Key != "name"
                         && i.Key != "LayerName"
                         && i.Key != "l_id"
-                    ).ToDictionary(i => i.Key, i => i.Value.Value)
+                    )
+                    .ToDictionary(i => i.Key, i => i.Value.Value)
             };
 
         // Rail point reading:
 
-        BYAMLNode[] railPointNodes =
-            railPointsNode?.GetValueAs<BYAMLNode[]>() ?? Array.Empty<BYAMLNode>();
+        BYAMLNode[] railPointNodes = railPointsNode?.GetValueAs<BYAMLNode[]>() ?? Array.Empty<BYAMLNode>();
 
         //Debug.Assert(pointCount?.GetValueAs<int>() == railPointNodes.Length);
 
@@ -731,10 +765,7 @@ internal partial class RomFSHandler
                             ),
                             Properties = railPointDict
                                 .Where(i =>
-                                    i.Key != "pnt0_x"
-                                    && i.Key != "pnt0_y"
-                                    && i.Key != "pnt0_z"
-                                    && i.Key != "id"
+                                    i.Key != "pnt0_x" && i.Key != "pnt0_y" && i.Key != "pnt0_z" && i.Key != "id"
                                 )
                                 .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
@@ -742,9 +773,7 @@ internal partial class RomFSHandler
                     break;
 
                 default:
-                    throw new NotImplementedException(
-                        "The given rail point type is not supported."
-                    );
+                    throw new NotImplementedException("The given rail point type is not supported.");
             }
         }
 
@@ -807,12 +836,15 @@ internal partial class RomFSHandler
                 foreach (RailObj r in processedRails.Values)
                 {
                     if (rO == r)
-                    {
                         railObj = r;
-
-                    }
                 }
-                if (railObj is null) throw new("The rail inside " + name.GetValueAs<string>() + " is not referenced in AllRailInfos, please report this issue.");
+
+                if (railObj is null)
+                    throw new(
+                        "The rail inside "
+                            + name?.GetValueAs<string>()
+                            + " is not referenced in AllRailInfos, please report this issue."
+                    );
             }
         }
         List<StageObj> children = new();
@@ -926,18 +958,19 @@ internal partial class RomFSHandler
 
     #endregion
 
-    #region Stage Writing 
+    #region Stage Writing
 
     public bool WriteStage(Stage stage)
     {
         int currentId = 0;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
-        Dictionary<StageFileType, string> paths = new Dictionary<StageFileType, string>
-        {
-            {StageFileType.Design, Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}.szs") },
-            {StageFileType.Map, Path.Join(_stagesPath, $"{stage.Name}Map{stage.Scenario}.szs") },
-            {StageFileType.Sound, Path.Join(_stagesPath, $"{stage.Name}Sound{stage.Scenario}.szs") }
-        };
+        Dictionary<StageFileType, string> paths =
+            new()
+            {
+                { StageFileType.Design, Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}.szs") },
+                { StageFileType.Map, Path.Join(_stagesPath, $"{stage.Name}Map{stage.Scenario}.szs") },
+                { StageFileType.Sound, Path.Join(_stagesPath, $"{stage.Name}Sound{stage.Scenario}.szs") }
+            };
 
         // check design -> map -> sound
         foreach (StageFileType StageType in Enum.GetValues<StageFileType>())
@@ -947,7 +980,10 @@ internal partial class RomFSHandler
             BYAML file = new(root, s_byamlEncoding, default);
             Dictionary<string, BYAMLNode> dict = new();
             StageFile st = stage.GetStageFile(StageType);
-            if (st.IsEmpty()) continue;
+
+            if (st.IsEmpty())
+                continue;
+
             dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
             dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
             dict.Add("LayerInfos", new(BYAMLNodeType.Array));
@@ -956,12 +992,12 @@ internal partial class RomFSHandler
             // design , map, sound StageData.byaml
 
             currentId = 0;
-            Dictionary<string, BYAMLNode> allRailDict;
-            dict["AllRailInfos"].TryGetValueAs(out allRailDict);
+            var allRailDict = dict["AllRailInfos"].GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
             allRailDict.Add("RailInfo", new(BYAMLNodeType.Array));
-            List<BYAMLNode> railInfo = new();//= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
+            List<BYAMLNode> railInfo = new(); //= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
             Dictionary<RailObj, BYAMLNode> railObjNodes = new();
+
             foreach (RailObj rail in st.GetRailInfos())
             {
                 var nodeRail = WriteRail(rail, currentId);
@@ -969,6 +1005,7 @@ internal partial class RomFSHandler
                 railObjNodes.Add(rail, nodeRail);
                 currentId++;
             }
+
             allRailDict["RailInfo"].Value = railInfo.ToArray();
             dict["AllRailInfos"].Value = allRailDict;
 
@@ -993,17 +1030,22 @@ internal partial class RomFSHandler
                     */
 
                     List<StageObj> objs = st.GetObjInfos(Infos);
-                    if (!objs.Any()) continue;
+
+                    if (objs.Count == 0)
+                        continue;
+
                     List<BYAMLNode> currentInfosList = new();
                     foreach (StageObj currentObj in objs)
                     {
-                        if (currentObj.Parent != null) continue;
-                        string scenarioLayer = "";
+                        if (currentObj.Parent != null)
+                            continue;
+
+                        string scenarioLayer = string.Empty;
                         int cId = currentId;
                         if (currentObj.Layer.Contains("シナリオ"))
                         {
                             scenarioLayer = "Scenario";
-                            if (currentObj.Layer.Contains("＆") || currentObj.Layer.Contains("&"))
+                            if (currentObj.Layer.Contains('＆') || currentObj.Layer.Contains("&"))
                             {
                                 scenarioLayer += currentObj.Layer.ElementAt(4) + "And" + currentObj.Layer.ElementAt(6);
                             }
@@ -1031,33 +1073,37 @@ internal partial class RomFSHandler
                         {
                             scenarioLayer = currentObj.Layer;
                         }
+
                         var scObj = WriteSceneObjects(currentObj, ref currentId, railObjNodes);
                         if (scenarioLayer != "")
                         {
-                            if (!layerInfosList.Keys.Contains(scenarioLayer))
+                            if (!layerInfosList.ContainsKey(scenarioLayer))
                             {
                                 BYAMLNode n = MakeNewLayerInfos(scenarioLayer);
                                 layerInfosList.Add(scenarioLayer, new());
                                 layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
                             }
-                            else if (!layerInfosList[scenarioLayer].Keys.Contains(InfosToString(Infos)))
+                            else if (!layerInfosList[scenarioLayer].ContainsKey(InfosToString(Infos)))
                             {
                                 layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
                             }
                         }
+
                         layerInfosList[scenarioLayer][InfosToString(Infos)].Add(scObj);
                         currentInfosList.Add(scObj);
                         currentId += 1;
                     }
+
                     BYAMLNode currentInfos = new(BYAMLNodeType.Array, currentInfosList.ToArray());
                     string ObjectType = InfosToString(Infos);
                     allInfosDict.Add(ObjectType, currentInfos);
                 }
             }
 
-
             dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
-            BYAMLNode[] layInfos = GetLayerInfos(layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary());
+            BYAMLNode[] layInfos = GetLayerInfos(
+                layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary()
+            );
             dict["LayerInfos"].Value = layInfos;
             rootdict = dict;
             root.Value = rootdict;
@@ -1065,9 +1111,9 @@ internal partial class RomFSHandler
 
             NARCFileSystem narcFS = new(new());
             byte[] binFile = BYAMLParser.Write(file);
-            foreach (KeyValuePair<string, byte[]> bymlFile in st.EnumerateAdditionalFiles())
+            foreach (var (key, value) in st.EnumerateAdditionalFiles())
             {
-                narcFS.AddFile(bymlFile.Key, bymlFile.Value);
+                narcFS.AddFile(key, value);
             }
             // if (st.StageFileType == StageFileType.Map)
             // {
@@ -1077,9 +1123,7 @@ internal partial class RomFSHandler
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
 #if DEBUG
             if (st.StageFileType == StageFileType.Map)
-            {
                 File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
-            }
 #endif
             File.WriteAllBytes(paths[StageType], compressedFile);
         }
@@ -1112,14 +1156,12 @@ internal partial class RomFSHandler
     private BYAMLNode MakeNewLayerInfos(string layerName, BYAMLNode layerInfosDict = null)
     {
         BYAMLNode kvp0;
-        if (layerInfosDict == null) kvp0 = new(BYAMLNodeType.Dictionary);
-        else kvp0 = new(layerInfosDict);
+        if (layerInfosDict is null)
+            kvp0 = new(BYAMLNodeType.Dictionary);
+        else
+            kvp0 = new(layerInfosDict);
         BYAMLNode kvp1 = new(BYAMLNodeType.String, layerName);
-        Dictionary<string, BYAMLNode> newdict = new()
-        {
-            { "Infos", kvp0 },
-            { "LayerName", kvp1 }
-        };
+        Dictionary<string, BYAMLNode> newdict = new() { { "Infos", kvp0 }, { "LayerName", kvp1 } };
         return new(newdict);
     }
 
@@ -1130,17 +1172,15 @@ internal partial class RomFSHandler
         {
             Dictionary<string, BYAMLNode> currentInfo = new();
             List<string> sl = layerInfosList[key].Keys.ToList();
+
             foreach (string infodict in sl)
             {
                 currentInfo.Add(infodict, new(BYAMLNodeType.Array, layerInfosList[key][infodict].ToArray()));
             }
+
             BYAMLNode kvp0 = new(currentInfo);
             BYAMLNode kvp1 = new(BYAMLNodeType.String, key);
-            Dictionary<string, BYAMLNode> newdict = new()
-            {
-                { "Infos", kvp0 },
-                { "LayerName", kvp1 }
-            };
+            Dictionary<string, BYAMLNode> newdict = new() { { "Infos", kvp0 }, { "LayerName", kvp1 } };
             retArray.Add(new(newdict));
         }
 
@@ -1173,13 +1213,15 @@ internal partial class RomFSHandler
         for (int i = 0; i < 10; i++)
         {
             rail.Properties.TryGetValue("Arg" + i, out object? arg);
-            if (arg != null) currentRailNodes.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
+            if (arg != null)
+                currentRailNodes.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
         }
         // try to get LayerName
         currentRailNodes.Add("LayerName", new(BYAMLNodeType.String, rail.Layer));
         // try to get MultiFileName
         rail.Properties.TryGetValue("MultiFileName", out object? mfn);
-        if (mfn != null) currentRailNodes.Add("MultiFileName", new(BYAMLNodeType.String, mfn));
+        if (mfn != null)
+            currentRailNodes.Add("MultiFileName", new(BYAMLNodeType.String, mfn));
         // try to get Points
         //rail.Points;
         List<BYAMLNode> points = new();
@@ -1191,7 +1233,8 @@ internal partial class RomFSHandler
             for (int i = 0; i < 10; i++)
             {
                 pt.Properties.TryGetValue("Arg" + i, out object? arg);
-                if (arg != null) ptd.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
+                if (arg != null)
+                    ptd.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
             }
             // try to get point id
             ptd.Add("id", new(BYAMLNodeType.Int, ptid));
@@ -1235,7 +1278,7 @@ internal partial class RomFSHandler
         currentRailNodes.Add("no", new(BYAMLNodeType.Int, currentId));
         // try to get num_pnt
         currentRailNodes.Add("num_pnt", new(BYAMLNodeType.Int, rail.Points.Count()));
-        // try to get type 
+        // try to get type
         currentRailNodes.Add("type", new(BYAMLNodeType.String, rail.PointType.ToString()));
         return new BYAMLNode(currentRailNodes);
     }
@@ -1247,24 +1290,29 @@ internal partial class RomFSHandler
         int parentId = -1
     )
     {
-        // read all information 
+        // read all information
         Dictionary<string, BYAMLNode> currentObjectNodes = new();
         //WriteSceneObjects(stageObj, currentId, file);
         int m = 10;
-        if (currentObj.Type != StageObjType.Regular) m = 8;
+
+        if (currentObj.Type != StageObjType.Regular)
+            m = 8;
+
         for (int i = 0; i < m; i++)
         {
             currentObj.Properties.TryGetValue("Arg" + i, out object? arg);
-            if (arg != null) currentObjectNodes.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
+
+            if (arg != null)
+                currentObjectNodes.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
         }
 
         foreach (var (name, property) in currentObj.Properties)
         {
-            if (name.Contains("Arg")) continue;
-            if (property is null)
-            {
+            if (name.Contains("Arg"))
                 continue;
-            }
+
+            if (property is null)
+                continue;
 
             switch (property)
             {
@@ -1280,12 +1328,13 @@ internal partial class RomFSHandler
 
                 default:
                     throw new NotImplementedException(
-                        "The property type " + property?.GetType().FullName
-                            ?? "null" + " is not supported."
+                        "The property type " + property?.GetType().FullName ?? "null" + " is not supported."
                     );
             }
         }
-        if (currentObj.Name != "Mario") currentObjectNodes.Add("l_id", new(BYAMLNodeType.Int, currentId));
+        if (currentObj.Name != "Mario")
+            currentObjectNodes.Add("l_id", new(BYAMLNodeType.Int, currentId));
+
         if (currentObj.Children != null && currentObj.Children.Any())
         {
             List<BYAMLNode> objectArray = new();
@@ -1295,16 +1344,27 @@ internal partial class RomFSHandler
             foreach (StageObj child in currentObj.Children)
             {
                 currentId += 1;
-                if (child.Type == StageObjType.AreaChild) areaArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
-                else objectArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
+                if (child.Type == StageObjType.AreaChild)
+                    areaArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
+                else
+                    objectArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
             }
+
             BYAMLNode objectArrayNode = new(BYAMLNodeType.Array, objectArray.ToArray());
             BYAMLNode areaArrayNode = new(BYAMLNodeType.Array, areaArray.ToArray());
-            if (objectArray.Any()) currentObjectNodes.Add("GenerateChildren", objectArrayNode);
-            if (areaArray.Any()) currentObjectNodes.Add("AreaChildren", areaArrayNode);
+
+            if (objectArray.Count != 0)
+                currentObjectNodes.Add("GenerateChildren", objectArrayNode);
+
+            if (areaArray.Count != 0)
+                currentObjectNodes.Add("AreaChildren", areaArrayNode);
         }
+
         currentObjectNodes.Add("name", new(BYAMLNodeType.String, currentObj.Name));
-        if (currentObj.ClassName != null) currentObjectNodes.Add("ClassName", new(BYAMLNodeType.String, currentObj.ClassName));
+
+        if (currentObj.ClassName != null)
+            currentObjectNodes.Add("ClassName", new(BYAMLNodeType.String, currentObj.ClassName));
+
         currentObjectNodes.Add("LayerName", new(BYAMLNodeType.String, currentObj.Layer));
 
         // object transforms
@@ -1330,25 +1390,43 @@ internal partial class RomFSHandler
             currentObjectNodes.Add("SwitchDeadOn", new(BYAMLNodeType.Int, currentObj.SwitchDeadOn));
             currentObjectNodes.Add("SwitchKill", new(BYAMLNodeType.Int, currentObj.SwitchKill));
         }
-        if (currentObj.Type == StageObjType.Regular || currentObj.Type == StageObjType.Child || currentObj.Type == StageObjType.Goal)
+
+        if (
+            currentObj.Type == StageObjType.Regular
+            || currentObj.Type == StageObjType.Child
+            || currentObj.Type == StageObjType.Goal
+        )
         {
             currentObjectNodes.Add("ViewId", new(BYAMLNodeType.Int, currentObj.ViewId));
             currentObjectNodes.Add("ClippingGroupId", new(BYAMLNodeType.Int, currentObj.ClippingGroupId));
         }
-        if (currentObj.Type == StageObjType.Goal || currentObj.Type == StageObjType.Regular || currentObj.Type == StageObjType.CameraArea || currentObj.Type == StageObjType.Child)
+
+        if (
+            currentObj.Type == StageObjType.Goal
+            || currentObj.Type == StageObjType.Regular
+            || currentObj.Type == StageObjType.CameraArea
+            || currentObj.Type == StageObjType.Child
+        )
         {
             currentObjectNodes.Add("CameraId", new(BYAMLNodeType.Int, currentObj.CameraId));
         }
+
         if (currentObj.Rail is not null)
         {
             currentObjectNodes.Add("Rail", railObjNodes[currentObj.Rail]);
         }
-        if (currentObj.Type == StageObjType.Area || currentObj.Type == StageObjType.AreaChild) currentObjectNodes.Add("AreaParent", new(BYAMLNodeType.Int, currentObj.Parent != null ? parentId : -1));
-        else if (currentObj.Type == StageObjType.Regular || currentObj.Type == StageObjType.Goal || currentObj.Type == StageObjType.Child) currentObjectNodes.Add("GenerateParent", new(BYAMLNodeType.Int, currentObj.Parent != null ? parentId : -1));
+
+        if (currentObj.Type == StageObjType.Area || currentObj.Type == StageObjType.AreaChild)
+            currentObjectNodes.Add("AreaParent", new(BYAMLNodeType.Int, currentObj.Parent != null ? parentId : -1));
+        else if (
+            currentObj.Type == StageObjType.Regular
+            || currentObj.Type == StageObjType.Goal
+            || currentObj.Type == StageObjType.Child
+        )
+            currentObjectNodes.Add("GenerateParent", new(BYAMLNodeType.Int, currentObj.Parent != null ? parentId : -1));
 
         return new(currentObjectNodes);
     }
 
     #endregion
-
 }

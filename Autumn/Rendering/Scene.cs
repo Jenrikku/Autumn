@@ -32,12 +32,7 @@ internal class Scene
     private uint _lastPickingId = 0;
     private readonly Dictionary<uint, SceneObj> _pickableObjs = new();
 
-    public Scene(
-        Stage stage,
-        LayeredFSHandler fsHandler,
-        GLTaskScheduler scheduler,
-        ref string status
-    )
+    public Scene(Stage stage, LayeredFSHandler fsHandler, GLTaskScheduler scheduler, ref string status)
     {
         Stage = stage;
         GenerateSceneObjects(fsHandler, scheduler, ref status);
@@ -104,23 +99,28 @@ internal class Scene
     }
 
     #endregion
+
     public void AddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         Stage.AddStageObj(stageObj);
         GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
+
     public uint DuplicateObj(StageObj clonedObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         uint pickingId = 0;
+
         if (clonedObj.Type == StageObjType.Child || clonedObj.Type == StageObjType.AreaChild)
         {
-            clonedObj.Parent.Children.Add(clonedObj);
+            clonedObj.Parent!.Children!.Add(clonedObj);
             DuplicateChild(clonedObj, fsHandler, scheduler);
             return pickingId;
         }
+
         Stage.AddStageObj(clonedObj);
         GenerateSceneObject(clonedObj, fsHandler, scheduler);
         pickingId = _lastPickingId - 1;
+
         if (clonedObj.Children != null && clonedObj.Children.Count > 0)
         {
             foreach (StageObj ch in clonedObj.Children)
@@ -128,8 +128,10 @@ internal class Scene
                 pickingId = DuplicateChild(ch, fsHandler, scheduler);
             }
         }
+
         return pickingId;
     }
+
     public uint DuplicateChild(StageObj clonedObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         GenerateSceneObject(clonedObj, fsHandler, scheduler);
@@ -143,6 +145,7 @@ internal class Scene
         }
         return pickingId;
     }
+
     public void RemoveObject(SceneObj sceneObj)
     {
         Stage.RemoveStageObj(sceneObj.StageObj);
@@ -183,11 +186,7 @@ internal class Scene
         Camera.LookAt(eye, marioPos);
     }
 
-    private void GenerateSceneObjects(
-        LayeredFSHandler fsHandler,
-        GLTaskScheduler scheduler,
-        ref string status
-    )
+    private void GenerateSceneObjects(LayeredFSHandler fsHandler, GLTaskScheduler scheduler, ref string status)
     {
         _sceneObjects.Clear();
         _selectedObjects.Clear();
@@ -196,17 +195,10 @@ internal class Scene
             return;
 
         IEnumerable<StageObjType> types = Enum.GetValues<StageObjType>()
-            .Where(t =>
-                t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child
-            );
+            .Where(t => t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child);
 
         foreach (StageObjType objType in types)
-            GenerateSceneObjects(
-                Stage.EnumerateStageObjs(objType),
-                fsHandler,
-                scheduler,
-                ref status
-            );
+            GenerateSceneObjects(Stage.EnumerateStageObjs(objType), fsHandler, scheduler, ref status);
     }
 
     private void GenerateSceneObjects(
@@ -232,11 +224,7 @@ internal class Scene
         status = string.Empty;
     }
 
-    private void GenerateSceneObject(
-        StageObj stageObj,
-        LayeredFSHandler fsHandler,
-        GLTaskScheduler scheduler
-    )
+    private void GenerateSceneObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         string actorName = stageObj.Name;
 
@@ -246,6 +234,7 @@ internal class Scene
             && !string.IsNullOrEmpty(modelNameString)
         )
             actorName = modelNameString;
+
         fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
         Actor actor = fsHandler.ReadActor(actorName, fallback, scheduler);
         SceneObj sceneObj = new(stageObj, actor, _lastPickingId);
@@ -253,12 +242,10 @@ internal class Scene
         _sceneObjects.Add(sceneObj);
         _pickableObjs.Add(_lastPickingId++, sceneObj);
     }
-    private void DestroySceneObject(
-        SceneObj sceneObj
-    )
+
+    private void DestroySceneObject(SceneObj sceneObj)
     {
         _sceneObjects.Remove(sceneObj);
         _pickableObjs.Remove(sceneObj.PickingId++);
     }
-
 }

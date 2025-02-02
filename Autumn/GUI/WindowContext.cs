@@ -17,7 +17,7 @@ namespace Autumn.GUI;
 /// <seealso cref="WindowManager" />
 internal abstract class WindowContext
 {
-    public List<ImGuiNET.ImFontPtr> FontPointers { get; set; } = new();
+    public List<ImFontPtr> FontPointers { get; set; } = new();
     public IWindow Window { get; protected set; }
     public ImGuiController? ImGuiController { get; protected set; }
 
@@ -138,8 +138,7 @@ internal abstract class WindowContext
                 unsafe
                 {
                     // Set the settings file's path in imgui.
-                    ImGui.GetIO().NativePtr->IniFilename = (byte*)
-                        Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
+                    ImGui.GetIO().NativePtr->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
                 }
             }
 
@@ -179,32 +178,36 @@ internal abstract class WindowContext
     /// <returns>Whether the window can be safely closed.</returns>
     public virtual bool Close() => true;
 
-    private void SetFont()
+    private unsafe void SetFont()
     {
         var io = ImGui.GetIO();
 
         const float sizeScalar = 1.5f; // Render a higher quality font texture for when we want to size up the font
-        
-       FontPointers.Add(io.Fonts.AddFontFromFileTTF(
+
+        FontPointers.Add(
+            io.Fonts.AddFontFromFileTTF(
                 Path.Join("Resources", "NotoSansJP-Regular.ttf"),
                 size_pixels: 18 * _scalingFactor * sizeScalar,
                 font_cfg: new ImFontConfigPtr(IntPtr.Zero),
                 io.Fonts.GetGlyphRangesJapanese()
-                ));
+            )
+        );
+
         FontPointers[0].Scale = 1 / sizeScalar;
-        unsafe
+
+        char[] ch = [(char)0xe005, (char)0xf8ff, (char)0];
+        fixed (char* glypths = &ch[0])
         {
-            char[] ch = [(char)0xe005, (char)0xf8ff, (char)0 ];
-            fixed (char* glypths = &ch[0])
-            {
-            FontPointers.Add(io.Fonts.AddFontFromFileTTF(
+            FontPointers.Add(
+                io.Fonts.AddFontFromFileTTF(
                     Path.Join("Resources", "fa-solid-900.ttf"),
                     size_pixels: 18 * _scalingFactor * sizeScalar,
                     font_cfg: new ImFontConfigPtr(IntPtr.Zero),
                     (nint)glypths
-                    ));
-            }
+                )
+            );
         }
+
         FontPointers[1].Scale = 1 / sizeScalar;
     }
 }

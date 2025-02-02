@@ -19,11 +19,14 @@ internal class MainWindowContext : WindowContext
 {
     public List<Scene> Scenes { get; } = new();
     public Scene? CurrentScene { get; set; }
+
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
 
     public GLTaskScheduler GLTaskScheduler { get; } = new();
+
+    public bool IsTransformActive => _sceneWindow.IsTransformActive;
 
     private bool _isFirstFrame = true;
 
@@ -31,7 +34,7 @@ internal class MainWindowContext : WindowContext
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
     private SettingsDialog _settingsDialog;
-    public EditChildrenDialog _editChildrenDialog;
+    public EditChildrenDialog? _editChildrenDialog;
 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
@@ -106,15 +109,18 @@ internal class MainWindowContext : WindowContext
             {
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
+
                 switch (ContextHandler.SystemSettings.Theme)
                 {
-                    default:
-                        ImGui.StyleColorsDark();
-                        break;
                     case 2:
                         ImGui.StyleColorsLight();
                         break;
+
+                    default:
+                        ImGui.StyleColorsDark();
+                        break;
                 }
+
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
 
@@ -206,15 +212,15 @@ internal class MainWindowContext : WindowContext
     }
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
+
     public void OpenAddObjectDialog() => _newStageObjDialog.Open();
+
     public void OpenSettingsDialog() => _settingsDialog.Open();
-    public bool isTransformActive => _sceneWindow.isTransformActive;
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
 
-    public void SetSceneDuplicateTranslation() =>
-        _sceneWindow.isTranslationFromDuplicate = true;
+    public void SetSceneDuplicateTranslation() => _sceneWindow.isTranslationFromDuplicate = true;
 
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
@@ -306,12 +312,14 @@ internal class MainWindowContext : WindowContext
         // Opened stages are displayed in tabs in the main menu bar.
 
         ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
+
         if (ContextHandler.ProjectChanged)
         {
             CurrentScene = null;
             Scenes.Clear();
             ContextHandler.ProjectChanged = false;
         }
+
         if (Scenes.Count > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
         {
             for (int i = 0; i < Scenes.Count; i++)
@@ -372,9 +380,7 @@ internal class MainWindowContext : WindowContext
         ImGui.SetNextWindowSize(new(viewportSize.X, height));
 
         ImGuiWindowFlags flags =
-            ImGuiWindowFlags.NoSavedSettings
-            | ImGuiWindowFlags.NoDecoration
-            | ImGuiWindowFlags.NoInputs;
+            ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs;
 
         if (!ImGui.Begin("StatusBar", flags))
             return;
@@ -413,11 +419,7 @@ internal class MainWindowContext : WindowContext
             | ImGuiWindowFlags.NoInputs
             | ImGuiWindowFlags.NoSavedSettings;
 
-        ImGui.SetNextWindowPos(
-            ImGui.GetWindowViewport().GetCenter(),
-            ImGuiCond.Always,
-            new(0.5f, 0.5f)
-        );
+        ImGui.SetNextWindowPos(ImGui.GetWindowViewport().GetCenter(), ImGuiCond.Always, new(0.5f, 0.5f));
 
         if (!ImGui.Begin("##", flags))
             return;

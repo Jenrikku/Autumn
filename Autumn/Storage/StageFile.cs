@@ -39,6 +39,7 @@ internal class StageFile
 
         return list;
     }
+
     public List<RailObj> GetRailInfos()
     {
         return _railInfo;
@@ -96,12 +97,11 @@ internal class StageFile
 
         list.Remove(stageObj);
     }
+
     public void AddAdditionalFile(string name, byte[] contents)
     {
         if (!_additionalFiles.TryAdd(name, contents))
-            throw new ArgumentException(
-                "There already is an additional file with the name " + name
-            );
+            throw new ArgumentException("There already is an additional file with the name " + name);
     }
 
     public IEnumerable<StageObj> EnumerateStageObjs(StageObjType type)
@@ -136,6 +136,16 @@ internal class StageFile
 
     public bool IsEmpty()
     {
-        return !(_railInfo.Any() || _additionalFiles.Any() || _objInfo.Any() || _areaObjInfo.Any() || _cameraAreaInfo.Any() || _demoSceneObjInfo.Any() || _goalObjInfo.Any() || _startEventObjInfo.Any() || _startInfo.Any());
-    } 
+        return !(
+            _railInfo.Any()
+            || _additionalFiles.Any()
+            || _objInfo.Any()
+            || _areaObjInfo.Any()
+            || _cameraAreaInfo.Any()
+            || _demoSceneObjInfo.Any()
+            || _goalObjInfo.Any()
+            || _startEventObjInfo.Any()
+            || _startInfo.Any()
+        );
+    }
 }

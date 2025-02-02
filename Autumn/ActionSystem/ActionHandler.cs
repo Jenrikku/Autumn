@@ -191,6 +191,7 @@ internal class ActionHandler
             },
             enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
         );
+
     private static Command OpenSettings() =>
         new(
             displayName: "Settings",
@@ -224,9 +225,9 @@ internal class ActionHandler
                     }
                 );
             },
-            enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
+
     private static Command AddObj() =>
         new(
             displayName: "Add Object",
@@ -237,9 +238,9 @@ internal class ActionHandler
 
                 mainContext.OpenAddObjectDialog();
             },
-            enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
+
     private static Command RemoveObj() =>
         new(
             displayName: "Remove selected Object(s)",
@@ -247,18 +248,21 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-                foreach (SceneObj del in mainContext.CurrentScene.SelectedObjects)
+
+                foreach (SceneObj del in mainContext.CurrentScene!.SelectedObjects)
                 {
                     ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
                 }
+
                 mainContext.CurrentScene.UnselectAllObjects();
             },
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.CurrentScene.SelectedObjects.Count() > 0
-                && !mainContext.isTransformActive
+                && mainContext.CurrentScene.SelectedObjects.Any()
+                && !mainContext.IsTransformActive
         );
+
     private static Command DuplicateObj() =>
         new(
             displayName: "Duplicate selected Object(s)",
@@ -266,37 +270,48 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-                int count = mainContext.CurrentScene.SelectedObjects.Count();
+
+                int count = mainContext.CurrentScene!.SelectedObjects.Count();
                 List<uint> newPickIds = new();
+
                 foreach (SceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
                     newPickIds.Add(ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy));
                 }
+
                 mainContext.CurrentScene.UnselectAllObjects();
+
                 for (int i = 0; i < newPickIds.Count; i++)
                 {
                     mainContext.CurrentScene.SetObjectSelected(newPickIds[i], true);
                 }
+
                 mainContext.SetSceneDuplicateTranslation();
             },
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.CurrentScene.SelectedObjects.Count() > 0
-                && !mainContext.isTransformActive
+                && mainContext.CurrentScene.SelectedObjects.Any()
+                && !mainContext.IsTransformActive
         );
 
     private static Command HideObj() =>
         new(
             displayName: "Hide selected object(s)",
             action: window =>
-             {
-                 if (window is not MainWindowContext mainContext)
-                     return;
-                 ChangeHandler.ChangeFieldValueMultiple<bool>(mainContext.CurrentScene.History, mainContext.CurrentScene.SelectedObjects, "isVisible");
-             },
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                ChangeHandler.ChangeFieldValueMultiple<bool>(
+                    mainContext.CurrentScene!.History,
+                    mainContext.CurrentScene!.SelectedObjects,
+                    "isVisible"
+                );
+            },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Count() > 0
+                window is MainWindowContext mainContext
+                && mainContext.CurrentScene is not null
+                && mainContext.CurrentScene.SelectedObjects.Any()
         );
 
     private static Command Undo() =>
@@ -307,14 +322,15 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainContext)
                     return;
 
-                mainContext.CurrentScene?.History.Undo();
-                mainContext.CurrentScene.IsSaved = mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
+                mainContext.CurrentScene!.History.Undo();
+                mainContext.CurrentScene.IsSaved =
+                    mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
             },
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
                 && mainContext.CurrentScene.History.CanUndo
-                && !mainContext.isTransformActive
+                && !mainContext.IsTransformActive
         );
 
     private static Command Redo() =>
@@ -325,14 +341,15 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainContext)
                     return;
 
-                mainContext.CurrentScene.History.Redo();
-                mainContext.CurrentScene.IsSaved = mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
+                mainContext.CurrentScene!.History.Redo();
+                mainContext.CurrentScene.IsSaved =
+                    mainContext.CurrentScene.SaveUndoCount == mainContext.CurrentScene.History.UndoSteps;
             },
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
                 && mainContext.CurrentScene.History.CanRedo
-                && !mainContext.isTransformActive
+                && !mainContext.IsTransformActive
         );
 
     #endregion

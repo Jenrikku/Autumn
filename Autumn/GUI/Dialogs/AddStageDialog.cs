@@ -35,6 +35,7 @@ internal class AddStageDialog
     {
         _window = window;
         ResetOnDone = resetOnDone;
+
         comboStrings =
         [
             "All stages",
@@ -48,18 +49,10 @@ internal class AddStageDialog
             "World 8 (Part 1)",
             "World 8 (Part 2)"
         ];
+
         comboStrings = comboStrings
             .Concat(
-                [
-                    "Special 1",
-                    "Special 2",
-                    "Special 3",
-                    "Special 4",
-                    "Special 5",
-                    "Special 6",
-                    "Special 7",
-                    "Special 8"
-                ]
+                ["Special 1", "Special 2", "Special 3", "Special 4", "Special 5", "Special 6", "Special 7", "Special 8"]
             )
             .ToArray();
 
@@ -93,11 +86,7 @@ internal class AddStageDialog
         Vector2 dimensions = new(450 * _window.ScalingFactor, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
-        ImGui.SetNextWindowPos(
-            ImGui.GetMainViewport().GetCenter(),
-            ImGuiCond.Appearing,
-            new(0.5f, 0.5f)
-        );
+        ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
 
         if (
             !ImGui.BeginPopupModal(
@@ -163,18 +152,13 @@ internal class AddStageDialog
                     string visibleString = name + scenario;
                     bool selected = _name == name && scenarioNo == scenario;
 
-                    if (
-                        ImGui.Selectable(
-                            visibleString,
-                            selected,
-                            ImGuiSelectableFlags.AllowDoubleClick
-                        )
-                    )
+                    if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
                     {
                         _name = name;
                         _scenario = scenario.ToString();
                         _stageListNeedsRebuild = true;
                         _useRomFSComboCurrent = 0;
+
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                             _skipOk = true;
                     }
@@ -196,7 +180,7 @@ internal class AddStageDialog
             {
                 foreach (
                     SystemDataTable.StageDefine _stage in _window
-                        .ContextHandler.FSHandler.ReadGameSystemDataTable()
+                        .ContextHandler.FSHandler.ReadGameSystemDataTable()!
                         .WorldList[currentItem - 1]
                         .StageList
                 )
@@ -206,20 +190,16 @@ internal class AddStageDialog
                         || _stage.StageType == SystemDataTable.StageTypes.Dokan
                     )
                         continue;
+
                     string visibleString = _stage.Stage + _stage.Scenario;
                     bool selected = _name == _stage.Stage && scenarioNo == _stage.Scenario;
 
-                    if (
-                        ImGui.Selectable(
-                            visibleString,
-                            selected,
-                            ImGuiSelectableFlags.AllowDoubleClick
-                        )
-                    )
+                    if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
                     {
                         _name = _stage.Stage;
                         _scenario = _stage.Scenario.ToString();
                         _useRomFSComboCurrent = 0;
+
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                             _skipOk = true;
                     }
@@ -242,8 +222,10 @@ internal class AddStageDialog
             _disable = true;
             _useRomFSComboCurrent = 1;
         }
+
         if (_window.ContextHandler.ProjectStages.Contains((_name, scenarioNo)))
             _disable = true;
+
         if (_disable)
             ImGui.BeginDisabled();
 
