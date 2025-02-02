@@ -8,7 +8,7 @@ using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Autumn.GUI;
+namespace Autumn.GUI.Windows;
 
 /// <summary>
 /// This class serves as a base for all windows.<br />
@@ -188,7 +188,7 @@ internal abstract class WindowContext
             io.Fonts.AddFontFromFileTTF(
                 Path.Join("Resources", "NotoSansJP-Regular.ttf"),
                 size_pixels: 18 * _scalingFactor * sizeScalar,
-                font_cfg: new ImFontConfigPtr(IntPtr.Zero),
+                font_cfg: new ImFontConfigPtr(nint.Zero),
                 io.Fonts.GetGlyphRangesJapanese()
             )
         );

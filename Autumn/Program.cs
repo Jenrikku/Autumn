@@ -1,6 +1,7 @@
 using System.Text;
 using Autumn.Context;
 using Autumn.GUI;
+using Autumn.GUI.Windows;
 
 // Required to support Shift-JIS encoding.
 // See System.Text.Encoding.CodePages package.

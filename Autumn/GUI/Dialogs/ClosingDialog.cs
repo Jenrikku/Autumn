@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.Enums;
+using Autumn.GUI.Windows;
 using ImGuiNET;
 
 namespace Autumn.GUI.Dialogs;

@@ -1,4 +1,4 @@
-using Autumn.GUI;
+using Autumn.GUI.Windows;
 
 namespace Autumn.ActionSystem;
 

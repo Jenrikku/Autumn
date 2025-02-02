@@ -104,9 +104,13 @@ internal static class MathUtils
 
             case H3DTextureTransformType.Dcc3dsMax:
                 matrix.M14 =
-                    scale.X * rotCos * (-translation.X - 0.5f) - scale.X * rotSin * (translation.Y - 0.5f) + 0.5f;
+                    scale.X * rotCos * (-translation.X - 0.5f)
+                    - scale.X * rotSin * (translation.Y - 0.5f)
+                    + 0.5f;
                 matrix.M24 =
-                    scale.Y * rotSin * (-translation.X - 0.5f) + scale.Y * rotCos * (translation.Y - 0.5f) + 0.5f;
+                    scale.Y * rotSin * (-translation.X - 0.5f)
+                    + scale.Y * rotCos * (translation.Y - 0.5f)
+                    + 0.5f;
                 break;
         }
 
@@ -207,7 +211,12 @@ internal static class MathUtils
     }
 
     // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
-    public static Vector3 IntersectPoint(Vector3 rayVector, Vector3 rayPoint, Vector3 planeNormal, Vector3 planePoint)
+    public static Vector3 IntersectPoint(
+        Vector3 rayVector,
+        Vector3 rayPoint,
+        Vector3 planeNormal,
+        Vector3 planePoint
+    )
     {
         //code from: https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane
         var diff = rayPoint - planePoint;
@@ -231,5 +240,30 @@ internal static class MathUtils
         a.Y = (float)Math.Round(a.Y);
         a.Z = (float)Math.Round(a.Z);
         return a;
+    }
+
+    /// <summary>
+    /// Calculates the nearest size unit (KB, MB, GB or TB) and returns a
+    /// string with the converted value followed by the unit suffix.
+    /// All units are in base 2.
+    /// </summary>
+    /// <param name="size">The size in bytes</param>
+    /// <returns>A string with the representation in a size unit</returns>
+    public static string ToNearestSizeUnit(double size)
+    {
+        int i = 0;
+
+        for (; i < 4 && size > 1024; i++)
+            size /= 1024;
+
+        return i switch
+        {
+            0 => size.ToString("0") + " B",
+            1 => size.ToString("0.##") + " KB",
+            2 => size.ToString("0.##") + " MB",
+            3 => size.ToString("0.##") + " GB",
+            4 => size.ToString("0.##") + " TB",
+            _ => throw new("Incorrect size unit")
+        };
     }
 }
