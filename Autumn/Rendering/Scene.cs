@@ -103,6 +103,7 @@ internal class Scene
         return _sceneObjects.Count;
     }
 
+    #endregion
     public void AddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         Stage.AddStageObj(stageObj);

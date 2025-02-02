@@ -23,6 +23,27 @@ internal class StageFile
         StageFileType = type;
     }
 
+    public List<StageObj> GetObjInfos(StageObjType Type)
+    {
+        List<StageObj> list = Type switch
+        {
+            StageObjType.Regular => _objInfo,
+            StageObjType.Area => _areaObjInfo,
+            StageObjType.CameraArea => _cameraAreaInfo,
+            StageObjType.Goal => _goalObjInfo,
+            StageObjType.StartEvent => _startEventObjInfo,
+            StageObjType.Start => _startInfo,
+            StageObjType.DemoScene => _demoSceneObjInfo,
+            _ => throw new NotImplementedException("Incorrect object type read.")
+        };
+
+        return list;
+    }
+    public List<RailObj> GetRailInfos()
+    {
+        return _railInfo;
+    }
+
     public void AddStageObj(StageObj stageObj)
     {
         if (stageObj is RailObj railObj)
@@ -112,4 +133,9 @@ internal class StageFile
         foreach (var keyValue in _additionalFiles)
             yield return keyValue;
     }
+
+    public bool IsEmpty()
+    {
+        return !(_railInfo.Any() || _additionalFiles.Any() || _objInfo.Any() || _areaObjInfo.Any() || _cameraAreaInfo.Any() || _demoSceneObjInfo.Any() || _goalObjInfo.Any() || _startEventObjInfo.Any() || _startInfo.Any());
+    } 
 }
