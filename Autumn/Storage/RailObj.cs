@@ -11,4 +11,13 @@ internal class RailObj : StageObj
     public bool Closed = false;
 
     public List<RailPoint> Points { get; init; } = new();
+
+    public static bool operator ==(RailObj r, RailObj rb)
+    {
+        return r.RailNo == rb.RailNo && r.Closed == rb.Closed && r.Name == rb.Name; 
+    }
+    public static bool operator !=(RailObj r, RailObj rb)
+    {
+        return r.RailNo != rb.RailNo || r.Closed != rb.Closed || r.Name != rb.Name; 
+    } 
 }

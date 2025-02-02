@@ -94,6 +94,22 @@ internal class LayeredFSHandler
             return OriginalFS.ReadCreatorClassNameTable();
         return new(new Dictionary<string, string>());
     }
+    public BgmTable? ReadBgmTable()
+    {
+        if (ModFS != null && ModFS.ExistsBgmTable())
+            return ModFS.ReadBgmTable();
+        else if (OriginalFS != null && OriginalFS.ExistsBgmTable())
+            return OriginalFS.ReadBgmTable();
+        return null;
+    }
+    public SystemDataTable? ReadGameSystemDataTable()
+    {
+        if (ModFS != null && ModFS.ExistsGSDT())
+            return ModFS.ReadGSDTable();
+        else if (OriginalFS != null && OriginalFS.ExistsGSDT())
+            return OriginalFS.ReadGSDTable();
+        return null;
+    }
 
     public IEnumerable<string> EnumeratePaths()
     {

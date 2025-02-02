@@ -81,7 +81,7 @@ internal abstract class WindowContext
             Keyboard = InputContext.Keyboards[0];
             Mouse = InputContext.Mice[0];
 
-            # region Load icons
+            #region Load icons
 
             if (s_iconCache is null)
             {
@@ -101,7 +101,7 @@ internal abstract class WindowContext
 
             Window.SetWindowIcon(s_iconCache);
 
-            # endregion
+            #endregion
 
             // Set scaling factor:
             unsafe

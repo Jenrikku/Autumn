@@ -52,7 +52,7 @@ internal class Scene
             ModelRenderer.Draw(gl, obj);
     }
 
-#region Object selection
+    #region Object selection
 
     public bool IsObjectSelected(uint id)
     {
@@ -103,7 +103,6 @@ internal class Scene
         return _sceneObjects.Count;
     }
 
-#endregion
     public void AddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
         Stage.AddStageObj(stageObj);
@@ -121,7 +120,7 @@ internal class Scene
         Stage.AddStageObj(clonedObj);
         GenerateSceneObject(clonedObj, fsHandler, scheduler);
         pickingId = _lastPickingId - 1;
-        if(clonedObj.Children!= null && clonedObj.Children.Count > 0)
+        if (clonedObj.Children != null && clonedObj.Children.Count > 0)
         {
             foreach (StageObj ch in clonedObj.Children)
             {
@@ -134,7 +133,7 @@ internal class Scene
     {
         GenerateSceneObject(clonedObj, fsHandler, scheduler);
         uint pickingId = _lastPickingId - 1;
-        if(clonedObj.Children!= null && clonedObj.Children.Count > 0)
+        if (clonedObj.Children != null && clonedObj.Children.Count > 0)
         {
             foreach (StageObj ch in clonedObj.Children)
             {

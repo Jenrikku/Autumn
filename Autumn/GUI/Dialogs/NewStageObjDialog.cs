@@ -293,11 +293,7 @@ internal class NewStageObjDialog(MainWindowContext window)
         else if (newObj.Type == StageObjType.Start) 
             newObj.Properties.Add("MarioNo", 0);
 
-        window.CurrentScene.AddObject(
-            newObj,
-            window.ContextHandler.FSHandler,
-            window.GLTaskScheduler
-        );
+        ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newObj);
 
         if (window.Keyboard?.IsShiftPressed() ?? false)
             window.AddSceneMouseClickAction(AddQueuedObject);

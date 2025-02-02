@@ -13,6 +13,7 @@ internal class SystemSettings
     public bool OpenLastProject = false;
     public string LastOpenedProject = string.Empty;
     public int Theme = 0;
+    public int MouseSpeed = 20;
 
     public void AddRecentlyOpenedPath(string path)
     {

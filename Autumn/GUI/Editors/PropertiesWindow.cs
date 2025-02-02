@@ -14,7 +14,7 @@ namespace Autumn;
 
 internal class PropertiesWindow(MainWindowContext window)
 {
-    private float PROP_WIDTH = 145f;
+    private const float PROP_WIDTH = 145f;
     private Vector3 mTl = Vector3.Zero;
     private Vector3 mRt = Vector3.Zero;
     private Vector3 mSc = Vector3.Zero;
@@ -23,6 +23,7 @@ internal class PropertiesWindow(MainWindowContext window)
     private int mCamera = -1;
     private string mLayer = "共通";
     private StageObj multiselector = new();
+    private bool linkedScale = false;
     public void Render()
     {
         if (!ImGui.Begin("Properties"))
@@ -132,10 +133,10 @@ internal class PropertiesWindow(MainWindowContext window)
 
                 //ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2.1f);
                 ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
-                DragFloat3("Translation", ref stageObj.Translation, v_speed: 10, ref sceneObj);
-                DragFloat3("Rotation", ref stageObj.Rotation, v_speed: 2, ref sceneObj);
-                DragFloat3("Scale", ref stageObj.Scale, v_speed: 0.2f, ref sceneObj);
+                DragFloat3("Translation", ref stageObj.Translation, ref sceneObj);
+                DragFloat3("Rotation", ref stageObj.Rotation, ref sceneObj);
                 ImGui.PopItemWidth();
+                LinkedFloat3("Scale", ref stageObj.Scale, v_speed: 0.2f, ref sceneObj, style);
                 ImGui.EndChild();
             }
 
@@ -191,12 +192,11 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.BeginChild("swc", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
-                    if (stageObj.SwitchA != null) 
-                        InputInt("SwitchA", ref stageObj.SwitchA, 1, ref stageObj);
-                    if (stageObj.SwitchB != null) InputInt("SwitchB", ref stageObj.SwitchB, 1, ref stageObj);
-                    if (stageObj.SwitchAppear != null) InputInt("SwitchAppear", ref stageObj.SwitchAppear, 1, ref stageObj);
-                    if (stageObj.SwitchDeadOn != null) InputInt("SwitchDeadOn", ref stageObj.SwitchDeadOn, 1, ref stageObj);
-                    if (stageObj.SwitchKill != null) InputInt("SwitchKill", ref stageObj.SwitchKill, 1, ref stageObj);
+                    InputInt("SwitchA", ref stageObj.SwitchA, 1, ref stageObj);
+                    InputInt("SwitchB", ref stageObj.SwitchB, 1, ref stageObj);
+                    InputInt("SwitchAppear", ref stageObj.SwitchAppear, 1, ref stageObj);
+                    InputInt("SwitchDeadOn", ref stageObj.SwitchDeadOn, 1, ref stageObj);
+                    InputInt("SwitchKill", ref stageObj.SwitchKill, 1, ref stageObj);
                     ImGui.PopItemWidth();
                     ImGui.EndChild();
                 }
@@ -411,7 +411,7 @@ internal class PropertiesWindow(MainWindowContext window)
     }
 
     #region Undoable Actions
-    private bool DragFloat3(string str, ref Vector3 rf, float v_speed, ref SceneObj sto)
+    private bool DragFloat3(string str, ref Vector3 rf, ref SceneObj sto)
     {
         Vector3 v = rf;
         if (ImGui.InputFloat3(str, ref v, default, ImGuiInputTextFlags.EnterReturnsTrue))
@@ -419,6 +419,56 @@ internal class PropertiesWindow(MainWindowContext window)
             ChangeHandler.ChangeTransform(window.CurrentScene.History, sto, str, rf, v);
             return true;
         }
+        return false;
+    }
+    private bool LinkedFloat3(string str, ref Vector3 rf, float v_speed, ref SceneObj sto, ImGuiStylePtr style)
+    {
+        float x = rf.X;
+        float y = rf.Y;
+        float z = rf.Z;
+        bool change = false;
+        ImGui.PushFont(window.FontPointers[1]);
+        if (ImGui.Button(linkedScale ? "\uf0c1" : "\uf127"))
+        {
+            linkedScale = !linkedScale;   
+        }
+        ImGui.PopFont();
+        
+        ImGui.PushItemWidth((ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2) / 3.5f);
+        ImGui.SameLine(default, style.ItemSpacing.X/2);
+        if (ImGui.InputFloat("##LX"+str, ref x, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {   
+            if (linkedScale)
+            {
+                y = z = x;
+            }
+            change = true;
+        }
+        ImGui.SameLine(default, style.ItemSpacing.X/2);
+        if (ImGui.InputFloat("##LY"+str, ref y, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {   
+            if (linkedScale)
+            {
+                x = z = y;
+            }
+            change = true;
+        }
+        ImGui.SameLine(default, style.ItemSpacing.X/2);
+        if (ImGui.InputFloat(str+"##LZ"+str, ref z, default, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {   
+            if (linkedScale)
+            {
+                x = y = z;
+            }
+            change = true;
+        }
+
+        if (change)
+        {
+            Vector3 v = new(x, y, z); 
+            ChangeHandler.ChangeTransform(window.CurrentScene.History, sto, str, rf, v);
+        }
+        ImGui.PopItemWidth();
         return false;
     }
     private bool InputText(string str, ref string rf, uint max, ref StageObj sto, string? hint = "")

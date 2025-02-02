@@ -249,7 +249,7 @@ internal class ActionHandler
                     return;
                 foreach (SceneObj del in mainContext.CurrentScene.SelectedObjects)
                 {
-                    mainContext.CurrentScene.RemoveObject(del);
+                    ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
                 }
                 mainContext.CurrentScene.UnselectAllObjects();
             },
@@ -266,13 +266,17 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-                uint selected = 0;
+                int count = mainContext.CurrentScene.SelectedObjects.Count();
+                List<uint> newPickIds = new();
                 foreach (SceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
-                    selected = mainContext.CurrentScene.DuplicateObj(copy.StageObj.Clone(), mainContext.ContextHandler.FSHandler, mainContext.GLTaskScheduler);
+                    newPickIds.Add(ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy));
                 }
                 mainContext.CurrentScene.UnselectAllObjects();
-                mainContext.CurrentScene.SetObjectSelected(selected, true);
+                for (int i = 0; i < newPickIds.Count; i++)
+                {
+                    mainContext.CurrentScene.SetObjectSelected(newPickIds[i], true);
+                }
                 mainContext.SetSceneDuplicateTranslation();
             },
             enabled: window =>
@@ -289,10 +293,7 @@ internal class ActionHandler
              {
                  if (window is not MainWindowContext mainContext)
                      return;
-                 foreach (SceneObj h in mainContext.CurrentScene.SelectedObjects)
-                 {
-                     ChangeHandler.ChangeFieldValue(mainContext.CurrentScene.History, h, "isVisible", h.isVisible, !h.isVisible);
-                 }
+                 ChangeHandler.ChangeFieldValueMultiple<bool>(mainContext.CurrentScene.History, mainContext.CurrentScene.SelectedObjects, "isVisible");
              },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Count() > 0

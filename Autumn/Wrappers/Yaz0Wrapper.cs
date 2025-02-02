@@ -8,7 +8,7 @@ internal static class Yaz0Wrapper
     /// <summary>
     /// Defines the level of compression used when compressing.
     /// </summary>
-    public static byte? Level { get; set; } = 10;
+    public static byte? Level { get; set; } = 3;
 
     public static unsafe byte[] Compress(byte[] data)
     {

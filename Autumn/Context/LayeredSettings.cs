@@ -6,6 +6,8 @@ internal class LayeredSettings(params Dictionary<string, object?>[] settings)
 
     public bool UseClassNames => GetSetting<bool>("UseClassNames");
     public string? RomFSPath => GetSetting<string>("RomFSPath");
+    public bool UseWASD => GetSetting<bool>("UseWASD");
+    public bool UseMiddleMouse => GetSetting<bool>("UseMiddleMouse");
 
     #endregion
 

@@ -130,6 +130,46 @@ internal static class ChangeHandler
         history.Add(change);
         return true;
     }
+    public static bool ChangeFieldValueMultiple<T1>(
+        ChangeHistory history,
+        IEnumerable<SceneObj> sList,
+        string name
+    )
+        where T1 : notnull
+    {
+        FieldInfo? field = sList.FirstOrDefault()?.GetType().GetField(name);
+
+        if (field is null)
+            return false;
+
+        List<T1> current = new();
+        foreach (SceneObj obj in sList)
+        {
+            current.Add((T1)field.GetValue(obj));
+        }
+        Change change =
+        new(
+            Undo: () =>
+            {
+                foreach (SceneObj obj in sList)
+                {
+                    field.SetValue(obj, sList.Where(x => x == obj).First());
+                }
+            },
+            Redo: () =>
+            {
+                int i = 0;
+                foreach (SceneObj obj in sList)
+                {
+                    field.SetValue(obj, current[i]);
+                    i++;
+                }
+            }
+        );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
 
     public static bool ChangeDictionaryValue<T1>(
         ChangeHistory history,
@@ -215,6 +255,86 @@ internal static class ChangeHandler
         );
         history.Add(change);
         return true;
+    }
+
+    public static bool ChangeRemove(
+        MainWindowContext context,
+        ChangeHistory history,
+        SceneObj del
+    )
+    {
+        var oldSO = del.StageObj.Clone();
+        var delete = del;
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene.AddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                    delete = context.CurrentScene.EnumerateSceneObjs().Last();
+                },
+                Redo: () =>
+                {
+                    context.CurrentScene.RemoveObject(delete);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeCreate(
+        MainWindowContext context,
+        ChangeHistory history,
+        StageObj newObj
+    )
+    {
+        SceneObj delete = null;
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene.RemoveObject(delete);
+
+                },
+                Redo: () =>
+                {
+                    context.CurrentScene.AddObject(newObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                    delete = context.CurrentScene.EnumerateSceneObjs().Last();
+
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+    public static uint ChangeDuplicate(
+        MainWindowContext context,
+        ChangeHistory history,
+        SceneObj dup
+    )
+    {
+        var duplicate = dup;
+        uint return_pick = 0;
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene.SetObjectSelected(duplicate.PickingId, false);
+                    context.CurrentScene.RemoveObject(duplicate);
+                },
+                Redo: () =>
+                {
+                    return_pick = context.CurrentScene.DuplicateObj(duplicate.StageObj.Clone(), context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                    duplicate = context.CurrentScene.EnumerateSceneObjs().Last();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return return_pick;
     }
 
 }

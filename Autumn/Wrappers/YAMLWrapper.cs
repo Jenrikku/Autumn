@@ -43,7 +43,7 @@ internal static class YAMLWrapper
 
         try
         {
-            if (dir is not null)
+            if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
 
             StreamWriter writer = new(path) { AutoFlush = true };

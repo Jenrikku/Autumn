@@ -25,13 +25,14 @@ internal class SceneWindow(MainWindowContext window)
     {
         public static Dictionary<SceneObj, Vector3> Relative = new();
         public static Dictionary<SceneObj, Vector3> Originals = new();
-
+        public static string FullTransformString = "";
     }
     private Vector3 axisLock = Vector3.One;
     private bool _persistentMouseDrag = false;
     private Vector2 _previousMousePos = Vector2.Zero;
     private Queue<Action<MainWindowContext, Vector4>> _mouseClickActions = new();
 
+    private ImGuiMouseButton mouseMoveKey = ImGuiMouseButton.Right;
     private bool isSceneHovered;
     private bool isSceneWindowFocused;
 
@@ -137,25 +138,39 @@ internal class SceneWindow(MainWindowContext window)
 
         Vector2 mousePos = ImGui.GetMousePos();
 
+        if (window.ContextHandler.Settings.UseMiddleMouse)
+            mouseMoveKey = ImGuiMouseButton.Middle;
+        else
+            mouseMoveKey = ImGuiMouseButton.Right;
+
         if (
             (isSceneHovered || _persistentMouseDrag)
-            && ImGui.IsMouseDragging(ImGuiMouseButton.Right)
+            && ImGui.IsMouseDragging(mouseMoveKey)
         )
         {
             Vector2 delta = mousePos - _previousMousePos;
 
-            Vector3 right = Vector3.Transform(Vector3.UnitX, camera.Rotation);
-            camera.Rotation =
-                Quaternion.CreateFromAxisAngle(right, -delta.Y * 0.002f) * camera.Rotation;
-
-            camera.Rotation =
-                Quaternion.CreateFromAxisAngle(Vector3.UnitY, -delta.X * 0.002f) * camera.Rotation;
-
-            _persistentMouseDrag = true;
+            if (!ImGui.IsKeyDown(ImGuiKey.ModShift) ||  window.ContextHandler.Settings.UseWASD)
+            {
+                Vector3 right = Vector3.Transform(Vector3.UnitX, camera.Rotation);
+                camera.Rotation = Quaternion.CreateFromAxisAngle(right, -delta.Y * 0.0001f * window.ContextHandler.SystemSettings.MouseSpeed) * camera.Rotation;
+                camera.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -delta.X * 0.0001f * window.ContextHandler.SystemSettings.MouseSpeed) * camera.Rotation;
+                _persistentMouseDrag = true;
+            }
+            else if (!window.ContextHandler.Settings.UseWASD)
+            {
+                if (delta != Vector2.Zero)
+                {
+                    
+                    delta *= 0.01f * window.ContextHandler.SystemSettings.MouseSpeed / 7;
+                    Vector3 right = Vector3.Transform(new Vector3(-delta.X, delta.Y, 0), camera.Rotation);
+                    camera.Eye += right;
+                }
+            }
             ImGui.SetWindowFocus();
         }
 
-        if (!ImGui.IsMouseDown(ImGuiMouseButton.Right))
+        if (!ImGui.IsMouseDown(mouseMoveKey))
             _persistentMouseDrag = false;
 
         _previousMousePos = mousePos;
@@ -165,26 +180,29 @@ internal class SceneWindow(MainWindowContext window)
             // Camera Movement
             float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
             camMoveSpeed *= window.Keyboard.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
-            if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
+            if (window.ContextHandler.Settings.UseWASD)
             {
-                if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
-                    camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
-                if (window.Mouse.ScrollWheels[0].Y != 0 && isSceneHovered)
+                if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
                 {
-                    camera.Eye -= Vector3.Transform(Vector3.UnitZ * window.Mouse.ScrollWheels[0].Y * 6, camera.Rotation);
+                    if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
+                        camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
+                    if (window.Keyboard?.IsKeyPressed(Key.S) ?? false)
+                        camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
+
+                    if (window.Keyboard?.IsKeyPressed(Key.A) ?? false)
+                        camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
+                    if (window.Keyboard?.IsKeyPressed(Key.D) ?? false)
+                        camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
+
+                    if (window.Keyboard?.IsKeyPressed(Key.Q) ?? false)
+                        camera.Eye -= Vector3.UnitY * camMoveSpeed;
+                    if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
+                        camera.Eye += Vector3.UnitY * camMoveSpeed;
                 }
-                if (window.Keyboard?.IsKeyPressed(Key.S) ?? false)
-                    camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
-
-                if (window.Keyboard?.IsKeyPressed(Key.A) ?? false)
-                    camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
-                if (window.Keyboard?.IsKeyPressed(Key.D) ?? false)
-                    camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
-
-                if (window.Keyboard?.IsKeyPressed(Key.Q) ?? false)
-                    camera.Eye -= Vector3.UnitY * camMoveSpeed;
-                if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
-                    camera.Eye += Vector3.UnitY * camMoveSpeed;
+            }
+            if (window.Mouse.ScrollWheels[0].Y != 0 && isSceneHovered)
+            {
+                camera.Eye -= Vector3.Transform(Vector3.UnitZ * window.Mouse.ScrollWheels[0].Y * 6 * camMoveSpeed, camera.Rotation);
             }
             if (window.Keyboard?.IsKeyPressed(Key.Keypad0) ?? false)
                 camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
@@ -376,12 +394,12 @@ internal class SceneWindow(MainWindowContext window)
             else if (isRotationActive)
                 s = "Rotating ";
             if (window.CurrentScene.SelectedObjects.Count() > 1)
-                s += "multiple objects ";
+                s += "multiple objects";
             else
-                s += window.CurrentScene.SelectedObjects.First().StageObj.Name + " ";
+                s += window.CurrentScene.SelectedObjects.First().StageObj.Name;
             if (axisLock != Vector3.One)
             {
-                s += "on the ";
+                s += " on the ";
                 if (axisLock == Vector3.UnitX)
                     s += "X ";
                 else if (axisLock == Vector3.UnitY)
@@ -393,6 +411,12 @@ internal class SceneWindow(MainWindowContext window)
                 {
                     s += ": " + (transformChangeString != "-" ? transformChangeString : "");
                 }
+                else
+                    s += ": " + ActTransform.FullTransformString;
+            }
+            else
+            {
+                s += ": " + ActTransform.FullTransformString;
             }
             ImGui.SetCursorPos(opos + new Vector2(8, -2));
             ImGui.Text(s);
@@ -455,6 +479,20 @@ internal class SceneWindow(MainWindowContext window)
                     scobj.StageObj.Translation = Round(scobj.StageObj.Translation / 50) * 50;
                 }
                 scobj.UpdateTransform();
+            }
+            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Translation;
+            if (axisLock == Vector3.One)
+            {
+                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
+            }
+            else
+            {
+                if (axisLock == Vector3.UnitX)
+                    ActTransform.FullTransformString = $" {STR.X}";
+                if (axisLock == Vector3.UnitY)
+                    ActTransform.FullTransformString = $" {STR.Y}";
+                if (axisLock == Vector3.UnitZ)
+                    ActTransform.FullTransformString = $" {STR.Z}";
             }
         }
         if ((ImGui.IsKeyPressed(ImGuiKey.G, false) && !isTranslationActive) || isTranslationFromDuplicate)
@@ -549,6 +587,20 @@ internal class SceneWindow(MainWindowContext window)
                 }
                 sobj.UpdateTransform();
             }
+            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Rotation;
+            if (axisLock == Vector3.One)
+            {
+                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
+            }
+            else
+            {
+                if (axisLock == Vector3.UnitX)
+                    ActTransform.FullTransformString = $" {STR.X}";
+                if (axisLock == Vector3.UnitY)
+                    ActTransform.FullTransformString = $" {STR.Y}";
+                if (axisLock == Vector3.UnitZ)
+                    ActTransform.FullTransformString = $" {STR.Z}";
+            }
         }
         if (ImGui.IsKeyPressed(ImGuiKey.R, false) && !isRotationActive)
         {   // Start action
@@ -628,6 +680,20 @@ internal class SceneWindow(MainWindowContext window)
                 }
 
                 sobj.UpdateTransform();
+            }
+            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+            if (axisLock == Vector3.One)
+            {
+                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
+            }
+            else
+            {
+                if (axisLock == Vector3.UnitX)
+                    ActTransform.FullTransformString = $" {STR.X}";
+                if (axisLock == Vector3.UnitY)
+                    ActTransform.FullTransformString = $" {STR.Y}";
+                if (axisLock == Vector3.UnitZ)
+                    ActTransform.FullTransformString = $" {STR.Z}";
             }
         }
         if (ImGui.IsKeyPressed(ImGuiKey.F, false) && !isScaleActive)

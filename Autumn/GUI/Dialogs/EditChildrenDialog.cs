@@ -54,6 +54,7 @@ internal class EditChildrenDialog
         _parent = null;
         _selectedObjs[0].Clear();
         _selectedObjs[1].Clear();
+        _isOpened = false;
     }
 
     public void Render()
@@ -61,7 +62,12 @@ internal class EditChildrenDialog
 
         if (!_isOpened)
             return;
-
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        {
+            Reset();
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
         ImGui.OpenPopup("Modify "+_name+"'s children.");
 
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
