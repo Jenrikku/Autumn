@@ -132,8 +132,8 @@ internal abstract class WindowContext
             // If no imgui settings file exists,
             if (!File.Exists(ImguiSettingsFile))
             {
-                // Copy the default imgui settings file.
-                File.Copy(Path.Join("Resources", "DefaultLayout.ini"), ImguiSettingsFile);
+                // Load the default imgui settings file.
+                ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
 
                 unsafe
                 {
