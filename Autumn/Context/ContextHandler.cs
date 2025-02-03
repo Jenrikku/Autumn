@@ -42,9 +42,7 @@ internal class ContextHandler
         FSHandler = new(Settings.RomFSPath);
 
         var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile);
-
-        if (actions is null)
-            YAMLWrapper.Deserialize<Dictionary<string, object>>(Path.Join("Resources", "DefaultActions.yml"));
+        actions ??= YAMLWrapper.Deserialize<Dictionary<string, object>>(Path.Join("Resources", "DefaultActions.yml"));
 
         // Convert to Dictionary<CommandID, Shortcut>
 
