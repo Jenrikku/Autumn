@@ -470,14 +470,14 @@ internal class SceneWindow(MainWindowContext window)
 
         if (ImGui.Button("\uf065"))
         {
-            ModelRenderer.visibleAreas = !ModelRenderer.visibleAreas;
+            ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
         }
 
         ImGui.SameLine();
 
         if (ImGui.Button("\uf083"))
         {
-            ModelRenderer.visibleCameraAreas = !ModelRenderer.visibleCameraAreas;
+            ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
 
         ImGui.PopStyleVar(2);

@@ -149,13 +149,7 @@ internal class H3DRenderingMaterial
 
     private static readonly Dictionary<string, ShaderProgram> s_shaderCache = new();
 
-    public H3DRenderingMaterial(
-        GL gl,
-        H3DMaterial material,
-        H3DMesh mesh,
-        H3DSkeletalAnimator animator,
-        Actor actor
-    )
+    public H3DRenderingMaterial(GL gl, H3DMaterial material, H3DMesh mesh, H3DSkeletalAnimator animator, Actor actor)
     {
         H3DMaterialParams matParams = material.MaterialParams;
         H3DSubMesh subMesh = mesh.SubMeshes[0];
@@ -163,10 +157,7 @@ internal class H3DRenderingMaterial
         Debug.Assert(mesh.SubMeshes.Count == 1);
 
         ShaderSource vertexShader = H3DShaders.VertexShader;
-        ShaderSource fragmentShader = H3DShaders.GetFragmentShader(
-            material.Name,
-            material.MaterialParams
-        );
+        ShaderSource fragmentShader = H3DShaders.GetFragmentShader(material.Name, material.MaterialParams);
 
         DepthFunction = (DepthFunction)FromPICATestFunc(matParams.DepthColorMask.DepthFunc);
 
@@ -403,8 +394,8 @@ internal class H3DRenderingMaterial
                     Diffuse = new(0.4f, 0.4f, 0.4f, 1),
                     Specular0 = new(0.8f, 0.8f, 0.8f, 1),
                     Specular1 = new(0.4f, 0.4f, 0.4f, 1),
-                    Position = new(0,1,-0.1f),
-                    Direction = new(0,0,0),
+                    Position = new(0, 1, -0.1f),
+                    Direction = new(0, 0, 0),
                     Directional = 1,
                     TwoSidedDiffuse = 0
                 }
@@ -434,14 +425,10 @@ internal class H3DRenderingMaterial
                         if (subMesh.Skinning == H3DSubMeshSkinning.Smooth)
                         {
                             transforms[boneIndex] =
-                                animator.Skeleton[boneIndex].InverseTransform
-                                * transforms[boneIndex];
+                                animator.Skeleton[boneIndex].InverseTransform * transforms[boneIndex];
                         }
 
-                        MathUtils.Pack3dTransformMatrix(
-                            in transforms[boneIndex],
-                            ref packedTransforms[i]
-                        );
+                        MathUtils.Pack3dTransformMatrix(in transforms[boneIndex], ref packedTransforms[i]);
                     }
                 }
             }
@@ -466,39 +453,17 @@ internal class H3DRenderingMaterial
         textureSamplers[1] = CreateTextureSampler(material.Texture1Name, 1);
         textureSamplers[2] = CreateTextureSampler(material.Texture2Name, 2);
 
-        textureSamplers[4] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTDist0TableName,
-            matParams.LUTDist0SamplerName
-        );
+        textureSamplers[4] = actor.GetLUTTexture(gl, matParams.LUTDist0TableName, matParams.LUTDist0SamplerName);
 
-        textureSamplers[5] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTDist1TableName,
-            matParams.LUTDist1SamplerName
-        );
+        textureSamplers[5] = actor.GetLUTTexture(gl, matParams.LUTDist1TableName, matParams.LUTDist1SamplerName);
 
-        textureSamplers[6] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTFresnelTableName,
-            matParams.LUTFresnelSamplerName
-        );
+        textureSamplers[6] = actor.GetLUTTexture(gl, matParams.LUTFresnelTableName, matParams.LUTFresnelSamplerName);
 
-        textureSamplers[7] = actor.GetLUTTexture(
-            gl,
-            matParams.LUTReflecRTableName,
-            matParams.LUTReflecRSamplerName
-        );
+        textureSamplers[7] = actor.GetLUTTexture(gl, matParams.LUTReflecRTableName, matParams.LUTReflecRSamplerName);
 
         TextureSampler lut;
 
-        if (
-            actor.TryGetLUTTexture(
-                matParams.LUTReflecGTableName,
-                matParams.LUTReflecGSamplerName,
-                out lut
-            )
-        )
+        if (actor.TryGetLUTTexture(matParams.LUTReflecGTableName, matParams.LUTReflecGSamplerName, out lut))
         {
             textureSamplers[8] = lut;
         }
@@ -507,13 +472,7 @@ internal class H3DRenderingMaterial
             textureSamplers[8] = textureSamplers[7];
         }
 
-        if (
-            actor.TryGetLUTTexture(
-                matParams.LUTReflecBTableName,
-                matParams.LUTReflecBSamplerName,
-                out lut
-            )
-        )
+        if (actor.TryGetLUTTexture(matParams.LUTReflecBTableName, matParams.LUTReflecBSamplerName, out lut))
         {
             textureSamplers[9] = lut;
         }
@@ -550,13 +509,7 @@ internal class H3DRenderingMaterial
                 _ => TextureMinFilter.Linear
             };
 
-            uint sampler = SamplerHelper.CreateSampler2D(
-                gl,
-                wrapModeS,
-                wrapModeT,
-                magFilter,
-                minFilter
-            );
+            uint sampler = SamplerHelper.CreateSampler2D(gl, wrapModeS, wrapModeT, magFilter, minFilter);
 
             return new(sampler, texture);
 
@@ -607,9 +560,7 @@ internal class H3DRenderingMaterial
             else
                 name = i < 4 ? $"Textures[{i}]" : $"LUTs[{i - 4}]";
 
-            samplerBindings.Add(
-                new(name, textureSampler.Value.Sampler, textureSampler.Value.Texture)
-            );
+            samplerBindings.Add(new(name, textureSampler.Value.Sampler, textureSampler.Value.Texture));
         }
 
         samplerBindings.Add(
@@ -660,11 +611,5 @@ internal class H3DRenderingMaterial
         _materialBuffer.SetData(_materialBuffer.Data with { SelectionColor = color });
 
     public bool TryUse(GL gl, out ProgramUniformScope scope) =>
-        _program.TryUse(
-            gl,
-            null,
-            new IShaderBindingContainer[] { _sceneParams, _materialParams },
-            out scope,
-            out _
-        );
+        _program.TryUse(gl, null, [_sceneParams, _materialParams], out scope, out _);
 }

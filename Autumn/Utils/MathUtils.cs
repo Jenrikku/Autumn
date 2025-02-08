@@ -104,13 +104,9 @@ internal static class MathUtils
 
             case H3DTextureTransformType.Dcc3dsMax:
                 matrix.M14 =
-                    scale.X * rotCos * (-translation.X - 0.5f)
-                    - scale.X * rotSin * (translation.Y - 0.5f)
-                    + 0.5f;
+                    scale.X * rotCos * (-translation.X - 0.5f) - scale.X * rotSin * (translation.Y - 0.5f) + 0.5f;
                 matrix.M24 =
-                    scale.Y * rotSin * (-translation.X - 0.5f)
-                    + scale.Y * rotCos * (translation.Y - 0.5f)
-                    + 0.5f;
+                    scale.Y * rotSin * (-translation.X - 0.5f) + scale.Y * rotCos * (translation.Y - 0.5f) + 0.5f;
                 break;
         }
 
@@ -211,12 +207,7 @@ internal static class MathUtils
     }
 
     // From https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
-    public static Vector3 IntersectPoint(
-        Vector3 rayVector,
-        Vector3 rayPoint,
-        Vector3 planeNormal,
-        Vector3 planePoint
-    )
+    public static Vector3 IntersectPoint(Vector3 rayVector, Vector3 rayPoint, Vector3 planeNormal, Vector3 planePoint)
     {
         //code from: https://rosettacode.org/wiki/Find_the_intersection_of_a_line_with_a_plane
         var diff = rayPoint - planePoint;
@@ -240,6 +231,17 @@ internal static class MathUtils
         a.Y = (float)Math.Round(a.Y);
         a.Z = (float)Math.Round(a.Z);
         return a;
+    }
+
+    public static Vector3 BezierPoint(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+    {
+        float t3 = (float)Math.Pow(t, 3);
+        float t2 = (float)Math.Pow(t, 2);
+
+        return p0 * (-t3 + 3 * t2 - 3 * t + 1)
+            + p1 * (3 * t3 - 6 * t2 + 3 * t) //
+            + p2 * (-3 * t3 + 3 * t2)
+            + p3 * t3;
     }
 
     /// <summary>

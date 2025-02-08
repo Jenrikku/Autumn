@@ -110,12 +110,5 @@ internal static class DefaultCubeMaterial
         CommonSceneParameters scene,
         CommonMaterialParameters material,
         out ProgramUniformScope scope
-    ) =>
-        Program.TryUse(
-            gl,
-            null,
-            new ShaderParams[] { scene.ShaderParameters, material.ShaderParameters },
-            out scope,
-            out _
-        );
+    ) => Program.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _);
 }

@@ -11,6 +11,8 @@ namespace Autumn.Rendering;
 
 internal static class ModelRenderer
 {
+    private static readonly Vector3 s_highlightColor = new(1, 1, 0);
+
     private static CommonSceneParameters? s_commonSceneParams;
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
     private static CommonMaterialParameters? s_areaMaterialParams;
@@ -20,8 +22,8 @@ internal static class ModelRenderer
 
     private static Matrix4x4 s_h3DScale = Matrix4x4.CreateScale(0.01f);
 
-    public static bool visibleAreas = false;
-    public static bool visibleCameraAreas = true;
+    public static bool VisibleAreas = false;
+    public static bool VisibleCameraAreas = true;
 
     public static void Initialize(GL gl)
     {
@@ -29,8 +31,8 @@ internal static class ModelRenderer
         AreaRenderer.Initialize(gl);
 
         s_commonSceneParams = new(gl);
-        s_defaultCubeMaterialParams = new(gl, new(1, 0.5f, 0, 1), new(1, 1, 0));
-        s_areaMaterialParams = new(gl, new(0, 1, 0, 1), new(1, 1, 0));
+        s_defaultCubeMaterialParams = new(gl, new(1, 0.5f, 0, 1), s_highlightColor);
+        s_areaMaterialParams = new(gl, new(0, 1, 0, 1), s_highlightColor);
     }
 
     public static void UpdateMatrices(in Matrix4x4 view, in Matrix4x4 projection)
@@ -55,6 +57,9 @@ internal static class ModelRenderer
 
         StageObj stageObj = sceneObj.StageObj;
         Actor actor = sceneObj.Actor;
+
+        if (!sceneObj.IsVisible)
+            return;
 
         if (
             stageObj.Type == StageObjType.Area
@@ -107,23 +112,25 @@ internal static class ModelRenderer
             };
 
             if (
-                !visibleAreas
+                !VisibleAreas
                 && !sceneObj.Selected
                 && (sceneObj.StageObj.Type == StageObjType.Area || sceneObj.StageObj.Type == StageObjType.AreaChild)
             )
                 return;
 
-            if (!visibleCameraAreas && !sceneObj.Selected && sceneObj.StageObj.Type == StageObjType.CameraArea)
+            if (!VisibleCameraAreas && !sceneObj.Selected && sceneObj.StageObj.Type == StageObjType.CameraArea)
                 return;
 
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(20f);
 
-            if (!sceneObj.isVisible)
-                return;
-            else
-                gl.CullFace(TriangleFace.Back);
+            gl.CullFace(TriangleFace.Back);
 
             AreaRenderer.Render(gl, s_commonSceneParams, s_areaMaterialParams, sceneObj.PickingId);
+            return;
+        }
+
+        if (stageObj is RailObj rail)
+        {
             return;
         }
 
@@ -133,86 +140,78 @@ internal static class ModelRenderer
             s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
             sceneObj.Actor.AABB = new AxisAlignedBoundingBox(2f);
 
-            if (!sceneObj.isVisible)
-                return;
-            else
-                gl.CullFace(TriangleFace.Back);
+            gl.CullFace(TriangleFace.Back);
 
             DefaultCubeRenderer.Render(gl, s_commonSceneParams, s_defaultCubeMaterialParams, sceneObj.PickingId);
         }
-        else
+
+        foreach (H3DMeshLayer layer in Enum.GetValues<H3DMeshLayer>())
+        foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
         {
-            if (!sceneObj.isVisible)
-                return;
+            material.SetSelectionColor(new(s_highlightColor, sceneObj.Selected ? 0.4f : 0));
 
-            foreach (H3DMeshLayer layer in Enum.GetValues<H3DMeshLayer>())
-            foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
+            material.SetMatrices(s_projectionMatrix, s_h3DScale * sceneObj.Transform, s_viewMatrix);
+
+            material.TryUse(gl, out ProgramUniformScope scope);
+
+            using (scope)
             {
-                material.SetSelectionColor(new(1, 1, 0, sceneObj.Selected ? 0.4f : 0));
+                if (material.CullFaceMode == TriangleFace.FrontAndBack)
+                    gl.Disable(EnableCap.CullFace);
+                else
+                    gl.CullFace(material.CullFaceMode);
 
-                material.SetMatrices(s_projectionMatrix, s_h3DScale * sceneObj.Transform, s_viewMatrix);
-
-                material.TryUse(gl, out ProgramUniformScope scope);
-
-                using (scope)
+                if (material.BlendingEnabled)
                 {
-                    if (material.CullFaceMode == TriangleFace.FrontAndBack)
-                        gl.Disable(EnableCap.CullFace);
-                    else
-                        gl.CullFace(material.CullFaceMode);
+                    gl.Enable(EnableCap.Blend);
 
-                    if (material.BlendingEnabled)
-                    {
-                        gl.Enable(EnableCap.Blend);
-
-                        gl.BlendColor(
-                            material.BlendingColor.X,
-                            material.BlendingColor.Y,
-                            material.BlendingColor.Z,
-                            material.BlendingColor.W
-                        );
-
-                        gl.BlendEquationSeparate(material.ColorBlendEquation, material.AlphaBlendEquation);
-
-                        gl.BlendFuncSeparate(
-                            material.ColorSrcFact,
-                            material.ColorDstFact,
-                            material.AlphaSrcFact,
-                            material.AlphaDstFact
-                        );
-                    }
-
-                    gl.StencilFunc(material.StencilFunction, material.StencilRef, material.StencilMask);
-
-                    gl.StencilMask(material.StencilBufferMask);
-
-                    gl.StencilOp(material.StencilOps[0], material.StencilOps[1], material.StencilOps[2]);
-
-                    gl.DepthFunc(material.DepthFunction);
-                    gl.DepthMask(material.DepthMaskEnabled);
-
-                    gl.ColorMask(
-                        material.ColorMask[0],
-                        material.ColorMask[1],
-                        material.ColorMask[2],
-                        material.ColorMask[3]
+                    gl.BlendColor(
+                        material.BlendingColor.X,
+                        material.BlendingColor.Y,
+                        material.BlendingColor.Z,
+                        material.BlendingColor.W
                     );
 
-                    if (material.PolygonOffsetFillEnabled)
-                    {
-                        gl.Enable(EnableCap.PolygonOffsetFill);
-                        gl.PolygonOffset(0, material.PolygonOffsetUnit);
-                    }
+                    gl.BlendEquationSeparate(material.ColorBlendEquation, material.AlphaBlendEquation);
 
-                    material.Program.TryGetUniformLoc("uPickingId", out int location);
-                    gl.Uniform1(location, sceneObj.PickingId);
-
-                    mesh.Draw();
-
-                    gl.Enable(EnableCap.CullFace);
-                    gl.Disable(EnableCap.PolygonOffsetFill);
-                    gl.Disable(EnableCap.Blend);
+                    gl.BlendFuncSeparate(
+                        material.ColorSrcFact,
+                        material.ColorDstFact,
+                        material.AlphaSrcFact,
+                        material.AlphaDstFact
+                    );
                 }
+
+                gl.StencilFunc(material.StencilFunction, material.StencilRef, material.StencilMask);
+
+                gl.StencilMask(material.StencilBufferMask);
+
+                gl.StencilOp(material.StencilOps[0], material.StencilOps[1], material.StencilOps[2]);
+
+                gl.DepthFunc(material.DepthFunction);
+                gl.DepthMask(material.DepthMaskEnabled);
+
+                gl.ColorMask(
+                    material.ColorMask[0],
+                    material.ColorMask[1],
+                    material.ColorMask[2],
+                    material.ColorMask[3]
+                );
+
+                if (material.PolygonOffsetFillEnabled)
+                {
+                    gl.Enable(EnableCap.PolygonOffsetFill);
+                    gl.PolygonOffset(0, material.PolygonOffsetUnit);
+                }
+
+                material.Program.TryGetUniformLoc("uPickingId", out int location);
+                gl.Uniform1(location, sceneObj.PickingId);
+
+                mesh.Draw();
+
+                gl.Enable(EnableCap.CullFace);
+                gl.Disable(EnableCap.PolygonOffsetFill);
+                gl.Disable(EnableCap.Blend);
             }
         }
     }

@@ -22,14 +22,12 @@ internal class ObjectWindow(MainWindowContext window)
 
     private bool IsChildArea(StageObj stageObj)
     {
-        return _objectFilterCurrent == (byte)StageObjType.Area + 1
-            && stageObj.Type == StageObjType.AreaChild;
+        return _objectFilterCurrent == (byte)StageObjType.Area + 1 && stageObj.Type == StageObjType.AreaChild;
     }
 
     private bool IsChild(StageObj stageObj)
     {
-        return _objectFilterCurrent == (byte)StageObjType.Regular + 1
-            && stageObj.Type == StageObjType.Child;
+        return _objectFilterCurrent == (byte)StageObjType.Regular + 1 && stageObj.Type == StageObjType.Child;
     }
 
     private int selectedIndex = -1;
@@ -86,48 +84,30 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
                 ImGui.PushFont(window.FontPointers[1]);
-                ImGui.PushStyleColor(
-                    ImGuiCol.ButtonActive,
-                    ImGui.GetColorU32(new Vector4(1, 1, 1, 0))
-                );
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
 
-                ImGui.PushStyleColor(
-                    ImGuiCol.ButtonHovered,
-                    ImGui.GetColorU32(new Vector4(1, 1, 1, 0))
-                );
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
                 ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
                 Vector2[] clickRect =
                 [
                     ImGui.GetCursorPos() + new Vector2(0, 84 - ImGui.GetScrollY()),
-                    ImGui.GetCursorPos()
-                        + new Vector2(ImGui.GetColumnWidth() + 10, 114 - ImGui.GetScrollY())
+                    ImGui.GetCursorPos() + new Vector2(ImGui.GetColumnWidth() + 10, 114 - ImGui.GetScrollY())
                 ];
                 //ImGui.GetWindowDrawList().AddRectFilled(clickRect[0],clickRect[1], 0xff0000ff);
                 //ImGui.GetWindowDrawList().AddCircle(ImGui.GetMousePos(), 20, 0xff00ff00);
                 if (ImGui.IsMouseHoveringRect(clickRect[0], clickRect[1]))
-                    ImGui.PushStyleColor(
-                        ImGuiCol.Text,
-                        0x7fffffff & ImGui.GetColorU32(ImGuiCol.Text)
-                    );
+                    ImGui.PushStyleColor(ImGuiCol.Text, 0x7fffffff & ImGui.GetColorU32(ImGuiCol.Text));
                 else
-                    ImGui.PushStyleColor(
-                        ImGuiCol.Text,
-                        0xffffffff & ImGui.GetColorU32(ImGuiCol.Text)
-                    );
+                    ImGui.PushStyleColor(ImGuiCol.Text, 0xffffffff & ImGui.GetColorU32(ImGuiCol.Text));
 
-                if (
-                    ImGui.Button(
-                        obj.isVisible ? "\uF06E" : "\uF070",
-                        new(ImGui.GetColumnWidth(), default)
-                    )
-                ) // Hide / Show
+                if (ImGui.Button(obj.IsVisible ? "\uF06E" : "\uF070", new(ImGui.GetColumnWidth(), default))) // Hide / Show
                 {
                     ChangeHandler.ChangeFieldValue(
                         window.CurrentScene.History,
                         obj,
                         "isVisible",
-                        obj.isVisible,
-                        !obj.isVisible
+                        obj.IsVisible,
+                        !obj.IsVisible
                     );
                 }
 
@@ -151,12 +131,7 @@ internal class ObjectWindow(MainWindowContext window)
 
                 if (selectedIndex == listId && !obj.Selected && lastKeyPressed)
                 {
-                    ChangeHandler.ToggleObjectSelection(
-                        window,
-                        window.CurrentScene.History,
-                        obj,
-                        true
-                    );
+                    ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, obj, true);
                     ImGui.SetScrollHereY();
                 }
 
@@ -166,14 +141,7 @@ internal class ObjectWindow(MainWindowContext window)
                     selectedIndex = listId;
                 }
 
-                if (
-                    ImGui.Selectable(
-                        stageObj.Name,
-                        obj.Selected,
-                        ImGuiSelectableFlags.AllowDoubleClick,
-                        new(1000, 25)
-                    )
-                )
+                if (ImGui.Selectable(stageObj.Name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
                 {
                     ChangeHandler.ToggleObjectSelection(
                         window,
@@ -188,8 +156,7 @@ internal class ObjectWindow(MainWindowContext window)
                             window.CurrentScene.SelectedObjects.First().Actor.AABB
                             * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
                         window.CurrentScene!.Camera.LookFrom(
-                            window.CurrentScene.SelectedObjects.First().StageObj.Translation
-                                * 0.01f,
+                            window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
                             aabb.GetDiagonal() * 0.01f
                         );
                     }
@@ -210,22 +177,14 @@ internal class ObjectWindow(MainWindowContext window)
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
             {
                 selectedIndex += 1;
-                selectedIndex = Math.Clamp(
-                    selectedIndex,
-                    0,
-                    window.CurrentScene.CountSceneObjs() - 1
-                );
+                selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
                 lastKeyPressed = true;
                 manualClick = false;
             }
             else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
             {
                 selectedIndex -= 1;
-                selectedIndex = Math.Clamp(
-                    selectedIndex,
-                    0,
-                    window.CurrentScene.CountSceneObjs() - 1
-                );
+                selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
                 lastKeyPressed = true;
                 manualClick = false;
             }

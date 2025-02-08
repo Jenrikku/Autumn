@@ -15,7 +15,7 @@ internal class SceneObj
 
     public uint PickingId { get; set; }
     public bool Selected { get; set; }
-    public bool isVisible = true;
+    public bool IsVisible { get; set; } = true;
 
     public SceneObj(StageObj stageObj, Actor actorObj, uint pickingId)
     {
