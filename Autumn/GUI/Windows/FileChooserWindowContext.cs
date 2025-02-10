@@ -126,7 +126,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                 if (ImGui.ArrowButton("Back", ImGuiDir.Left))
                     ChangeDirectory(_history[--_historyIndex], updateHistory: false);
 
-                ImGui.EndDisabled();
+                if (_historyIndex <= 0)
+                    ImGui.EndDisabled();
+
                 ImGui.SameLine();
 
                 if (_historyIndex == _history.Count - 1)
@@ -135,7 +137,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                 if (ImGui.ArrowButton("Forward", ImGuiDir.Right))
                     ChangeDirectory(_history[++_historyIndex], updateHistory: false);
 
-                ImGui.EndDisabled();
+                if (_historyIndex == _history.Count - 1)
+                    ImGui.EndDisabled();
+
                 ImGui.SameLine();
 
                 if (string.IsNullOrEmpty(_parentDirectory))
@@ -144,7 +148,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                 if (ImGui.ArrowButton("Up", ImGuiDir.Up))
                     ChangeDirectory(_parentDirectory);
 
-                ImGui.EndDisabled();
+                if (string.IsNullOrEmpty(_parentDirectory))
+                    ImGui.EndDisabled();
+
                 ImGui.SameLine();
                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 5);
 
