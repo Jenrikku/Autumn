@@ -306,6 +306,17 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
+            if (ImGui.MenuItem("Test New Project"))
+            {
+                ProjectCreateChooserContext projectChooser = new(ContextHandler, WindowManager);
+                WindowManager.Add(projectChooser);
+
+                projectChooser.SuccessCallback += result =>
+                {
+                    Console.WriteLine(result[0]);
+                };
+            }
+
             if (ImGui.MenuItem("Test Open Project"))
             {
                 ProjectChooserContext projectChooser = new(ContextHandler, WindowManager);

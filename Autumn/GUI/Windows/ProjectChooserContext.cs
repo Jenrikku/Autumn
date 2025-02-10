@@ -6,19 +6,19 @@ namespace Autumn.GUI.Windows;
 
 internal class ProjectChooserContext : FileChooserWindowContext
 {
-    private const ImGuiTableFlags _fileChooseFlags =
+    protected const ImGuiTableFlags FileChooseFlags =
         ImGuiTableFlags.ScrollY
         | ImGuiTableFlags.BordersOuterH
         | ImGuiTableFlags.Sortable
         | ImGuiTableFlags.NoSavedSettings;
 
-    private const ImGuiSelectableFlags _fileSelectableFlags =
+    protected const ImGuiSelectableFlags FileSelectableFlags =
         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick;
 
     /// <summary>
     /// Holds whether the directory in the key is a RomFS.
     /// </summary>
-    private readonly Dictionary<string, bool> _isDirRomFS = new();
+    protected readonly Dictionary<string, bool> IsDirRomFS = new();
 
     public ProjectChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
@@ -27,21 +27,21 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
         DirectoryUpdated += () =>
         {
-            _isDirRomFS.Clear();
+            IsDirRomFS.Clear();
 
             foreach (var entry in DirectoryEntries)
             {
                 if (entry is not DirectoryInfo dir)
                     continue;
 
-                _isDirRomFS.Add(entry.Name, IsRomFS(entry.FullName));
+                IsDirRomFS.Add(entry.Name, IsRomFS(entry.FullName));
             }
         };
     }
 
     protected override void RenderFileChoosePanel()
     {
-        if (!ImGui.BeginTable("FileChoose", 2, _fileChooseFlags))
+        if (!ImGui.BeginTable("FileChoose", 2, FileChooseFlags))
             return;
 
         UpdateFileSortByTable(ImGui.TableGetSortSpecs());
@@ -60,9 +60,9 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
             ImGui.TableSetColumnIndex(0);
 
-            if (ImGui.Selectable(dir.Name, false, _fileSelectableFlags))
+            if (ImGui.Selectable(dir.Name, false, FileSelectableFlags))
             {
-                if (_isDirRomFS[dir.Name])
+                if (IsDirRomFS[dir.Name])
                 {
                     SelectedFile = dir.Name;
 
