@@ -64,6 +64,7 @@ internal class StageWindow
             ImGui.TableSetupColumn("Stage");
             ImGui.TableSetupColumn("Scenario", ImGuiTableColumnFlags.None, 0.35f);
             ImGui.TableHeadersRow();
+
             if (currentItem == 0) //All stages
             {
                 foreach (var (name, scenario) in window.ContextHandler.ProjectStages)

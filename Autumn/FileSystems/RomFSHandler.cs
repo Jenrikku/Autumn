@@ -1153,7 +1153,7 @@ internal partial class RomFSHandler
         return ret;
     }
 
-    private BYAMLNode MakeNewLayerInfos(string layerName, BYAMLNode layerInfosDict = null)
+    private BYAMLNode MakeNewLayerInfos(string layerName, BYAMLNode? layerInfosDict = null)
     {
         BYAMLNode kvp0;
         if (layerInfosDict is null)

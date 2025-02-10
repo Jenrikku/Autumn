@@ -91,11 +91,6 @@ internal class MainWindowContext : WindowContext
             );
 
             GizmoDrawer.SetOrientationCubeTexture((nint)cubeTexName);
-
-            ImGuiIOPtr io = ImGui.GetIO();
-
-            io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-            io.ConfigWindowsMoveFromTitleBarOnly = true;
         };
 
         Window.Render += (deltaSeconds) =>
@@ -107,6 +102,11 @@ internal class MainWindowContext : WindowContext
 
             if (_isFirstFrame)
             {
+                ImGuiIOPtr io = ImGui.GetIO();
+
+                io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+                io.ConfigWindowsMoveFromTitleBarOnly = true;
+
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
 

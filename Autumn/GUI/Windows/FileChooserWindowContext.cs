@@ -29,9 +29,7 @@ internal abstract class FileChooserWindowContext : WindowContext
     private string _parentDirectory = string.Empty;
 
     private const ImGuiWindowFlags _mainWindowFlags =
-        ImGuiWindowFlags.NoDecoration
-        | ImGuiWindowFlags.NoScrollWithMouse
-        | ImGuiWindowFlags.NoSavedSettings;
+        ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings;
 
     private const float _bottomPanelBaseHeight = 60;
 
@@ -52,9 +50,7 @@ internal abstract class FileChooserWindowContext : WindowContext
     private string _inputPathBuffer = "";
 
     protected static readonly string Root = OperatingSystem.IsWindows() ? "C:\\" : "/";
-    protected static readonly string Home = Environment.GetFolderPath(
-        Environment.SpecialFolder.UserProfile
-    );
+    protected static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     protected string SearchString = "";
     protected string SelectedFile = "";
@@ -116,10 +112,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             if (
                 ImGui.BeginChild(
                     "FileTopBar",
-                    new(
-                        ImGui.GetContentRegionAvail().X,
-                        ImGui.GetFontSize() + ImGui.GetStyle().ItemInnerSpacing.Y * 2
-                    ),
+                    new(ImGui.GetContentRegionAvail().X, ImGui.GetFontSize() + ImGui.GetStyle().ItemInnerSpacing.Y * 2),
                     ImGuiChildFlags.None,
                     ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoScrollWithMouse
                 )
@@ -163,10 +156,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             if (
                 ImGui.BeginChild(
                     "FilePathBar",
-                    new(
-                        ImGui.GetContentRegionAvail().X,
-                        ImGui.GetFontSize() + ImGui.GetStyle().ItemInnerSpacing.Y * 2
-                    ),
+                    new(ImGui.GetContentRegionAvail().X, ImGui.GetFontSize() + ImGui.GetStyle().ItemInnerSpacing.Y * 2),
                     ImGuiChildFlags.None,
                     ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoScrollWithMouse
                 )
@@ -192,10 +182,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                     if (ImGui.Button("Ok", new(buttonWidth, 0)) || enterPressed)
                     {
                         _inputtingPath = false;
-                        ChangeDirectory(
-                            _inputPathBuffer,
-                            updateHistory: CurrentDirectory != _inputPathBuffer
-                        );
+                        ChangeDirectory(_inputPathBuffer, updateHistory: CurrentDirectory != _inputPathBuffer);
                     }
 
                     ImGui.SameLine();
@@ -245,13 +232,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                 ImGui.EndChild();
             }
 
-            if (
-                ImGui.BeginChild(
-                    "##Places",
-                    ImGui.GetContentRegionAvail() / new Vector2(4, 1),
-                    ImGuiChildFlags.Border
-                )
-            )
+            if (ImGui.BeginChild("##Places", ImGui.GetContentRegionAvail() / new Vector2(4, 1), ImGuiChildFlags.Border))
             {
                 if (ImGui.Selectable("Home"))
                     ChangeDirectory(Home);
@@ -341,10 +322,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SameLine();
 
-                    if (
-                        (ImGui.Button("Ok", buttonSize) || enterPressed)
-                        && !string.IsNullOrEmpty(SelectedFile)
-                    )
+                    if ((ImGui.Button("Ok", buttonSize) || enterPressed) && !string.IsNullOrEmpty(SelectedFile))
                     {
                         if (IsMultiFileSelect)
                         {

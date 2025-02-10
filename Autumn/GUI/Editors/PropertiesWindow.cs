@@ -232,11 +232,11 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SameLine();
                             if (stageObj.Parent != null)
                             {
-                                ImGui.GetColorU32(ImGuiCol.NavHighlight);
                                 ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.HeaderActive));
                                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                                 ImGui.Text(stageObj.Parent.Name);
                                 ImGui.PopStyleColor();
+
                                 if (ImGui.IsItemClicked())
                                 {
                                     foreach (SceneObj s in window.CurrentScene.EnumerateSceneObjs())
