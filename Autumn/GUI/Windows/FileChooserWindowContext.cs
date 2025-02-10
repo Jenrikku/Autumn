@@ -67,6 +67,8 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// </summary>
     protected readonly List<FileSystemInfo> DirectoryEntries = new();
 
+    protected event Action? DirectoryUpdated;
+
     public FileChooserWindowContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {
@@ -390,6 +392,8 @@ internal abstract class FileChooserWindowContext : WindowContext
             comparison = _activeComparisons[_comparisonIndex];
 
         DirectoryEntries.Sort(comparison);
+
+        DirectoryUpdated?.Invoke();
     }
 
     protected void SetupFileComparisons(params Comparison<FileSystemInfo>[] comparisons)
@@ -417,7 +421,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
     protected void InvokeCancelCallback() => CancelCallback.Invoke();
 
-    protected void InvokeSuccessCallback(string[] result) => SuccessCallback.Invoke(result);
+    protected void InvokeSuccessCallback(params string[] result) => SuccessCallback.Invoke(result);
 
     #region Comparisions
 

@@ -21,7 +21,7 @@ internal class SingleFileChooserContext : FileChooserWindowContext
         SetupFileComparisons(CompareByName, CompareBySize, CompareByDate);
     }
 
-    protected unsafe override void RenderFileChoosePanel()
+    protected override unsafe void RenderFileChoosePanel()
     {
         if (!ImGui.BeginTable("FileChoose", 3, _fileChooseFlags))
             return;
@@ -53,7 +53,7 @@ internal class SingleFileChooserContext : FileChooserWindowContext
                     SelectedFile = file.Name.Replace(";", "\\;").Replace("\\", "\\\\");
 
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                        InvokeSuccessCallback([file.FullName]);
+                        InvokeSuccessCallback(file.FullName);
                 }
             }
 

@@ -1,4 +1,5 @@
 using Autumn.Context;
+using Autumn.Wrappers;
 using ImGuiNET;
 
 namespace Autumn.GUI.Windows;
@@ -14,10 +15,28 @@ internal class ProjectChooserContext : FileChooserWindowContext
     private const ImGuiSelectableFlags _fileSelectableFlags =
         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick;
 
+    /// <summary>
+    /// Holds whether the directory in the key is a RomFS.
+    /// </summary>
+    private readonly Dictionary<string, bool> _isDirRomFS = new();
+
     public ProjectChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {
         SetupFileComparisons(CompareByName, CompareByDate);
+
+        DirectoryUpdated += () =>
+        {
+            _isDirRomFS.Clear();
+
+            foreach (var entry in DirectoryEntries)
+            {
+                if (entry is not DirectoryInfo dir)
+                    continue;
+
+                _isDirRomFS.Add(entry.Name, IsRomFS(entry.FullName));
+            }
+        };
     }
 
     protected override void RenderFileChoosePanel()
@@ -41,9 +60,18 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
             ImGui.TableSetColumnIndex(0);
 
-            if (ImGui.Selectable(info.Name, false, _fileSelectableFlags))
+            if (ImGui.Selectable(dir.Name, false, _fileSelectableFlags))
             {
-                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+                if (_isDirRomFS[dir.Name])
+                {
+                    SelectedFile = dir.Name;
+
+                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+                    {
+                        InvokeSuccessCallback(dir.FullName);
+                    }
+                }
+                else if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                 {
                     ChangeDirectory(dir.FullName);
                     break;
@@ -56,5 +84,31 @@ internal class ProjectChooserContext : FileChooserWindowContext
         }
 
         ImGui.EndTable();
+    }
+
+    /// <summary>
+    /// Checks if the directory is a valid RomFS (also returns true on projects)
+    /// </summary>
+    private static bool IsRomFS(string dir)
+    {
+        string projectFile = Path.Join(dir, "autumnproj.yml");
+
+        if (File.Exists(projectFile)) // If it's a project, then it's probably a valid RomFS
+            return true;
+
+        string stageData = Path.Join(dir, "StageData");
+
+        if (!Directory.Exists(stageData)) // Check for StageData/
+            return false;
+
+        var files = Directory.EnumerateFiles(stageData);
+
+        if (!files.Any()) // Check if it is not empty
+            return false;
+
+        if (SZSWrapper.ReadFile(files.First()) is null) // Check if it has the proper files
+            return false;
+
+        return true;
     }
 }
