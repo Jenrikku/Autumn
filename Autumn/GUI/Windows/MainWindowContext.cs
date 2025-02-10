@@ -313,7 +313,8 @@ internal class MainWindowContext : WindowContext
 
                 projectChooser.SuccessCallback += result =>
                 {
-                    Console.WriteLine(result[0]);
+                    ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
+                    ContextHandler.NewProject(result[0]);
                 };
             }
 
