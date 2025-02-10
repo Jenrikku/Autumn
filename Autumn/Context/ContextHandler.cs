@@ -117,18 +117,19 @@ internal class ContextHandler
         Project project = new(projectDir);
         string projectFile = project.ProjectFile;
 
-        if (!File.Exists(projectFile))
-            return false;
+        if (File.Exists(projectFile))
+        {
+            var projectSettings = YAMLWrapper.Deserialize<Dictionary<string, object?>>(projectFile);
 
-        var projectSettings = YAMLWrapper.Deserialize<Dictionary<string, object?>>(projectFile);
+            if (projectSettings is null)
+                return false;
 
-        if (projectSettings is null)
-            return false;
+            project.ProjectSettings = projectSettings;
 
-        project.ProjectSettings = projectSettings;
+            Settings = new(projectSettings, _globalSettings);
+        }
+
         _project = project;
-
-        Settings = new(projectSettings, _globalSettings);
 
         FSHandler.ModFS = string.IsNullOrEmpty(project.ContentsPath) ? null : new(project.ContentsPath);
         SystemSettings.AddRecentlyOpenedPath(projectDir);
