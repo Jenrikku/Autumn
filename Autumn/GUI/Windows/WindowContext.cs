@@ -132,6 +132,8 @@ internal abstract class WindowContext
             // If no imgui settings file exists,
             if (!File.Exists(ImguiSettingsFile))
             {
+                ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+
                 // Load the default imgui settings file.
                 ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
 
