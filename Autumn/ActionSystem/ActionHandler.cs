@@ -2,6 +2,7 @@ using Autumn.Enums;
 using Autumn.GUI;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using TinyFileDialogsSharp;
 
@@ -249,7 +250,7 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainContext)
                     return;
 
-                foreach (SceneObj del in mainContext.CurrentScene!.SelectedObjects)
+                foreach (ISceneObj del in mainContext.CurrentScene!.SelectedObjects)
                 {
                     ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
                 }
@@ -274,7 +275,7 @@ internal class ActionHandler
                 int count = mainContext.CurrentScene!.SelectedObjects.Count();
                 List<uint> newPickIds = new();
 
-                foreach (SceneObj copy in mainContext.CurrentScene.SelectedObjects)
+                foreach (ISceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
                     newPickIds.Add(ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy));
                 }
@@ -302,10 +303,11 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
+
                 ChangeHandler.ChangeFieldValueMultiple<bool>(
                     mainContext.CurrentScene!.History,
                     mainContext.CurrentScene!.SelectedObjects,
-                    "isVisible"
+                    "IsVisible"
                 );
             },
             enabled: window =>

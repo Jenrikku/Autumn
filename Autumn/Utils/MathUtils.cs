@@ -1,6 +1,9 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Autumn.Rendering.CtrH3D;
+using Autumn.Rendering.Storage;
 using Silk.NET.Maths;
+using SPICA.Formats.CtrH3D;
 using SPICA.Formats.CtrH3D.Model.Material;
 
 namespace Autumn.Utils;
@@ -267,5 +270,15 @@ internal static class MathUtils
             4 => size.ToString("0.##") + " TB",
             _ => throw new("Incorrect size unit")
         };
+    }
+
+    public static void BoundBox(this AxisAlignedBoundingBox aabb, H3DBoundingBox box)
+    {
+        aabb.Min.X = Math.Min(aabb.Min.X, -box.Size.X);
+        aabb.Max.X = Math.Max(aabb.Max.X, box.Size.X);
+        aabb.Min.Y = Math.Min(aabb.Min.Y, -box.Size.Y);
+        aabb.Max.Y = Math.Max(aabb.Max.Y, box.Size.Y);
+        aabb.Min.Z = Math.Min(aabb.Min.Z, -box.Size.Z);
+        aabb.Max.Z = Math.Max(aabb.Max.Z, box.Size.Z);
     }
 }

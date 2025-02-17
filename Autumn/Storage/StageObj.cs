@@ -79,4 +79,7 @@ internal class StageObj
 
         return clone;
     }
+
+    public bool IsArea() =>
+        Type == StageObjType.Area || Type == StageObjType.CameraArea || Type == StageObjType.AreaChild;
 }

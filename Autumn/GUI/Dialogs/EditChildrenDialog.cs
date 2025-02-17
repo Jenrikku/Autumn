@@ -1,8 +1,7 @@
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
-using Autumn.Rendering;
-using Autumn.Rendering.CtrH3D;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using ImGuiNET;
 
@@ -21,8 +20,8 @@ internal class EditChildrenDialog
     private List<StageObj> _newChildren = new();
     private StageObj? _parent;
     private List<StageObj> _oldChildren = new();
-    private IEnumerable<SceneObj> sceneObjs;
-    private string search = "";
+    private IEnumerable<ISceneObj> _sceneObjs;
+    private string _search = "";
 
     Vector2 dimensions = new(800, 450);
 
@@ -39,7 +38,7 @@ internal class EditChildrenDialog
             _newChildren = new(_parent.Children);
         }
 
-        sceneObjs = _window.CurrentScene!.EnumerateSceneObjs();
+        _sceneObjs = _window.CurrentScene!.EnumerateSceneObjs();
         _name = _parent.Name;
     }
 
@@ -80,7 +79,7 @@ internal class EditChildrenDialog
 
         dimensions = ImGui.GetWindowSize();
 
-        ImGui.InputText("SEARCHBOX", ref search, 100);
+        ImGui.InputText("SEARCHBOX", ref _search, 100);
         Vector2 tableDimensions = new(dimensions.X / 2 - 25, dimensions.Y - 96);
 
         if (ImGui.BeginChild("LEFT", tableDimensions))
@@ -108,11 +107,11 @@ internal class EditChildrenDialog
                 ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.40f);
                 ImGui.TableHeadersRow();
 
-                foreach (SceneObj obj in sceneObjs)
+                foreach (ISceneObj obj in _sceneObjs)
                 {
                     StageObj stageObj = obj.StageObj;
 
-                    if (search != "" && !stageObj.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+                    if (_search != "" && !stageObj.Name.Contains(_search, StringComparison.CurrentCultureIgnoreCase))
                         continue;
 
                     if (!(!_newChildren.Contains(stageObj) && _oldChildren.Contains(stageObj)))
@@ -149,7 +148,7 @@ internal class EditChildrenDialog
 
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                         {
-                            AxisAlignedBoundingBox aabb = obj.Actor.AABB * stageObj.Scale;
+                            AxisAlignedBoundingBox aabb = obj.AABB * stageObj.Scale;
                             _window.CurrentScene!.Camera.LookFrom(
                                 stageObj.Translation * 0.01f,
                                 aabb.GetDiagonal() * 0.01f

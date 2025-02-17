@@ -1,8 +1,7 @@
 using System.Numerics;
 using SceneGL;
-using Silk.NET.OpenGL;
 
-namespace Autumn.Rendering;
+namespace Autumn.Rendering.Storage;
 
 internal sealed class CommonSceneParameters
 {
@@ -15,12 +14,12 @@ internal sealed class CommonSceneParameters
         public Matrix4x4 Transform;
     }
 
-    public CommonSceneParameters(GL gl) =>
+    public CommonSceneParameters() =>
         ShaderParameters = ShaderParams.FromUniformBlockDataAndSamplers(
             "ubScene",
             new SceneData(),
             "ubSceneBuffer",
-            Array.Empty<SamplerBinding>(),
+            [],
             out _buffer
         );
 
@@ -49,12 +48,12 @@ internal sealed class CommonMaterialParameters
         public float HighlightAlpha;
     }
 
-    public CommonMaterialParameters(GL gl, Vector4 color, Vector3 highlightColor) =>
+    public CommonMaterialParameters(Vector4 color, Vector3 highlightColor) =>
         ShaderParameters = ShaderParams.FromUniformBlockDataAndSamplers(
             "ubMaterial",
             new MaterialData() { Color = color, HighlightColor = highlightColor },
             "ubMaterialBuffer",
-            Array.Empty<SamplerBinding>(),
+            [],
             out _buffer
         );
 

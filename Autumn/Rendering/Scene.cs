@@ -3,6 +3,8 @@ using Autumn.Background;
 using Autumn.Enums;
 using Autumn.FileSystems;
 using Autumn.History;
+using Autumn.Rendering.Area;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Silk.NET.OpenGL;
 
@@ -17,8 +19,8 @@ internal class Scene
 
     public ChangeHistory History { get; } = new();
 
-    private readonly List<SceneObj> _selectedObjects = new();
-    public IEnumerable<SceneObj> SelectedObjects => _selectedObjects;
+    private readonly List<ISceneObj> _selectedObjects = new();
+    public IEnumerable<ISceneObj> SelectedObjects => _selectedObjects;
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
 
@@ -27,10 +29,10 @@ internal class Scene
     /// </summary>
     public bool IsReady { get; set; } = false;
 
-    private readonly List<SceneObj> _sceneObjects = new();
+    private readonly List<ISceneObj> _sceneObjects = new();
 
     private uint _lastPickingId = 0;
-    private readonly Dictionary<uint, SceneObj> _pickableObjs = new();
+    private readonly Dictionary<uint, ISceneObj> _pickableObjs = new();
 
     public Scene(Stage stage, LayeredFSHandler fsHandler, GLTaskScheduler scheduler, ref string status)
     {
@@ -43,7 +45,7 @@ internal class Scene
     {
         ModelRenderer.UpdateMatrices(view, projection);
 
-        foreach (SceneObj obj in _sceneObjects)
+        foreach (ISceneObj obj in _sceneObjects)
             ModelRenderer.Draw(gl, obj);
     }
 
@@ -51,13 +53,13 @@ internal class Scene
 
     public bool IsObjectSelected(uint id)
     {
-        _pickableObjs.TryGetValue(id, out SceneObj? sceneObj);
+        _pickableObjs.TryGetValue(id, out ISceneObj? sceneObj);
         return sceneObj?.Selected ?? false;
     }
 
     public void SetObjectSelected(uint id, bool value)
     {
-        if (!_pickableObjs.TryGetValue(id, out SceneObj? sceneObj))
+        if (!_pickableObjs.TryGetValue(id, out ISceneObj? sceneObj))
             return;
 
         sceneObj.Selected = value;
@@ -70,26 +72,26 @@ internal class Scene
 
     public void UnselectAllObjects()
     {
-        foreach (SceneObj sceneObj in _selectedObjects)
+        foreach (ISceneObj sceneObj in _selectedObjects)
             sceneObj.Selected = false;
 
         _selectedObjects.Clear();
     }
 
-    public void SetSelectedObjects(IEnumerable<SceneObj> objs)
+    public void SetSelectedObjects(IEnumerable<ISceneObj> objs)
     {
         UnselectAllObjects();
 
-        foreach (SceneObj sceneObj in objs)
+        foreach (ISceneObj sceneObj in objs)
         {
             sceneObj.Selected = true;
             _selectedObjects.Add(sceneObj);
         }
     }
 
-    public IEnumerable<SceneObj> EnumerateSceneObjs()
+    public IEnumerable<ISceneObj> EnumerateSceneObjs()
     {
-        foreach (SceneObj sceneObj in _sceneObjects)
+        foreach (ISceneObj sceneObj in _sceneObjects)
             yield return sceneObj;
     }
 
@@ -146,7 +148,7 @@ internal class Scene
         return pickingId;
     }
 
-    public void RemoveObject(SceneObj sceneObj)
+    public void RemoveObject(ISceneObj sceneObj)
     {
         Stage.RemoveStageObj(sceneObj.StageObj);
         DestroySceneObject(sceneObj);
@@ -211,14 +213,12 @@ internal class Scene
         if (stageObjs is null)
             return;
 
-        int curObj = 0;
         foreach (StageObj stageObj in stageObjs)
         {
             status = $"Loading model for {stageObj.Name}";
 
             GenerateSceneObject(stageObj, fsHandler, scheduler);
             GenerateSceneObjects(stageObj.Children, fsHandler, scheduler, ref status);
-            ++curObj;
         }
 
         status = string.Empty;
@@ -226,6 +226,30 @@ internal class Scene
 
     private void GenerateSceneObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
+        // Areas:
+        if (stageObj.IsArea())
+        {
+            Vector4 color = AreaMaterial.GetAreaColor(stageObj.Name);
+            CommonMaterialParameters matParams = new(color, new());
+
+            BasicSceneObj areaSceneObj = new(stageObj, matParams, 20f, _lastPickingId);
+            _sceneObjects.Add(areaSceneObj);
+            _pickableObjs.Add(_lastPickingId++, areaSceneObj);
+            return;
+        }
+
+        // Rails:
+        if (stageObj.Type == StageObjType.Rail && stageObj is RailObj rail)
+        {
+            RailSceneObj railSceneObj = new(rail, ref _lastPickingId);
+
+            // TO-DO: Pickable rail and rail points.
+
+            _sceneObjects.Add(railSceneObj);
+            return;
+        }
+
+        // Actors:
         string actorName = stageObj.Name;
 
         if (
@@ -237,15 +261,15 @@ internal class Scene
 
         fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
         Actor actor = fsHandler.ReadActor(actorName, fallback, scheduler);
-        SceneObj sceneObj = new(stageObj, actor, _lastPickingId);
+        ActorSceneObj actorSceneObj = new(stageObj, actor, _lastPickingId);
 
-        _sceneObjects.Add(sceneObj);
-        _pickableObjs.Add(_lastPickingId++, sceneObj);
+        _sceneObjects.Add(actorSceneObj);
+        _pickableObjs.Add(_lastPickingId++, actorSceneObj);
     }
 
-    private void DestroySceneObject(SceneObj sceneObj)
+    private void DestroySceneObject(ISceneObj sceneObj)
     {
         _sceneObjects.Remove(sceneObj);
-        _pickableObjs.Remove(sceneObj.PickingId++);
+        _pickableObjs.Remove(sceneObj.PickingId);
     }
 }

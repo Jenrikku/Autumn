@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Autumn.Rendering.Storage;
 using SceneGL;
 using SceneGL.Materials;
 using Silk.NET.OpenGL;
@@ -168,12 +169,7 @@ internal static class DefaultCubeRenderer
         return builder.GetModel(gl);
     }
 
-    public static void Render(
-        GL gl,
-        CommonSceneParameters scene,
-        CommonMaterialParameters material,
-        uint pickingId
-    )
+    public static void Render(GL gl, CommonSceneParameters scene, CommonMaterialParameters material, uint pickingId)
     {
         if (!DefaultCubeMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
             return;

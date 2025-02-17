@@ -78,7 +78,7 @@ internal class StageFile
 
         if (stageObj.Type == StageObjType.Child || stageObj.Type == StageObjType.AreaChild)
         {
-            stageObj.Parent.Children.Remove(stageObj);
+            stageObj.Parent!.Children!.Remove(stageObj);
             stageObj.Parent = null;
             return;
         }

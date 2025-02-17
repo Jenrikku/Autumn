@@ -1,8 +1,7 @@
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
-using Autumn.Rendering;
-using Autumn.Rendering.CtrH3D;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
@@ -72,7 +71,7 @@ internal class ObjectWindow(MainWindowContext window)
             ImGui.TableHeadersRow();
             int listId = 0;
 
-            foreach (SceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
+            foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
                 StageObj stageObj = obj.StageObj;
                 if (
@@ -131,7 +130,7 @@ internal class ObjectWindow(MainWindowContext window)
 
                 if (selectedIndex == listId && !obj.Selected && lastKeyPressed)
                 {
-                    ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, obj, true);
+                    ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, obj.PickingId, true);
                     ImGui.SetScrollHereY();
                 }
 
@@ -146,14 +145,14 @@ internal class ObjectWindow(MainWindowContext window)
                     ChangeHandler.ToggleObjectSelection(
                         window,
                         window.CurrentScene.History,
-                        obj,
+                        obj.PickingId,
                         !window.Keyboard?.IsShiftPressed() ?? true
                     );
                     manualClick = true;
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                     {
                         AxisAlignedBoundingBox aabb =
-                            window.CurrentScene.SelectedObjects.First().Actor.AABB
+                            window.CurrentScene.SelectedObjects.First().AABB
                             * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
                         window.CurrentScene!.Camera.LookFrom(
                             window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,

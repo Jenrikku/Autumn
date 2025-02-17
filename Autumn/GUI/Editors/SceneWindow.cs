@@ -2,8 +2,8 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
-using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.Gizmo;
+using Autumn.Rendering.Storage;
 using Autumn.Utils;
 using ImGuiNET;
 using Silk.NET.Input;
@@ -23,8 +23,8 @@ internal class SceneWindow(MainWindowContext window)
 
     internal static class ActTransform
     {
-        public static Dictionary<SceneObj, Vector3> Relative = new();
-        public static Dictionary<SceneObj, Vector3> Originals = new();
+        public static Dictionary<ISceneObj, Vector3> Relative = new();
+        public static Dictionary<ISceneObj, Vector3> Originals = new();
         public static string FullTransformString = "";
     }
 
@@ -230,10 +230,10 @@ internal class SceneWindow(MainWindowContext window)
             //     camera.LookAt(camera.Eye, window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
             // }
 
-            if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0)
+            if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Any())
             {
                 AxisAlignedBoundingBox aabb =
-                    window.CurrentScene.SelectedObjects.First().Actor.AABB
+                    window.CurrentScene.SelectedObjects.First().AABB
                     * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
                 camera.LookFrom(
                     window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
@@ -365,7 +365,6 @@ internal class SceneWindow(MainWindowContext window)
                     window,
                     window.CurrentScene.History,
                     pixel,
-                    typeof(SceneObj),
                     !(window.Keyboard?.IsShiftPressed() ?? false)
                 );
             }
@@ -513,7 +512,7 @@ internal class SceneWindow(MainWindowContext window)
 
             _ndcMousePos3D *= dist / 8;
 
-            foreach (SceneObj scobj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
             {
                 Vector3 defPos = ActTransform.Originals[scobj] - (ActTransform.Relative[scobj] + _ndcMousePos3D); // default position
 
@@ -565,7 +564,7 @@ internal class SceneWindow(MainWindowContext window)
 
             _ndcMousePos3D *= dist / 8;
 
-            foreach (SceneObj scobj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
             {
                 ActTransform.Originals.Add(scobj, scobj.StageObj.Translation);
                 ActTransform.Relative[scobj] = scobj.StageObj.Translation - _ndcMousePos3D;
@@ -611,7 +610,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             isTranslationActive = false;
 
-            foreach (SceneObj scobj in window.CurrentScene!.SelectedObjects)
+            foreach (ISceneObj scobj in window.CurrentScene!.SelectedObjects)
             {
                 scobj.StageObj.Translation = ActTransform.Originals[scobj]; // Reset to what it was
                 scobj.UpdateTransform();
@@ -664,7 +663,7 @@ internal class SceneWindow(MainWindowContext window)
             if (axisLock == Vector3.One)
                 axisLock = Vector3.UnitY;
 
-            foreach (SceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
                 if (transformChangeString != string.Empty && transformChangeString != "-")
                 {
@@ -708,7 +707,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Start action
             isRotationActive = true;
 
-            foreach (SceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
                 ActTransform.Originals.Add(sobj, sobj.StageObj.Rotation);
                 ActTransform.Relative.Add(sobj, Vector3.UnitX * (float)rot);
@@ -754,7 +753,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             isRotationActive = false;
 
-            foreach (SceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
                 sobj.StageObj.Rotation = ActTransform.Originals[sobj];
                 sobj.UpdateTransform();
@@ -794,7 +793,7 @@ internal class SceneWindow(MainWindowContext window)
 
             _ndcMousePos3D *= dist / 2;
 
-            foreach (SceneObj sobj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
             {
                 sobj.StageObj.Scale = ActTransform.Originals[sobj];
                 float distA = Vector3.Distance(window.CurrentScene.Camera.Eye, ActTransform.Relative[sobj]);
@@ -845,7 +844,7 @@ internal class SceneWindow(MainWindowContext window)
 
             _ndcMousePos3D *= dist / 2;
 
-            foreach (SceneObj sobj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
             {
                 ActTransform.Originals.Add(sobj, sobj.StageObj.Scale);
                 ActTransform.Relative.Add(sobj, _ndcMousePos3D);
@@ -891,7 +890,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             isScaleActive = false;
 
-            foreach (SceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
                 sobj.StageObj.Scale = ActTransform.Originals[sobj];
                 sobj.UpdateTransform();

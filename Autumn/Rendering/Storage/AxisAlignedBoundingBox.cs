@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Autumn.Rendering.CtrH3D;
+namespace Autumn.Rendering.Storage;
 
 internal class AxisAlignedBoundingBox
 {
@@ -33,7 +33,7 @@ internal class AxisAlignedBoundingBox
 
     public static AxisAlignedBoundingBox operator *(AxisAlignedBoundingBox _aabb, Vector3 v)
     {
-        AxisAlignedBoundingBox rAABB = new AxisAlignedBoundingBox(_aabb.Max, _aabb.Min);
+        AxisAlignedBoundingBox rAABB = new(_aabb.Max, _aabb.Min);
         rAABB.Max.X *= v.X;
         rAABB.Min.X *= v.X;
         rAABB.Max.Y *= v.Y;

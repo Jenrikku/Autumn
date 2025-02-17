@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Autumn.Background;
 using Autumn.Enums;
 using Autumn.Storage;
+using Autumn.Utils;
 using Autumn.Wrappers;
 using BYAMLSharp;
 using NARCSharp;
@@ -271,6 +272,8 @@ internal partial class RomFSHandler
             {
                 foreach (H3DMesh mesh in meshLists[i])
                 {
+                    actor.ForceModelNotEmpty();
+
                     // Obtain the mesh's material by its index.
                     int matIdx = mesh.MaterialIndex;
                     H3DMaterial material = model.Materials[matIdx];
@@ -296,7 +299,7 @@ internal partial class RomFSHandler
                         for (int m = 0; m < mesh.MetaData.Count; m++)
                         {
                             if (mesh.MetaData[m].Name == "OBBox")
-                                actor.BoundBox((H3DBoundingBox)mesh.MetaData[m].Values[0]!);
+                                actor.AABB.BoundBox((H3DBoundingBox)mesh.MetaData[m].Values[0]!);
                         }
                     }
                 }
@@ -457,7 +460,7 @@ internal partial class RomFSHandler
                                         if (d[item].NodeType != BYAMLNodeType.Array)
                                             continue;
 
-                                        foreach (BYAMLNode bnode in d[item].GetValueAs<BYAMLNode[]>())
+                                        foreach (BYAMLNode bnode in d[item].GetValueAs<BYAMLNode[]>()!)
                                         {
                                             if (bnode.NodeType != BYAMLNodeType.Dictionary)
                                                 continue;
@@ -545,7 +548,10 @@ internal partial class RomFSHandler
                                 new()
                                 {
                                     StageType = (SystemDataTable.StageTypes)
-                                        Enum.Parse(typeof(SystemDataTable.StageTypes), tp.GetValueAs<string>()),
+                                        Enum.Parse(
+                                            typeof(SystemDataTable.StageTypes),
+                                            tp?.GetValueAs<string>() ?? string.Empty
+                                        ),
                                     Scenario = sc?.GetValueAs<int>() ?? -1,
                                     Miniature = min?.GetValueAs<string>() ?? "",
                                     Stage = st?.GetValueAs<string>() ?? "",
@@ -1242,7 +1248,7 @@ internal partial class RomFSHandler
             // try to get point positions
             if (rail.PointType == RailPointType.Linear)
             {
-                var lpt = pt as RailPointLinear;
+                var lpt = (RailPointLinear)pt;
                 for (int p = 0; p < 3; p++)
                 {
                     ptd.Add("pnt" + p + "_x", new(BYAMLNodeType.Float, lpt.Translation.X));
@@ -1252,7 +1258,7 @@ internal partial class RomFSHandler
             }
             else
             {
-                var bpt = pt as RailPointBezier;
+                var bpt = (RailPointBezier)pt;
                 ptd.Add("pnt0_x", new(BYAMLNodeType.Float, bpt.Point0Trans.X));
                 ptd.Add("pnt0_y", new(BYAMLNodeType.Float, bpt.Point0Trans.Y));
                 ptd.Add("pnt0_z", new(BYAMLNodeType.Float, bpt.Point0Trans.Z));

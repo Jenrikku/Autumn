@@ -1,6 +1,7 @@
 using Autumn.Enums;
 using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.CtrH3D.Animation;
+using Autumn.Rendering.Storage;
 using SceneGL.GLHelpers;
 using SceneGL.Materials.Common;
 using Silk.NET.OpenGL;
@@ -18,17 +19,7 @@ internal class Actor
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
 
-    public AxisAlignedBoundingBox AABB = new AxisAlignedBoundingBox();
-
-    public void BoundBox(H3DBoundingBox Box)
-    {
-        AABB.Min.X = Math.Min(AABB.Min.X, -Box.Size.X);
-        AABB.Max.X = Math.Max(AABB.Max.X, Box.Size.X);
-        AABB.Min.Y = Math.Min(AABB.Min.Y, -Box.Size.Y);
-        AABB.Max.Y = Math.Max(AABB.Max.Y, Box.Size.Y);
-        AABB.Min.Z = Math.Min(AABB.Min.Z, -Box.Size.Z);
-        AABB.Max.Z = Math.Max(AABB.Max.Z, Box.Size.Z);
-    }
+    public AxisAlignedBoundingBox AABB { get; set; } = new();
 
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.
@@ -172,4 +163,6 @@ internal class Actor
         foreach (var tuple in _meshes[(int)layer])
             yield return tuple;
     }
+
+    public void ForceModelNotEmpty() => IsEmptyModel = false;
 }

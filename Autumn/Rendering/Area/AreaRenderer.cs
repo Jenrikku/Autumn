@@ -1,4 +1,5 @@
 ﻿using Autumn.Rendering.DefaultCube;
+using Autumn.Rendering.Storage;
 using SceneGL;
 using Silk.NET.OpenGL;
 
@@ -10,12 +11,7 @@ internal static class AreaRenderer
 
     public static void Initialize(GL gl) => s_model = DefaultCubeRenderer.GenerateCubeModel(gl, 10.15f);
 
-    public static void Render(
-        GL gl,
-        CommonSceneParameters scene,
-        CommonMaterialParameters material,
-        uint pickingId
-    )
+    public static void Render(GL gl, CommonSceneParameters scene, CommonMaterialParameters material, uint pickingId)
     {
         if (!AreaMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
             return;

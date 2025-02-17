@@ -2,8 +2,8 @@ using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI;
 using Autumn.GUI.Windows;
-using Autumn.Rendering;
-using Autumn.Rendering.CtrH3D;
+using Autumn.Rendering.Area;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
@@ -35,7 +35,7 @@ internal class PropertiesWindow(MainWindowContext window)
             return;
         }
 
-        IEnumerable<SceneObj> selectedObjects = window.CurrentScene.SelectedObjects;
+        IEnumerable<ISceneObj> selectedObjects = window.CurrentScene.SelectedObjects;
         int selectedCount = selectedObjects.Count();
 
         if (
@@ -60,7 +60,7 @@ internal class PropertiesWindow(MainWindowContext window)
         if (selectedCount == 1)
         {
             // Only one object selected:
-            SceneObj sceneObj = selectedObjects.First();
+            ISceneObj sceneObj = selectedObjects.First();
             StageObj stageObj = sceneObj.StageObj;
             string oldName = stageObj.Name;
             ImGui.GetIO().ConfigDragClickToInputText = true;
@@ -144,12 +144,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.EndChild();
             }
 
-            if (
-                stageObj.Type == StageObjType.Regular
-                || stageObj.Type == StageObjType.Area
-                || stageObj.Type == StageObjType.Child
-                || stageObj.Type == StageObjType.AreaChild
-            )
+            if (stageObj.Type == StageObjType.Regular || stageObj.IsArea())
             {
                 if (ImGui.CollapsingHeader("Object Arguments", ImGuiTreeNodeFlags.DefaultOpen))
                 {
@@ -198,11 +193,9 @@ internal class PropertiesWindow(MainWindowContext window)
 
             if (
                 stageObj.Type == StageObjType.Goal
-                || stageObj.Type == StageObjType.Area
-                || stageObj.Type == StageObjType.CameraArea
                 || stageObj.Type == StageObjType.Regular
                 || stageObj.Type == StageObjType.Child
-                || stageObj.Type == StageObjType.AreaChild
+                || stageObj.IsArea()
             )
             {
                 if (ImGui.CollapsingHeader("Object Switches", ImGuiTreeNodeFlags.DefaultOpen))
@@ -239,7 +232,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                 if (ImGui.IsItemClicked())
                                 {
-                                    foreach (SceneObj s in window.CurrentScene.EnumerateSceneObjs())
+                                    foreach (ISceneObj s in window.CurrentScene.EnumerateSceneObjs())
                                     {
                                         if (s.StageObj == stageObj.Parent)
                                         {
@@ -247,10 +240,11 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 window,
                                                 window.CurrentScene.History,
                                                 s.PickingId,
-                                                typeof(SceneObj),
                                                 !(window.Keyboard?.IsCtrlPressed() ?? false)
                                             );
-                                            AxisAlignedBoundingBox aabb = s.Actor.AABB * s.StageObj.Scale;
+
+                                            AxisAlignedBoundingBox aabb = s.AABB * s.StageObj.Scale;
+
                                             window.CurrentScene!.Camera.LookFrom(
                                                 s.StageObj.Translation * 0.01f,
                                                 aabb.GetDiagonal() * 0.01f
@@ -310,7 +304,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     if (autoResize)
                                         ImGui.SetScrollY(0);
 
-                                    foreach (SceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
+                                    foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
                                     {
                                         StageObj sObj = obj.StageObj;
 
@@ -330,10 +324,11 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ChangeHandler.ToggleObjectSelection(
                                                 window,
                                                 window.CurrentScene.History,
-                                                obj,
+                                                obj.PickingId,
                                                 !window.Keyboard?.IsCtrlPressed() ?? true
                                             );
-                                            AxisAlignedBoundingBox aabb = obj.Actor.AABB * sObj.Scale;
+
+                                            AxisAlignedBoundingBox aabb = obj.AABB * sObj.Scale;
                                             window.CurrentScene!.Camera.LookFrom(
                                                 sObj.Translation * 0.01f,
                                                 aabb.GetDiagonal() * 0.01f
@@ -443,13 +438,22 @@ internal class PropertiesWindow(MainWindowContext window)
                         stageObj.Properties.Add("ShapeModelNo", 0);
                     }
                 }
+
                 ImGui.PopItemWidth();
                 ImGui.EndChild();
             }
 
             if (oldName != stageObj.Name)
             {
-                sceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                if (sceneObj is ActorSceneObj actorSceneObj)
+                {
+                    actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                }
+
+                if (sceneObj is BasicSceneObj basicSceneObj && sceneObj.StageObj.IsArea())
+                {
+                    basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(stageObj.Name);
+                }
             }
 
             ImGui.PopStyleColor();
@@ -463,7 +467,7 @@ internal class PropertiesWindow(MainWindowContext window)
             InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
             InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
 
-            foreach (SceneObj sceneObj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj sceneObj in window.CurrentScene.SelectedObjects)
             {
                 if (multiselector.ViewId != mView)
                     sceneObj.StageObj.ViewId = multiselector.ViewId;
@@ -481,7 +485,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
     #region Undoable Actions
 
-    private bool DragFloat3(string str, ref Vector3 rf, ref SceneObj sto)
+    private bool DragFloat3(string str, ref Vector3 rf, ref ISceneObj sto)
     {
         Vector3 v = rf;
 
@@ -494,7 +498,7 @@ internal class PropertiesWindow(MainWindowContext window)
         return false;
     }
 
-    private bool LinkedFloat3(string str, ref Vector3 rf, float v_speed, ref SceneObj sto, ImGuiStylePtr style)
+    private bool LinkedFloat3(string str, ref Vector3 rf, float v_speed, ref ISceneObj sto, ImGuiStylePtr style)
     {
         float x = rf.X;
         float y = rf.Y;
