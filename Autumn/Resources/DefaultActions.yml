@@ -38,3 +38,8 @@ HideObj:
   Ctrl: false
   Key: H
   Shift: false
+AddStage:
+  Alt: true
+  Ctrl: false
+  Key: A
+  Shift: false

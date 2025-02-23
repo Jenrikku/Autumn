@@ -1,9 +1,12 @@
 using Autumn.Enums;
 using Autumn.GUI;
 using Autumn.GUI.Windows;
+using Autumn.History;
 using Autumn.Rendering;
 using Autumn.Rendering.Storage;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
+using Silk.NET.SDL;
 using TinyFileDialogsSharp;
 
 namespace Autumn.ActionSystem;
@@ -34,6 +37,7 @@ internal class ActionHandler
                 CommandID.HideObj => HideObj(),
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
+                CommandID.GotoParent => GotoParent(),
                 _ => null
             };
 
@@ -45,6 +49,7 @@ internal class ActionHandler
             _actions.Add(id, (command, shortcut));
         }
     }
+
 
     public void ExecuteShortcuts(WindowContext? focusedWindow)
     {
@@ -220,7 +225,7 @@ internal class ActionHandler
                     {
                         Scene scene = mainContext.CurrentScene!;
                         Stage stage = mainContext.CurrentScene!.Stage!;
-                        window.ContextHandler.FSHandler.WriteStage(stage);
+                        window.ContextHandler.FSHandler.WriteStage(stage, window.ContextHandler.Settings.UseClassNames);
                         scene.IsSaved = true;
                         scene.SaveUndoCount = mainContext.CurrentScene.History.UndoSteps;
                     }
@@ -277,7 +282,12 @@ internal class ActionHandler
 
                 foreach (ISceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
-                    newPickIds.Add(ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy));
+                    if (mainContext.CurrentScene.SelectedObjects.Any(x => x.StageObj.Children != null && x.StageObj.Children.Contains(copy.StageObj)))
+                        continue;
+
+                    uint newestPickId = ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy);
+                    newPickIds.Add(newestPickId);
+                    CheckPickChildren(copy.StageObj, ref newPickIds, ref newestPickId);
                 }
 
                 mainContext.CurrentScene.UnselectAllObjects();
@@ -296,6 +306,20 @@ internal class ActionHandler
                 && !mainContext.IsTransformActive
         );
 
+    private static void CheckPickChildren(StageObj StageObj, ref List<uint> newPickIds, ref uint newestPickId)
+    {
+        if (StageObj.Children is not null && StageObj.Children.Count > 0)
+        {
+            for (int i = 0; i < StageObj.Children.Count; i++)
+            {
+                newestPickId -= 1;
+                newPickIds.Add(newestPickId);
+                CheckPickChildren(StageObj.Children[i], ref newPickIds, ref newestPickId);
+            }
+            
+        }
+    }
+
     private static Command HideObj() =>
         new(
             displayName: "Hide selected object(s)",
@@ -304,16 +328,29 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainContext)
                     return;
 
-                ChangeHandler.ChangeFieldValueMultiple<bool>(
-                    mainContext.CurrentScene!.History,
-                    mainContext.CurrentScene!.SelectedObjects,
-                    "IsVisible"
-                );
+                ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects, "IsVisible");
             },
             enabled: window =>
-                window is MainWindowContext mainContext
-                && mainContext.CurrentScene is not null
-                && mainContext.CurrentScene.SelectedObjects.Any()
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+        );
+
+    private Command GotoParent() =>
+        new(
+            displayName: "Select Parent // First Child",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (mainContext.CurrentScene!.SelectedObjects.First().StageObj.Parent != null)
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateSceneObjs().First(x => x.StageObj == mainContext.CurrentScene.SelectedObjects.First().StageObj.Parent).PickingId, true);
+                else
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateSceneObjs().First(x => x.StageObj.Parent == mainContext.CurrentScene.SelectedObjects.First().StageObj).PickingId, true);
+
+                AxisAlignedBoundingBox aabb = mainContext.CurrentScene.SelectedObjects.First().AABB * mainContext.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                mainContext.CurrentScene!.Camera.LookFrom(mainContext.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Count() == 1 && (mainContext.CurrentScene.SelectedObjects.First().StageObj.Parent != null || (mainContext.CurrentScene.SelectedObjects.First().StageObj.Children != null && mainContext.CurrentScene.SelectedObjects.First().StageObj.Children.Any()))
         );
 
     private static Command Undo() =>

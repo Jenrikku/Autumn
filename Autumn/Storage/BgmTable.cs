@@ -15,7 +15,7 @@ internal class BgmTable
         OutSide,
 
         /// <summary>
-        /// Used on Bowser fights.
+        /// Used on Bowser and BoomBoom fights.
         /// </summary>
         Boss,
 
@@ -25,27 +25,38 @@ internal class BgmTable
         AfterBattle,
 
         /// <summary>
-        /// Used on BoomBoom and PomPom fights.
+        /// Used on PomPom fights.
         /// </summary>
         PunPun
     }
 
+    public const string DEFAULT_TRACK = "STM_BGM_FIELD_WALK";
+
     /// <summary>
-    /// Defines the song used in a specific stage (NameScenario -> FirstStage_1) by default. <br/>
+    /// Defines the song used in a specific stage (NameScenario -> FirstStage1) by default. <br/>
     /// SoundData/BgmTable.szs/StageDefaultBgmList.byml
     /// </summary>
     public class StageDefaultBgm
     {
         public int Scenario = 1;
         public string StageName = "FirstStage";
-        public string BgmLabel = "STM_BGM_FIELD_WALK";
+        public string BgmLabel = DEFAULT_TRACK;
 
-        // public StageDefaultBgm(string name, byte sc, string lbl)
-        // {
-        //     Scenario = sc;
-        //     StageName = name;
-        //     BgmLabel = lbl;
-        // }
+        public StageDefaultBgm() { }
+
+        public StageDefaultBgm(string name, byte sc, string lbl)
+        {
+            Scenario = sc;
+            StageName = name;
+            BgmLabel = lbl;
+        }
+
+        public StageDefaultBgm(StageDefaultBgm bgm)
+        {
+            Scenario = bgm.Scenario;
+            StageName = bgm.StageName;
+            BgmLabel = bgm.BgmLabel;
+        }
     }
 
     /// <summary>
@@ -53,7 +64,8 @@ internal class BgmTable
     /// BgmChangeArea Arg0. <br/>
     /// SoundData/BgmTable.szs/StageBgmList.byml -> KindNumList
     /// </summary>
-    public List<string> BgmTypes = new();
+    //public List<string> BgmTypes = new();
+    public Dictionary<int, string> BgmTypes = new();
 
     /// <summary>
     /// Offers more granularity over the stage's music, using songs determined by the <see cref="BgmTypes"/><br/>
@@ -81,10 +93,13 @@ internal class BgmTable
         /// <summary>
         /// The track name within the game files.
         /// </summary>
-        public string Label = "STM_BGM_FIELD_WALK";
+        public string Label = DEFAULT_TRACK;
     }
 
     public List<StageDefaultBgm> StageDefaultBgmList = new();
     public List<StageBgm> StageBgmList = new();
-    public string[] BgmFiles = [];
+    public string[] BgmArray => BgmFiles.ToArray();
+
+    public List<string> BgmFiles = new();
+    public Dictionary<string, byte[]> AdditionalFiles = new();
 }

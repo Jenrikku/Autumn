@@ -1,11 +1,19 @@
-﻿using System.Numerics;
+using System.Diagnostics;
+using System.Numerics;
 using Autumn.Enums;
+using Autumn.FileSystems;
 using Autumn.Rendering.Area;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.DefaultCube;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using SceneGL;
+using SceneGL.GLHelpers;
+using SceneGL.Materials.Common;
 using Silk.NET.OpenGL;
+using SPICA.Formats.CtrGfx;
+using SPICA.Formats.CtrH3D;
+using SPICA.Formats.CtrH3D.LUT;
 
 namespace Autumn.Rendering;
 
@@ -19,16 +27,59 @@ internal static class ModelRenderer
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
 
+    private static H3DRenderingMaterial.Light _defaultLight = new()
+    {
+        Ambient = new(0.1f, 0.1f, 0.1f, 1),
+        Diffuse = new(0.4f, 0.4f, 0.4f, 1),
+        Specular0 = new(0.8f, 0.8f, 0.8f, 1),
+        Specular1 = new(0.4f, 0.4f, 0.4f, 1),
+        Position = new(1, 1, 0.7f),
+        Direction = new(0, 0, 0),
+        Directional = 1,
+        TwoSidedDiffuse = 0,
+        DisableConst5 = 1
+    };
+
+    public static Dictionary<string, TextureSampler> GeneralLUTs = new();
+
     public static bool VisibleAreas = false;
     public static bool VisibleCameraAreas = true;
+    public static bool VisibleGrid = true;
 
-    public static void Initialize(GL gl)
+    public static void Initialize(GL gl, LayeredFSHandler fsHandler)
     {
         DefaultCubeRenderer.Initialize(gl);
         AreaRenderer.Initialize(gl);
 
         s_commonSceneParams = new();
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
+
+        var narc = fsHandler.ReadShaders();
+        if (narc is not null)
+        {
+            bool found = narc.TryGetFile("Shader.bcsdr", out byte[] cgfx);
+
+            if (!found)
+                return;
+
+            H3D h3D;
+
+            try
+            {
+                using MemoryStream stream = new(cgfx);
+                h3D = Gfx.OpenAsH3D(stream);
+            }
+            catch
+            {
+                Debug.Write($"The cgfx could not be read", "Error");
+                return;
+            }
+            foreach (H3DLUT lut in h3D.LUTs)
+                foreach (H3DLUTSampler sampler in lut.Samplers)
+                {
+                    AddLUTTexture(gl, lut.Name, sampler);
+                }
+        }
     }
 
     public static void UpdateMatrices(in Matrix4x4 view, in Matrix4x4 projection)
@@ -44,7 +95,7 @@ internal static class ModelRenderer
         s_commonSceneParams.ViewProjection = view * projection;
     }
 
-    public static void Draw(GL gl, ISceneObj sceneObj)
+    public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
     {
         if (s_commonSceneParams is null || s_defaultCubeMaterialParams is null)
             throw new InvalidOperationException(
@@ -96,7 +147,6 @@ internal static class ModelRenderer
             {
                 s_commonSceneParams.Transform = sceneObj.Transform;
                 s_defaultCubeMaterialParams.Selected = sceneObj.Selected;
-                actorSceneObj.AABB = new AxisAlignedBoundingBox(2f);
 
                 gl.CullFace(TriangleFace.Back);
 
@@ -108,10 +158,11 @@ internal static class ModelRenderer
             foreach (var (mesh, material) in actor.EnumerateMeshes(layer))
             {
                 material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
-
                 material.SetMatrices(s_projectionMatrix, actorSceneObj.Transform, s_viewMatrix);
+                material.SetLight0(previewLight?.GetAsLight() ?? _defaultLight);
 
-                material.TryUse(gl, out ProgramUniformScope scope);
+                if (!material.TryUse(gl, out ProgramUniformScope scope))
+                    continue;
 
                 using (scope)
                 {
@@ -174,5 +225,49 @@ internal static class ModelRenderer
                 }
             }
         }
+    }
+
+    public static void AddLUTTexture(GL gl, string tableName, H3DLUTSampler sampler)
+    {
+        string name = tableName + sampler.Name;
+
+        float[] table = new float[512];
+
+        if ((sampler.Flags & H3DLUTFlags.IsAbsolute) != 0)
+        {
+            for (int i = 0; i < 256; i++)
+            {
+                table[i + 256] = sampler.Table[i];
+                table[i + 0] = sampler.Table[0];
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 256; i += 2)
+            {
+                int PosIdx = i >> 1;
+                int NegIdx = PosIdx + 128;
+
+                table[i + 256] = sampler.Table[PosIdx];
+                table[i + 257] = sampler.Table[PosIdx];
+                table[i + 0] = sampler.Table[NegIdx];
+                table[i + 1] = sampler.Table[NegIdx];
+            }
+        }
+
+        uint glSampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+
+        uint glTexture = TextureHelper.CreateTexture2D<float>(
+            gl,
+            SceneGL.PixelFormat.R32_Float,
+            (uint)table.Length,
+            1,
+            table,
+            false
+        );
+
+        TextureSampler textureSampler = new(glSampler, glTexture);
+
+        GeneralLUTs.Add(name, textureSampler);
     }
 }

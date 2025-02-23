@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Autumn.Context;
 using ImGuiNET;
 using Silk.NET.Core;
@@ -184,32 +185,32 @@ internal abstract class WindowContext
     {
         var io = ImGui.GetIO();
 
-        const float sizeScalar = 1.5f; // Render a higher quality font texture for when we want to size up the font
-
-        FontPointers.Add(
-            io.Fonts.AddFontFromFileTTF(
+        const float sizeScalar = 2f; // Render a higher quality font texture for when we want to size up the font
+        FontPointers.Add(io.Fonts.AddFontFromFileTTF(
                 Path.Join("Resources", "NotoSansJP-Regular.ttf"),
                 size_pixels: 18 * _scalingFactor * sizeScalar,
-                font_cfg: new ImFontConfigPtr(nint.Zero),
+                null,
                 io.Fonts.GetGlyphRangesJapanese()
             )
         );
 
         FontPointers[0].Scale = 1 / sizeScalar;
 
-        char[] ch = [(char)0xe005, (char)0xf8ff, (char)0];
-        fixed (char* glypths = &ch[0])
-        {
-            FontPointers.Add(
-                io.Fonts.AddFontFromFileTTF(
-                    Path.Join("Resources", "fa-solid-900.ttf"),
-                    size_pixels: 18 * _scalingFactor * sizeScalar,
-                    font_cfg: new ImFontConfigPtr(IntPtr.Zero),
-                    (nint)glypths
-                )
-            );
+        unsafe
+        {                
+            ImFontConfig* cfg = ImGuiNative.ImFontConfig_ImFontConfig();
+            cfg->MergeMode = 1;
+            char[] ch = [(char)0xe005, (char)0xf8ff, (char)0];
+            fixed (char* glypths = &ch[0])
+            {
+                FontPointers.Add(io.Fonts.AddFontFromFileTTF(
+                        Path.Join("Resources", "fa-solid-900.ttf"),
+                        size_pixels: 18 * _scalingFactor * sizeScalar,
+                        font_cfg: cfg,
+                        (nint)glypths
+                        ));
+            }
+            FontPointers[1].Scale = 1 / sizeScalar;
         }
-
-        FontPointers[1].Scale = 1 / sizeScalar;
     }
 }

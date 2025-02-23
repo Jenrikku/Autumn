@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using Autumn.Enums;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Math3D;
 using SPICA.PICA.Commands;
@@ -22,6 +23,7 @@ internal class FragmentShaderGenerator
     public const string Constant3Uniform = "u_Constant3Color";
     public const string Constant4Uniform = "u_Constant4Color";
     public const string Constant5Uniform = "u_Constant5Color";
+    public const string Constant5Variable = "v_Constant5Color";
     public const string AlphaRefUniform = "u_AlphaReference";
     public const string SelectionUniform = "u_SelectionColor";
     public const string DebugModeUniform = "u_DebugMode";
@@ -47,6 +49,7 @@ internal class FragmentShaderGenerator
 
             struct Light_t {
                 vec3 Position;
+                int DisableConst5;
                 vec3 Direction;
                 vec4 Ambient;
                 vec4 Diffuse;
@@ -60,6 +63,7 @@ internal class FragmentShaderGenerator
                 int DistAttEnb;
                 int TwoSidedDiff;
                 int Directional;
+                vec4 ConstantColor5;
             };
 
             uniform sampler2D Textures[3];
@@ -110,6 +114,7 @@ internal class FragmentShaderGenerator
         SB.AppendLine($"    vec4 {CombBufferUniform};");
         SB.AppendLine($"    float {AlphaRefUniform};");
         SB.AppendLine($"    vec4 {SelectionUniform};");
+        SB.AppendLine($"    vec3 CameraView;");
         SB.AppendLine("};");
         SB.AppendLine();
         SB.AppendLine($"uniform int {DebugModeUniform};");
@@ -142,6 +147,7 @@ internal class FragmentShaderGenerator
         SB.AppendLine($"    vec4 CombBuffer = {CombBufferUniform};");
         SB.AppendLine($"    vec4 FragPriColor = vec4(0, 0, 0, 1);");
         SB.AppendLine("    vec4 FragSecColor = vec4(0, 0, 0, 1);");
+        SB.AppendLine($"    vec4 {Constant5Variable} = {Constant5Uniform};");
 
         int stageId = 0;
         foreach (PICATexEnvStage Stage in Params.TexEnvStages)
@@ -168,7 +174,7 @@ internal class FragmentShaderGenerator
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Constant2 => Constant2Uniform,
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Constant3 => Constant3Uniform,
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Constant4 => Constant4Uniform,
-                SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Constant5 => Constant5Uniform,
+                SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Constant5 => Constant5Variable,
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Diffuse => DiffuseUniform,
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Ambient => AmbientUniform,
                 SPICA.Formats.CtrGfx.Model.Material.GfxTexEnvConstant.Specular0 => Specular0Uniform,
@@ -398,6 +404,11 @@ internal class FragmentShaderGenerator
 
         SB.AppendLine($"Output.rgb += {SelectionUniform}.rgb * {SelectionUniform}.a;");
 
+        if (Params.RenderLayer == (int)H3DMeshLayer.Opaque)
+        {
+            SB.AppendLine("Output.a = 1;");
+        }
+        
         SB.AppendLine("}");
 
         return SB.ToString();
@@ -485,16 +496,30 @@ internal class FragmentShaderGenerator
         SB.AppendLine();
         SB.AppendLine("\tfor (int i = 0; i < LightsCount; i++) {");
 
+        // Prevents CameraView from being the exact same as any of the axis, thus making it impossible for flickering due to bad angles to happen.
+        SB.AppendLine($"\t\tfloat Roundedx = (abs(CameraView.x) == 1 || CameraView.x == 0) ? CameraView.x+0.001 : CameraView.x;");
+        SB.AppendLine($"\t\tfloat Roundedy = (abs(CameraView.y) == 1 || CameraView.y == 0) ? CameraView.y+0.001 : CameraView.y;");
+        SB.AppendLine($"\t\tfloat Roundedz = (abs(CameraView.z) == 1 || CameraView.z == 0) ? CameraView.z+0.001 : CameraView.z;");
+        SB.AppendLine($"\t\tvec3 Rounded = vec3(Roundedx, Roundedy, Roundedz);");
+
+        // Same but for Lights[i].Position.
+        SB.AppendLine($"\t\tvec3 RPos = Lights[i].Position;");
+        SB.AppendLine("\t\tif (Lights[i].Directional != 0) {");
+
+        SB.AppendLine($"\t\t\tRPos.x = (abs(RPos.x) == 1 || RPos.x == 0) ? RPos.x+0.001 : RPos.x;");
+        SB.AppendLine($"\t\t\tRPos.y = (abs(RPos.y) == 1 || RPos.y == 0) ? RPos.y+0.001 : RPos.y;");
+        SB.AppendLine($"\t\t\tRPos.z = (abs(RPos.z) == 1 || RPos.z == 0) ? RPos.z+0.001 : RPos.z;");
+        SB.AppendLine("\t\t}");
         SB.AppendLine(
             "\t\tvec3 Light = (Lights[i].Directional != 0)"
-                + " ? normalize(Lights[i].Position)"
-                + $" : normalize(Lights[i].Position + {View}.xyz);"
+                + " ? normalize(RPos)"
+                + $" : normalize(RPos + Rounded);"
         );
 
-        SB.AppendLine($"\t\tvec3 Half = normalize(normalize({View}.xyz) + Light);");
+        SB.AppendLine($"\t\tvec3 Half = normalize(normalize(Rounded) + Light);");
         SB.AppendLine("\t\tfloat CosNormalHalf = dot(Normal, Half);");
-        SB.AppendLine($"\t\tfloat CosViewHalf = dot(normalize({View}.xyz), Half);");
-        SB.AppendLine($"\t\tfloat CosNormalView = dot(Normal, normalize({View}.xyz));");
+        SB.AppendLine($"\t\tfloat CosViewHalf = dot(normalize(Rounded), Half);");
+        SB.AppendLine($"\t\tfloat CosNormalView = dot(Normal, normalize(Rounded));");
         SB.AppendLine("\t\tfloat CosLightNormal = dot(Light, Normal);");
         SB.AppendLine("\t\tfloat CosLightSpot = dot(Light, Lights[i].Direction);");
         SB.AppendLine($"\t\tfloat CosPhi = dot({HalfProj}, Tangent);");
@@ -536,7 +561,7 @@ internal class FragmentShaderGenerator
 
         string DistAttIdx;
 
-        DistAttIdx = $"length(-{View}.xyz - Lights[i].Position) * Lights[i].AttScale";
+        DistAttIdx = $"length(-{View}.xyz - RPos) * Lights[i].AttScale";
         DistAttIdx = $"clamp({DistAttIdx} + Lights[i].AttBias, 0, 1)";
 
         SB.AppendLine($"\t\t\tDistAtt = SampleLUT(7 + i * 2, {DistAttIdx}, 1);");
@@ -615,6 +640,9 @@ internal class FragmentShaderGenerator
         {
             SB.AppendLine($"\t\tDebugFresnel = vec4({Fresnel});");
         }
+        
+        //Only done if a light has ConstantColor5 active 
+        SB.AppendLine($"\t\t{Constant5Variable} = {Constant5Variable} * Lights[i].DisableConst5 + Lights[i].ConstantColor5 * (1 - Lights[i].DisableConst5);");
 
         //Lights loop end
         SB.AppendLine("\t}");

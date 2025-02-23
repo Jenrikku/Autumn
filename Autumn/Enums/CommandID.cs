@@ -14,4 +14,5 @@ internal enum CommandID
     DuplicateObj,
     RemoveObj,
     HideObj,
+    GotoParent,
 }

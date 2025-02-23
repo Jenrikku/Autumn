@@ -105,7 +105,7 @@ internal static class GizmoDrawer
     private static readonly Vector2[] s_ellipsePoints = new Vector2[ELLIPSE_NUM_SEGMENTS + 1];
     private static readonly Vector3[] s_transformMatVectors = new Vector3[4];
 
-    private static uint[] s_axisColors = new uint[] { 0xFF_44_44_FF, 0xFF_FF_88_44, 0xFF_44_FF_44 };
+    private static uint[] s_axisColors = new uint[] { 0xFF_44_44_FF, 0xFF_44_FF_44, 0xFF_FF_88_44 };
     private static IntPtr s_orientationCubeTexture;
 
     public static uint AlphaBlend(uint colA, uint colB)

@@ -68,6 +68,41 @@ internal class StageFile
         list.Add(stageObj);
     }
 
+    public void SetChild(StageObj child, StageObj parent)
+    {
+        if (parent.Children == null) parent.Children = new();
+        if (child.Parent != null) child.Parent.Children.Remove(child);
+        
+        child.Parent = parent;
+        parent.Children.Add(child);
+        if (child.Type == StageObjType.Child || child.Type == StageObjType.Regular)
+        {
+            child.Type = StageObjType.Child;
+            if (_objInfo.Contains(child)) _objInfo.Remove(child);
+        }
+        else if (child.Type == StageObjType.AreaChild || child.Type == StageObjType.Area)
+        {
+            child.Type = StageObjType.AreaChild;
+            if (_areaObjInfo.Contains(child)) _areaObjInfo.Remove(child);
+        }
+    }
+    public void UnlinkChild(StageObj child)
+    {
+        if (child.Parent != null)
+            child.Parent.Children.Remove(child);
+        child.Parent = null;
+        if (child.Type == StageObjType.Child)
+        {
+            child.Type = StageObjType.Regular;
+            _objInfo.Add(child);
+        }
+        else
+        {
+            child.Type = StageObjType.Area;
+            _areaObjInfo.Add(child);
+        }
+    }
+
     public void RemoveStageObj(StageObj stageObj)
     {
         if (stageObj is RailObj railObj)
@@ -80,6 +115,14 @@ internal class StageFile
         {
             stageObj.Parent!.Children!.Remove(stageObj);
             stageObj.Parent = null;
+            if (stageObj.Children != null && stageObj.Children.Count > 0)
+            {
+                foreach (StageObj child in stageObj.Children)
+                {
+                    child.Parent = null;
+                    UnlinkChild(child);
+                }
+            }
             return;
         }
 
@@ -94,6 +137,15 @@ internal class StageFile
             StageObjType.DemoScene => _demoSceneObjInfo,
             _ => throw new NotImplementedException("Incorrect object type read.")
         };
+
+        if (stageObj.Children != null && stageObj.Children.Count > 0)
+        {
+            foreach (StageObj child in stageObj.Children)
+            {
+                child.Parent = null;
+                UnlinkChild(child);
+            }
+        }
 
         list.Remove(stageObj);
     }
@@ -136,16 +188,6 @@ internal class StageFile
 
     public bool IsEmpty()
     {
-        return !(
-            _railInfo.Any()
-            || _additionalFiles.Any()
-            || _objInfo.Any()
-            || _areaObjInfo.Any()
-            || _cameraAreaInfo.Any()
-            || _demoSceneObjInfo.Any()
-            || _goalObjInfo.Any()
-            || _startEventObjInfo.Any()
-            || _startInfo.Any()
-        );
+        return !(_railInfo.Any() || _additionalFiles.Any() || _objInfo.Any() || _areaObjInfo.Any() || _cameraAreaInfo.Any() || _demoSceneObjInfo.Any() || _goalObjInfo.Any() || _startEventObjInfo.Any() || _startInfo.Any());
     }
 }

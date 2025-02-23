@@ -1,9 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 using Autumn.GUI.Windows;
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using Autumn.ActionSystem;
+using Autumn.Enums;
+using Autumn.History;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Storage;
+using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
 using Silk.NET.Input;
@@ -13,8 +19,8 @@ namespace Autumn.GUI.Editors;
 
 internal class SceneWindow(MainWindowContext window)
 {
+    public bool IsWindowFocused => isSceneWindowFocused;
     public bool IsTransformActive => isTranslationActive || isRotationActive || isScaleActive;
-
     public bool isTranslationFromDuplicate = false;
     private bool isTranslationActive = false;
     private bool isRotationActive = false;
@@ -32,6 +38,14 @@ internal class SceneWindow(MainWindowContext window)
     private bool _persistentMouseDrag = false;
     private Vector2 _previousMousePos = Vector2.Zero;
     private Queue<Action<MainWindowContext, Vector4>> _mouseClickActions = new();
+    public int MouseClickActionsCount => _mouseClickActions.Count;
+    private bool _isObjectOptionsEnabled = false;
+    private Vector2 _objectOptionsPos = Vector2.Zero;
+    private double _objectOptionsTime = 0;
+    private bool _selCantParent = false;
+    private bool _selCantChild = false;
+    private bool _selNotSame = false;
+    private ISceneObj _pickObject;
 
     private ImGuiMouseButton mouseMoveKey = ImGuiMouseButton.Right;
     private bool isSceneHovered;
@@ -93,7 +107,7 @@ internal class SceneWindow(MainWindowContext window)
             return;
         }
 
-        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 24);
+        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 24 * window.ScalingFactor);
         aspectRatio = contentAvail.X / contentAvail.Y;
 
         Vector2 sceneWindowRegionMin = ImGui.GetWindowContentRegionMin();
@@ -208,37 +222,52 @@ internal class SceneWindow(MainWindowContext window)
                 );
             }
 
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad0) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
-
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad2) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 1, 0));
-
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad4) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, 1));
-
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad5) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(-1, 0, 0));
-
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad6) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, -1, 0));
-
-            if (window.Keyboard?.IsKeyPressed(Key.Keypad7) ?? false)
-                camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, -1));
-
-            // if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
+            // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
             //     camera.LookAt(camera.Eye, window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
             // }
-
-            if ((window.Keyboard?.IsKeyPressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Any())
+            if (window.CurrentScene.SelectedObjects.Any())
             {
-                AxisAlignedBoundingBox aabb =
-                    window.CurrentScene.SelectedObjects.First().AABB
-                    * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                camera.LookFrom(
-                    window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
-                    aabb.GetDiagonal() * 0.01f
-                );
+                bool camToObj = window.Keyboard?.IsKeyPressed(Key.Space) ?? false;
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad1) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
+                    camToObj = true;
+                }
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad2) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 1, 0));
+                    camToObj = true;
+
+                }
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad3) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, 1));
+                    camToObj = true;
+
+                }
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad4) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(-1, 0, 0));
+                    camToObj = true;
+
+                }
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad5) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, -1, 0));
+                    camToObj = true;
+
+                }
+                if (window.Keyboard?.IsKeyPressed(Key.Keypad6) ?? false)
+                {
+                    camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, -1));
+                    camToObj = true;
+
+                }
+                if (camToObj)
+                {
+                    AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().AABB * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                    camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                }
             }
         }
 
@@ -274,7 +303,8 @@ internal class SceneWindow(MainWindowContext window)
 
         window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix);
 
-        InfiniteGrid.Render(window.GL, viewProjection);
+        if (ModelRenderer.VisibleGrid)
+            InfiniteGrid.Render(window.GL, viewProjection);
 
         CameraState cameraState =
             new(
@@ -335,17 +365,15 @@ internal class SceneWindow(MainWindowContext window)
             ndcMousePos = (windowMousePos / sceneImageSize * 2 - Vector2.One) * new Vector2(1, -1);
             Vector4 ndcMousePos3D = new(ndcMousePos, normPickingDepth * 2 - 1, 1.0f);
             bool canInvert = Matrix4x4.Invert(viewProjection, out Matrix4x4 inverseViewProjection);
-            Debug.Assert(canInvert);
+            //Debug.Assert(canInvert);
             Vector4 worldMousePos = Vector4.Transform(ndcMousePos3D, inverseViewProjection);
             worldMousePos /= worldMousePos.W;
 
             if (
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left)
                 && isSceneHovered
-                && !isTranslationActive
-                && !isRotationActive
-                && !isScaleActive
-            )
+                && !isTranslationActive && !isRotationActive && !isScaleActive
+                && (mouseMoveKey == ImGuiMouseButton.Right ? !ImGui.IsKeyDown(ImGuiKey.ModAlt) : true))
             {
                 if (!isSceneWindowFocused)
                     ImGui.SetWindowFocus();
@@ -368,12 +396,42 @@ internal class SceneWindow(MainWindowContext window)
                     !(window.Keyboard?.IsShiftPressed() ?? false)
                 );
             }
-            else if (
-                (isSceneHovered && window.CurrentScene.SelectedObjects.Any())
-                || isTranslationActive
-                || isScaleActive
-                || isRotationActive
-            )
+            else if ((mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                && isSceneHovered
+                && !isTranslationActive && !isRotationActive && !isScaleActive)
+            {
+                _pickObject = window.CurrentScene.GetSceneObjFromPicking(pixel);
+                if (_pickObject != null)
+                {
+                    _objectOptionsPos = windowMousePos;
+                    bool select1 = window.CurrentScene.SelectedObjects.Count() == 1;
+
+                    bool selectover1 = window.CurrentScene.SelectedObjects.Count() > 0;
+
+                    _selNotSame = selectover1 ? !window.CurrentScene.SelectedObjects.Contains(_pickObject) : true;
+
+                    var sType = _pickObject.StageObj.Type;
+                    bool isSelectionChildable = (sType == StageObjType.Area
+                                    || sType == StageObjType.AreaChild
+                                    || sType == StageObjType.Child
+                                    || sType == StageObjType.Regular)
+                                    && _pickObject.StageObj.FileType == StageFileType.Map;
+                    bool cantChild = window.CurrentScene.SelectedObjects.Any(x => (x.StageObj.Type != StageObjType.Area
+                                    && x.StageObj.Type != StageObjType.AreaChild
+                                    && x.StageObj.Type != StageObjType.Child
+                                    && x.StageObj.Type != StageObjType.Regular)
+                                    || x.StageObj.FileType != StageFileType.Map
+                                    );
+
+                    _selCantParent = !selectover1 || !_selNotSame || !isSelectionChildable || cantChild;
+                    _selCantChild = !select1 || !_selNotSame || !isSelectionChildable || cantChild;
+                    _isObjectOptionsEnabled = true;
+                    _objectOptionsTime = 0;
+                }
+                else
+                    _isObjectOptionsEnabled = false;
+            }
+            else if ((isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || isTranslationActive || isScaleActive || isRotationActive)
             {
                 Vector3 _ndcMousePos3D =
                     new(
@@ -409,10 +467,110 @@ internal class SceneWindow(MainWindowContext window)
         }
 
         GizmoDrawer.EndGizmoDrawing();
+
         ActionPanel(contentAvail);
+        ActionMenu(deltaSeconds);
+
         ImGui.End();
     }
+    private void ActionMenu(double deltaSeconds)
+    {
 
+        if (_isObjectOptionsEnabled)
+        {
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.WindowBg));
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 3);
+            var mpos = _objectOptionsPos - new Vector2(0, -20);
+            ImGui.SetCursorPos(mpos);
+            float w = ImGui.CalcTextSize(_pickObject.StageObj.Name).X * 1.3f + 10;
+            if (ImGui.BeginListBox("##SelectableListbox", new(w > 140 ? w : 140, 150)))
+            {
+                ImGui.SetWindowFontScale(1.3f);
+                ImGui.Text(_pickObject.StageObj.Name);
+                ImGui.SetWindowFontScale(0.95f);
+                ImGui.Separator();
+
+                if (_selCantParent)
+                    ImGui.BeginDisabled();
+                if (ImGui.Selectable("Set parent of selection"))
+                {
+                    _isObjectOptionsEnabled = false;
+                    foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
+                    {
+                        if (sobj == _pickObject) continue;
+                        if (_pickObject.StageObj.Parent != null && _pickObject.StageObj.Parent == sobj.StageObj) continue;
+                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(sobj.StageObj, _pickObject.StageObj);
+                    }
+                }
+                if (_selCantParent)
+                    ImGui.EndDisabled();
+                ImGui.Separator();
+
+                if (_selCantChild)
+                    ImGui.BeginDisabled();
+                if (ImGui.Selectable("Add as child of selection"))
+                {
+                    _isObjectOptionsEnabled = false;
+                    var sobj = window.CurrentScene.SelectedObjects.First();
+                    if (sobj.StageObj.Parent != _pickObject.StageObj)
+                    {
+                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(_pickObject.StageObj, sobj.StageObj);
+                    }
+                }
+                if (_selCantChild)
+                    ImGui.EndDisabled();
+                ImGui.Separator();
+
+                if (ImGui.Selectable("Duplicate"))
+                {
+                    _isObjectOptionsEnabled = false;
+                    if (_selNotSame)
+                        ChangeHandler.ToggleObjectSelection(
+                            window,
+                            window.CurrentScene!.History,
+                            _pickObject.PickingId,
+                            true
+                        );
+                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.DuplicateObj, window);
+                }
+                ImGui.Separator();
+                if (ImGui.Selectable("Delete"))
+                {
+                    _isObjectOptionsEnabled = false;
+                    if (_selNotSame)
+                        ChangeHandler.ToggleObjectSelection(
+                            window,
+                            window.CurrentScene!.History,
+                            _pickObject.PickingId,
+                            true
+                        );
+                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.RemoveObj, window);
+
+                }
+                ImGui.EndListBox();
+                ImGui.SetWindowFontScale(1f);
+            }
+            //ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetWindowPos() + mpos, ImGui.GetWindowPos() + _objectOptionsPos + new Vector2(w, 150), 0x7f7f7f7f);
+            if (!ImGui.IsMouseHoveringRect(ImGui.GetWindowPos() + mpos, ImGui.GetWindowPos() + _objectOptionsPos + new Vector2(w, 150)))
+            {
+                //Console.WriteLine("Hovering");
+                if (_objectOptionsTime != 0 && (ImGui.IsMouseClicked(ImGuiMouseButton.Left) || ImGui.IsMouseClicked(mouseMoveKey)))
+                {
+                    _objectOptionsTime = 100;
+                }
+                _objectOptionsTime += deltaSeconds;
+            }
+            else
+                _objectOptionsTime = 0;
+            if (_objectOptionsTime >= 0.45)
+            {
+                _isObjectOptionsEnabled = false;
+
+            }
+            ImGui.PopStyleVar();
+            ImGui.PopStyleColor();
+        }
+    }
     private void ActionPanel(Vector2 contentAvail)
     {
         var opos = ImGui.GetCursorPos();
@@ -462,25 +620,35 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.SetCursorPos(opos);
         }
 
-        ImGui.PushFont(window.FontPointers[1]);
+        //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        ImGui.SetCursorPos(contentAvail - new Vector2(ImGui.CalcTextSize("\uf065").X * 3 + 3, -24));
-
-        if (ImGui.Button("\uf065"))
+        float buttons = /*ImGui.CalcTextSize("Toggle Paths").X + 1 +*/ ImGui.CalcTextSize("Toggle Grid").X + 1 + ImGui.CalcTextSize("Toggle Areas").X + 1 + ImGui.CalcTextSize("Toggle CameraAreas").X + 1;
+        ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons - 24, opos.Y - 3f));
+        // if (ImGui.Button("Toggle Paths"))
+        // {
+        //     ModelRenderer.visibleAreas = !ModelRenderer.visibleAreas;
+        // }
+        // ImGui.SameLine();
+        if (ImGui.Button("Toggle Grid"))
         {
-            ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
+            ModelRenderer.VisibleGrid = !ModelRenderer.VisibleGrid;
         }
 
         ImGui.SameLine();
 
-        if (ImGui.Button("\uf083"))
+        if (ImGui.Button("Toggle Areas"))
+        {
+            ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Toggle CameraAreas"))
         {
             ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
 
         ImGui.PopStyleVar(2);
-        ImGui.PopFont();
+        //ImGui.PopFont();
         ImGui.SetCursorPos(opos);
     }
 

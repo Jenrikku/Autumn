@@ -2,6 +2,9 @@ using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering.Storage;
+using Autumn.FileSystems;
+using Autumn.Rendering;
+using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
 using ImGuiNET;
 
@@ -74,13 +77,25 @@ internal class EditChildrenDialog
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
         ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Always, new(0.5f, 0.5f));
 
-        if (!ImGui.BeginPopupModal("Modify " + _name + "'s children.", ref _isOpened))
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Always,
+            new(0.5f, 0.5f)
+        );
+
+        if (
+            !ImGui.BeginPopupModal(
+                "Modify " + _name + "'s children.",
+                ref _isOpened
+            )
+        )
             return;
 
         dimensions = ImGui.GetWindowSize();
 
         ImGui.InputText("SEARCHBOX", ref _search, 100);
-        Vector2 tableDimensions = new(dimensions.X / 2 - 25, dimensions.Y - 96);
+        Vector2 tableDimensions = new(dimensions.X / 2 - 27, dimensions.Y - 96);
+        float tablestart = ImGui.GetCursorPosY();
 
         if (ImGui.BeginChild("LEFT", tableDimensions))
         {
@@ -88,18 +103,13 @@ internal class EditChildrenDialog
             ImGui.Text("Scene objects:");
             ImGui.SetWindowFontScale(1.0f);
 
-            if (
-                ImGui.BeginTable(
-                    "ObjectTable",
-                    2,
-                    ImGuiTableFlags.RowBg
-                        | ImGuiTableFlags.Resizable
-                        | ImGuiTableFlags.BordersOuter
-                        | ImGuiTableFlags.BordersV
-                        | ImGuiTableFlags.ScrollY,
-                    new(tableDimensions.X - 2, tableDimensions.Y - 30)
-                )
-            )
+            tablestart += ImGui.GetCursorPosY();
+            if (ImGui.BeginTable("ObjectTable", 2,
+                                                ImGuiTableFlags.RowBg
+                                                | ImGuiTableFlags.Resizable
+                                                | ImGuiTableFlags.BordersOuter
+                                                | ImGuiTableFlags.BordersV
+                                                | ImGuiTableFlags.ScrollY, new(tableDimensions.X - 3, tableDimensions.Y - 30)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -116,14 +126,7 @@ internal class EditChildrenDialog
 
                     if (!(!_newChildren.Contains(stageObj) && _oldChildren.Contains(stageObj)))
                     {
-                        if (
-                            stageObj == _parent?.Parent
-                            || _newChildren.Contains(stageObj)
-                            || (stageObj.Type != StageObjType.Regular && stageObj.Type != StageObjType.Area)
-                            || (stageObj.Type == StageObjType.Area && stageObj.Name != "ObjectChildArea")
-                            || stageObj.FileType != _parent?.FileType
-                            || stageObj == _parent
-                        )
+                        if (stageObj == _parent.Parent || _newChildren.Contains(stageObj) || (stageObj.Type != StageObjType.Regular && stageObj.Type != StageObjType.Area) || (stageObj.Type == StageObjType.Area && stageObj.Name != "ObjectChildArea") || stageObj.FileType != _parent.FileType || stageObj == _parent)
                             continue;
                     }
 
@@ -133,13 +136,7 @@ internal class EditChildrenDialog
 
                     bool contained = _selectedObjs[0].Contains(stageObj);
 
-                    if (
-                        ImGui.Selectable(
-                            stageObj.Name,
-                            contained,
-                            ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick
-                        )
-                    )
+                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
                     {
                         if (contained)
                             _selectedObjs[0].Remove(stageObj);
@@ -171,46 +168,43 @@ internal class EditChildrenDialog
                 ImGui.EndTable();
             }
 
-            ImGui.EndChild();
         }
 
+        ImGui.EndChild();
+        //ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xff0000ff);
         ImGui.SameLine(default, 5f);
 
-        if (ImGui.BeginChild("MIDDLE", new(20, tableDimensions.Y)))
+        ImGui.SetCursorPosY(tablestart);
+        if (ImGui.BeginChild("MIDDLE", new(24, tableDimensions.Y - 24)))
         {
-            ImGui.Dummy(new(0, tableDimensions.Y / 3));
-
-            if (ImGui.ArrowButton("r", ImGuiDir.Right))
+            if (ImGuiWidgets.ArrowButton("r", ImGuiDir.Right, new(default, ImGui.GetWindowHeight()/2 - ImGui.GetStyle().ItemSpacing.Y)))
+            {
                 MoveToChildren();
+            }
 
-            ImGui.Dummy(new(0, tableDimensions.Y / 6));
-
-            if (ImGui.ArrowButton("l", ImGuiDir.Left))
+            if (ImGuiWidgets.ArrowButton("l", ImGuiDir.Left,  new(default, ImGui.GetWindowHeight()/2 - ImGui.GetStyle().ItemSpacing.Y)))
+            {
                 MoveToGeneral();
-
-            ImGui.EndChild();
+            }
         }
-
+        ImGui.EndChild();
+        //ImGui.PopStyleColor();
         ImGui.SameLine();
 
+        List<int> move = new(); // Id, Up(true) or Down(false)
+        bool moveb = false; // Id, Up(true) or Down(false)
         if (ImGui.BeginChild("RIGHT", tableDimensions))
         {
             ImGui.SetWindowFontScale(1.3f);
             ImGui.Text("Children:");
             ImGui.SetWindowFontScale(1.0f);
 
-            if (
-                ImGui.BeginTable(
-                    "ChildrenTable",
-                    2,
-                    ImGuiTableFlags.RowBg
-                        | ImGuiTableFlags.Resizable
-                        | ImGuiTableFlags.BordersOuter
-                        | ImGuiTableFlags.BordersV
-                        | ImGuiTableFlags.ScrollY,
-                    new(tableDimensions.X - 3, tableDimensions.Y - 30)
-                )
-            )
+            if (ImGui.BeginTable("ChildrenTable", 2,
+                                                    ImGuiTableFlags.RowBg
+                                                    | ImGuiTableFlags.Resizable
+                                                | ImGuiTableFlags.BordersOuter
+                                                | ImGuiTableFlags.BordersV
+                                                | ImGuiTableFlags.ScrollY, new(tableDimensions.X - 2, tableDimensions.Y - 60)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -226,13 +220,7 @@ internal class EditChildrenDialog
 
                     bool contained = _selectedObjs[1].Contains(stageObj);
 
-                    if (
-                        ImGui.Selectable(
-                            stageObj.Name,
-                            contained,
-                            ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick
-                        )
-                    )
+                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
                     {
                         if (contained)
                             _selectedObjs[1].Remove(stageObj);
@@ -254,6 +242,26 @@ internal class EditChildrenDialog
                         ImGui.BeginTooltip();
                         ImGui.SetTooltip("Child: " + stageObj.Name);
                         ImGui.EndTooltip();
+
+                    }
+                    if (contained)
+                    {
+                        if (_newChildren.IndexOf(stageObj) != 0)
+                        {
+                            if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
+                            {
+                                move.Add(_newChildren.IndexOf(stageObj));
+                                moveb = true;
+                            }
+                        }
+                        if (_newChildren.IndexOf(stageObj) != _newChildren.Count - 1)
+                        {
+                            if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
+                            {
+                                move.Add(_newChildren.IndexOf(stageObj));
+                                moveb = false;
+                            }
+                        }
                     }
 
                     ImGui.TableSetColumnIndex(1);
@@ -264,8 +272,48 @@ internal class EditChildrenDialog
                 ImGui.EndTable();
             }
 
-            ImGui.EndChild();
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2);
+            if (ImGuiWidgets.ArrowButton("upbt", ImGuiDir.Up, new(ImGui.GetWindowWidth() / 2, -1)))
+            {
+                foreach (StageObj s in _selectedObjs[1])
+                {
+                    if (_newChildren.IndexOf(s) != 0)
+                        move.Add(_newChildren.IndexOf(s));
+                }
+                move.Sort();
+                moveb = true;
+            }
+            ImGui.SameLine();
+            if (ImGuiWidgets.ArrowButton("dwbt", ImGuiDir.Down, new(ImGui.GetWindowWidth() / 2, -1)))
+            {
+                foreach (StageObj s in _selectedObjs[1])
+                {
+                    if (_newChildren.IndexOf(s) != _newChildren.Count - 1)
+                        move.Add(_newChildren.IndexOf(s));
+                }
+                move.Sort();
+                moveb = false;
+            }
+
+            if (move.Count > 0)
+            {
+                if (moveb)
+                    for (int ii = 0; ii < move.Count; ii++)
+                    {
+                        var ch = _newChildren[move[ii]];
+                        _newChildren.RemoveAt(move[ii]);
+                        _newChildren.Insert(move[ii] - 1, ch);
+                    }
+                else
+                    for (int ii = move.Count - 1; ii > -1; ii--)
+                    {
+                        var ch = _newChildren[move[ii]];
+                        _newChildren.RemoveAt(move[ii]);
+                        _newChildren.Insert(move[ii] + 1, ch);
+                    }
+            }
         }
+        ImGui.EndChild();
 
         //ImGui.TextColored(new Vector4(1, 0, 0, 1), dimensions.X+", "+ dimensions.Y);
         //ImGui.SameLine();
@@ -281,12 +329,12 @@ internal class EditChildrenDialog
             }
             else
             {
-                foreach (StageObj old in _parent!.Children!)
+
+                foreach (StageObj oldChild in _parent!.Children!)
                 {
-                    if (!_newChildren.Contains(old))
+                    if (!_newChildren.Contains(oldChild))
                     {
-                        old.Parent = null;
-                        old.Type = old.Type == StageObjType.Child ? StageObjType.Regular : StageObjType.Area;
+                        _window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(oldChild);
                     }
                 }
 
@@ -295,19 +343,8 @@ internal class EditChildrenDialog
 
             for (int i = 0; i < _newChildren.Count(); i++)
             {
-                _newChildren[i].Parent = _parent;
-                _parent.Children.Add(_newChildren[i]);
-                switch (_newChildren[i].Type)
-                {
-                    case StageObjType.Regular:
-                        _newChildren[i].Type = StageObjType.Child;
-                        break;
-
-                    case StageObjType.Area:
-                        _newChildren[i].Type = StageObjType.AreaChild;
-                        break;
-                }
-            }
+                _window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(_newChildren[i], _parent);
+	    }
 
             Reset();
 

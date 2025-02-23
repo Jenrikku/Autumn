@@ -9,17 +9,23 @@ internal static class ClassDatabaseWrapper
         public string ClassNameFull { get; set; }
         public string Description { get; set; }
         public string DescriptionAdditional { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public bool RailRequired { get; set; }
+        public string? ArchiveName { get; set; }
+        public string? Type { get; set; }
         public Dictionary<string, Switch?> Switches { get; set; }
     }
 
     public struct Arg
     {
         public object Default { get; set; }
+        public string Type { get; set; }
         public string Description { get; set; }
         public string Name { get; set; }
         public bool Required { get; set; }
+        public Dictionary<int, string>? Values { get; set; }
+        public int? Min { get; set; }
+        public int? Max { get; set; }
     }
 
     public struct Switch
@@ -42,7 +48,9 @@ internal static class ClassDatabaseWrapper
                 foreach (string entryPath in Directory.EnumerateFiles(path))
                 {
                     DatabaseEntry entry = YAMLWrapper.Deserialize<DatabaseEntry>(entryPath);
-                    s_DatabaseEntries[entry.ClassName] = entry;
+
+                    if(entry.ClassName is not null)
+                        s_DatabaseEntries[entry.ClassName] = entry;
                 }
             }
 

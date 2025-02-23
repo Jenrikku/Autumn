@@ -82,4 +82,15 @@ internal class StageObj
 
     public bool IsArea() =>
         Type == StageObjType.Area || Type == StageObjType.CameraArea || Type == StageObjType.AreaChild;
+
+    public List<string> GetSwitches(int sw)
+    {
+        List<string> ret = new(); 
+        if (SwitchA == sw) ret.Add("SwitchA"); 
+        if (SwitchB == sw) ret.Add("SwitchB"); 
+        if (SwitchDeadOn == sw) ret.Add("SwitchDeadOn"); 
+        if (SwitchAppear == sw) ret.Add("SwitchAppear"); 
+        if (SwitchKill == sw) ret.Add("SwitchKill"); 
+        return ret;
+    }
 }

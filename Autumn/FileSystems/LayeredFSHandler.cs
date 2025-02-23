@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Autumn.Background;
 using Autumn.Storage;
+using NARCSharp;
 
 namespace Autumn.FileSystems;
 
@@ -60,18 +61,27 @@ internal class LayeredFSHandler
         if (fallback is null)
             return ReadActor(name, scheduler);
 
-        if (ModFS is not null)
+        var hasMod = ModFS != null;
+        var hasOg = OriginalFS != null;
+        if (hasMod)
         {
             if (!ModFS.ExistsActor(name))
             {
-                if (ModFS.ExistsActor(fallback))
-                    return ModFS.ReadActor(fallback, scheduler);
+                if (hasOg && OriginalFS.ExistsActor(name))
+                    return OriginalFS.ReadActor(name, scheduler);
+                else
+                {
+                    if (ModFS.ExistsActor(fallback))
+                        return ModFS.ReadActor(fallback, scheduler);
+                    else if (hasOg && OriginalFS.ExistsActor(fallback))
+                        return OriginalFS.ReadActor(fallback, scheduler);
+                }
             }
             else
                 return ModFS.ReadActor(name, scheduler);
         }
 
-        if (OriginalFS is not null)
+        if (hasOg)
         {
             if (!OriginalFS.ExistsActor(name))
             {
@@ -84,13 +94,76 @@ internal class LayeredFSHandler
 
         return new(name);
     }
-
-    public bool WriteStage(Stage stage)
+    public Actor ReadActor(string name, string? dbArchive, string? fallback, GLTaskScheduler scheduler)
     {
-        if (ModFS is null)
-            return false;
+        if (dbArchive == null && fallback == null) return ReadActor(name, scheduler);
+        else if (dbArchive == null) return ReadActor(name, fallback, scheduler);
+        else if (fallback == null) return ReadActor(name, dbArchive, scheduler);
 
-        return ModFS.WriteStage(stage);
+
+        var hasMod = ModFS != null;
+        var hasOg = OriginalFS != null;
+
+        if (hasMod)
+        {
+            if (!ModFS.ExistsActor(dbArchive))
+            {
+                if (hasOg && OriginalFS.ExistsActor(dbArchive))
+                    return OriginalFS.ReadActor(dbArchive, scheduler);
+                else
+                {
+                    if (!ModFS.ExistsActor(name))
+                    {
+                        if (hasOg && OriginalFS.ExistsActor(name))
+                            return OriginalFS.ReadActor(name, scheduler);
+                        else
+                        {
+                            if (!ModFS.ExistsActor(fallback))
+                            {
+                                if (hasOg && OriginalFS.ExistsActor(fallback))
+                                    return OriginalFS.ReadActor(fallback, scheduler);
+                            }
+                            else
+                                return ModFS.ReadActor(fallback, scheduler);
+                        }
+                    }
+                    else
+                        return ModFS.ReadActor(name, scheduler);
+                }
+            }
+            else
+                return ModFS.ReadActor(dbArchive, scheduler);
+        }
+        if (hasOg)
+        {
+            if (!OriginalFS!.ExistsActor(dbArchive))
+            {
+                if (!OriginalFS.ExistsActor(name))
+                {
+                    if (OriginalFS.ExistsActor(fallback))
+                        return OriginalFS.ReadActor(fallback, scheduler);
+                }
+                else
+                    return OriginalFS.ReadActor(name, scheduler);
+            }
+            else
+                return OriginalFS.ReadActor(dbArchive, scheduler);
+        }
+        return new(name);
+    }
+
+    public bool WriteStage(Stage stage, bool _useClassNames)
+    {
+        if (ModFS == null) return false;
+        var r = ModFS.WriteStage(stage, _useClassNames);
+        if ((r && stage.DefaultBgm is not null && ReadBgmTable().StageDefaultBgmList.Where(x => x.Scenario == stage.DefaultBgm.Scenario && x.StageName == stage.DefaultBgm.StageName && x.BgmLabel != stage.DefaultBgm.BgmLabel).Any())
+            || stage.RebuildMusicAreas)
+        {
+            // Overwrite BgmTable in ModFS with the OriginaFS BgmTable modified with this stage's new song.
+            ModFS.WriteBgmTable(ReadBgmTable(), stage);
+            stage.RebuildMusicAreas = false;
+        }
+        return r;
     }
 
     public ReadOnlyDictionary<string, string> ReadCreatorClassNameTable()
@@ -120,6 +193,22 @@ internal class LayeredFSHandler
         else if (OriginalFS is not null && OriginalFS.ExistsGSDT())
             return OriginalFS.ReadGSDTable();
 
+        return null;
+    }
+    public Dictionary<string, LightArea>? ReadLightAreas()
+    {
+        if (ModFS != null && ModFS.ExistsLightDataArea())
+            return ModFS.GetPossibleLightAreas();
+        else if (OriginalFS != null && OriginalFS.ExistsLightDataArea())
+            return OriginalFS.GetPossibleLightAreas();
+        return null;
+    }
+    public NARCFileSystem? ReadShaders()
+    {
+        if (ModFS != null && ModFS.ExistsShaders())
+            return ModFS.GetShader();
+        else if (OriginalFS != null && OriginalFS.ExistsShaders())
+            return OriginalFS.GetShader();
         return null;
     }
 

@@ -37,25 +37,9 @@ internal class AddStageDialog
         _window = window;
         ResetOnDone = resetOnDone;
 
-        comboStrings =
-        [
-            "All stages",
-            "World 1",
-            "World 2",
-            "World 3",
-            "World 4",
-            "World 5",
-            "World 6",
-            "World 7",
-            "World 8 (Part 1)",
-            "World 8 (Part 2)"
-        ];
-
-        comboStrings = comboStrings
-            .Concat(
-                ["Special 1", "Special 2", "Special 3", "Special 4", "Special 5", "Special 6", "Special 7", "Special 8"]
-            )
-            .ToArray();
+        comboStrings = ["All stages", "World 1", "World 2", "World 3", "World 4", "World 5", "World 6", "World 7", "World 8 (Part 1)", "World 8 (Part 2)",
+                        "Special 1", "Special 2", "Special 3", "Special 4", "Special 5", "Special 6", "Special 7", "Special 8",
+                        "Cutscenes", "Miscellaneous"];
 
         Reset();
     }
@@ -81,6 +65,12 @@ internal class AddStageDialog
 
         if (!_isOpened)
             return;
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        {
+            Reset();
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
 
         ImGui.OpenPopup("Add New Stage");
 
@@ -102,7 +92,8 @@ internal class AddStageDialog
         ImGuiStylePtr style = ImGui.GetStyle();
 
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
-        ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length);
+        if (ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length))
+            _stageListNeedsRebuild = true;
         _skipOk = false;
 
         #region Name and Scenario
@@ -125,24 +116,30 @@ internal class AddStageDialog
 
         if (_stageListNeedsRebuild)
         {
-            _foundStages = _window
-                .ContextHandler.FSHandler.OriginalFS.EnumerateStages()
-                .Where(t => t.Name.Contains(_name, StringComparison.InvariantCultureIgnoreCase))
-                .ToList();
+            if (currentItem == 0)
+            {
+                _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains(_name, StringComparison.CurrentCultureIgnoreCase)).ToList();
 
-            // Remove already opened stages:
-            foreach (var stage in _window.ContextHandler.ProjectStages)
-                _foundStages.Remove(stage);
+                // Remove already opened stages:
+                foreach (var stage in _window.ContextHandler.ProjectStages)
+                    _foundStages.Remove(stage);
 
-            _foundStages.Sort();
-            _stageListNeedsRebuild = false;
+                _foundStages.Sort();
+                _stageListNeedsRebuild = false;
+            }
+            else if (currentItem == comboStrings.Length - 2)
+                _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains("Demo")).ToList();
+            else if (currentItem == comboStrings.Length - 1)
+                _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains("Mystery") || t.Name.Contains("Kinopio") || t.Name.Contains("Title") || t.Name.Contains("CourseSelect")).ToList();
+
         }
 
         #endregion
 
+        #region Stage list box
+
         if (currentItem == 0)
         {
-            #region Stage list box
 
             ImGui.SetNextItemWidth(contentAvail.X);
 
@@ -167,10 +164,8 @@ internal class AddStageDialog
 
                 ImGui.EndListBox();
             }
-
-            #endregion
         }
-        else
+        else if (currentItem > 0 && currentItem < comboStrings.Length - 2)
         {
             ImGui.SetNextItemWidth(contentAvail.X);
 
@@ -209,6 +204,35 @@ internal class AddStageDialog
                 ImGui.EndListBox();
             }
         }
+        else
+        {
+            ImGui.SetNextItemWidth(contentAvail.X);
+
+            if (ImGui.BeginListBox("##stageList") && _foundStages is not null)
+            {
+                foreach (var (name, scenario) in _foundStages)
+                {
+                    string visibleString = name + scenario;
+                    bool selected = _name == name && scenarioNo == scenario;
+
+                    if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
+                    {
+                        _name = name;
+                        _scenario = scenario.ToString();
+                        _stageListNeedsRebuild = true;
+                        _useRomFSComboCurrent = 0;
+                        if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+                            _skipOk = true;
+                    }
+                }
+
+                ImGui.EndListBox();
+            }
+        }
+
+
+        #endregion
+
         #region Bottom bar
 
         if (!byte.TryParse(_scenario, out scenarioNo))

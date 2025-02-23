@@ -6,7 +6,7 @@ namespace Autumn.Rendering.CtrH3D;
 
 internal class H3DShaders
 {
-    public static ShaderSource VertexShader =>
+    public static ShaderSource VertexShader(bool FakeVtxCol) =>
         new(
             "H3D.vert",
             ShaderType.VertexShader,
@@ -465,7 +465,23 @@ internal class H3DShaders
             	if (reg_cmp.x && reg_cmp.y) {
             		reg_temp[9].xyzw = MatDiff.xyzw;
             	}
-            	Color.xyzw = max(vec4(0, 1, 2, 3).xxxx, reg_temp[9].xyzw);
+                vec4 tmp = max(vec4(0), reg_temp[9]);
+                // Undefined for objects that use Vertex Colors in stages but have no Color attribute assigned
+            """
++ 
+(	FakeVtxCol ?
+            """
+               
+            	Color.xyzw = vec4(1);
+            """
+:
+            """
+               
+            	Color.xyzw = tmp;
+            """)
++ 
+            """
+
             	if (DisableVertexColor == 1)
             		Color.xyzw = vec4(1);
             }
@@ -599,9 +615,15 @@ internal class H3DShaders
             			reg_temp[10].w = vec4(0, 1, 2, 3).y;
             		} else {
             			reg_a0.x = int(vec4(0, 1, 2, 3).x);
-            			reg_temp[10].x = dot(UnivReg[0].xyzw, reg_temp[15].xyzw);
-            			reg_temp[10].y = dot(UnivReg[1].xyzw, reg_temp[15].xyzw);
-            			reg_temp[10].z = dot(UnivReg[2].xyzw, reg_temp[15].xyzw);
+                        vec4 p = vec4(0);
+                        p.x = dot(UnivReg[0].xyzw, reg_temp[15].xyzw);
+                        p.y = dot(UnivReg[1].xyzw, reg_temp[15].xyzw);
+                        p.z = dot(UnivReg[2].xyzw, reg_temp[15].xyzw);
+                        p.w = vec4(0, 1, 2, 3).y;
+
+                        reg_temp[10].x = dot(WrldMtx[0].xyzw, p.xyzw);
+                        reg_temp[10].y = dot(WrldMtx[1].xyzw, p.xyzw);
+                        reg_temp[10].z = dot(WrldMtx[2].xyzw, p.xyzw);
             			reg_temp[10].w = vec4(0, 1, 2, 3).y;
             		}
             		if (reg_cmp.x && !reg_cmp.y) {
@@ -688,13 +710,11 @@ internal class H3DShaders
             	proc_calc_texcoord1();
             	proc_calc_texcoord2();
             	gl_Position = Position;
-
                 float totalWeight = BoneWeightDisplay(ivec4(aBoneIndex));
                 WeightPreview = vec4(BoneWeightColor(totalWeight).rgb, 1);
             }
             """
         );
-
     public static ShaderSource GetFragmentShader(string name, H3DMaterialParams materialParams)
     {
         FragmentShaderGenerator generator = new(materialParams);

@@ -3,6 +3,7 @@ using Autumn.Background;
 using Autumn.FileSystems;
 using Autumn.Storage;
 using Autumn.Utils;
+using Autumn.Wrappers;
 
 namespace Autumn.Rendering.Storage;
 
@@ -47,7 +48,16 @@ internal class ActorSceneObj : ISceneObj
             actorName = modelNameString;
 
         fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
-        Actor = fsHandler.ReadActor(actorName, fallback, scheduler);
-        UpdateTransform();
+
+        if (fallback != null && ClassDatabaseWrapper.DatabaseEntries.ContainsKey(fallback) && ClassDatabaseWrapper.DatabaseEntries[fallback].ArchiveName != null)
+        {
+            Actor = fsHandler.ReadActor(actorName, ClassDatabaseWrapper.DatabaseEntries[fallback].ArchiveName, fallback, scheduler);
+        }
+        else if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(actorName) && ClassDatabaseWrapper.DatabaseEntries[actorName].ArchiveName != null)
+            Actor = fsHandler.ReadActor(actorName, ClassDatabaseWrapper.DatabaseEntries[actorName].ArchiveName, scheduler);
+        else
+            Actor = fsHandler.ReadActor(actorName, fallback, scheduler);
+
+	UpdateTransform();
     }
 }

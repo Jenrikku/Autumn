@@ -1,4 +1,5 @@
 using Autumn.Enums;
+using Autumn.Rendering;
 using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.CtrH3D.Animation;
 using Autumn.Rendering.Storage;
@@ -145,20 +146,31 @@ internal class Actor
     {
         if (!_lutSamplers.TryGetValue(tableName + samplerName, out TextureSampler result))
         {
-            // Default values for non-existing luts.
-            uint sampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
-            uint texture = TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
+            if (!ModelRenderer.GeneralLUTs.TryGetValue(tableName + samplerName, out result))
+            {
+                // Default values for non-existing luts.
+                uint sampler = SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST);
+                uint texture = TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK);
 
-            return new(sampler, texture);
+                return new(sampler, texture);
+            }
         }
 
         return result;
     }
 
-    public bool TryGetLUTTexture(string tableName, string samplerName, out TextureSampler result) =>
-        _lutSamplers.TryGetValue(tableName + samplerName, out result);
+    public bool TryGetLUTTexture(string tableName, string samplerName, out TextureSampler result)
+    {
+        if (!_lutSamplers.TryGetValue(tableName + samplerName, out result))
+        {
+            return ModelRenderer.GeneralLUTs.TryGetValue(tableName + samplerName, out result);
+        }
+        return true;
+    }
 
-    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(H3DMeshLayer layer)
+    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(
+        H3DMeshLayer layer
+    )
     {
         foreach (var tuple in _meshes[(int)layer])
             yield return tuple;

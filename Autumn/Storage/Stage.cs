@@ -1,4 +1,5 @@
 using Autumn.Enums;
+using static Autumn.Storage.BgmTable;
 
 namespace Autumn.Storage;
 
@@ -10,7 +11,13 @@ internal class Stage
     private StageFile _design = new(StageFileType.Design);
     private StageFile _map = new(StageFileType.Map);
     private StageFile _sound = new(StageFileType.Sound);
+    
+    public StageDefaultBgm DefaultBgm;
+    public bool RebuildMusicAreas = false;
     public StageParams StageParams { get; set; } = new();
+    public List<StageFog> StageFogs = new() { new() }; // Main fog.
+    public LightParams? LightParams { get; set; }
+    public Dictionary<int, string> LightAreaNames = new();
 
     /// <summary>
     /// Creates a new stage.
@@ -165,13 +172,14 @@ internal class StageParams
 
     public class FPrnt
     {
-        public string? AnimName = "Cream";
+        public string? AnimName = "Cream"; // Found in the footprint model material animation
         public string? AnimType = "Mcl"; // Always the same?
-        public string Material = "Sand";
+        public string Material = "Sand"; // Name of the material to draw footprints on
         public string Model = "FootPrint"; // Always the same?
 
-        enum AnimNames
+        enum AnimNames // Found in the footprint model material animation
         {
+            Normal,
             Cream,
             Snow
         }

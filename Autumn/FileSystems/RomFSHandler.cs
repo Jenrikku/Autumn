@@ -42,6 +42,7 @@ internal partial class RomFSHandler
     private ReadOnlyDictionary<string, string>? _creatorClassNameTable = null;
     private BgmTable? _bgmTable = null;
     private SystemDataTable? _GSDTable = null;
+    private Dictionary<string, LightArea>? _lightAreas = null;
 
     public RomFSHandler(string path)
     {
@@ -88,6 +89,8 @@ internal partial class RomFSHandler
     public bool ExistsBgmTable() => File.Exists(Path.Join(_soundPath, "BgmTable.szs"));
 
     public bool ExistsGSDT() => File.Exists(Path.Join(_actorsPath, "GameSystemDataTable.szs"));
+    public bool ExistsLightDataArea() => File.Exists(Path.Join(_actorsPath, "LightDataArea.szs"));
+    public bool ExistsShaders() => File.Exists(Path.Join(_actorsPath, "Shader.szs"));
 
     public IEnumerable<(string Name, byte Scenario)> EnumerateStages()
     {
@@ -153,21 +156,20 @@ internal partial class RomFSHandler
 
                     case string s when s.Contains("StageInfo"):
                         if (!s.Contains($"{scenario}") && s != "StageInfo.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
                             break;
-
+                        }
                         BYAML stageInfoByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (stageInfoByaml.RootNode == null || stageInfoByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
 
-                        if (
-                            stageInfoByaml.RootNode is null
-                            || stageInfoByaml.RootNode.NodeType != BYAMLNodeType.Dictionary
-                        )
-                            break;
+                        // Console.WriteLine(stageInfoByaml.RootNode.Value.GetType());
 
-                        var rootDict = stageInfoByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
-                        rootDict.TryGetValue("StageTimer", out BYAMLNode? timerN);
-                        rootDict.TryGetValue("StageTimerRestart", out BYAMLNode? timerRN);
-                        rootDict.TryGetValue("PowerUpItemNum", out BYAMLNode? pupN);
-                        rootDict.TryGetValue("FootPrint", out BYAMLNode? fprnt);
+                        var rootInfoDict = stageInfoByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                        rootInfoDict.TryGetValue("StageTimer", out BYAMLNode? timerN);
+                        rootInfoDict.TryGetValue("StageTimerRestart", out BYAMLNode? timerRN);
+                        rootInfoDict.TryGetValue("PowerUpItemNum", out BYAMLNode? pupN);
+                        rootInfoDict.TryGetValue("FootPrint", out BYAMLNode? fprnt);
 
                         stage.StageParams.Timer = timerN?.GetValueAs<int>() ?? default;
                         stage.StageParams.RestartTimer = timerRN?.GetValueAs<int>() ?? -1;
@@ -176,22 +178,184 @@ internal partial class RomFSHandler
                         if (fprnt is not null)
                         {
                             stage.StageParams.FootPrint = new();
-                            var dict = fprnt.GetValueAs<BYAMLNode[]>()?[0].GetValueAs<Dictionary<string, BYAMLNode>>();
+                            var d = fprnt.GetValueAs<BYAMLNode[]>()?[0].GetValueAs<Dictionary<string, BYAMLNode>>();
 
-                            if (dict is not null)
+                            if (d is not null)
                             {
-                                dict.TryGetValue("AnimName", out BYAMLNode? aN);
-                                dict.TryGetValue("AnimType", out BYAMLNode? aT);
+                                d.TryGetValue("AnimName", out BYAMLNode? aN);
+                                d.TryGetValue("AnimType", out BYAMLNode? aT);
 
-                                stage.StageParams.FootPrint.Material = dict["Material"].GetValueAs<string>()!;
-                                stage.StageParams.FootPrint.Model = dict["Model"].GetValueAs<string>()!;
+                                stage.StageParams.FootPrint.Material = d["Material"].GetValueAs<string>()!;
+                                stage.StageParams.FootPrint.Model = d["Model"].GetValueAs<string>()!;
                                 stage.StageParams.FootPrint.AnimName = aN?.GetValueAs<string>();
                                 stage.StageParams.FootPrint.AnimType = aT?.GetValueAs<string>();
                             }
                         }
+                        break;
+                    case string s when s.Contains("FogParam"):
+                        if (!s.Contains($"{scenario}") && s != "FogParam.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        // ignored if it's not in a design file
+                        if (fileType != StageFileType.Design) break;
+                        BYAML fogByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (fogByaml.RootNode == null || fogByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
 
-                        // Temporary
-                        stage.AddAdditionalFile(fileType, filename, contents);
+                        // Console.WriteLine(fogByaml.RootNode.Value.GetType());
+
+                        var rootFogDict = fogByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        rootFogDict.TryGetValue("ColorB", out BYAMLNode? fB);
+                        rootFogDict.TryGetValue("ColorG", out BYAMLNode? fG);
+                        rootFogDict.TryGetValue("ColorR", out BYAMLNode? fR);
+                        rootFogDict.TryGetValue("Density", out BYAMLNode? fD);
+                        rootFogDict.TryGetValue("FogType", out BYAMLNode? fT);
+                        rootFogDict.TryGetValue("InterpFrame", out BYAMLNode? fI);
+                        rootFogDict.TryGetValue("MaxDepth", out BYAMLNode? fMax);
+                        rootFogDict.TryGetValue("MinDepth", out BYAMLNode? fMin);
+
+                        StageFog MainFog = new()
+                        {
+                            Color = new(fR?.GetValueAs<float>() ?? 1, fG?.GetValueAs<float>() ?? 1, fB?.GetValueAs<float>() ?? 1),
+                            Density = fD?.GetValueAs<float>() ?? 0,
+                            FogType = Enum.Parse<StageFog.FogTypes>(fT?.GetValueAs<string>() ?? "FOG_UPDATER_TYPE_LINEAR"),
+                            InterpFrame = fI?.GetValueAs<int>() ?? 0,
+                            MaxDepth = fMax?.GetValueAs<float>() ?? 0,
+                            MinDepth = fMin?.GetValueAs<float>() ?? 0,
+                        };
+
+                        stage.StageFogs[0] = MainFog;
+
+                        rootFogDict.TryGetValue("FogAreas", out BYAMLNode? fAreas);
+                        var fArr = fAreas?.GetValueAs<BYAMLNode[]>()!;
+
+                        if (fArr != null)
+                        {
+                            int fogIdx = 0;
+                            foreach (BYAMLNode node in fArr)
+                            {
+                                if (node.NodeType != BYAMLNodeType.Dictionary) continue;
+
+                                var fogAreanode = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                                fogAreanode.TryGetValue("Area Id", out BYAMLNode? fId);
+                                fogAreanode.TryGetValue("ColorB", out BYAMLNode? fAB);
+                                fogAreanode.TryGetValue("ColorG", out BYAMLNode? aG);
+                                fogAreanode.TryGetValue("ColorR", out BYAMLNode? fAR);
+                                fogAreanode.TryGetValue("Density", out BYAMLNode? fAD);
+                                fogAreanode.TryGetValue("FogType", out BYAMLNode? fAT);
+                                fogAreanode.TryGetValue("InterpFrame", out BYAMLNode? fAI);
+                                fogAreanode.TryGetValue("MaxDepth", out BYAMLNode? fAMax);
+                                fogAreanode.TryGetValue("MinDepth", out BYAMLNode? fAMin);
+
+                                stage.StageFogs.Add(new()
+                                {
+                                    Color = new(fAR?.GetValueAs<float>() ?? 1, aG?.GetValueAs<float>() ?? 1, fAB?.GetValueAs<float>() ?? 1),
+                                    Density = fAD?.GetValueAs<float>() ?? 0,
+                                    FogType = Enum.Parse<StageFog.FogTypes>(fAT?.GetValueAs<string>() ?? "FOG_UPDATER_TYPE_LINEAR"),
+                                    InterpFrame = fAI?.GetValueAs<int>() ?? 0,
+                                    MaxDepth = fAMax?.GetValueAs<float>() ?? 0,
+                                    MinDepth = fAMin?.GetValueAs<float>() ?? 30000,
+                                    AreaId = fId?.GetValueAs<int>() ?? fogIdx
+                                });
+                                fogIdx += 1;
+                            }
+                        }
+
+                        break;
+
+                    case string s when s.Contains("LightParam"):
+                        if (!s.Contains($"{scenario}") && s != "LightParam.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        // ignored if it's not in a design file
+                        if (fileType != StageFileType.Design) break;
+                        BYAML lightByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (lightByaml.RootNode == null || lightByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+
+                        // Console.WriteLine(lightByaml.RootNode.Value.GetType());
+
+                        var rootLightDict = lightByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        rootLightDict.TryGetValue("Stage Light", out BYAMLNode? sL);
+                        rootLightDict.TryGetValue("Stage Map Light", out BYAMLNode? sML);
+
+                        stage.LightParams = new();
+
+                        if (sML.NodeType == BYAMLNodeType.Dictionary)
+                        {
+                            var sMdict = sML.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                            stage.LightParams.StageMapLight = new StageLight(sMdict);
+                        }
+                        var stageLightDict = sL.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        if (stageLightDict != null)
+                        {
+                            stageLightDict.TryGetValue("Interpolate Frame", out BYAMLNode iFrame);
+                            stageLightDict.TryGetValue("MapObj Light", out BYAMLNode MOL);
+                            stageLightDict.TryGetValue("Name", out BYAMLNode lName);
+                            stageLightDict.TryGetValue("Obj Light", out BYAMLNode OL);
+                            stageLightDict.TryGetValue("Player Light", out BYAMLNode PL);
+
+                            stage.LightParams.InterpolateFrame = iFrame?.GetValueAs<int>() ?? 10;
+                            stage.LightParams.Name = lName?.GetValueAs<string>() ?? default!;
+                            stage.LightParams.MapObjectLight = new(MOL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                            stage.LightParams.ObjectLight = new(OL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                            stage.LightParams.PlayerLight = new(PL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                        }
+
+                        break;
+                    case string s when s.Contains("ModelToMapLightNameTable"):
+                        if (!s.Contains($"{scenario}") && s != "ModelToMapLightNameTable.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        // ignored if it's not in a design file
+                        if (fileType != StageFileType.Design) break;
+                        BYAML mtm = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (mtm.RootNode == null || mtm.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+
+                        // Console.WriteLine(mtm.RootNode.Value.GetType());
+
+                        var MTOMAP = mtm.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        // Console.WriteLine(MTOMAP);
+                        break;
+                    case string s when s.Contains("AreaIdToLightNameTable"):
+                        if (!s.Contains($"{scenario}") && s != "AreaIdToLightNameTable.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        // ignored if it's not in a design file
+                        if (fileType != StageFileType.Design) break;
+                        BYAML AID = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (AID.RootNode == null || AID.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+
+                        // Console.WriteLine(AID.RootNode.Value.GetType());
+
+                        var AIDNT = AID.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                        if (AIDNT.First().Value.Value is Dictionary<string, BYAMLNode>)
+                        {
+                            var arId = AIDNT.First().Value.GetValueAs<Dictionary<string, BYAMLNode>>();
+                            foreach (string str in arId.Keys)
+                            {
+                                if (arId[str].NodeType is BYAMLNodeType.String)
+                                {
+                                    if (arId[str].GetValueAs<string>() == null)
+                                        continue;
+                                    stage.LightAreaNames.Add(int.Parse(str.Substring("LightAreaId ".Length)), arId[str].GetValueAs<string>());
+                                }
+                            }
+                        }
+
+                        // Console.WriteLine(AIDNT);
                         break;
                     default:
                         stage.AddAdditionalFile(fileType, filename, contents);
@@ -253,10 +417,10 @@ internal partial class RomFSHandler
         }
 
         foreach (H3DLUT lut in h3D.LUTs)
-        foreach (H3DLUTSampler sampler in lut.Samplers)
-        {
-            scheduler.EnqueueGLTask(gl => actor.AddLUTTexture(gl, lut.Name, sampler));
-        }
+            foreach (H3DLUTSampler sampler in lut.Samplers)
+            {
+                scheduler.EnqueueGLTask(gl => actor.AddLUTTexture(gl, lut.Name, sampler));
+            }
 
         foreach (H3DModel model in h3D.Models)
         {
@@ -373,6 +537,9 @@ internal partial class RomFSHandler
 
             if (narc is not null)
             {
+                foreach ((string Name, byte[] Contents) f in narc.EnumerateFiles())
+                    _bgmTable.AdditionalFiles.Add(f.Name, f.Contents);
+
                 byte[] defaultListData = narc.GetFile("StageDefaultBgmList.byml");
                 byte[] listData = narc.GetFile("StageBgmList.byml");
                 BYAML defaultListByaml = BYAMLParser.Read(defaultListData, s_byamlEncoding);
@@ -388,19 +555,18 @@ internal partial class RomFSHandler
                         if (node.NodeType != BYAMLNodeType.Dictionary)
                             continue;
 
-                        var d = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                        var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
-                        d.TryGetValue("BgmLabel", out BYAMLNode? lbl);
-                        d.TryGetValue("Scenario", out BYAMLNode? sc);
-                        d.TryGetValue("StageName", out BYAMLNode? name);
-
-                        StageDefaultBgm bgm =
-                            new()
-                            {
-                                Scenario = sc?.GetValueAs<int>() ?? 0,
-                                BgmLabel = lbl?.GetValueAs<string>() ?? "",
-                                StageName = name?.GetValueAs<string>() ?? "",
-                            };
+                        dict.TryGetValue("BgmLabel", out BYAMLNode? lbl);
+                        dict.TryGetValue("Scenario", out BYAMLNode? sc);
+                        dict.TryGetValue("StageName", out BYAMLNode? name);
+                        StageDefaultBgm bgm = new StageDefaultBgm()
+                        {
+                            Scenario = sc?.GetValueAs<int>() ?? 0,
+                            BgmLabel = lbl?.GetValueAs<string>() ?? "",
+                            StageName = name?.GetValueAs<string>() ?? "",
+                        };
+                        if (!_bgmTable.BgmFiles.Contains(bgm.BgmLabel)) _bgmTable.BgmFiles.Add(bgm.BgmLabel);
 
                         _bgmTable.StageDefaultBgmList.Add(bgm);
                     }
@@ -425,8 +591,8 @@ internal partial class RomFSHandler
                                     continue;
 
                                 var dict = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
-                                // ignore idx for now
-                                _bgmTable.BgmTypes.Add(dict["Kind"].GetValueAs<string>()!);
+
+                                _bgmTable.BgmTypes.Add(dict["Idx"].GetValueAs<int>(), dict["Kind"].GetValueAs<string>());
                             }
                         }
                         else
@@ -466,14 +632,9 @@ internal partial class RomFSHandler
                                                 continue;
 
                                             KindDefine k = new();
-
-                                            k.Kind = bnode
-                                                .GetValueAs<Dictionary<string, BYAMLNode>>()!["Kind"]
-                                                .GetValueAs<string>()!;
-
-                                            k.Label = bnode
-                                                .GetValueAs<Dictionary<string, BYAMLNode>>()!["Label"]
-                                                .GetValueAs<string>()!;
+                                            k.Kind = bnode.GetValueAs<Dictionary<string, BYAMLNode>>()["Kind"].GetValueAs<string>();
+                                            k.Label = bnode.GetValueAs<Dictionary<string, BYAMLNode>>()["Label"].GetValueAs<string>();
+                                            if (!_bgmTable.BgmFiles.Contains(k.Label)) _bgmTable.BgmFiles.Add(k.Label);
 
                                             e.Add(k);
                                         }
@@ -489,11 +650,10 @@ internal partial class RomFSHandler
                 }
             }
 
-            _bgmTable.BgmFiles = Directory
-                .EnumerateFiles(Path.Join(_soundPath, "stream"))
-                .Select(x => Path.GetFileNameWithoutExtension(x))
-                .Order()
-                .ToArray();
+            if (Directory.Exists(Path.Join(_soundPath, "stream")))
+                _bgmTable.BgmFiles = Directory.EnumerateFiles(Path.Join(_soundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x)).Order().ToList();
+            else
+                _bgmTable.BgmFiles.Sort();
         }
 
         //var query = (from s in _bgmTable.StageDefaultBgmList where s.Scenario == 1 select s).ToList();
@@ -526,7 +686,7 @@ internal partial class RomFSHandler
                         var wdict = wnode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
 
                         if (wdict.TryGetValue("Type", out BYAMLNode? wtp))
-                            world.WorldType = Enum.Parse<SystemDataTable.WorldTypes>(wtp.GetValueAs<string>()!);
+                            world.WorldType = Enum.Parse<SystemDataTable.WorldTypes>(wtp?.GetValueAs<string>()!);
 
                         BYAMLNode[] stagenodes = wdict["Course"].GetValueAs<BYAMLNode[]>()!;
 
@@ -544,24 +704,16 @@ internal partial class RomFSHandler
                             dict.TryGetValue("Stage", out BYAMLNode? st);
                             dict.TryGetValue("CoinCollectNum", out BYAMLNode? ccn);
 
-                            SystemDataTable.StageDefine lvl =
-                                new()
-                                {
-                                    StageType = (SystemDataTable.StageTypes)
-                                        Enum.Parse(
-                                            typeof(SystemDataTable.StageTypes),
-                                            tp?.GetValueAs<string>() ?? string.Empty
-                                        ),
-                                    Scenario = sc?.GetValueAs<int>() ?? -1,
-                                    Miniature = min?.GetValueAs<string>() ?? "",
-                                    Stage = st?.GetValueAs<string>() ?? "",
-                                    CollectCoinNum = ccn?.GetValueAs<int>() ?? -1,
-                                };
+                            SystemDataTable.StageDefine lvl = new()
+                            {
+                                StageType = (SystemDataTable.StageTypes)Enum.Parse(typeof(SystemDataTable.StageTypes), tp.GetValueAs<string>()),
+                                Scenario = sc?.GetValueAs<int>() ?? -1,
+                                Miniature = min?.GetValueAs<string>() ?? "",
+                                Stage = st?.GetValueAs<string>() ?? "",
+                                CollectCoinNum = ccn?.GetValueAs<int>() ?? -1,
+                            };
 
-                            if (
-                                lvl.StageType != SystemDataTable.StageTypes.Dokan
-                                && lvl.StageType != SystemDataTable.StageTypes.Empty
-                            )
+                            if (lvl.StageType != SystemDataTable.StageTypes.Dokan && lvl.StageType != SystemDataTable.StageTypes.Empty)
                             {
                                 lvl.StageNumber = lvlNum;
                                 lvlNum += 1;
@@ -578,6 +730,45 @@ internal partial class RomFSHandler
         return _GSDTable;
     }
 
+    public Dictionary<string, LightArea> GetPossibleLightAreas()
+    {
+        if (_lightAreas == null)
+        {
+            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(_actorsPath, "LightDataArea.szs"));
+            _lightAreas = new();
+            if (narc != null)
+            {
+                var v = narc.EnumerateFiles("/");
+                foreach ((string name, byte[] contents) in v)
+                {
+                    BYAML LightAreaBYML = BYAMLParser.Read(contents, s_byamlEncoding);
+                    var rootLightAreaDict = LightAreaBYML.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                    if (rootLightAreaDict != null)
+                    {
+                        LightArea lA = new();
+                        rootLightAreaDict.TryGetValue("Interpolate Frame", out BYAMLNode iFrame);
+                        rootLightAreaDict.TryGetValue("MapObj Light", out BYAMLNode MOL);
+                        rootLightAreaDict.TryGetValue("Name", out BYAMLNode lName);
+                        rootLightAreaDict.TryGetValue("Obj Light", out BYAMLNode OL);
+                        rootLightAreaDict.TryGetValue("Player Light", out BYAMLNode PL);
+
+                        lA.InterpolateFrame = iFrame?.GetValueAs<int>() ?? 10;
+                        lA.Name = lName?.GetValueAs<string>() ?? default!;
+                        lA.MapObjectLight = new(MOL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                        lA.ObjectLight = new(OL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                        lA.PlayerLight = new(PL.GetValueAs<Dictionary<string, BYAMLNode>>()!);
+                        _lightAreas.Add(lA.Name, lA);
+                    }
+                }
+            }
+        }
+        return _lightAreas;
+    }
+    public NARCFileSystem GetShader()
+    {
+        return SZSWrapper.ReadFile(Path.Join(_actorsPath, "Shader.szs"))!;
+    }
     private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageFileType fileType)
     {
         if (byaml.RootNode.NodeType is not BYAMLNodeType.Dictionary)
@@ -876,6 +1067,7 @@ internal partial class RomFSHandler
                     scaleZ?.GetValueAs<float>() ?? 1
                 ),
                 Name = name?.GetValueAs<string>() ?? "StageObj",
+                ClassName = className?.GetValueAs<string>() ?? null,
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
                 SwitchA = switchA != null ? switchA.GetValueAs<int>() : -1,
                 SwitchB = switchB != null ? switchB.GetValueAs<int>() : -1,
@@ -908,6 +1100,7 @@ internal partial class RomFSHandler
                         && i.Key != "CameraId"
                         && i.Key != "ClippingGroupId"
                         && i.Key != "ViewId"
+                        && i.Key != "ClassName"
                         && !i.Key.Contains("Switch")
                     )
                     .ToDictionary(i => i.Key, i => i.Value.Value)
@@ -966,7 +1159,7 @@ internal partial class RomFSHandler
 
     #region Stage Writing
 
-    public bool WriteStage(Stage stage)
+    public bool WriteStage(Stage stage, bool _useClassNames)
     {
         int currentId = 0;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
@@ -988,132 +1181,127 @@ internal partial class RomFSHandler
             StageFile st = stage.GetStageFile(StageType);
 
             if (st.IsEmpty())
-                continue;
-
-            dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
-            dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
-            dict.Add("LayerInfos", new(BYAMLNodeType.Array));
-
-            Dictionary<string, BYAMLNode> allInfosDict = new(); // dictionary of arrays of dictionaries
-            // design , map, sound StageData.byaml
-
-            currentId = 0;
-            var allRailDict = dict["AllRailInfos"].GetValueAs<Dictionary<string, BYAMLNode>>()!;
-
-            allRailDict.Add("RailInfo", new(BYAMLNodeType.Array));
-            List<BYAMLNode> railInfo = new(); //= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
-            Dictionary<RailObj, BYAMLNode> railObjNodes = new();
-
-            foreach (RailObj rail in st.GetRailInfos())
             {
-                var nodeRail = WriteRail(rail, currentId);
-                railInfo.Add(nodeRail);
-                railObjNodes.Add(rail, nodeRail);
-                currentId++;
-            }
-
-            allRailDict["RailInfo"].Value = railInfo.ToArray();
-            dict["AllRailInfos"].Value = allRailDict;
-
-            //List<BYAMLNode> layerInfos = new();
-            //Dictionary<string, BYAMLNode> layerInfosNames = new(); // "Common", BYAML_Array[] -> "ObjInfo", "CameraAreaInfo"...
-            Dictionary<string, Dictionary<string, List<BYAMLNode>>> layerInfosList = new(); // "Common", List_Array[] -> "ObjInfo", "CameraAreaInfo"...
-
-            //currentLayer
-            currentId = 0;
-
-            foreach (StageObjType Infos in Enum.GetValues<StageObjType>())
+                if (StageType == StageFileType.Sound)
+                    continue;
+            }   
+            else
             {
-                if (Infos != StageObjType.Rail && Infos != StageObjType.Child && Infos != StageObjType.AreaChild)
+                dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
+                dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
+                dict.Add("LayerInfos", new(BYAMLNodeType.Array));
+
+                Dictionary<string, BYAMLNode> allInfosDict = new(); // dictionary of arrays of dictionaries
+                                                                    // design , map, sound StageData.byaml
+
+                currentId = 0;
+                Dictionary<string, BYAMLNode> allRailDict;
+                dict["AllRailInfos"].TryGetValueAs(out allRailDict);
+
+                allRailDict.Add("RailInfo", new(BYAMLNodeType.Array));
+                List<BYAMLNode> railInfo = new();//= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
+                Dictionary<RailObj, BYAMLNode> railObjNodes = new();
+                foreach (RailObj rail in st.GetRailInfos())
                 {
-                    /* AllInfos (dictionary)
-            (Dict entry) -> "CameraAreaInfo"[] (array)
-                        (array entry 0) -> CameraArea (dictionary)
-                        (array entry 1) -> CameraArea (dictionary)
-                        (array entry 2) -> CameraArea (dictionary)
-            (Dict entry) -> "StartInfo"[] (array)
-                        (array entry) -> Mario (dictionary)
-                    */
-
-                    List<StageObj> objs = st.GetObjInfos(Infos);
-
-                    if (objs.Count == 0)
-                        continue;
-
-                    List<BYAMLNode> currentInfosList = new();
-                    foreach (StageObj currentObj in objs)
-                    {
-                        if (currentObj.Parent != null)
-                            continue;
-
-                        string scenarioLayer = string.Empty;
-                        int cId = currentId;
-                        if (currentObj.Layer.Contains("シナリオ"))
-                        {
-                            scenarioLayer = "Scenario";
-                            if (currentObj.Layer.Contains('＆') || currentObj.Layer.Contains("&"))
-                            {
-                                scenarioLayer += currentObj.Layer.ElementAt(4) + "And" + currentObj.Layer.ElementAt(6);
-                            }
-                            else
-                            {
-                                scenarioLayer += currentObj.Layer.ElementAt(4);
-                                // add to ScenarioX
-                            }
-                        }
-                        else if (currentObj.Layer.Contains("共通")) // common / commons
-                        {
-                            scenarioLayer = "Common";
-                            if (currentObj.Layer.Contains("サブ"))
-                            {
-                                scenarioLayer += "Sub";
-                                // add to CommonSub
-                            }
-                        }
-                        else if (currentObj.Layer == string.Empty)
-                        { // if we have an incorrect layer we default to Common
-                            scenarioLayer = "Common";
-                            currentObj.Layer = "共通";
-                        }
-                        else // if the layer is valid but not predefined we let it save as is
-                        {
-                            scenarioLayer = currentObj.Layer;
-                        }
-
-                        var scObj = WriteSceneObjects(currentObj, ref currentId, railObjNodes);
-                        if (scenarioLayer != "")
-                        {
-                            if (!layerInfosList.ContainsKey(scenarioLayer))
-                            {
-                                BYAMLNode n = MakeNewLayerInfos(scenarioLayer);
-                                layerInfosList.Add(scenarioLayer, new());
-                                layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
-                            }
-                            else if (!layerInfosList[scenarioLayer].ContainsKey(InfosToString(Infos)))
-                            {
-                                layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
-                            }
-                        }
-
-                        layerInfosList[scenarioLayer][InfosToString(Infos)].Add(scObj);
-                        currentInfosList.Add(scObj);
-                        currentId += 1;
-                    }
-
-                    BYAMLNode currentInfos = new(BYAMLNodeType.Array, currentInfosList.ToArray());
-                    string ObjectType = InfosToString(Infos);
-                    allInfosDict.Add(ObjectType, currentInfos);
+                    var nodeRail = WriteRail(rail, currentId);
+                    railInfo.Add(nodeRail);
+                    railObjNodes.Add(rail, nodeRail);
+                    currentId++;
                 }
-            }
+                allRailDict["RailInfo"].Value = railInfo.ToArray();
+                dict["AllRailInfos"].Value = allRailDict;
 
-            dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
-            BYAMLNode[] layInfos = GetLayerInfos(
-                layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary()
-            );
-            dict["LayerInfos"].Value = layInfos;
-            rootdict = dict;
-            root.Value = rootdict;
-            file.RootNode = root;
+                //List<BYAMLNode> layerInfos = new();
+                //Dictionary<string, BYAMLNode> layerInfosNames = new(); // "Common", BYAML_Array[] -> "ObjInfo", "CameraAreaInfo"...
+                Dictionary<string, Dictionary<string, List<BYAMLNode>>> layerInfosList = new(); // "Common", List_Array[] -> "ObjInfo", "CameraAreaInfo"...
+
+                //currentLayer
+                currentId = 0;
+
+                foreach (StageObjType Infos in Enum.GetValues<StageObjType>())
+                {
+                    if (Infos != StageObjType.Rail && Infos != StageObjType.Child && Infos != StageObjType.AreaChild)
+                    {
+                        /* AllInfos (dictionary)
+                (Dict entry) -> "CameraAreaInfo"[] (array)
+                            (array entry 0) -> CameraArea (dictionary)
+                            (array entry 1) -> CameraArea (dictionary)
+                            (array entry 2) -> CameraArea (dictionary)
+                (Dict entry) -> "StartInfo"[] (array)
+                            (array entry) -> Mario (dictionary)
+                        */
+
+                        List<StageObj> objs = st.GetObjInfos(Infos);
+                        if (!objs.Any()) continue;
+                        List<BYAMLNode> currentInfosList = new();
+                        foreach (StageObj currentObj in objs)
+                        {
+                            if (currentObj.Parent != null) continue;
+                            string scenarioLayer = "";
+                            int cId = currentId;
+                            if (currentObj.Layer.Contains("シナリオ"))
+                            {
+                                scenarioLayer = "Scenario";
+                                if (currentObj.Layer.Contains("＆") || currentObj.Layer.Contains("&"))
+                                {
+                                    scenarioLayer += currentObj.Layer.ElementAt(4) + "And" + currentObj.Layer.ElementAt(6);
+                                }
+                                else
+                                {
+                                    scenarioLayer += currentObj.Layer.ElementAt(4);
+                                    // add to ScenarioX
+                                }
+                            }
+                            else if (currentObj.Layer.Contains("共通")) // common / commons
+                            {
+                                scenarioLayer = "Common";
+                                if (currentObj.Layer.Contains("サブ"))
+                                {
+                                    scenarioLayer += "Sub";
+                                    // add to CommonSub
+                                }
+                            }
+                            else if (currentObj.Layer == string.Empty)
+                            { // if we have an incorrect layer we default to Common
+                                scenarioLayer = "Common";
+                                currentObj.Layer = "共通";
+                            }
+                            else // if the layer is valid but not predefined we let it save as is
+                            {
+                                scenarioLayer = currentObj.Layer;
+                            }
+                            var scObj = WriteSceneObjects(currentObj, ref currentId, railObjNodes, useClassNames: _useClassNames);
+                            if (scenarioLayer != "")
+                            {
+                                if (!layerInfosList.Keys.Contains(scenarioLayer))
+                                {
+                                    BYAMLNode n = MakeNewLayerInfos(scenarioLayer);
+                                    layerInfosList.Add(scenarioLayer, new());
+                                    layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
+                                }
+                                else if (!layerInfosList[scenarioLayer].Keys.Contains(InfosToString(Infos)))
+                                {
+                                    layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
+                                }
+                            }
+                            layerInfosList[scenarioLayer][InfosToString(Infos)].Add(scObj);
+                            currentInfosList.Add(scObj);
+                            currentId += 1;
+                        }
+                        BYAMLNode currentInfos = new(BYAMLNodeType.Array, currentInfosList.ToArray());
+                        string ObjectType = InfosToString(Infos);
+                        allInfosDict.Add(ObjectType, currentInfos);
+                    }
+                }
+
+
+                dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
+                BYAMLNode[] layInfos = GetLayerInfos(layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary());
+                dict["LayerInfos"].Value = layInfos;
+                rootdict = dict;
+                root.Value = rootdict;
+                file.RootNode = root;
+            }
 
             NARCFileSystem narcFS = new(new());
             byte[] binFile = BYAMLParser.Write(file);
@@ -1121,22 +1309,68 @@ internal partial class RomFSHandler
             {
                 narcFS.AddFile(key, value);
             }
-            // if (st.StageFileType == StageFileType.Map)
-            // {
-            //     narcFS.AddFileRoot("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write(MakeStageInfo(stage)));
-            // }
-            narcFS.AddFileRoot("StageData.byml", binFile);
-            byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-#if DEBUG
             if (st.StageFileType == StageFileType.Map)
-                File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
-#endif
+            {
+                var stageInfoBYML = MakeStageInfo(stage);
+                if (stageInfoBYML != null)
+                    narcFS.AddFileRoot("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));
+            }
+            if (st.StageFileType == StageFileType.Design)
+            {
+                if (stage.StageFogs.Count > 0)
+                    narcFS.AddFileRoot("FogParam" + stage.Scenario + ".byml", BYAMLParser.Write(MakeFogParam(stage)));
+                if (stage.LightParams != null)
+                    narcFS.AddFileRoot("LightParam" + stage.Scenario + ".byml", BYAMLParser.Write(new(stage.LightParams.GetNodes(), s_byamlEncoding, default)));
+                if (stage.LightAreaNames.Count > 0)
+                {
+                    narcFS.AddFileRoot("AreaIdToLightNameTable" + stage.Scenario + ".byml", BYAMLParser.Write(MakeLightAreas(stage)));
+                }
+            }
+            if (!st.IsEmpty())
+                narcFS.AddFileRoot("StageData.byml", binFile);
+            byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
+
+            //          #if DEBUG
+            //          if (st.StageFileType == StageFileType.Map)
+            //          {
+            //              File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
+            //          }
+            //          #endif
             File.WriteAllBytes(paths[StageType], compressedFile);
         }
         return true;
     }
 
-    private BYAML MakeStageInfo(Stage stage)
+    private BYAML MakeFogParam(Stage stage)
+    {
+        BYAMLNode root;
+        Dictionary<string, BYAMLNode> rd = new()
+        {
+            { "ColorB", new(BYAMLNodeType.Float, stage.StageFogs[0].Color.Z) },
+            { "ColorG", new(BYAMLNodeType.Float, stage.StageFogs[0].Color.Y) },
+            { "ColorR", new(BYAMLNodeType.Float, stage.StageFogs[0].Color.X) },
+            { "Density", new(BYAMLNodeType.Float, stage.StageFogs[0].Density) },
+            { "InterpFrame", new(BYAMLNodeType.Int, stage.StageFogs[0].InterpFrame) },
+            { "MaxDepth", new(BYAMLNodeType.Float, stage.StageFogs[0].MaxDepth) },
+            { "MinDepth", new(BYAMLNodeType.Float, stage.StageFogs[0].MinDepth) },
+            { "FogType", new(BYAMLNodeType.String, stage.StageFogs[0].FogType.ToString()) }
+        };
+
+        if (stage.StageFogs.Count > 1)
+        {
+            var stagefogs = new List<BYAMLNode>();
+            for (int i = 1; i < stage.StageFogs.Count; i++)
+            {
+                stagefogs.Add(stage.StageFogs[i].GetNodes());
+            }
+            rd.Add("FogAreas", new(BYAMLNodeType.Array, stagefogs.ToArray()));
+        }
+        root = new(rd);
+        BYAML ret = new(root, s_byamlEncoding, default);
+        ret.RootNode = root;
+        return ret;
+    }
+    private BYAML? MakeStageInfo(Stage stage)
     {
         BYAMLNode root;
         Dictionary<string, BYAMLNode> rd = new();
@@ -1152,6 +1386,23 @@ internal partial class RomFSHandler
         {
             rd.Add("PowerUpItemNum", new(BYAMLNodeType.Int, stage.StageParams.MaxPowerUps));
         }
+        if (stage.StageParams.FootPrint != null) //Array of dictionaries for each footprint
+        {
+            var dc = new Dictionary<string, BYAMLNode>
+            {
+                {"Material", new(BYAMLNodeType.String, stage.StageParams.FootPrint.Material)},
+                {"Model", new(BYAMLNodeType.String, stage.StageParams.FootPrint.Model)},
+            };
+            if (stage.StageParams.FootPrint.AnimName != null)
+                dc.Add("AnimName", new(BYAMLNodeType.String, stage.StageParams.FootPrint.AnimName));
+            if (stage.StageParams.FootPrint.AnimType != null)
+                dc.Add("AnimType", new(BYAMLNodeType.String, stage.StageParams.FootPrint.AnimType));
+
+            BYAMLNode[] arr = [new(dc)];
+            rd.Add("FootPrint", new(BYAMLNodeType.Array, arr, false));
+        }
+        if (rd.Count == 0)
+            return null;
 
         root = new(rd);
         BYAML ret = new(root, s_byamlEncoding, default);
@@ -1159,7 +1410,26 @@ internal partial class RomFSHandler
         return ret;
     }
 
-    private BYAMLNode MakeNewLayerInfos(string layerName, BYAMLNode? layerInfosDict = null)
+    private BYAML MakeLightAreas(Stage stage)
+    {
+        BYAMLNode root;
+        Dictionary<string, BYAMLNode> rd = new();
+        foreach (int id in stage.LightAreaNames.Keys)
+        {
+            rd.Add("LightAreaId " + id.ToString("0000"), new(BYAMLNodeType.String, stage.LightAreaNames[id]));
+        }
+
+        Dictionary<string, BYAMLNode> rTable = new()
+        {
+            { "AreaId LightName Table", new(rd) }
+        };
+        root = new(rTable);
+        BYAML ret = new(root, s_byamlEncoding, default);
+        ret.RootNode = root;
+        return ret;
+    }
+
+    private BYAMLNode MakeNewLayerInfos(string layerName, BYAMLNode layerInfosDict = null)
     {
         BYAMLNode kvp0;
         if (layerInfosDict is null)
@@ -1293,7 +1563,8 @@ internal partial class RomFSHandler
         StageObj currentObj,
         ref int currentId,
         Dictionary<RailObj, BYAMLNode> railObjNodes,
-        int parentId = -1
+        int parentId = -1,
+        bool useClassNames = false
     )
     {
         // read all information
@@ -1301,15 +1572,11 @@ internal partial class RomFSHandler
         //WriteSceneObjects(stageObj, currentId, file);
         int m = 10;
 
-        if (currentObj.Type != StageObjType.Regular)
-            m = 8;
-
+        if (currentObj.Type != StageObjType.Regular && currentObj.Type != StageObjType.Child) m = 8;
         for (int i = 0; i < m; i++)
         {
             currentObj.Properties.TryGetValue("Arg" + i, out object? arg);
-
-            if (arg != null)
-                currentObjectNodes.Add("Arg" + i, new(BYAMLNodeType.Int, arg));
+            if (arg != null) currentObjectNodes.Add("Arg" + i, new(arg));
         }
 
         foreach (var (name, property) in currentObj.Properties)
@@ -1350,10 +1617,9 @@ internal partial class RomFSHandler
             foreach (StageObj child in currentObj.Children)
             {
                 currentId += 1;
-                if (child.Type == StageObjType.AreaChild)
-                    areaArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
-                else
-                    objectArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid));
+
+                if (child.Type == StageObjType.AreaChild) areaArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid, useClassNames: useClassNames));
+                else objectArray.Add(WriteSceneObjects(child, ref currentId, railObjNodes, pid, useClassNames: useClassNames));
             }
 
             BYAMLNode objectArrayNode = new(BYAMLNodeType.Array, objectArray.ToArray());
@@ -1368,8 +1634,18 @@ internal partial class RomFSHandler
 
         currentObjectNodes.Add("name", new(BYAMLNodeType.String, currentObj.Name));
 
-        if (currentObj.ClassName != null)
-            currentObjectNodes.Add("ClassName", new(BYAMLNodeType.String, currentObj.ClassName));
+        if (useClassNames)
+        {
+            if (string.IsNullOrEmpty(currentObj.ClassName))
+            {
+                if (ReadCreatorClassNameTable().ContainsKey(currentObj.Name))
+                    currentObj.ClassName = _creatorClassNameTable[currentObj.Name];
+                else if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(currentObj.Name))
+                    currentObj.ClassName = ClassDatabaseWrapper.DatabaseEntries[currentObj.Name].ClassName;
+            }
+            if (!string.IsNullOrEmpty(currentObj.ClassName))
+                currentObjectNodes.Add("ClassName", new(BYAMLNodeType.String, currentObj.ClassName));
+        }
 
         currentObjectNodes.Add("LayerName", new(BYAMLNodeType.String, currentObj.Layer));
 
@@ -1432,6 +1708,115 @@ internal partial class RomFSHandler
             currentObjectNodes.Add("GenerateParent", new(BYAMLNodeType.Int, currentObj.Parent != null ? parentId : -1));
 
         return new(currentObjectNodes);
+    }
+
+    #endregion
+
+    #region More Writing
+    public bool WriteBgmTable(BgmTable? bT, Stage stage)
+    {
+        if (bT is null) return false;
+
+        string tablePath = Path.Join(_soundPath, "BgmTable.szs");
+
+        Dictionary<string, BYAMLNode> dtop = new();
+
+        List<BYAMLNode> defaultBGMList = new(); //"StageDefaultBgmList"
+        int changedBgm = -1;
+        foreach (StageDefaultBgm defBgm in bT.StageDefaultBgmList)
+        {
+            if (defBgm.StageName == stage.Name && defBgm.Scenario == stage.Scenario)
+            {
+                changedBgm = bT.StageDefaultBgmList.IndexOf(defBgm);
+                defaultBGMList.Add(new(
+                    new Dictionary<string, BYAMLNode>
+                    {
+                        { "BgmLabel", new(stage.DefaultBgm.BgmLabel)},
+                        { "Scenario", new(stage.DefaultBgm.Scenario)},
+                        { "StageName", new(stage.DefaultBgm.StageName)}
+                    }
+                    ));
+            }
+            else
+                defaultBGMList.Add(new(
+                    new Dictionary<string, BYAMLNode>
+                    {
+                        { "BgmLabel", new(defBgm.BgmLabel)},
+                        { "Scenario", new(defBgm.Scenario)},
+                        { "StageName", new(defBgm.StageName)}
+                    }
+                    ));
+        }
+
+        dtop.Add("StageDefaultBgmList", new(defaultBGMList.ToArray()));
+
+        if (changedBgm > -1)
+            bT.StageDefaultBgmList[changedBgm].BgmLabel = stage.DefaultBgm.BgmLabel;
+
+        Dictionary<string, BYAMLNode> top = new();
+
+        List<BYAMLNode> BGMTypes = new(); //"KindNumList"
+
+        foreach (KeyValuePair<int, string> s in bT.BgmTypes)
+        {
+            Dictionary<string, BYAMLNode> tp = new()
+            {
+                { "Idx", new( BYAMLNodeType.Int, s.Key)},
+                { "Kind", new( BYAMLNodeType.String, s.Value)}
+            };
+            BGMTypes.Add(new(tp));
+        }
+        top.Add("KindNumList", new(BYAMLNodeType.Array, BGMTypes.ToArray()));
+
+        List<BYAMLNode> BGMList = new(); //"StageBgmList"
+
+        foreach (StageBgm bgm in bT.StageBgmList)
+        {
+            Dictionary<string, BYAMLNode> lineList = new();
+
+            foreach (string s in bgm.LineList.Keys)
+            {
+                List<BYAMLNode> currentline = new();
+                foreach (KindDefine k in bgm.LineList[s])
+                {
+                    currentline.Add(new(new Dictionary<string, BYAMLNode>()
+                    {
+                      { "Kind", new(BYAMLNodeType.String, k.Kind)},
+                      { "Label", new(BYAMLNodeType.String, k.Label)}
+                    }));
+                }
+                lineList.Add(s, new(currentline.ToArray()));
+            }
+
+            Dictionary<string, BYAMLNode> tp = new()
+            {
+                { "StageName", new( BYAMLNodeType.String, bgm.StageName)},
+                { "LineList", new(lineList)}
+            };
+            if (bgm.Scenario != null)
+                tp.Add("Scenario", new(BYAMLNodeType.Int, bgm.Scenario));
+            BGMList.Add(new(tp));
+        }
+        top.Add("StageBgmList", new(BYAMLNodeType.Array, BGMList.ToArray()));
+
+
+
+        BYAML defbyml = new(new(dtop), s_byamlEncoding, default);
+        BYAML byml = new(new(top), s_byamlEncoding, default);
+        NARCFileSystem narcFS = new(new());
+        byte[] defbin = BYAMLParser.Write(defbyml);
+        byte[] bin = BYAMLParser.Write(byml);
+        narcFS.AddFileRoot("StageBgmList.byml", bin);
+        narcFS.AddFileRoot("StageDefaultBgmList.byml", defbin);
+
+        foreach (string s in bT.AdditionalFiles.Keys)
+        {
+            if (s == "StageDefaultBgmList.byml" || s == "StageBgmList.byml") continue;
+            narcFS.AddFileRoot(s, bT.AdditionalFiles[s]);
+        }
+        byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
+        File.WriteAllBytes(tablePath, compressedFile);
+        return true;
     }
 
     #endregion

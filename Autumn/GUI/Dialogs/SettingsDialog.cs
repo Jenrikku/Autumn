@@ -57,11 +57,23 @@ internal class SettingsDialog
     {
         if (!_isOpened)
             return;
+            
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        {
+            Reset();
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
 
         ImGui.OpenPopup("Settings");
 
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
-        ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
+
+        ImGui.SetNextWindowPos(
+            ImGui.GetMainViewport().GetCenter(),
+            ImGuiCond.Appearing,
+            new(0.5f * _window.ScalingFactor, 0.5f)
+        );
 
         if (
             !ImGui.BeginPopupModal(
@@ -104,6 +116,41 @@ internal class SettingsDialog
         ImGui.SetItemTooltip("Recommended values: 20, 35");
         _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
 
+        ImGui.Separator();
+        ImGui.Text("Reset:");
+
+        float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X*1.65f;
+        if (ImGui.Button("Values", new(resetWidth,0)))
+        {
+            _window.ContextHandler.SetProjectSetting("UseClassNames", false);
+            _window.ContextHandler.SetProjectSetting("UseWASD", false);
+            _window.ContextHandler.SetProjectSetting("UseMiddleMouse", false);
+            _window.ContextHandler.SystemSettings.Theme = 0;
+            _window.ContextHandler.SystemSettings.MouseSpeed = 20;
+            ImGui.StyleColorsDark();
+            ImGui.CloseCurrentPopup();
+            ImGui.EndPopup();
+            _isOpened = false;
+            Reset();
+            return;
+        }
+        ImGui.SetItemTooltip("This will set all values to their default.");
+        ImGui.SameLine();
+
+        if (ImGui.Button("Layout", new(resetWidth,0)))
+        {
+            string stpth = Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini");
+            if (File.Exists(stpth))
+                File.Delete(stpth);
+            File.Copy(Path.Join("Resources", "DefaultLayout.ini"), Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini"));
+            ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
+            ImGui.CloseCurrentPopup();
+            ImGui.EndPopup();
+            _isOpened = false;
+            Reset();
+            return;
+        }
+
         // ImGui.TextColored(new Vector4(1, 0, 0, 1), "Test error text");
 
         if (ImGui.Button("Cancel", new(80, 0)))
@@ -127,22 +174,6 @@ internal class SettingsDialog
         }
 
         ImGui.SameLine();
-        ImGui.SetCursorPosX(dimensions.X / 2);
-
-        if (ImGui.Button("Reset", new(80, 0)))
-        {
-            _window.ContextHandler.SetProjectSetting("UseClassNames", false);
-            _window.ContextHandler.SystemSettings.UseWASD = false;
-            _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
-            _window.ContextHandler.SystemSettings.Theme = default;
-            _window.ContextHandler.SystemSettings.MouseSpeed = default;
-            ImGui.StyleColorsDark();
-            ImGui.CloseCurrentPopup();
-            ImGui.EndPopup();
-            _isOpened = false;
-            Reset();
-            return;
-        }
 
         ImGui.SetItemTooltip("This will set all values to their default.");
 

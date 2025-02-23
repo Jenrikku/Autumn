@@ -114,7 +114,7 @@ namespace Autumn.Rendering
                     oColor.a += a;
 
                     a = 2.0*smoothstep(fwx*2.0,0,abs(vTexCoord.x));
-                    oColor.rbg = mix(oColor.rbg,vec3(0.0,0.0,1.0),a);
+                    oColor.rbg = mix(oColor.rbg,vec3(0.0,1.0,0.0),a);
                     oColor.a += a;
 
                     oColor.a*=gl_FragCoord.a*10.0;

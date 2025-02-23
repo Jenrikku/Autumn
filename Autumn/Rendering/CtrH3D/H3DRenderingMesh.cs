@@ -55,7 +55,10 @@ internal class H3DRenderingMesh : IDisposable
             vertexBuffer = stream.ToArray();
         }
 
-        Debug.Assert(vertexBuffer.Length == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount);
+        //Debug.Assert(
+        //    vertexBuffer.Length
+        //        == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount
+        //);
 
         _vertexBufferHandle = gl.GenBuffer();
         _elementBufferHandle = gl.GenBuffer();

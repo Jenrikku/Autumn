@@ -104,11 +104,11 @@ internal class StageWindow
 
                                     newScene.ResetCamera();
                                     window.Scenes.Add(newScene);
+                                    ImGui.SetWindowFocus("Objects");
                                 }
                             );
                         }
 
-                        ImGui.SetWindowFocus("Objects");
                     }
 
                     ImGui.TableNextColumn();
@@ -163,11 +163,11 @@ internal class StageWindow
 
                                     newScene.ResetCamera();
                                     window.Scenes.Add(newScene);
+                                    ImGui.SetWindowFocus("Objects");
                                 }
                             );
                         }
 
-                        ImGui.SetWindowFocus("Objects");
                     }
 
                     ImGui.TableNextColumn();

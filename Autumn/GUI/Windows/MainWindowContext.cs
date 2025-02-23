@@ -23,10 +23,10 @@ internal class MainWindowContext : WindowContext
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
-
     public GLTaskScheduler GLTaskScheduler { get; } = new();
 
     public bool IsTransformActive => _sceneWindow.IsTransformActive;
+    public bool IsSceneFocused => _sceneWindow.IsWindowFocused;
 
     private bool _isFirstFrame = true;
 
@@ -39,6 +39,7 @@ internal class MainWindowContext : WindowContext
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
+    private readonly ParametersWindow _paramsWindow;
     private readonly SceneWindow _sceneWindow;
     private readonly WelcomeDialog _welcomeDialog;
 
@@ -60,6 +61,7 @@ internal class MainWindowContext : WindowContext
         _stageWindow = new(this);
         _objectWindow = new(this);
         _propertiesWindow = new(this);
+        _paramsWindow = new(this);
         _sceneWindow = new(this);
 
         Window.Title = "Autumn: Stage Editor";
@@ -74,7 +76,7 @@ internal class MainWindowContext : WindowContext
         Window.Load += () =>
         {
             InfiniteGrid.Initialize(GL!);
-            ModelRenderer.Initialize(GL!);
+            ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
             var cubeTexPixels = new Rgba32[cubeTex.Width * cubeTex.Height];
@@ -163,6 +165,7 @@ internal class MainWindowContext : WindowContext
             {
                 _objectWindow.Render();
                 _propertiesWindow.Render();
+                _paramsWindow.Render();
                 _sceneWindow.Render(deltaSeconds);
                 _stageWindow.Render();
             }
@@ -220,7 +223,15 @@ internal class MainWindowContext : WindowContext
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
 
-    public void SetSceneDuplicateTranslation() => _sceneWindow.isTranslationFromDuplicate = true;
+    public void SetSceneDuplicateTranslation() =>
+        _sceneWindow.isTranslationFromDuplicate = true;
+
+    public void SetSwitchSelected(int i)
+    {
+        _paramsWindow.SwitchEnabled = true;
+        _paramsWindow.SelectedSwitch = i;
+        _paramsWindow.CurrentTab = 0;
+    }
 
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
@@ -297,6 +308,25 @@ internal class MainWindowContext : WindowContext
 
             ImGui.EndMenu();
         }
+        // TODO
+        if (ImGui.BeginMenu("Stage"))
+        {
+            if (ImGui.MenuItem("Edit General Params"))
+                _paramsWindow.MiscEnabled = true;
+            if (ImGui.MenuItem("Edit Switches"))
+                _paramsWindow.SwitchEnabled = true;
+            if (ImGui.MenuItem("Edit Fogs"))
+                _paramsWindow.FogEnabled = true;
+            if (ImGui.MenuItem("Edit Lights"))
+                _paramsWindow.LightEnabled = true;
+            ImGui.Separator();
+            ImGui.BeginDisabled();
+            if (ImGui.MenuItem("Edit Cameras"))
+                _paramsWindow.CamerasEnabled = true;
+
+            ImGui.EndDisabled();
+            ImGui.EndMenu();
+        }
 
 #if DEBUG
         if (ImGui.BeginMenu("Debug"))
@@ -336,6 +366,16 @@ internal class MainWindowContext : WindowContext
                 WindowManager.Add(fileChooserContext);
 
                 fileChooserContext.SuccessCallback += result => Console.WriteLine(result[0]);
+            }
+
+            ImGui.Separator();
+
+            if (ImGui.MenuItem("Show all params"))
+            {
+                _paramsWindow.MiscEnabled = true;
+                _paramsWindow.SwitchEnabled = true;
+                _paramsWindow.FogEnabled = true;
+                _paramsWindow.LightEnabled = true;
             }
 
             ImGui.EndMenu();
@@ -390,6 +430,10 @@ internal class MainWindowContext : WindowContext
                         CurrentScene = null;
                     else
                         CurrentScene = Scenes[i];
+                    if (Scenes.Count == 0)
+                    {
+                        ImGui.SetWindowFocus("Stages");
+                    }    
                 }
             }
 
@@ -435,6 +479,12 @@ internal class MainWindowContext : WindowContext
 
             ImGui.SetCursorPosX(viewportSize.X - textSize.X - 10);
             ImGui.Text("GL tasks left: ");
+        }
+
+        if (_sceneWindow.MouseClickActionsCount > 0)
+        {
+            ImGui.SameLine();
+            ImGui.Text("Click anywhere to place the object, Shift Click to keep adding the same object.");
         }
 
         ImGui.End();

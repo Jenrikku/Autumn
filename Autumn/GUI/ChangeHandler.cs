@@ -94,8 +94,12 @@ internal static class ChangeHandler
         history.Add(change);
         return true;
     }
-
-    public static bool ChangeFieldValueMultiple<T>(ChangeHistory history, IEnumerable<ISceneObj> sList, string name)
+    public static bool ChangeFieldValueMultiple<T>(
+        ChangeHistory history,
+        IEnumerable<ISceneObj> sList,
+        string name,
+        T nvar
+    )
         where T : notnull
     {
         FieldInfo? field = sList.FirstOrDefault()?.GetType().GetField(name);
@@ -110,24 +114,68 @@ internal static class ChangeHandler
         }
 
         Change change =
-            new(
-                Undo: () =>
+        new(
+            Undo: () =>
+            {
+                int i = 0;
+                foreach (ISceneObj obj in sList)
                 {
-                    foreach (ISceneObj obj in sList)
-                    {
-                        field.SetValue(obj, sList.Where(x => x == obj).First());
-                    }
-                },
-                Redo: () =>
-                {
-                    int i = 0;
-                    foreach (ISceneObj obj in sList)
-                    {
-                        field.SetValue(obj, current[i]);
-                        i++;
-                    }
+                    field.SetValue(obj, current[i]);
+                    i++;
                 }
-            );
+            },
+            Redo: () =>
+            {
+                int i = 0;
+                foreach (ISceneObj obj in sList)
+                {
+                    field.SetValue(obj, nvar);
+                    i++;
+                }
+            }
+        );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+    public static bool ChangeHideMultiple(
+        ChangeHistory history,
+        IEnumerable<ISceneObj> sList,
+        string name
+    )
+    {
+        FieldInfo? field = sList.FirstOrDefault()?.GetType().GetField(name);
+
+        if (field is null)
+            return false;
+
+        List<bool> current = new();
+        foreach (ISceneObj obj in sList)
+        {
+            current.Add((bool)field.GetValue(obj)!);
+        }
+        Change change =
+        new(
+            Undo: () =>
+            {
+                int i = 0;
+                foreach (ISceneObj obj in sList)
+                {
+                    field.SetValue(obj, current[i]);
+                    i++;
+                }
+            },
+            Redo: () =>
+            {
+                int i = 0;
+                foreach (ISceneObj obj in sList)
+                {
+                    field.SetValue(obj, !current[i]);
+                    i++;
+                }
+            }
+        );
 
         change.Redo();
         history.Add(change);
@@ -240,6 +288,7 @@ internal static class ChangeHandler
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
         var oldSO = del.StageObj.Clone();
+	var oldParent = del.StageObj.Parent;
         var delete = del;
 
         Change change =
@@ -249,7 +298,7 @@ internal static class ChangeHandler
                     if (context.CurrentScene is null)
                         return;
 
-                    context.CurrentScene.AddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                    context.CurrentScene.ReAddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler, oldParent);
                     delete = context.CurrentScene.EnumerateSceneObjs().Last();
                 },
                 Redo: () =>
@@ -288,7 +337,12 @@ internal static class ChangeHandler
         return true;
     }
 
-    public static uint ChangeDuplicate(MainWindowContext context, ChangeHistory history, ISceneObj dup)
+    public static uint ChangeDuplicate(
+        MainWindowContext context,
+        ChangeHistory history,
+        ISceneObj dup,
+        bool keepChildren = false
+    )
     {
         var duplicate = dup;
         uint return_pick = 0;

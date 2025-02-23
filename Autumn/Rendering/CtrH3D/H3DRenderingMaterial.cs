@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection.Metadata;
 using Autumn.Rendering.CtrH3D.Animation;
 using Autumn.Storage;
 using Autumn.Utils;
@@ -83,26 +84,29 @@ internal class H3DRenderingMaterial
         public float AlphaReference;
         public Vector3 _Padding1;
         public Vector4 SelectionColor;
+        public Vector3 CameraView;
+        public float _Padding2;
+    }
 
-        public struct Light
-        {
-            public Vector3 Position;
-            public int _Padding0;
-            public Vector3 Direction;
-            public int _Padding1;
-            public Vector4 Ambient;
-            public Vector4 Diffuse;
-            public Vector4 Specular0;
-            public Vector4 Specular1;
-            public float AttenuationScale;
-            public float AttenuationBias;
-            public float AngleLUTScale;
-            public int AngleLUTInput;
-            public int SpotAttEnbled; // bool
-            public int DistAttEnbled; // bool
-            public int TwoSidedDiffuse; // bool
-            public int Directional; // bool
-        }
+    public struct Light
+    {
+        public Vector3 Position;
+        public int DisableConst5;
+        public Vector3 Direction;
+        public int _Padding1;
+        public Vector4 Ambient;
+        public Vector4 Diffuse;
+        public Vector4 Specular0;
+        public Vector4 Specular1;
+        public float AttenuationScale;
+        public float AttenuationBias;
+        public float AngleLUTScale;
+        public int AngleLUTInput;
+        public int SpotAttEnbled; // bool
+        public int DistAttEnbled; // bool
+        public int TwoSidedDiffuse; // bool
+        public int Directional; // bool
+        public Vector4 ConstantColor5;
     }
 
     private readonly ShaderProgram _program;
@@ -154,10 +158,19 @@ internal class H3DRenderingMaterial
         H3DMaterialParams matParams = material.MaterialParams;
         H3DSubMesh subMesh = mesh.SubMeshes[0];
 
-        Debug.Assert(mesh.SubMeshes.Count == 1);
+        // Debug.Assert(mesh.SubMeshes.Count == 1);
 
-        ShaderSource vertexShader = H3DShaders.VertexShader;
-        ShaderSource fragmentShader = H3DShaders.GetFragmentShader(material.Name, material.MaterialParams);
+        bool FakeVtxCol = false;
+
+        if (!mesh.Attributes.Exists(x => x.Name == PICAAttributeName.Color) && matParams.TexEnvStages.Count(x => x.Source.Color.Count(x=> x == PICATextureCombinerSource.PrimaryColor) > 0) > 0)
+        {
+            FakeVtxCol = true;
+        }
+        ShaderSource vertexShader = H3DShaders.VertexShader(FakeVtxCol);
+        ShaderSource fragmentShader = H3DShaders.GetFragmentShader(
+            material.Name,
+            material.MaterialParams
+        );
 
         DepthFunction = (DepthFunction)FromPICATestFunc(matParams.DepthColorMask.DepthFunc);
 
@@ -367,7 +380,7 @@ internal class H3DRenderingMaterial
             matParams.DiffuseColor.R / 255f,
             matParams.DiffuseColor.G / 255f,
             matParams.DiffuseColor.B / 255f,
-            1f
+            matParams.DiffuseColor.A / 255f
         );
 
         // MaterialData --------------------------------------------------------------------------------
@@ -567,7 +580,7 @@ internal class H3DRenderingMaterial
             new(
                 "UVTestPattern",
                 SamplerHelper.GetOrCreate(gl, SamplerHelper.DefaultSamplerKey.NEAREST),
-                TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.BLACK)
+                TextureHelper.GetOrCreate(gl, TextureHelper.DefaultTextureKey.NORMAL)
             )
         );
 
@@ -607,9 +620,45 @@ internal class H3DRenderingMaterial
         );
     }
 
+    public void SetViewRotation(Quaternion Camera)
+    {        
+        _materialBuffer.SetData(
+            _materialBuffer.Data with
+            {
+                CameraView = MathUtils.Round(Vector3.Transform(Vector3.UnitZ, Camera))
+            }
+        );
+    }
+
     public void SetSelectionColor(Vector4 color) =>
         _materialBuffer.SetData(_materialBuffer.Data with { SelectionColor = color });
+    public void SetLight0(Light light) {
+        if (!IsEqualsLight(_materialBuffer.Data.Light0, light))
+        _materialBuffer.SetData(_materialBuffer.Data with { Light0 = light});}
+    public void SetConst5(Vector4 color) =>
+        _materialBuffer.SetData(_materialBuffer.Data with { Constant5Color = color});
+    
+    private bool IsEqualsLight(Light a, Light b)
+    {
+        return a.Ambient == b.Ambient 
+        && a.Diffuse == b.Diffuse
+        && a.Specular0 == b.Specular0
+        && a.Specular1 == b.Specular1
+        && a.ConstantColor5 == b.ConstantColor5
+        && a.Direction == b.Direction
+        && a.Directional == b.Directional
+        && a.Position == b.Position
+        && a.DisableConst5 == b.DisableConst5
+        && a.Diffuse == b.Diffuse;
+    }
+
 
     public bool TryUse(GL gl, out ProgramUniformScope scope) =>
-        _program.TryUse(gl, null, [_sceneParams, _materialParams], out scope, out _);
+        _program.TryUse(
+            gl,
+            null,
+            new IShaderBindingContainer[] { _sceneParams, _materialParams },
+            out scope,
+            out _
+        );
 }

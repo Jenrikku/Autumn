@@ -82,7 +82,7 @@ internal class ObjectWindow(MainWindowContext window)
 
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
-                ImGui.PushFont(window.FontPointers[1]);
+                //ImGui.PushFont(window.FontPointers[1]);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
 
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
@@ -111,7 +111,7 @@ internal class ObjectWindow(MainWindowContext window)
                 }
 
                 ImGui.PopStyleColor(4);
-                ImGui.PopFont();
+                //ImGui.PopFont();
 
                 ImGui.TableSetColumnIndex(1);
 
@@ -161,6 +161,8 @@ internal class ObjectWindow(MainWindowContext window)
                     }
                 }
 
+                ImGui.SetItemTooltip(stageObj.Name);
+
                 listId++;
                 ImGui.TableSetColumnIndex(2);
 
@@ -171,7 +173,7 @@ internal class ObjectWindow(MainWindowContext window)
         }
 
         lastKeyPressed = false;
-        if (window.IsFocused)
+        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
         {
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
             {
