@@ -13,8 +13,9 @@ internal class SettingsDialog
 
     private bool _isOpened = false;
     private bool _useClassNames = false;
-    private bool _WASD = false;
-    private bool _MiddleMovesCamera = false;
+    private bool _wasd = false;
+    private bool _middleMovesCamera = false;
+    private bool _enableVSync = false;
 
     private int _oldStyle = 0;
     private int _selectedStyle = 0;
@@ -38,10 +39,11 @@ internal class SettingsDialog
         _isOpened = true;
         _useClassNames = _window.ContextHandler.Settings.UseClassNames;
         _selectedStyle = _window.ContextHandler.SystemSettings.Theme;
-        _WASD = _window.ContextHandler.SystemSettings.UseWASD;
-        _MiddleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
+        _wasd = _window.ContextHandler.SystemSettings.UseWASD;
+        _middleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
         _oldStyle = _window.ContextHandler.SystemSettings.Theme;
+        _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
     }
 
     /// <summary>
@@ -104,11 +106,13 @@ internal class SettingsDialog
 
         ImGui.Checkbox("Use ClassNames", ref _useClassNames);
 
+        ImGui.Checkbox("Enable VSync", ref _enableVSync);
+
         ImGui.Separator();
 
-        ImGui.Checkbox("Use WASD to move the viewport camera", ref _WASD);
-        ImGui.SetItemTooltip("Please be aware that his WILL interfere with other editor commands.");
-        ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _MiddleMovesCamera);
+        ImGui.Checkbox("Use WASD to move the viewport camera", ref _wasd);
+        ImGui.SetItemTooltip("Please be aware that this WILL interfere with other editor commands.");
+        ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
 
         ImGui.Separator();
 
@@ -123,10 +127,12 @@ internal class SettingsDialog
         if (ImGui.Button("Values", new(resetWidth,0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
-            _window.ContextHandler.SetProjectSetting("UseWASD", false);
-            _window.ContextHandler.SetProjectSetting("UseMiddleMouse", false);
+            _window.ContextHandler.SystemSettings.UseWASD = false;
+            _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
+            _window.ContextHandler.SystemSettings.EnableVSync = false;
             _window.ContextHandler.SystemSettings.Theme = 0;
             _window.ContextHandler.SystemSettings.MouseSpeed = 20;
+            
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
@@ -183,8 +189,9 @@ internal class SettingsDialog
         if (ImGui.Button("Ok", new(80, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", _useClassNames);
-            _window.ContextHandler.SystemSettings.UseWASD = _WASD;
-            _window.ContextHandler.SystemSettings.UseMiddleMouse = _MiddleMovesCamera;
+            _window.ContextHandler.SystemSettings.UseWASD = _wasd;
+            _window.ContextHandler.SystemSettings.UseMiddleMouse = _middleMovesCamera;
+            _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;
             _window.ContextHandler.SystemSettings.Theme = _selectedStyle;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
             ImGui.CloseCurrentPopup();
