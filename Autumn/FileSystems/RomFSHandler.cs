@@ -1336,6 +1336,7 @@ internal partial class RomFSHandler
                 narcFS.AddFileRoot("StageData.byml", binFile);
             if (saveBackup)
             {
+                if (File.Exists(paths[StageType]))
                 File.Copy(paths[StageType], Path.Join(paths[StageType] + ".BACKUP"), true);
             }
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
