@@ -81,11 +81,11 @@ internal static class ModelRenderer
         }
     }
 
-    public static void UpdateScene(in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
+    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
     {
         if (s_commonSceneParams is null)
             throw new InvalidOperationException(
-                $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateScene)}"
+                $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateSceneParams)}"
             );
 
         s_viewMatrix = view;

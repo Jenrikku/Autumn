@@ -54,7 +54,7 @@ internal class Scene
 
     public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
     {
-        ModelRenderer.UpdateScene(view, projection, camera);
+        ModelRenderer.UpdateSceneParams(view, projection, camera);
 
         foreach (ISceneObj obj in _sceneObjects)
             ModelRenderer.Draw(gl, obj, PreviewLight);

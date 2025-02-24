@@ -367,7 +367,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     );
                                 }
 
-				                ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                                ImGui.SameLine(default, style.ItemSpacing.X / 2);
                                 if (ImGui.Button("\uf127##" + pName))
                                 {
                                     window.CurrentScene.Stage.GetStageFile(StageFileType.Map).UnlinkChild(stageObj);
