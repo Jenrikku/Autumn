@@ -12,7 +12,7 @@ internal class SystemSettings
     public bool SkipWelcomeDialog = false;
     public bool OpenLastProject = false;
     public string LastOpenedProject = string.Empty;
-    public bool EnableVSync = false;
+    public bool EnableVSync = true;
     public int Theme = 0;
     public int MouseSpeed = 20;
     public bool UseWASD = false;

@@ -15,7 +15,7 @@ internal class SettingsDialog
     private bool _useClassNames = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
-    private bool _enableVSync = false;
+    private bool _enableVSync = true;
 
     private int _oldStyle = 0;
     private int _selectedStyle = 0;
@@ -129,7 +129,7 @@ internal class SettingsDialog
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
-            _window.ContextHandler.SystemSettings.EnableVSync = false;
+            _window.ContextHandler.SystemSettings.EnableVSync = true;
             _window.ContextHandler.SystemSettings.Theme = 0;
             _window.ContextHandler.SystemSettings.MouseSpeed = 20;
             
