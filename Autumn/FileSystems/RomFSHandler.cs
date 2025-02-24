@@ -1162,6 +1162,7 @@ internal partial class RomFSHandler
     public bool WriteStage(Stage stage, bool _useClassNames)
     {
         int currentId = 0;
+        bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =
             new()
@@ -1187,6 +1188,7 @@ internal partial class RomFSHandler
             }   
             else
             {
+                try {
                 dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
                 dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
                 dict.Add("LayerInfos", new(BYAMLNodeType.Array));
@@ -1300,7 +1302,11 @@ internal partial class RomFSHandler
                 dict["LayerInfos"].Value = layInfos;
                 rootdict = dict;
                 root.Value = rootdict;
-                file.RootNode = root;
+                file.RootNode = root;}
+                catch 
+                {
+                    Console.WriteLine("SOMETHING WENT WRONG DURING STAGE SAVING PLEASE CHECK THE LOGGED FILES");
+                }
             }
 
             NARCFileSystem narcFS = new(new());
@@ -1328,14 +1334,13 @@ internal partial class RomFSHandler
             }
             if (!st.IsEmpty())
                 narcFS.AddFileRoot("StageData.byml", binFile);
+            if (saveBackup)
+            {
+                File.Copy(paths[StageType], Path.Join(paths[StageType] + ".BACKUP"), true);
+            }
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-
-            //          #if DEBUG
-            //          if (st.StageFileType == StageFileType.Map)
-            //          {
-            //              File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
-            //          }
-            //          #endif
+            if (saveBackup)
+                File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
             File.WriteAllBytes(paths[StageType], compressedFile);
         }
         return true;
