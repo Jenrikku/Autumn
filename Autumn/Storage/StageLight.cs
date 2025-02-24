@@ -161,7 +161,7 @@ internal class StageLight
     {
         return new()
         {
-            Position = -Direction,
+            Position = Direction,
             Direction = new(),
             Ambient = Ambient,
             Diffuse = Diffuse,

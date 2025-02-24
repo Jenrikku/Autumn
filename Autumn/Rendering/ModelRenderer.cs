@@ -26,7 +26,7 @@ internal static class ModelRenderer
 
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
-
+    private static Vector3 s_cameraRotation;
     private static H3DRenderingMaterial.Light _defaultLight = new()
     {
         Ambient = new(0.1f, 0.1f, 0.1f, 1),
@@ -50,7 +50,6 @@ internal static class ModelRenderer
     {
         DefaultCubeRenderer.Initialize(gl);
         AreaRenderer.Initialize(gl);
-
         s_commonSceneParams = new();
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
 
@@ -82,15 +81,16 @@ internal static class ModelRenderer
         }
     }
 
-    public static void UpdateMatrices(in Matrix4x4 view, in Matrix4x4 projection)
+    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
     {
         if (s_commonSceneParams is null)
             throw new InvalidOperationException(
-                $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateMatrices)}"
+                $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateSceneParams)}"
             );
 
         s_viewMatrix = view;
         s_projectionMatrix = projection;
+        s_cameraRotation = Vector3.Transform(Vector3.UnitZ, camera);
 
         s_commonSceneParams.ViewProjection = view * projection;
     }
@@ -160,6 +160,7 @@ internal static class ModelRenderer
                 material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
                 material.SetMatrices(s_projectionMatrix, actorSceneObj.Transform, s_viewMatrix);
                 material.SetLight0(previewLight?.GetAsLight() ?? _defaultLight);
+                material.SetViewRotation(s_cameraRotation);
 
                 if (!material.TryUse(gl, out ProgramUniformScope scope))
                     continue;

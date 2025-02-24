@@ -7,6 +7,7 @@ using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
+using Autumn.Storage;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
@@ -26,7 +27,7 @@ internal class MainWindowContext : WindowContext
     public GLTaskScheduler GLTaskScheduler { get; } = new();
 
     public bool IsTransformActive => _sceneWindow.IsTransformActive;
-    public bool IsSceneFocused => _sceneWindow.IsWindowFocused;
+    public bool IsSceneFocused => _sceneWindow.IsWindowFocused || IsFocused;
 
     private bool _isFirstFrame = true;
 
@@ -34,7 +35,7 @@ internal class MainWindowContext : WindowContext
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
     private SettingsDialog _settingsDialog;
-    public EditChildrenDialog? _editChildrenDialog;
+    public EditChildrenDialog _editChildrenDialog;
 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
@@ -55,6 +56,7 @@ internal class MainWindowContext : WindowContext
         _closingDialog = new(this);
         _newStageObjDialog = new(this);
         _welcomeDialog = new(this);
+        _editChildrenDialog = new(this);
         _settingsDialog = new(this);
 
         // Initialize editors:
@@ -178,7 +180,7 @@ internal class MainWindowContext : WindowContext
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
-            _editChildrenDialog?.Render();
+            _editChildrenDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
 
@@ -232,7 +234,8 @@ internal class MainWindowContext : WindowContext
         _paramsWindow.SelectedSwitch = i;
         _paramsWindow.CurrentTab = 0;
     }
-
+    internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
+    
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
     /// </summary>

@@ -101,10 +101,10 @@ internal class ObjectWindow(MainWindowContext window)
 
                 if (ImGui.Button(obj.IsVisible ? "\uF06E" : "\uF070", new(ImGui.GetColumnWidth(), default))) // Hide / Show
                 {
-                    ChangeHandler.ChangeFieldValue(
+                    ChangeHandler.ChangePropertyValue(
                         window.CurrentScene.History,
                         obj,
-                        "isVisible",
+                        "IsVisible",
                         obj.IsVisible,
                         !obj.IsVisible
                     );

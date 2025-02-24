@@ -13,9 +13,8 @@ namespace Autumn.GUI.Dialogs;
 /// <summary>
 /// A dialog that allows the user to set and unset objects as children of another.
 /// </summary>
-internal class EditChildrenDialog
+internal class EditChildrenDialog(MainWindowContext _window)
 {
-    private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
     private string _name = string.Empty;
@@ -28,11 +27,11 @@ internal class EditChildrenDialog
 
     Vector2 dimensions = new(800, 450);
 
-    public EditChildrenDialog(MainWindowContext window, StageObj stageObj)
+
+    public void Open(StageObj stageObj)
     {
+
         Reset();
-        dimensions *= window.ScalingFactor;
-        _window = window;
         _parent = stageObj;
 
         if (_parent.Children is not null)
@@ -43,18 +42,19 @@ internal class EditChildrenDialog
 
         _sceneObjs = _window.CurrentScene!.EnumerateSceneObjs();
         _name = _parent.Name;
+        _isOpened = true;
     }
-
-    public void Open() => _isOpened = true;
 
     /// <summary>
     /// Resets all values from this dialog to their defaults.
     /// </summary>
     public void Reset()
     {
-        dimensions = new(800, 450);
+        dimensions = new Vector2(800, 450) * _window.ScalingFactor;
         _name = string.Empty;
         _parent = null;
+        _oldChildren = new();
+        _newChildren = new();
         _selectedObjs[0].Clear();
         _selectedObjs[1].Clear();
         _isOpened = false;

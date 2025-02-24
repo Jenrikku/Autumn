@@ -328,7 +328,7 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainContext)
                     return;
 
-                ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects, "IsVisible");
+                ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects);
             },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
