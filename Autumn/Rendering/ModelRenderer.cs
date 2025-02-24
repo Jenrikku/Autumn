@@ -5,6 +5,7 @@ using Autumn.FileSystems;
 using Autumn.Rendering.Area;
 using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.DefaultCube;
+using Autumn.Rendering.Rail;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using SceneGL;
@@ -23,6 +24,8 @@ internal static class ModelRenderer
 
     private static CommonSceneParameters? s_commonSceneParams;
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
+    private static CommonMaterialParameters? s_RailMaterialParams;
+    private static CommonMaterialParameters? s_RailPointMaterialParams;
 
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
@@ -50,8 +53,12 @@ internal static class ModelRenderer
     {
         DefaultCubeRenderer.Initialize(gl);
         AreaRenderer.Initialize(gl);
+
         s_commonSceneParams = new();
+        
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
+        s_RailMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
+        s_RailPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
 
         var narc = fsHandler.ReadShaders();
         if (narc is not null)
@@ -136,6 +143,10 @@ internal static class ModelRenderer
 
         if (sceneObj is RailSceneObj railSceneObj)
         {
+            s_RailMaterialParams!.Selected = railSceneObj.Selected;
+
+            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_RailMaterialParams, s_RailPointMaterialParams!);
+
             return;
         }
 

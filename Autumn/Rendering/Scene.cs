@@ -4,6 +4,7 @@ using Autumn.Enums;
 using Autumn.FileSystems;
 using Autumn.History;
 using Autumn.Rendering.Area;
+using Autumn.Rendering.Rail;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Wrappers;
@@ -385,10 +386,7 @@ internal class Scene
 
                 _stageFogList[Stage.StageFogs[i]].Add(sobj);
             }
-
-
         }
-
     }
 
     private void GenerateSceneObjects(
@@ -408,6 +406,8 @@ internal class Scene
 
         foreach (StageObjType objType in types)
             GenerateSceneObjects(Stage.EnumerateStageObjs(objType), fsHandler, scheduler, ref status);
+
+        GenerateSceneObjects(Stage.EnumerateRails(), fsHandler, scheduler, ref status);
     }
 
     private void GenerateSceneObjects(
@@ -448,7 +448,10 @@ internal class Scene
         // Rails:
         if (stageObj.Type == StageObjType.Rail && stageObj is RailObj rail)
         {
-            RailSceneObj railSceneObj = new(rail, ref _lastPickingId);
+            RailModel model = new(rail);
+            RailSceneObj railSceneObj = new(rail, model, ref _lastPickingId);
+
+            scheduler.EnqueueGLTask(model.Initialize);
 
             // TO-DO: Pickable rail and rail points.
 

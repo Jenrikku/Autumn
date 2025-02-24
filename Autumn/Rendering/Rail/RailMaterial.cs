@@ -22,7 +22,7 @@ internal static class RailMaterial
             };
 
             void main() {
-                gl_Position = uViewProjection * uTransform;
+                gl_Position = uViewProjection * uTransform * aPos;
             }
             """
         );

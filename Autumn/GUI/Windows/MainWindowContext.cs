@@ -1,5 +1,4 @@
 using System.Numerics;
-using Autumn.ActionSystem;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
@@ -7,6 +6,7 @@ using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
+using Autumn.Rendering.Rail;
 using Autumn.Storage;
 using ImGuiNET;
 using SceneGL.GLHelpers;
@@ -78,6 +78,7 @@ internal class MainWindowContext : WindowContext
         Window.Load += () =>
         {
             InfiniteGrid.Initialize(GL!);
+            RailRenderer.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));

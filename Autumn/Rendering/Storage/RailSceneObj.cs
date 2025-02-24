@@ -1,4 +1,5 @@
 using System.Numerics;
+using Autumn.Rendering.Rail;
 using Autumn.Storage;
 
 namespace Autumn.Rendering.Storage;
@@ -6,6 +7,7 @@ namespace Autumn.Rendering.Storage;
 internal class RailSceneObj : ISceneObj
 {
     public RailObj RailObj { get; }
+    public RailModel RailModel { get; }
 
     public Matrix4x4 Transform { get; set; }
     public AxisAlignedBoundingBox AABB { get; set; }
@@ -19,9 +21,10 @@ internal class RailSceneObj : ISceneObj
 
     StageObj ISceneObj.StageObj => RailObj;
 
-    public RailSceneObj(RailObj rail, ref uint pickingId)
+    public RailSceneObj(RailObj rail, RailModel railModel, ref uint pickingId)
     {
         RailObj = rail;
+        RailModel = railModel;
         PickingId = pickingId++;
 
         AABB = new(); // TO-DO
@@ -36,5 +39,5 @@ internal class RailSceneObj : ISceneObj
         UpdateTransform();
     }
 
-    public void UpdateTransform() => Transform = Matrix4x4.CreateTranslation(new(0.01f));
+    public void UpdateTransform() => Transform = Matrix4x4.Identity;
 }
