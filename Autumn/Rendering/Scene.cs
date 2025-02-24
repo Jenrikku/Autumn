@@ -52,9 +52,9 @@ internal class Scene
         GenerateFog();
     }
 
-    public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection)
+    public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
     {
-        ModelRenderer.UpdateMatrices(view, projection);
+        ModelRenderer.UpdateScene(view, projection, camera);
 
         foreach (ISceneObj obj in _sceneObjects)
             ModelRenderer.Draw(gl, obj, PreviewLight);

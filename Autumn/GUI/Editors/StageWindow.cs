@@ -75,7 +75,7 @@ internal class StageWindow
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
 
-                    if (ImGui.Selectable(name, false, ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGui.Selectable(name +$"##{name}{scenario}", false, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         Scene? scene = window.Scenes.Find(scene =>
                             scene.Stage.Name == name && scene.Stage.Scenario == scenario
@@ -131,7 +131,7 @@ internal class StageWindow
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
 
-                    if (ImGui.Selectable(_stage.Stage + _stage.Scenario, false))
+                    if (ImGui.Selectable(_stage.Stage + $"##{_stage.Stage}{_stage.Scenario}", false))
                     {
                         Scene? scene = window.Scenes.Find(scene =>
                             scene.Stage.Name == _stage.Stage && scene.Stage.Scenario == _stage.Scenario

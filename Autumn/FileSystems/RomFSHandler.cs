@@ -1605,7 +1605,7 @@ internal partial class RomFSHandler
                     );
             }
         }
-        if (currentObj.Name != "Mario")
+        if (currentObj.Type != StageObjType.Start)
             currentObjectNodes.Add("l_id", new(BYAMLNodeType.Int, currentId));
 
         if (currentObj.Children != null && currentObj.Children.Any())

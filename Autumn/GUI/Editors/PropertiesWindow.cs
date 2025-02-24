@@ -37,9 +37,11 @@ internal class PropertiesWindow(MainWindowContext window)
             fixed (ImGuiWindowClass* tmp = &windowClass)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
-        if (!ImGui.Begin("Properties"))
-            return;
+        bool begun = ImGui.Begin("Properties");
         ImGui.PopStyleColor(3);
+        
+        if (!begun)
+            return;
         if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");
@@ -351,29 +353,22 @@ internal class PropertiesWindow(MainWindowContext window)
                                     ImGui.BeginDisabled();
                                 if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize("\uf127").X * 1.65f * window.ScalingFactor , default)))
                                 {
-                                    foreach (ISceneObj s in window.CurrentScene.EnumerateSceneObjs())
-                                    {
-                                        if (s.StageObj == stageObj.Parent)
-                                        {
-                                            ChangeHandler.ToggleObjectSelection(
+                                    var p = window.CurrentScene.GetSceneObjFromStageObj(stageObj.Parent!);
+                                    ChangeHandler.ToggleObjectSelection(
                                                 window,
                                                 window.CurrentScene.History,
-                                                s.PickingId,
+                                                p.PickingId,
                                                 !(window.Keyboard?.IsCtrlPressed() ?? false)
                                             );
-
-                                            AxisAlignedBoundingBox aabb = s.AABB * s.StageObj.Scale;
-
-                                            window.CurrentScene!.Camera.LookFrom(
-                                                s.StageObj.Translation * 0.01f,
-                                                aabb.GetDiagonal() * 0.01f
-                                            );
-                                        }
-                                    }
+                                    AxisAlignedBoundingBox aabb = p.AABB * p.StageObj.Scale;
+                                    window.CurrentScene!.Camera.LookFrom(
+                                        p.StageObj.Translation * 0.01f,
+                                        aabb.GetDiagonal() * 0.01f
+                                    );
                                 }
 
-				ImGui.SameLine(default, style.ItemSpacing.X / 2);
-                                if (ImGui.Button("\uf127##"+pName))
+				                ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                                if (ImGui.Button("\uf127##" + pName))
                                 {
                                     window.CurrentScene.Stage.GetStageFile(StageFileType.Map).UnlinkChild(stageObj);
                                 }
@@ -387,8 +382,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     ImGui.SameLine();
                                     if (ImGui.Button("Edit children", new Vector2(ImGuiWidgets.SetPropertyWidth("Parent:"), default)))
                                     {
-                                        window._editChildrenDialog = new(window, stageObj);
-                                        window._editChildrenDialog.Open();
+                                        window.SetupChildrenDialog(stageObj);
                                     }
                                     bool autoResize = stageObj.Children.Count < 6;
                                     if (ImGui.BeginTable("childrenTable", 2,
@@ -402,16 +396,17 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None);
                                         ImGui.TableHeadersRow();
                                         if (autoResize) ImGui.SetScrollY(0);
+                                        int cidx = 0;
                                         foreach (StageObj ch in stageObj.Children) // This keeps child order!
                                         {
-                                            var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
                                             ImGui.TableNextRow();
 
                                             ImGui.TableSetColumnIndex(0);
 
-                                            ImGui.PushID("SceneChildSelectable" + child.PickingId);
+                                            ImGui.PushID("SceneChildSelectable" + cidx);
                                             if (ImGui.Selectable(ch.Name, false, ImGuiSelectableFlags.SpanAllColumns))
                                             {
+                                                var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
                                                 ChangeHandler.ToggleObjectSelection(
                                                     window,
                                                     window.CurrentScene.History,
@@ -425,6 +420,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.TableNextColumn();
 
                                             ImGui.Text(ch.Type.ToString());
+                                            cidx++;
                                         }
 
                                         ImGui.EndTable();
@@ -435,8 +431,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     ImGui.SameLine();
                                     if (ImGui.Button("Add children", new Vector2(ImGuiWidgets.SetPropertyWidth("Children:"), default)))
                                     {
-                                        window._editChildrenDialog = new(window, stageObj);
-                                        window._editChildrenDialog.Open();
+                                        window.SetupChildrenDialog(stageObj);
                                     }
                                 }
                             }

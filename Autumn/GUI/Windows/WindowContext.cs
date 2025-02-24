@@ -28,7 +28,7 @@ internal abstract class WindowContext
     public IKeyboard? Keyboard { get; protected set; }
     public IMouse? Mouse { get; protected set; }
 
-    public bool IsFocused { get; private set; }
+    public bool IsFocused { get; private set; } = true;
 
     public ContextHandler ContextHandler { get; }
     public WindowManager WindowManager { get; }

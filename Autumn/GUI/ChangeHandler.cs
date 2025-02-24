@@ -141,19 +141,13 @@ internal static class ChangeHandler
 
     public static bool ChangeHideMultiple(
         ChangeHistory history,
-        IEnumerable<ISceneObj> sList,
-        string name
+        IEnumerable<ISceneObj> sList
     )
     {
-        FieldInfo? field = sList.FirstOrDefault()?.GetType().GetField(name);
-
-        if (field is null)
-            return false;
-
         List<bool> current = new();
         foreach (ISceneObj obj in sList)
         {
-            current.Add((bool)field.GetValue(obj)!);
+            current.Add(obj.IsVisible);
         }
         Change change =
         new(
@@ -162,7 +156,7 @@ internal static class ChangeHandler
                 int i = 0;
                 foreach (ISceneObj obj in sList)
                 {
-                    field.SetValue(obj, current[i]);
+                    obj.IsVisible =  current[i];
                     i++;
                 }
             },
@@ -171,7 +165,7 @@ internal static class ChangeHandler
                 int i = 0;
                 foreach (ISceneObj obj in sList)
                 {
-                    field.SetValue(obj, !current[i]);
+                    obj.IsVisible = !current[i];
                     i++;
                 }
             }

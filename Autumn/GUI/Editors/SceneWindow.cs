@@ -45,9 +45,10 @@ internal class SceneWindow(MainWindowContext window)
     private bool _selCantParent = false;
     private bool _selCantChild = false;
     private bool _selNotSame = false;
-    private ISceneObj _pickObject;
+    private ISceneObj? _pickObject;
 
-    private ImGuiMouseButton mouseMoveKey = ImGuiMouseButton.Right;
+    private ImGuiMouseButton _mouseMoveKey = ImGuiMouseButton.Right;
+    private ImGuiKey _scaleKey = ImGuiKey.S;
     private bool isSceneHovered;
     private bool isSceneWindowFocused;
 
@@ -140,14 +141,14 @@ internal class SceneWindow(MainWindowContext window)
 
         #region Input
 
+
+        _scaleKey = window.ContextHandler.SystemSettings.UseWASD ? ImGuiKey.F : ImGuiKey.S;
+
         Vector2 mousePos = ImGui.GetMousePos();
 
-        if (window.ContextHandler.SystemSettings.UseMiddleMouse)
-            mouseMoveKey = ImGuiMouseButton.Middle;
-        else
-            mouseMoveKey = ImGuiMouseButton.Right;
+        _mouseMoveKey = window.ContextHandler.SystemSettings.UseMiddleMouse ? ImGuiMouseButton.Middle: ImGuiMouseButton.Right;
 
-        if ((isSceneHovered || _persistentMouseDrag) && ImGui.IsMouseDragging(mouseMoveKey))
+        if ((isSceneHovered || _persistentMouseDrag) && ImGui.IsMouseDragging(_mouseMoveKey))
         {
             Vector2 delta = mousePos - _previousMousePos;
 
@@ -181,7 +182,7 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.SetWindowFocus();
         }
 
-        if (!ImGui.IsMouseDown(mouseMoveKey))
+        if (!ImGui.IsMouseDown(_mouseMoveKey))
             _persistentMouseDrag = false;
 
         _previousMousePos = mousePos;
@@ -301,7 +302,7 @@ internal class SceneWindow(MainWindowContext window)
         window.SceneFramebuffer.Use(window.GL!);
         window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix);
+        window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix, window.CurrentScene.Camera.Rotation);
 
         if (ModelRenderer.VisibleGrid)
             InfiniteGrid.Render(window.GL, viewProjection);
@@ -373,7 +374,7 @@ internal class SceneWindow(MainWindowContext window)
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left)
                 && isSceneHovered
                 && !isTranslationActive && !isRotationActive && !isScaleActive
-                && (mouseMoveKey == ImGuiMouseButton.Right ? !ImGui.IsKeyDown(ImGuiKey.ModAlt) : true))
+                && (_mouseMoveKey == ImGuiMouseButton.Right ? !ImGui.IsKeyDown(ImGuiKey.ModAlt) : true))
             {
                 if (!isSceneWindowFocused)
                     ImGui.SetWindowFocus();
@@ -396,7 +397,7 @@ internal class SceneWindow(MainWindowContext window)
                     !(window.Keyboard?.IsShiftPressed() ?? false)
                 );
             }
-            else if ((mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+            else if ((_mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                 && isSceneHovered
                 && !isTranslationActive && !isRotationActive && !isScaleActive)
             {
@@ -554,7 +555,7 @@ internal class SceneWindow(MainWindowContext window)
             if (!ImGui.IsMouseHoveringRect(ImGui.GetWindowPos() + mpos, ImGui.GetWindowPos() + _objectOptionsPos + new Vector2(w, 150)))
             {
                 //Console.WriteLine("Hovering");
-                if (_objectOptionsTime != 0 && (ImGui.IsMouseClicked(ImGuiMouseButton.Left) || ImGui.IsMouseClicked(mouseMoveKey)))
+                if (_objectOptionsTime != 0 && (ImGui.IsMouseClicked(ImGuiMouseButton.Left) || ImGui.IsMouseClicked(_mouseMoveKey)))
                 {
                     _objectOptionsTime = 100;
                 }
@@ -1002,7 +1003,7 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
-        if (ImGui.IsKeyPressed(ImGuiKey.F, false) && !isScaleActive)
+        if (ImGui.IsKeyPressed(_scaleKey, false) && !isScaleActive && !ImGui.IsKeyDown(ImGuiKey.ModCtrl))
         { // Start action
             isScaleActive = true;
             dist = Vector3.Distance(
@@ -1020,7 +1021,7 @@ internal class SceneWindow(MainWindowContext window)
         }
         else if (
             (
-                ImGui.IsKeyPressed(ImGuiKey.F, false)
+                ImGui.IsKeyPressed(_scaleKey, false)
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
             ) && isScaleActive

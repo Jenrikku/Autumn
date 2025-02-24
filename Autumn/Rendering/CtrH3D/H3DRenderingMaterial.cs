@@ -620,12 +620,12 @@ internal class H3DRenderingMaterial
         );
     }
 
-    public void SetViewRotation(Quaternion Camera)
+    public void SetViewRotation(Vector3 camera)
     {        
         _materialBuffer.SetData(
             _materialBuffer.Data with
             {
-                CameraView = MathUtils.Round(Vector3.Transform(Vector3.UnitZ, Camera))
+                CameraView = camera
             }
         );
     }

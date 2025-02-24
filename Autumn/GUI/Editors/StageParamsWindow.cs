@@ -19,7 +19,6 @@ internal class ParametersWindow(MainWindowContext window)
     int musicIdx = 0;
     public bool FogEnabled = false;
     int selectedfog = -1;
-    Vector3 col = new();
     public bool LightEnabled = false;
     StageLight? selectedlight;
     int lightIdx;
@@ -582,7 +581,7 @@ internal class ParametersWindow(MainWindowContext window)
 
                 ImGui.Text("Constant 5");
                 ImGui.SameLine();
-                ImGuiWidgets.SetPropertyWidthGen("Constant 5", A, B);
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Constant 5", 22, 30) - 24 * window.ScalingFactor);
                 ImGui.ColorEdit4("##Constant 5", ref ColorEdit, _colorEditFlags);
                 if (ColorEdit != selectedlight.ConstantColors[5])
                 {
