@@ -507,16 +507,16 @@ internal class ParametersWindow(MainWindowContext window)
                 switch (copyLight)
                 {
                     case 0:
-                        scn.Stage.LightParams.MapObjectLight = selectedlight!;
+                        scn.Stage.LightParams.MapObjectLight = new(selectedlight);
                         break;
                     case 1:
-                        scn.Stage.LightParams.ObjectLight = selectedlight!;
+                        scn.Stage.LightParams.ObjectLight = new(selectedlight)!;
                         break;
                     case 2:
-                        scn.Stage.LightParams.PlayerLight = selectedlight!;
+                        scn.Stage.LightParams.PlayerLight = new(selectedlight)!;
                         break;
                     case 3:
-                        scn.Stage.LightParams.StageMapLight = selectedlight!;
+                        scn.Stage.LightParams.StageMapLight = new(selectedlight)!;
                         break;
                 }
 
