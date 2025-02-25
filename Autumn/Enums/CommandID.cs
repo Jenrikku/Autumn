@@ -7,6 +7,8 @@ internal enum CommandID
     OpenSettings,
     Exit,
     AddStage,
+    AddALL,
+    SaveALL,
     SaveStage,
     Undo,
     Redo,

@@ -281,6 +281,8 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
 
             ImGuiWidgets.CommandMenuItem(CommandID.AddStage, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.SaveALL, ContextHandler.ActionHandler, this);
             ImGuiWidgets.CommandMenuItem(CommandID.SaveStage, ContextHandler.ActionHandler, this);
 
             ImGui.Separator();
