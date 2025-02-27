@@ -481,50 +481,85 @@ internal partial class RomFSHandler
     {
         if (_creatorClassNameTable is null)
         {
-            NARCFileSystem? narc = SZSWrapper.ReadFile(_ccntPath);
-
-            Dictionary<string, string> dict = new();
-
-            do
-            {
-                if (narc is null)
-                    break;
-
-                byte[] tableData = narc.GetFile("CreatorClassNameTable.byml");
-
-                if (tableData.Length == 0)
-                    break;
-
-                BYAML byaml = BYAMLParser.Read(tableData, s_byamlEncoding);
-
-                if (byaml.RootNode.NodeType != BYAMLNodeType.Array)
-                    break;
-
-                BYAMLNode[] nodes = byaml.RootNode.GetValueAs<BYAMLNode[]>()!;
-
-                foreach (BYAMLNode node in nodes)
-                {
-                    if (node.NodeType != BYAMLNodeType.Dictionary)
-                        continue;
-
-                    var entry = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
-
-                    if (
-                        !entry.TryGetValue("ObjectName", out BYAMLNode? objectName)
-                        || !entry.TryGetValue("ClassName", out BYAMLNode? className)
-                        || objectName.NodeType != BYAMLNodeType.String
-                        || className.NodeType != BYAMLNodeType.String
-                    )
-                        continue;
-
-                    dict.Add(objectName.GetValueAs<string>()!, className.GetValueAs<string>()!);
-                }
-            } while (false);
-
-            _creatorClassNameTable = new(dict);
+            _creatorClassNameTable = ReadAnyCreatorClassNameTable(_ccntPath);
         }
 
         return _creatorClassNameTable;
+    }
+    public static ReadOnlyDictionary<string, string> ReadAnyCreatorClassNameTable(string path)
+    {
+        NARCFileSystem? narc = SZSWrapper.ReadFile(path);
+
+        Dictionary<string, string> dict = new();
+
+        do
+        {
+            if (narc is null)
+                break;
+
+            byte[] tableData = narc.GetFile("CreatorClassNameTable.byml");
+
+            if (tableData.Length == 0)
+                break;
+
+            BYAML byaml = BYAMLParser.Read(tableData, s_byamlEncoding);
+
+            if (byaml.RootNode.NodeType != BYAMLNodeType.Array)
+                break;
+
+            BYAMLNode[] nodes = byaml.RootNode.GetValueAs<BYAMLNode[]>()!;
+
+            foreach (BYAMLNode node in nodes)
+            {
+                if (node.NodeType != BYAMLNodeType.Dictionary)
+                    continue;
+
+                var entry = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                if (
+                    !entry.TryGetValue("ObjectName", out BYAMLNode? objectName)
+                    || !entry.TryGetValue("ClassName", out BYAMLNode? className)
+                    || objectName.NodeType != BYAMLNodeType.String
+                    || className.NodeType != BYAMLNodeType.String
+                )
+                    continue;
+
+                dict.Add(objectName.GetValueAs<string>()!, className.GetValueAs<string>()!);
+            }
+        } while (false);
+
+        return new(dict);
+
+    }
+
+    //String Dictionary Array
+    public bool WriteCCNT(Dictionary<string, string> ccnt)
+    {
+        try {
+            List<BYAMLNode> classObjectList = new();
+            foreach (string obj in ccnt.Keys)
+            {
+                classObjectList.Add(new(
+                    new Dictionary<string, BYAMLNode>
+                    {
+                        { "ClassName", new(ccnt[obj])},
+                        { "ObjectName", new(obj)}
+                    }
+                    ));
+            }
+            BYAML byml = new(new(classObjectList.ToArray()), s_byamlEncoding, default);
+            NARCFileSystem narcFS = new(new());
+            byte[] bin = BYAMLParser.Write(byml);
+            narcFS.AddFileRoot("CreatorClassNameTable.byml", bin);
+            byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
+            File.WriteAllBytes(_ccntPath, compressedFile);
+            _creatorClassNameTable = new(ccnt); // Replace old ccnt with edited one
+        }
+        catch 
+        {
+            return false;
+        }
+        return true;
     }
 
     public BgmTable ReadBgmTable()
@@ -661,6 +696,10 @@ internal partial class RomFSHandler
         return _bgmTable;
     }
 
+    /// <summary>
+    /// Reads the contents of ObjectData/GameSystemDataTable.szs
+    /// </summary>
+    /// <returns>SystemDataTable</returns>
     public SystemDataTable ReadGSDTable()
     {
         if (_GSDTable is null)
@@ -1345,11 +1384,9 @@ internal partial class RomFSHandler
                     File.Copy(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), Path.Join(paths[StageType] + ".narc.BACKUP"), true);
                 if (File.Exists(paths[StageType] + "_StageData.byml"))
                     File.Copy(paths[StageType] + "_StageData.byml", Path.Join(paths[StageType] + "_StageData.byml" + ".BACKUP"), true);
-                
             }
             byte[] uncompressed = NARCParser.Write(narcFS.ToNARC());
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-            
             File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
             File.WriteAllBytes(paths[StageType], compressedFile);
             File.WriteAllBytes(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), uncompressed);

@@ -31,18 +31,27 @@ internal class MainWindowContext : WindowContext
 
     private bool _isFirstFrame = true;
 
+#region Dialogs
     private readonly AddStageDialog _addStageDialog;
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
-    private SettingsDialog _settingsDialog;
-    public EditChildrenDialog _editChildrenDialog;
+    private readonly SettingsDialog _settingsDialog;
+    private readonly ShortcutsDialog _shortcutsDialog;
+#endregion
 
+#region Editor Dialogs
+    public readonly EditChildrenDialog _editChildrenDialog;
+    public readonly EditCreatorClassNameTable _editCCNT;
+#endregion
+
+#region Editor Windows 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
     private readonly ParametersWindow _paramsWindow;
     private readonly SceneWindow _sceneWindow;
     private readonly WelcomeDialog _welcomeDialog;
+#endregion
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -58,6 +67,8 @@ internal class MainWindowContext : WindowContext
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
         _settingsDialog = new(this);
+        _editCCNT = new(this);
+        _shortcutsDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -181,6 +192,8 @@ internal class MainWindowContext : WindowContext
             _closingDialog.Render();
             _newStageObjDialog.Render();
             _editChildrenDialog.Render();
+            _editCCNT.Render();
+            _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
 
@@ -235,7 +248,7 @@ internal class MainWindowContext : WindowContext
         _paramsWindow.CurrentTab = 0;
     }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
-    
+
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
     /// </summary>
@@ -333,6 +346,29 @@ internal class MainWindowContext : WindowContext
             ImGui.EndMenu();
         }
 
+        if (ImGui.BeginMenu("General"))
+        {
+            if (ImGui.MenuItem("CreatorClassNameTable"))
+               _editCCNT.Open();
+            ImGui.BeginDisabled();
+            if (ImGui.MenuItem("Audio"))
+               _editCCNT.Open();
+            if (ImGui.MenuItem("Light Areas"))
+               _editCCNT.Open();
+            if (ImGui.MenuItem("Stage List"))
+               _editCCNT.Open();
+            if (ImGui.MenuItem("Effects"))
+               _editCCNT.Open();
+            ImGui.EndDisabled();
+            if (ContextHandler.SystemSettings.EnableDBEditor)
+            {
+                ImGui.Separator();
+                if (ImGui.MenuItem("Edit Object Database"))
+                    _editCCNT.Open();
+            }
+            ImGui.EndMenu();
+        }
+
 #if DEBUG
         if (ImGui.BeginMenu("Debug"))
         {
@@ -374,7 +410,6 @@ internal class MainWindowContext : WindowContext
             }
 
             ImGui.Separator();
-
             if (ImGui.MenuItem("Show all params"))
             {
                 _paramsWindow.MiscEnabled = true;
@@ -386,6 +421,17 @@ internal class MainWindowContext : WindowContext
             ImGui.EndMenu();
         }
 #endif
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Help").X - ImGui.GetStyle().ItemSpacing.X*2);
+        if (ImGui.BeginMenu("Help"))
+        {
+            if (ImGui.MenuItem("Shortcuts"))
+                _shortcutsDialog.Open();
+            if (ImGui.MenuItem("About"))
+            {
+                
+            }
+            ImGui.EndMenu();
+        }
 
         #region SceneTabs
         // Opened stages are displayed in tabs in the main menu bar.
@@ -438,7 +484,7 @@ internal class MainWindowContext : WindowContext
                     if (Scenes.Count == 0)
                     {
                         ImGui.SetWindowFocus("Stages");
-                    }    
+                    }
                 }
             }
 

@@ -17,6 +17,7 @@ internal class SystemSettings
     public int MouseSpeed = 20;
     public bool UseWASD = false;
     public bool UseMiddleMouse = false;
+    public bool EnableDBEditor = false;
 
     public void AddRecentlyOpenedPath(string path)
     {

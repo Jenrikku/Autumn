@@ -24,6 +24,8 @@ internal class ParametersWindow(MainWindowContext window)
     int lightIdx;
     int selectedlightarea = -1;
     int selectedlightName = -1;
+    ImGuiWidgets.InputComboBox lightAreaCombo = new();
+
     string[] lightTypes = ["Map Obj Light", "Obj Light", "Player Light", "Stage Map Light"];
     int copyLight = 0;
 
@@ -459,34 +461,36 @@ internal class ParametersWindow(MainWindowContext window)
         ImGui.EndDisabled();
         ImGui.PopItemWidth();
         ImGui.PushItemWidth(prevW - style.ItemSpacing.X * 2);
-        if (ImGui.BeginListBox("##LightList"))
-        {
-            bool iscliked = false;
-            if (ImGui.Selectable("Map Object Light", lightIdx == 0))
-            {
-                lightIdx = 0;
-                iscliked = true;
-            }
-            if (ImGui.Selectable("Object Light", lightIdx == 1))
-            {
-                lightIdx = 1;
-                iscliked = true;
-            }
-            if (ImGui.Selectable("Player Light", lightIdx == 2))
-            {
-                lightIdx = 2;
-                iscliked = true;
-            }
-            if (ImGui.Selectable("Stage Map Light", lightIdx == 3))
-            {
-                lightIdx = 3;
-                iscliked = true;
-            }
 
-            if (iscliked && ImGui.IsKeyDown(ImGuiKey.ModShift))
-                lightIdx = -1;
-            ImGui.EndListBox();
+        ImGui.Separator();
+        ImGui.PushStyleColor(ImGuiCol.WindowBg, ImGui.GetColorU32(ImGuiCol.FrameBg) | 0xFF000000);
+        bool iscliked = false;
+        if (ImGui.Selectable("Map Object Light", lightIdx == 0))
+        {
+            lightIdx = 0;
+            iscliked = true;
         }
+        if (ImGui.Selectable("Object Light", lightIdx == 1))
+        {
+            lightIdx = 1;
+            iscliked = true;
+        }
+        if (ImGui.Selectable("Player Light", lightIdx == 2))
+        {
+            lightIdx = 2;
+            iscliked = true;
+        }
+        if (ImGui.Selectable("Stage Map Light", lightIdx == 3))
+        {
+            lightIdx = 3;
+            iscliked = true;
+        }
+
+        if (iscliked && ImGui.IsKeyDown(ImGuiKey.ModShift))
+            lightIdx = -1;
+
+        ImGui.PopStyleColor();
+        ImGui.Separator();
         selectedlight = lightIdx switch
         {
             0 => scn.Stage.LightParams.MapObjectLight,
@@ -671,13 +675,14 @@ internal class ParametersWindow(MainWindowContext window)
 
             ImGui.PushItemWidth(prevW - PROP_WIDTH - 20);
             var ReadLightAreas = window.ContextHandler.FSHandler.ReadLightAreas();
-            var refStr = scn.Stage.LightAreaNames![scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)];
+            var refStr = scn.Stage.LightAreaNames.Values.ElementAt(selectedlightarea);
+            string prevRefStr = refStr;
 
             int aId = scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea);
             ImGui.InputInt("Area Id", ref aId);
             if (aId != scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea) && !scn.Stage.LightAreaNames.ContainsKey(aId))
             {
-                string tmpS = scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)];
+                string tmpS = scn.Stage.LightAreaNames.Values.ElementAt(selectedlightarea);
                 scn.Stage.LightAreaNames.Remove(scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea));
                 scn.Stage.LightAreaNames.Add(aId, tmpS);
             }
@@ -685,25 +690,33 @@ internal class ParametersWindow(MainWindowContext window)
             if (ReadLightAreas != null)
             {
 
-                selectedlightName = ReadLightAreas.Keys.ToList().IndexOf(refStr);
+                //selectedlightName = ReadLightAreas.Keys.ToList().IndexOf(refStr);
 
+                var p = ImGui.GetCursorPosX();
+                ImGui.Text("Light Name:");
+                ImGui.SameLine();
                 var keyArray = ReadLightAreas.Keys.ToArray();
+                lightAreaCombo.Use("Light Name", ref refStr, ReadLightAreas.Keys.ToList(), ImGui.GetContentRegionAvail().X);
+                ImGui.SetCursorPosX(p);
+                //ImGui.Combo("Light Name", ref selectedlightName, keyArray, ReadLightAreas.Keys.Count - 1);
 
-                ImGui.Combo("Light Name", ref selectedlightName, keyArray, ReadLightAreas.Keys.Count - 1);
+                if (refStr != prevRefStr)
+                    scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)] = refStr;
 
-                if (refStr != keyArray[selectedlightName])
-                    scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)] = keyArray[selectedlightName];
-
-                LightArea area = ReadLightAreas![scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)]];
-
-                ImGui.BeginDisabled();
-                ImGui.DragInt("InterpolateFrame", ref area.InterpolateFrame, 1);
-                ImGui.InputText("Name", ref area.Name, 128);
-                ImGui.PopItemWidth();
-                ImGui.PushItemWidth(prevW - style.ItemSpacing.X);
-                ImGui.EndDisabled();
-                if (ImGui.BeginListBox("##LightList", new(prevW * window.ScalingFactor, 4 * ImGui.GetTextLineHeight() * window.ScalingFactor)))
+                if (keyArray.Contains(refStr))
                 {
+
+                    ImGui.PushItemWidth(prevW - PROP_WIDTH - 20);
+                    LightArea area = ReadLightAreas![scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)]];
+
+                    ImGui.BeginDisabled();
+                    ImGui.DragInt("InterpolateFrame", ref area.InterpolateFrame, 1);
+                    ImGui.InputText("Name", ref area.Name, 128);
+                    ImGui.PopItemWidth();
+                    ImGui.PushItemWidth(prevW - style.ItemSpacing.X);
+                    ImGui.EndDisabled();
+                    ImGui.Separator();
+                    ImGui.PushStyleColor(ImGuiCol.WindowBg, ImGui.GetColorU32(ImGuiCol.FrameBg) | 0xFF000000);
                     if (ImGui.Selectable("Map Object Light", lightIdx == 0))
                     {
                         lightIdx = 0;
@@ -716,68 +729,80 @@ internal class ParametersWindow(MainWindowContext window)
                     {
                         lightIdx = 2;
                     }
-                    ImGui.EndListBox();
-                }
-                selectedlight = lightIdx switch
-                {
-                    0 => area.MapObjectLight,
-                    1 => area.ObjectLight,
-                    2 => area.PlayerLight,
-                    _ => null,
-                };
-                ImGui.PushItemWidth(prevW - PROP_WIDTH);
-                ImGui.BeginDisabled();
-                if (scn.PreviewLight != selectedlight)
-                {
-                    scn.PreviewLight = selectedlight;
-                }
-                if (selectedlight != null)
-                {
-                    int A = 22;
-                    int B = 30;
+                    ImGui.PopStyleColor();
+                    ImGui.Separator();
 
-                    ImGuiWidgets.PrePropertyWidthName("Follow Camera", A, B);
-                    ImGui.Checkbox("##Follow Camera", ref selectedlight.IsCameraFollow);
-
-                    ImGuiWidgets.PrePropertyWidthName("Direction", A, B);
-                    ImGui.DragFloat3("##Direction", ref selectedlight.Direction, 0.01f);
-
-                    ImGuiWidgets.PrePropertyWidthName("Ambient", A, B);
-                    ImGui.ColorEdit4("##Ambient", ref selectedlight.Ambient, _colorEditFlags);
-
-                    ImGuiWidgets.PrePropertyWidthName("Diffuse", A, B);
-                    ImGui.ColorEdit4("##Diffuse", ref selectedlight.Diffuse, _colorEditFlags);
-
-                    ImGuiWidgets.PrePropertyWidthName("Specular 0", A, B);
-                    ImGui.ColorEdit4("##Specular 0", ref selectedlight.Specular0, _colorEditFlags);
-
-                    ImGuiWidgets.PrePropertyWidthName("Specular 1", A, B);
-                    ImGui.ColorEdit4("##Specular 1", ref selectedlight.Specular1, _colorEditFlags);
-                    for (int i = 0; i < 6; i++)
+                    selectedlight = lightIdx switch
                     {
-                        if (selectedlight.ConstantColors[i] != null)
+                        0 => area.MapObjectLight,
+                        1 => area.ObjectLight,
+                        2 => area.PlayerLight,
+                        _ => null,
+                    };
+                    ImGui.PopItemWidth();
+                    ImGui.PushItemWidth(prevW - PROP_WIDTH);
+                    ImGui.BeginDisabled();
+                    if (scn.PreviewLight != selectedlight)
+                    {
+                        scn.PreviewLight = selectedlight;
+                    }
+                    if (selectedlight != null)
+                    {
+                        int A = 22;
+                        int B = 30;
+
+                        ImGuiWidgets.PrePropertyWidthName("Follow Camera", A, B);
+                        ImGui.Checkbox("##Follow Camera", ref selectedlight.IsCameraFollow);
+
+                        ImGuiWidgets.PrePropertyWidthName("Direction", A, B);
+                        ImGui.DragFloat3("##Direction", ref selectedlight.Direction, 0.01f);
+
+                        ImGuiWidgets.PrePropertyWidthName("Ambient", A, B);
+                        ImGui.ColorEdit4("##Ambient", ref selectedlight.Ambient, _colorEditFlags);
+
+                        ImGuiWidgets.PrePropertyWidthName("Diffuse", A, B);
+                        ImGui.ColorEdit4("##Diffuse", ref selectedlight.Diffuse, _colorEditFlags);
+
+                        ImGuiWidgets.PrePropertyWidthName("Specular 0", A, B);
+                        ImGui.ColorEdit4("##Specular 0", ref selectedlight.Specular0, _colorEditFlags);
+
+                        ImGuiWidgets.PrePropertyWidthName("Specular 1", A, B);
+                        ImGui.ColorEdit4("##Specular 1", ref selectedlight.Specular1, _colorEditFlags);
+                        for (int i = 0; i < 6; i++)
                         {
-                            Vector4 ColorEdit = (Vector4)selectedlight.ConstantColors[i]!;
-                            ImGuiWidgets.PrePropertyWidthName($"Constant {i}", A, B);
-                            ImGui.ColorEdit4($"Constant {i}", ref ColorEdit, _colorEditFlags);
-                            if (ColorEdit != selectedlight.ConstantColors[i])
+                            if (selectedlight.ConstantColors[i] != null)
                             {
-                                selectedlight.ConstantColors[i] = ColorEdit;
+                                Vector4 ColorEdit = (Vector4)selectedlight.ConstantColors[i]!;
+                                ImGuiWidgets.PrePropertyWidthName($"Constant {i}", A, B);
+                                ImGui.ColorEdit4($"Constant {i}", ref ColorEdit, _colorEditFlags);
+                                if (ColorEdit != selectedlight.ConstantColors[i])
+                                {
+                                    selectedlight.ConstantColors[i] = ColorEdit;
+                                }
                             }
                         }
-                    }
 
+                    }
+                    ImGui.PopItemWidth();
+                    ImGui.EndDisabled();
                 }
-                ImGui.EndDisabled();
+                else
+                {
+                    ImGui.BeginDisabled();
+                    ImGui.TextWrapped("LightArea with that name couldn't be found in LightDataArea.szs!");
+                    ImGui.Text("Can't display Light info.");
+                    ImGui.EndDisabled();
+                }
                 ImGui.PopItemWidth();
             }
             else
             {
-                var ln = scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)];
+                var ln = scn.Stage.LightAreaNames.Values.ElementAt(selectedlightarea);
                 ImGui.InputText("Light Name", ref ln, 128);
-                if (ln != scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)])
+                if (ln != scn.Stage.LightAreaNames.Values.ElementAt(selectedlightarea))
                     scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea)] = ln;
-                ImGui.TextDisabled("LightDataArea.szs not found! \nCan't display Light info.");
+                ImGui.TextDisabled("LightDataArea.szs not found.");
+                ImGui.TextDisabled("Can't display Light info.");
             }
         }
     }

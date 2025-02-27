@@ -80,16 +80,19 @@ internal static class ImGuiWidgets
         switch (dir)
         {
             case ImGuiDir.Up:
-                str = "\uf062##"+str;
+                str = "\uf062##" + str;
                 break;
             case ImGuiDir.Down:
-                str = "\uf063##"+str;
+                str = "\uf063##" + str;
                 break;
             case ImGuiDir.Left:
-                str = "\uf060##"+str;
+                str = "\uf060##" + str;
                 break;
             case ImGuiDir.Right:
-                str = "\uf061##"+str;
+                str = "\uf061##" + str;
+                break;
+            case ImGuiDir.COUNT:
+                str = "\uf078##" + str;
                 break;
         }
         return ImGui.Button(str, size ?? default);
@@ -110,7 +113,7 @@ internal static class ImGuiWidgets
         ImGui.SetNextItemWidth(ret);
         return ret;
     }
-    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3,  bool colon = true)
+    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3, bool colon = true)
     {
         float ret = 0;
         if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X / 2) > (ImGui.CalcTextSize(str + ":").X + 12))
@@ -120,13 +123,13 @@ internal static class ImGuiWidgets
         }
         else
         {
-            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 2 - 5);
+            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 2);
         }
         ImGui.SetNextItemWidth(ret);
         return ret;
     }
 
-    public static void PrePropertyWidthName(string str, int ratioA = 2, int ratioB = 3,  bool colon = true)
+    public static void PrePropertyWidthName(string str, int ratioA = 2, int ratioB = 3, bool colon = true)
     {
         ImGui.Text(str + (colon ? ":" : ""));
         ImGui.SameLine();
@@ -141,10 +144,8 @@ internal static class ImGuiWidgets
         ImGui.TextDisabled("?");
         ImGui.SetCursorPos(cursorPos);
 
-        ImGui.InvisibleButton("helpButton", new Vector2(20, 20));
-
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(tooltip);
+        ImGui.InvisibleButton("helpButton", new Vector2(24, 24));
+        ImGui.SetItemTooltip(tooltip);
     }
 
     public static bool InputTextRedWhenInvalid(
@@ -194,11 +195,81 @@ internal static class ImGuiWidgets
         return InputTextRedWhenInvalid(label, ref buf, buf_size, isInvalid);
     }
 
+    public class InputComboBox
+    {
+        private bool wasHovering = false;
+        private bool arrowPressed = false;
+        private Vector2 listpos = new();
+
+        public bool Use(string str, ref string value, List<string> comboStrings, float width = -1)
+        {
+            bool ret = false;
+            listpos.X = ImGui.GetCursorPosX();
+            ImGui.SetNextItemWidth(width - 24);
+            ImGui.InputText($"##{str}", ref value, 128);
+            listpos.Y = ImGui.GetCursorPosY();
+            bool textactive = ImGui.IsItemActive() || wasHovering;
+            ret = ImGui.IsItemActive();
+
+            ImGui.SameLine(default, 0);
+            if (ArrowButton("arr" + str, ImGuiDir.COUNT))
+            {
+                arrowPressed = !arrowPressed;
+                wasHovering = arrowPressed;
+            }
+            if (!ImGui.IsItemFocused())
+            {
+                arrowPressed = false || wasHovering;
+            }
+
+            string finalresult = "";
+            if (value != "")
+            {
+                string val = value;
+                comboStrings = comboStrings.Where(x => x.Contains(val, StringComparison.InvariantCultureIgnoreCase)).ToList();
+            }
+
+            int t = comboStrings.ToList().IndexOf(value);
+
+            if ((textactive && value != "") || arrowPressed)
+            {
+                ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.FrameBg) | 0xFF000000);
+                ImGui.PushStyleColor(ImGuiCol.WindowBg, ImGui.GetColorU32(ImGuiCol.FrameBg) & 0x00FFFFFF);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+                ImGui.SetNextItemAllowOverlap();
+                ImGui.SetCursorPos(listpos);
+                ImGui.SetNextItemWidth(width);
+                if (ImGui.BeginChild(str, default))
+                {
+                    bool activ = ImGui.ListBox("##CombostringsList" + str, ref t, comboStrings.ToArray(), comboStrings.Count);
+
+                    wasHovering = ImGui.IsItemHovered();
+                    if (activ)
+                    {
+                        value = comboStrings[t];
+                        wasHovering = false;
+                        arrowPressed = false;
+                        ret = true;
+                    }
+                }
+                ImGui.EndChild();
+                ImGui.PopStyleColor(2);
+                ImGui.PopStyleVar();
+            }
+            else wasHovering = false;
+
+            if (comboStrings.Count == 0)
+                finalresult = value;
+            ImGui.SetCursorPos(listpos);
+            return ret;
+        }
+    }
+
     public static bool DragFloat(string str, ref float rf, float v_speed = 1)
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str+":");
+        SetPropertyWidthGen(str + ":");
         return ImGui.DragFloat("##" + str, ref rf, v_speed);
 
     }
@@ -206,7 +277,7 @@ internal static class ImGuiWidgets
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str+":");
+        SetPropertyWidthGen(str + ":");
         return ImGui.DragInt("##" + str, ref rf, v_speed);
 
     }
@@ -214,7 +285,7 @@ internal static class ImGuiWidgets
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str+":");
+        SetPropertyWidthGen(str + ":");
         return ImGui.InputInt("##" + str, ref rf, step);
     }
 
@@ -222,7 +293,7 @@ internal static class ImGuiWidgets
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str+":");
+        SetPropertyWidthGen(str + ":");
         return ImGui.InputText("##" + str, ref rf, max);
     }
 }

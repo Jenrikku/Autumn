@@ -66,7 +66,7 @@ internal class NewStageObjDialog(MainWindowContext window)
             !ImGui.BeginPopupModal(
                 "Add New Object",
                 ref _isOpened,
-                 ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse
+                ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse
             )
         )
             return;

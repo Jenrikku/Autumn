@@ -13,6 +13,7 @@ internal class SettingsDialog
 
     private bool _isOpened = false;
     private bool _useClassNames = false;
+    private bool _dbEditor = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
     private bool _enableVSync = false;
@@ -40,6 +41,7 @@ internal class SettingsDialog
         _useClassNames = _window.ContextHandler.Settings.UseClassNames;
         _selectedStyle = _window.ContextHandler.SystemSettings.Theme;
         _wasd = _window.ContextHandler.SystemSettings.UseWASD;
+        _dbEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
         _middleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
         _oldStyle = _window.ContextHandler.SystemSettings.Theme;
@@ -88,6 +90,7 @@ internal class SettingsDialog
 
         #region Styling
 
+        ImGui.SeparatorText("UI settings");
         string[] comb = ["Default", "Dark", "Light"];
         ImGui.Combo("Application style", ref _selectedStyle, comb, comb.Count());
 
@@ -104,24 +107,28 @@ internal class SettingsDialog
 
         #endregion
 
-        ImGui.Checkbox("Use ClassNames", ref _useClassNames);
-
         ImGui.Checkbox("Enable VSync", ref _enableVSync);
+        ImGui.SameLine();
+        ImGuiWidgets.HelpTooltip("This option requires restarting the editor");
 
-        ImGui.Separator();
+        ImGui.SeparatorText("Viewport");
 
         ImGui.Checkbox("Use WASD to move the viewport camera", ref _wasd);
-        ImGui.SetItemTooltip("Please be aware that this WILL interfere with other editor commands.");
+        ImGui.SameLine();
+        ImGuiWidgets.HelpTooltip("Please be aware that this WILL interfere with other editor commands.");
+
         ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
-
-        ImGui.Separator();
-
         ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1, default);
-        ImGui.SetItemTooltip("Recommended values: 20, 35");
+        ImGui.SameLine();
+        ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
         _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
 
-        ImGui.Separator();
-        ImGui.Text("Reset:");
+        ImGui.SeparatorText("Editor Functionality");
+
+        ImGui.Checkbox("Use ClassNames", ref _useClassNames);
+        ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
+
+        ImGui.SeparatorText("Reset");
 
         float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X*1.65f;
         if (ImGui.Button("Values", new(resetWidth,0)))
@@ -129,9 +136,10 @@ internal class SettingsDialog
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
-            _window.ContextHandler.SystemSettings.EnableVSync = false;
+            _window.ContextHandler.SystemSettings.EnableVSync = true;
             _window.ContextHandler.SystemSettings.Theme = 0;
             _window.ContextHandler.SystemSettings.MouseSpeed = 20;
+            _window.ContextHandler.SystemSettings.EnableDBEditor = false;
             
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
@@ -180,10 +188,6 @@ internal class SettingsDialog
         }
 
         ImGui.SameLine();
-
-        ImGui.SetItemTooltip("This will set all values to their default.");
-
-        ImGui.SameLine();
         ImGui.SetCursorPosX(dimensions.X - 10 - 80);
 
         if (ImGui.Button("Ok", new(80, 0)))
@@ -194,6 +198,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;
             _window.ContextHandler.SystemSettings.Theme = _selectedStyle;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
+            _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _window.ContextHandler.SaveSettings();
