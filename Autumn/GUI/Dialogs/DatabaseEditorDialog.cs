@@ -265,6 +265,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                 if (ImGui.Button("OK", new(ImGui.GetContentRegionAvail().X, 30)))
                 {
                     SaveNewArg();
+                    UpdateEntry();
                     newPopup = false;
                 }
                 if (!canSave)
@@ -766,10 +767,6 @@ internal class DatabaseEditor(MainWindowContext _window)
                 tp = "enum";
                 break;
         }
-        if (entry.Args == null)
-        {
-            entry.Args = new();
-        }
 
         var arg = new ClassDatabaseWrapper.Arg()
         {
@@ -781,8 +778,14 @@ internal class DatabaseEditor(MainWindowContext _window)
             Min = editArgMin,
             Max = editArgMax
         };
+        var oldargs = entry.Args;
+        entry.Args = new();
+        if (oldargs != null)
+        foreach (string a in oldargs.Keys)
+        {
+            entry.Args[a] = oldargs[a];
+        }
         entry.Args[$"Arg{editArgId}"] = arg;
-        UpdateEntry();
     }
 
     private void SetArgs(bool clean = true)
