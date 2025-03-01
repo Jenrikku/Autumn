@@ -653,7 +653,6 @@ internal class DatabaseEditor(MainWindowContext _window)
         ImGui.SameLine(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Save").X - style.ItemSpacing.X * 2);
         if (ImGui.Button("Save"))
         {
-            _modifiedEntries = _dbEntries.Keys.ToList();
             foreach (string s in _modifiedEntries)
             {
                 if (!_dbEntries.ContainsKey(s)) // Erase the files that will no longer be there
