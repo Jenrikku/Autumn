@@ -144,16 +144,38 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.InputInt("##defval", ref editArgDefault, 1);
                         int min = editArgMin ?? -1;
                         int max = editArgMax ?? -1;
+                        if (editArgMin is null)
+                            ImGui.BeginDisabled();
                         ImGui.Text("Min:");
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Min"));
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Min") - 28);
                         ImGui.InputInt("##minval", ref min, 1);
-                        if (min != editArgMin) editArgMin = min;
-                        ImGui.Text("Min:");
+                        if (min != editArgMin && editArgMin != null) editArgMin = min;
+                        if (editArgMin is null)
+                            ImGui.EndDisabled();
+
+                        ImGui.SameLine(default, style.ItemSpacing.X/2);
+                        if (ImGui.Button((editArgMin is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMin"))
+                        {
+                            editArgMin = editArgMin is null ? -1 : null;
+                        }
+
+                        if (editArgMax is null)
+                            ImGui.BeginDisabled();
+                        ImGui.Text("Max:");
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Max"));
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Max")- 28);
                         ImGui.InputInt("##maxval", ref max, 1);
-                        if (max != editArgMax) editArgMax = max;
+                        if (max != editArgMax && editArgMax != null) editArgMax = max;
+                        if (editArgMax is null)
+                            ImGui.EndDisabled();
+
+                        ImGui.SameLine(default, style.ItemSpacing.X/2);
+                        if (ImGui.Button((editArgMax is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMax"))
+                        {
+                            editArgMax = editArgMax is null ? -1 : null;  
+                        }
+
                         break;
                     case 2:
                         var dfsel = editEnumValues.Keys.ToList().IndexOf(editArgDefault);
