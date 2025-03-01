@@ -184,7 +184,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         {
                             editArgDefault = editEnumValues.Keys.ElementAt(dfsel);
                         }
-                        int removeAt = -1;
+                        int? removeAt = null;
                         if (ImGui.BeginTable("##enumvalues", 3, ImGuiTableFlags.RowBg
                                                     | ImGuiTableFlags.BordersOuter
                                                     | ImGuiTableFlags.BordersV
@@ -221,9 +221,9 @@ internal class DatabaseEditor(MainWindowContext _window)
                             }
                             ImGui.EndTable();
                         }
-                        if (removeAt > -1)
+                        if (removeAt != null)
                         {
-                            editEnumValues.Remove(removeAt);
+                            editEnumValues.Remove((int)removeAt);
                         }
                         if (editEnumValues.ContainsKey(curEnumVal))
                             ImGui.BeginDisabled();

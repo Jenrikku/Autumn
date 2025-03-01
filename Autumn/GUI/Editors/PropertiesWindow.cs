@@ -284,7 +284,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 ImGui.SameLine();
                                                 ImGuiWidgets.SetPropertyWidth(aName);
                                                 ImGui.InputInt("##" + argEntry.Name + "i", ref rf, 1, default);
-                                                int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
+                                                rf = int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
                                                 if (intBuf != rf)
                                                 {
                                                     stageObj.Properties[name] = rf;
