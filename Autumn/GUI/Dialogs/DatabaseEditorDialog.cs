@@ -11,54 +11,49 @@ namespace Autumn.GUI.Dialogs;
 internal class DatabaseEditor(MainWindowContext _window)
 {
     private bool _isOpened = false;
+    private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
     private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     private int _argsel = -1;
-    string[] switches = ["A", "B", "Appear", "Kill", "DeadOn"];
-    string[] switchStates = ["None", "Read", "Write"];
-    private string _swsel = "";
-    private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
-    private List<string> _modifiedEntries = new();
+    readonly string[] switches = ["A", "B", "Appear", "Kill", "DeadOn"];
+    readonly string[] switchTypes = ["None", "Read", "Write"];
+    readonly string[] argTypes = ["bool", "int", "enum"];
+    readonly string[] actorTypes = ["Obj", "AreaObj", "CameraAreaObj", "GoalObj", "StartEventObj", "Demo"];
+    readonly string[] filter = ["All", "Obj", "AreaObj", "CameraAreaObj", "GoalObj", "StartEventObj", "Demo"];
+    private int _filterIdx = 0;
     private string _search = "";
-    private ClassDatabaseWrapper.DatabaseEntry oldEntry;
+    private List<string> _modifiedEntries = new();
     private ClassDatabaseWrapper.DatabaseEntry entry;
-    private string newClassName = "";
     Vector2 dimensions = new(742, 520);
-    bool newPopup = false;
-    string[] ActorTypes = ["Obj", "AreaObj", "CameraAreaObj", "GoalObj", "StartEventObj", "Demo"];
-    string[] filter = ["All"];
-    int filterIdx = 0;
-    bool editClassName = false;
+    bool _argEdit = false;
     bool _isEditor = true;
+    ImGuiTableFlags _tableFlags = ImGuiTableFlags.RowBg
+                                | ImGuiTableFlags.BordersOuter
+                                | ImGuiTableFlags.BordersV
+                                | ImGuiTableFlags.ScrollY
+                                | ImGuiTableFlags.Resizable;
 
-
-    bool debugflag = false;
-
-
-    bool editArgCanOverwrite = false;
-    int editArgId = 0; // 0 through 9
-    int editArgType = 1; // Bool, Int, Enum
-    string[] editArgTypes = ["bool", "int", "enum"];
-    string editArgDesc = "";
-    string editArgName = "";
-    int editArgDefault = -1;
-    int? editArgMin;
-    int? editArgMax;
-    Dictionary<int, string> editEnumValues = new();
-    string curEnumName = "";
-    int curEnumVal = -1;
+    bool _editClassName = false;
+    bool _editArgCanOverwrite = false;
+    int _editArgId = 0; // 0 through 9
+    int _editArgType = 1; // Bool, Int, Enum
+    string _editArgDesc = "";
+    string _editArgName = "";
+    int _editArgDefault = -1;
+    int? _editArgMin;
+    int? _editArgMax;
+    Dictionary<int, string> _editEnumValues = new();
+    string _editEnNm = "";
+    int _editEnVal = -1;
 
     public void Open()
     {
-        Reset();
         _isOpened = true;
         _dbEntries = new(ClassDatabaseWrapper.DatabaseEntries);
-        filter = filter.Concat(ActorTypes).ToArray();
         _isEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
     }
     public void Reset()
     {
         dimensions = new Vector2(742, 520) * _window.ScalingFactor;
-        oldEntry = new();
         entry = new();
         _modifiedEntries.Clear();
         _search = "";
@@ -70,8 +65,8 @@ internal class DatabaseEditor(MainWindowContext _window)
 
         if (ImGui.IsKeyPressed(ImGuiKey.Escape))
         {
-            if (newPopup)
-                newPopup = false;
+            if (_argEdit)
+                _argEdit = false;
             else
             {
                 if (!ImGui.GetIO().WantTextInput) // prevent exiting when input is focused
@@ -98,183 +93,13 @@ internal class DatabaseEditor(MainWindowContext _window)
             return;
         dimensions = ImGui.GetWindowSize();
         var style = ImGui.GetStyle();
+        bool update = false;
 
-        if (newPopup)
+        if (_argEdit)
         {
-            ImGui.OpenPopup("Edit Arg");
-            ImGui.SetNextWindowSize(dimensions / 2.8f, ImGuiCond.Appearing);
-            ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
-            if (ImGui.BeginPopupModal("Edit Arg", ref newPopup, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.Popup | ImGuiWindowFlags.AlwaysAutoResize))
-            {
-                if (editArgCanOverwrite)
-                    ImGui.BeginDisabled();
-                ImGui.Text("Arg ID:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg ID"));
-                ImGui.InputInt("##argid", ref editArgId, 1);
-                editArgId = int.Clamp(editArgId, 0, 9);
-                if (editArgCanOverwrite)
-                    ImGui.EndDisabled();
-                ImGui.Text("Arg name:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg name"));
-                ImGui.InputTextWithHint("##argname", "Name", ref editArgName, 128);
-                ImGui.Text("Description:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Description"));
-                ImGui.InputTextWithHint("##argdesc", "Description", ref editArgDesc, 128);
-                ImGui.Text("Type:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Type"));
-                ImGui.Combo("##argtype", ref editArgType, editArgTypes, 3);
-                ImGui.Text("Default:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Default"));
-
-                switch (editArgType)
-                {
-                    case 0:
-
-                        int df = editArgDefault == -1 ? 0 : 1;
-                        ImGui.Combo("##defboolval", ref df, ["False", "True"], 2);
-                        editArgDefault = df == 0 ? -1 : 0;
-                        break;
-
-                    case 1:
-                        ImGui.InputInt("##defval", ref editArgDefault, 1);
-                        int min = editArgMin ?? -1;
-                        int max = editArgMax ?? -1;
-                        if (editArgMin is null)
-                            ImGui.BeginDisabled();
-                        ImGui.Text("Min:");
-                        ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Min") - 28);
-                        ImGui.InputInt("##minval", ref min, 1);
-                        if (min != editArgMin && editArgMin != null) editArgMin = min;
-                        if (editArgMin is null)
-                            ImGui.EndDisabled();
-
-                        ImGui.SameLine(default, style.ItemSpacing.X/2);
-                        if (ImGui.Button((editArgMin is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMin"))
-                        {
-                            editArgMin = editArgMin is null ? -1 : null;
-                        }
-
-                        if (editArgMax is null)
-                            ImGui.BeginDisabled();
-                        ImGui.Text("Max:");
-                        ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Max")- 28);
-                        ImGui.InputInt("##maxval", ref max, 1);
-                        if (max != editArgMax && editArgMax != null) editArgMax = max;
-                        if (editArgMax is null)
-                            ImGui.EndDisabled();
-
-                        ImGui.SameLine(default, style.ItemSpacing.X/2);
-                        if (ImGui.Button((editArgMax is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMax"))
-                        {
-                            editArgMax = editArgMax is null ? -1 : null;  
-                        }
-
-                        break;
-                    case 2:
-                        var dfsel = editEnumValues.Keys.ToList().IndexOf(editArgDefault);
-                        ImGui.Combo("##defval", ref dfsel, editEnumValues.Values.ToArray(), editEnumValues.Keys.Count);
-                        if (dfsel != editEnumValues.Keys.ToList().IndexOf(editArgDefault))
-                        {
-                            editArgDefault = editEnumValues.Keys.ElementAt(dfsel);
-                        }
-                        int? removeAt = null;
-                        if (ImGui.BeginTable("##enumvalues", 3, ImGuiTableFlags.RowBg
-                                                    | ImGuiTableFlags.BordersOuter
-                                                    | ImGuiTableFlags.BordersV
-                                                    | ImGuiTableFlags.ScrollY
-                                                    | ImGuiTableFlags.Resizable,
-                                                    new(ImGui.GetContentRegionAvail().X, 150)
-                                                    ))
-                        {
-                            ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.9f);
-                            ImGui.TableSetupColumn("Value", ImGuiTableColumnFlags.None);
-                            ImGui.TableSetupColumn("##delete", ImGuiTableColumnFlags.None, 0.1f);
-                            ImGui.TableHeadersRow();
-                            foreach (int i in editEnumValues.Keys)
-                            {
-                                ImGui.TableNextRow();
-                                ImGui.TableSetColumnIndex(0);
-                                if (ImGui.Selectable(editEnumValues[i] + $"##{i}sl", false))
-                                {
-                                    curEnumName = editEnumValues[i];
-                                    curEnumVal = i;
-                                }
-                                ImGui.TableSetColumnIndex(1);
-                                if (ImGui.Selectable(i + $"##{i}slid", false))
-                                {
-                                    curEnumName = editEnumValues[i];
-                                    curEnumVal = i;
-                                }
-                                ImGui.TableSetColumnIndex(2);
-                                if (ImGui.Selectable(IconUtils.MINUS + $"##{i}dl"))
-                                {
-                                    removeAt = i;
-                                }
-                            }
-                            ImGui.EndTable();
-                        }
-                        if (removeAt != null)
-                        {
-                            editEnumValues.Remove((int)removeAt);
-                        }
-                        if (editEnumValues.ContainsKey(curEnumVal))
-                            ImGui.BeginDisabled();
-                        if (ImGui.Button("Add", new(ImGui.GetContentRegionAvail().X, 25)))
-                        {
-                            editEnumValues[curEnumVal] = curEnumName;
-                        }
-                        if (editEnumValues.ContainsKey(curEnumVal))
-                            ImGui.EndDisabled();
-
-                        ImGui.Text("Name:");
-                        ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg Name"));
-                        if (ImGui.InputText("##opName", ref curEnumName, 128) && editEnumValues.ContainsKey(curEnumVal))
-                        {
-                            editEnumValues[curEnumVal] = curEnumName;
-                        }
-                        if (!string.IsNullOrWhiteSpace(curEnumName))
-                            ImGui.SetItemTooltip(curEnumName);
-                        ImGui.Text("Value:");
-                        ImGui.SameLine();
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg Value"));
-                        ImGui.InputInt("##opVal", ref curEnumVal, 1);
-                        break;
-                }
-
-
-                ImGui.Separator();
-                bool canSave = entry.Args == null || !entry.Args.ContainsKey($"Arg{editArgId}") || editArgCanOverwrite;
-
-                if (ImGui.Button("Cancel", new(ImGui.GetContentRegionAvail().X / 2, 30)))
-                {
-                    newPopup = false;
-                }
-                ImGui.SameLine(default, style.ItemSpacing.X / 2);
-
-                if (!canSave)
-                    ImGui.BeginDisabled();
-                if (ImGui.Button("OK", new(ImGui.GetContentRegionAvail().X, 30)))
-                {
-                    SaveNewArg();
-                    UpdateEntry();
-                    newPopup = false;
-                }
-                if (!canSave)
-                    ImGui.EndDisabled();
-
-            }
-            ImGui.End();
+            ArgWindow(style);
         }
-        if (newPopup)
+        if (_argEdit)
             ImGui.BeginDisabled();
         if (ImGui.BeginChild("LEFTSIDE", new(ImGui.GetContentRegionAvail().X * 18 / 30, ImGui.GetContentRegionAvail().Y - 30)))
         {
@@ -282,12 +107,10 @@ internal class DatabaseEditor(MainWindowContext _window)
             ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100);
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
-            ImGui.Combo("##Filter", ref filterIdx, filter, filter.Length);
+            ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length);
             if (ImGui.BeginTable("ClassTable", 2,
-                                                    ImGuiTableFlags.RowBg
-                                                    | ImGuiTableFlags.BordersOuter
-                                                    | ImGuiTableFlags.BordersV
-                                                    | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - 30)))
+                                    _tableFlags,
+                                    new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - 30)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -301,7 +124,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                     && (_dbEntries[s].Name == null
                     || !_dbEntries[s].Name!.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
                         continue;
-                    switch (filterIdx)
+                    switch (_filterIdx)
                     {
                         case 1:
                             if (_dbEntries[s].Type != null) continue;
@@ -326,46 +149,40 @@ internal class DatabaseEditor(MainWindowContext _window)
                     ImGui.TableSetColumnIndex(0);
                     ImGui.Text(_dbEntries[s].Name != null ? _dbEntries[s].Name : "");
                     ImGui.TableSetColumnIndex(1);
-                    if (ImGui.Selectable(s + $"##{i}", s == oldEntry.ClassName, ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGui.Selectable(s + $"##{i}", s == entry.ClassName, ImGuiSelectableFlags.SpanAllColumns))
                     {
-                        oldEntry = _dbEntries[s];
                         entry = _dbEntries[s];
-                        editClassName = false;
+                        _editClassName = false;
                         _argsel = -1;
                     }
                     i++;
                 }
                 ImGui.EndTable();
             }
-            if (oldEntry.ClassName == null)
+            if (entry.ClassName == null)
                 ImGui.BeginDisabled();
             if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetContentRegionAvail().X / 2, default))) // -
             {
-                _dbEntries.Remove(oldEntry.ClassName);
-                oldEntry = new();
-                entry = new();
+                RemoveEntry(entry.ClassName!);
             }
-            if (oldEntry.ClassName == null)
+            if (entry.ClassName == null)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, ImGui.GetStyle().ItemSpacing.X / 2);
             if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetContentRegionAvail().X, default))) // +
             {
-                //newPopup = true;
-
                 for (int i = 0; i < 999; i++)
                 {
                     if (_dbEntries.ContainsKey($"NewObj{i}")) continue;
-                    oldEntry = new() { ClassName = $"NewObj{i}" };
-                    entry = oldEntry;
-                    _dbEntries.Add(oldEntry.ClassName, oldEntry);
+                    entry = new() { ClassName = $"NewObj{i}" };
+                    _dbEntries.Add(entry.ClassName, entry);
                     break;
                 }
+                update = true;
             }
         }
         ImGui.EndChild();
         ImGui.SameLine();
 
-        bool update = false;
         if (ImGui.BeginChild("RIGHTSIDE", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30)))
         {
             ImGui.SetWindowFontScale(1.3f);
@@ -378,7 +195,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             ImGui.Spacing();
             if (string.IsNullOrEmpty(entry.ClassName))
                 ImGui.BeginDisabled();
-            if (!editClassName)
+            if (!_editClassName)
                 ImGui.BeginDisabled();
             ImGui.Text("Class Name:");
             ImGui.SameLine();
@@ -387,14 +204,14 @@ internal class DatabaseEditor(MainWindowContext _window)
 
             if (ImGui.InputText("##clsname", ref className, 128, ImGuiInputTextFlags.EnterReturnsTrue) && !_dbEntries.ContainsKey(className) && className != entry.ClassName)
             {
-                UpdateClassEntry(className != "" ? className : null);
+                UpdateClassEntry(className != "" ? className : null!);
             }
-            if (!editClassName)
+            if (!_editClassName)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, 0);
             if (ImGui.Button(IconUtils.PENCIL))
             {
-                editClassName = !editClassName;
+                _editClassName = !_editClassName;
             }
 
             ImGui.Text("Entry Name:");
@@ -415,7 +232,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             ImGui.InputText("##Descriptionname", ref entryDesc, 1024);
             if (entryDesc != (entry.Description ?? ""))
             {
-                entry.Description = entryDesc != "" ? entryDesc : null;
+                entry.Description = entryDesc != "" ? entryDesc : null!;
                 update = true;
             }
 
@@ -441,32 +258,25 @@ internal class DatabaseEditor(MainWindowContext _window)
 
             ImGui.Text("Needs Rail:");
             ImGui.SameLine();
-            bool RailRequired = entry.RailRequired;
+            bool needsRail = entry.RailRequired;
             ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Needs Rail", 20, 30) + style.ItemSpacing.X);
-            ImGui.Checkbox("##railr", ref RailRequired);
-            if (RailRequired != entry.RailRequired)
+            ImGui.Checkbox("##railr", ref needsRail);
+            if (needsRail != entry.RailRequired)
             {
-                entry.RailRequired = RailRequired;
+                entry.RailRequired = needsRail;
                 update = true;
             }
 
             ImGui.Text("Type:");
             ImGui.SameLine();
-            int itype = Array.IndexOf(ActorTypes, entryType);
+            int clsType = Array.IndexOf(actorTypes, entryType);
             ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Type", 20, 30) + style.ItemSpacing.X);
-            ImGui.Combo("##etype", ref itype, ActorTypes, ActorTypes.Length);
-            if (itype != Array.IndexOf(ActorTypes, entryType))
+            ImGui.Combo("##etype", ref clsType, actorTypes, actorTypes.Length);
+            if (clsType != Array.IndexOf(actorTypes, entryType))
             {
-                entry.Type = ActorTypes[itype] != "Obj" ? ActorTypes[itype] : null; // Since most classes are obj we don't add the property
+                entry.Type = actorTypes[clsType] != "Obj" ? actorTypes[clsType] : null; // Since most classes are obj we don't add the property
                 update = true;
             }
-
-            // ImGui.SetWindowFontScale(1.3f);
-            // if (entry.Name == null)
-            //     ImGui.TextDisabled("Undocumented class");
-            // else
-            //     ImGui.Text(entry.Name);
-            // ImGui.SetWindowFontScale(1f);
 
             Vector2 descriptionSize = new(ImGui.GetContentRegionAvail().X - 2, -3);
             if (ImGui.BeginTabBar("##tabs", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton))
@@ -477,11 +287,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.BeginTable(
                             "ArgTable",
                             3,
-                            ImGuiTableFlags.ScrollY
-                            | ImGuiTableFlags.RowBg
-                            | ImGuiTableFlags.BordersOuter
-                            | ImGuiTableFlags.BordersV
-                            | ImGuiTableFlags.Resizable,
+                            _tableFlags,
                             new(descriptionSize.X, descriptionSize.Y - 23 - style.ItemSpacing.Y))
                     )
                     {
@@ -519,13 +325,15 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.TableNextRow();
 
                             ImGui.TableSetColumnIndex(0);
-                            if (ImGui.Selectable(arg, _argsel == i, ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick, new(default, 30)))
+                            if (ImGui.Selectable(arg, _argsel == i,
+                                ImGuiSelectableFlags.SpanAllColumns
+                                | ImGuiSelectableFlags.AllowDoubleClick, new(default, 30)))
                             {
                                 _argsel = i;
                                 if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                                 {
                                     SetArgs(false);
-                                    newPopup = true;
+                                    _argEdit = true;
                                 }
                             }
                             if (!string.IsNullOrWhiteSpace(argDescription))
@@ -553,7 +361,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         if (ImGui.Button("Add ARG", new(ImGui.GetContentRegionAvail().X, default)))
                         {
                             SetArgs();
-                            newPopup = true;
+                            _argEdit = true;
                             update = true;
                         }
                     }
@@ -565,11 +373,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.BeginTable(
                             "SwitchTable",
                             3,
-                            ImGuiTableFlags.ScrollY
-                            | ImGuiTableFlags.RowBg
-                            | ImGuiTableFlags.BordersOuter
-                            | ImGuiTableFlags.BordersV
-                            | ImGuiTableFlags.Resizable,
+                            _tableFlags,
                             new(descriptionSize.X, descriptionSize.Y - 23 - style.ItemSpacing.Y))
                     )
                     {
@@ -578,6 +382,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.4f);
                         ImGui.TableSetupColumn("##remove");
                         ImGui.TableHeadersRow();
+                        bool swUpdate = false;
                         foreach (string swn in switches)
                         {
                             string swName = $"Switch{swn}";
@@ -595,12 +400,12 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.Text(swn);
                             ImGui.TableSetColumnIndex(1);
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                            int swi = Array.IndexOf(switchStates, swType == "" ? "None" : swType);
-                            ImGui.Combo($"##swcombo{swn}", ref swi, switchStates, 3);
-                            if (swi != Array.IndexOf(switchStates, swType == "" ? "None" : swType))
+                            int swi = Array.IndexOf(switchTypes, swType == "" ? "None" : swType);
+                            ImGui.Combo($"##swcombo{swn}", ref swi, switchTypes, 3);
+                            if (swi != Array.IndexOf(switchTypes, swType == "" ? "None" : swType))
                             {
-                                swType = swi == 0 ? "" : switchStates[swi];
-                                update = true;
+                                swType = swi == 0 ? "" : switchTypes[swi];
+                                swUpdate = true;
                             }
                             ImGui.TableSetColumnIndex(2);
                             if (swi == 0)
@@ -608,7 +413,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                             if (ImGui.InputText($"##swDesc{swn}", ref swDescription, 128))
                             {
-                                update = true;
+                                swUpdate = true;
                             }
                             if (!string.IsNullOrWhiteSpace(swDescription))
                                 ImGui.SetItemTooltip(swDescription);
@@ -616,7 +421,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             if (swi == 0)
                                 ImGui.EndDisabled();
 
-                            if (update)
+                            if (swUpdate)
                             {
                                 if (entry.Switches == null) entry.Switches = new();
                                 if (swType == "")
@@ -627,7 +432,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                                         Description = swDescription,
                                         Type = swType
                                     };
-                                update = false;
+                                swUpdate = false;
                             }
                         }
                         ImGui.EndTable();
@@ -652,13 +457,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                 }
                 ImGui.EndTabBar();
             }
-            var beginLast = ImGui.GetCursorPos();
-            //ImGui.SetCursorPos(beginClass);
-
             if (string.IsNullOrEmpty(entry.ClassName))
                 ImGui.EndDisabled();
-
-            //ImGui.SetCursorPos(beginLast);
         }
         if (update && entry.ClassName != null) UpdateEntry();
         ImGui.EndChild();
@@ -666,7 +466,7 @@ internal class DatabaseEditor(MainWindowContext _window)
         {
             Reset();
             _isOpened = false;
-            if (newPopup)
+            if (_argEdit)
                 ImGui.EndDisabled();
             ImGui.CloseCurrentPopup(); ;
             ImGui.EndPopup();
@@ -678,44 +478,27 @@ internal class DatabaseEditor(MainWindowContext _window)
         {
             foreach (string s in _modifiedEntries)
             {
-                if (!_dbEntries.ContainsKey(s)) // Erase the files that will no longer be there
+                string pth = Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml");
+                if (!_dbEntries.ContainsKey(s)) 
                 {
-                    // File.Delete(Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml"));
+                    File.Delete(pth); // Erase the files that will no longer be there
                 }
                 else
                 {
-                    if (_dbEntries[s].Switches != null)
-                    {
-                        if (_dbEntries[s].Switches.Count > 0)
-                        {
-                            foreach (string sw in switches)
-                            {
-                                if (!_dbEntries[s].Switches.ContainsKey($"Switch{sw}")) continue;
-                                if (_dbEntries[s].Switches[$"Switch{sw}"] == null)
-                                    _dbEntries[s].Switches.Remove($"Switch{sw}");
-                            }
-                        }
-                        if (_dbEntries[s].Switches.Count == 0)
-                        {
-                            var e = _dbEntries[s];
-                            e.Switches = null;
-                            _dbEntries[s] = e;
-                        }
-                    }
-                    YAMLWrapper.Serialize(Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml"), _dbEntries[s]);
+                    PreSaveSwitchSetup(s);
+                    YAMLWrapper.Serialize(pth, _dbEntries[s]);
                 }
             }
             ClassDatabaseWrapper.ReloadEntries = true;
             Reset();
-
             _isOpened = false;
-            if (newPopup)
+            if (_argEdit)
                 ImGui.EndDisabled();
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             return;
         }
-        if (newPopup)
+        if (_argEdit)
             ImGui.EndDisabled();
         ImGui.EndPopup();
     }
@@ -724,7 +507,6 @@ internal class DatabaseEditor(MainWindowContext _window)
     {
         if (!_modifiedEntries.Contains(entry.ClassName))
             _modifiedEntries.Add(entry.ClassName);
-        oldEntry = entry;
         _dbEntries[entry.ClassName] = entry;
     }
 
@@ -740,84 +522,287 @@ internal class DatabaseEditor(MainWindowContext _window)
             _modifiedEntries.Add(entry.ClassName);
         if (!_modifiedEntries.Contains(newName))
             _modifiedEntries.Add(newName);
-        oldEntry = entry;
         _dbEntries.Remove(entry.ClassName);
         entry.ClassName = newName;
         _dbEntries[entry.ClassName] = entry;
     }
 
+    private void RemoveEntry(string clsName)
+    {
+        _modifiedEntries.Add(clsName);
+        _dbEntries.Remove(clsName!);
+        entry = new();
+    }
+
+    private void PreSaveSwitchSetup(string switchName)
+    {
+        if (_dbEntries[switchName].Switches != null)
+        {
+            if (_dbEntries[switchName].Switches.Count > 0)
+            {
+                foreach (string sw in switches)
+                {
+                    if (!_dbEntries[switchName].Switches.ContainsKey($"Switch{sw}")) continue;
+                    if (_dbEntries[switchName].Switches[$"Switch{sw}"] == null)
+                        _dbEntries[switchName].Switches.Remove($"Switch{sw}");
+                }
+            }
+            if (_dbEntries[switchName].Switches.Count == 0)
+            {
+                var e = _dbEntries[switchName];
+                e.Switches = null!;
+                _dbEntries[switchName] = e;
+            }
+        }
+    }
+
     private void SaveNewArg()
     {
         string tp = "";
-        switch (editArgType)
+        switch (_editArgType)
         {
             case 0:
-                editArgMin = null;
-                editArgMax = null;
-                editEnumValues.Clear();
+                _editArgMin = null;
+                _editArgMax = null;
+                _editEnumValues.Clear();
                 tp = "bool";
                 break;
             case 1:
-                editEnumValues.Clear();
+                _editEnumValues.Clear();
                 tp = "int";
                 break;
             case 2:
-                editArgMin = null;
-                editArgMax = null;
+                _editArgMin = null;
+                _editArgMax = null;
                 tp = "enum";
                 break;
         }
 
         var arg = new ClassDatabaseWrapper.Arg()
         {
-            Default = editArgDefault,
+            Default = _editArgDefault,
             Type = tp,
-            Description = editArgDesc,
-            Name = editArgName,
-            Values = editEnumValues.Count > 0 ? editEnumValues : null,
-            Min = editArgMin,
-            Max = editArgMax
+            Description = _editArgDesc,
+            Name = _editArgName,
+            Values = _editEnumValues.Count > 0 ? _editEnumValues : null,
+            Min = _editArgMin,
+            Max = _editArgMax
         };
         var oldargs = entry.Args;
         entry.Args = new();
         if (oldargs != null)
-        foreach (string a in oldargs.Keys)
-        {
-            entry.Args[a] = oldargs[a];
-        }
-        entry.Args[$"Arg{editArgId}"] = arg;
+            foreach (string a in oldargs.Keys)
+            {
+                entry.Args[a] = oldargs[a];
+            }
+        entry.Args[$"Arg{_editArgId}"] = arg;
     }
 
     private void SetArgs(bool clean = true)
     {
         if (clean)
         {
-            editArgId = 0;
-            editArgType = 1;
-            editArgDesc = "";
-            editArgName = "";
-            editArgDefault = -1;
-            editArgMin = null;
-            editArgMax = null;
-            editEnumValues.Clear();
-            editArgCanOverwrite = false;
+            _editArgId = 0;
+            _editArgType = 1;
+            _editArgDesc = "";
+            _editArgName = "";
+            _editArgDefault = -1;
+            _editArgMin = null;
+            _editArgMax = null;
+            _editEnumValues.Clear();
+            _editArgCanOverwrite = false;
         }
         else
         {
-            editArgId = _argsel;
+            _editArgId = _argsel;
             var arg = entry.Args[$"Arg{_argsel}"];
-            editArgType = arg.Type == null || arg.Type == "int" ? 1 : arg.Type == "bool" ? 0 : 2;
-            editArgDesc = arg.Description ?? "";
-            editArgName = arg.Name ?? "";
-            editArgDefault = (int)arg.Default;
-            editArgMin = arg.Min;
-            editArgMax = arg.Max;
-            editEnumValues = new();
+            _editArgType = arg.Type == null || arg.Type == "int" ? 1 : arg.Type == "bool" ? 0 : 2;
+            _editArgDesc = arg.Description ?? "";
+            _editArgName = arg.Name ?? "";
+            _editArgDefault = (int)arg.Default;
+            _editArgMin = arg.Min;
+            _editArgMax = arg.Max;
+            _editEnumValues = new();
             if (arg.Values != null)
-                editEnumValues = new(arg.Values);
-            editArgCanOverwrite = true;
+                _editEnumValues = new(arg.Values);
+            _editArgCanOverwrite = true;
         }
-        curEnumName = "";
-        curEnumVal = -1;
+        _editEnNm = "";
+        _editEnVal = -1;
     }
+
+    private void ArgWindow(ImGuiStylePtr style)
+    {
+        ImGui.OpenPopup("Edit Arg");
+        ImGui.SetNextWindowSize(dimensions / 2.8f, ImGuiCond.Appearing);
+        ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
+        if (ImGui.BeginPopupModal("Edit Arg", ref _argEdit, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.Popup | ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            if (_editArgCanOverwrite)
+                ImGui.BeginDisabled();
+            ImGui.Text("Arg ID:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg ID"));
+            ImGui.InputInt("##argid", ref _editArgId, 1);
+            _editArgId = int.Clamp(_editArgId, 0, 9);
+            if (_editArgCanOverwrite)
+                ImGui.EndDisabled();
+
+            ImGui.Text("Arg name:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg name"));
+            ImGui.InputTextWithHint("##argname", "Name", ref _editArgName, 128);
+
+            ImGui.Text("Description:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Description"));
+            ImGui.InputTextWithHint("##argdesc", "Description", ref _editArgDesc, 128);
+            ImGui.Text("Type:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Type"));
+            ImGui.Combo("##argtype", ref _editArgType, argTypes, 3);
+
+            ImGui.Text("Default:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Default"));
+
+            switch (_editArgType)
+            {
+                case 0:
+
+                    int df = _editArgDefault == -1 ? 0 : 1;
+                    ImGui.Combo("##defboolval", ref df, ["False", "True"], 2);
+                    _editArgDefault = df == 0 ? -1 : 0;
+                    break;
+
+                case 1:
+                    ImGui.InputInt("##defval", ref _editArgDefault, 1);
+                    int min = _editArgMin ?? -1;
+                    int max = _editArgMax ?? -1;
+                    if (_editArgMin is null)
+                        ImGui.BeginDisabled();
+                    ImGui.Text("Min:");
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Min") - 28);
+                    ImGui.InputInt("##minval", ref min, 1);
+                    if (min != _editArgMin && _editArgMin != null) _editArgMin = min;
+                    if (_editArgMin is null)
+                        ImGui.EndDisabled();
+
+                    ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                    if (ImGui.Button((_editArgMin is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMin"))
+                    {
+                        _editArgMin = _editArgMin is null ? -1 : null;
+                    }
+
+                    if (_editArgMax is null)
+                        ImGui.BeginDisabled();
+                    ImGui.Text("Max:");
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Max") - 28);
+                    ImGui.InputInt("##maxval", ref max, 1);
+                    if (max != _editArgMax && _editArgMax != null) _editArgMax = max;
+                    if (_editArgMax is null)
+                        ImGui.EndDisabled();
+
+                    ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                    if (ImGui.Button((_editArgMax is null ? IconUtils.PLUS : IconUtils.MINUS) + "##remMax"))
+                    {
+                        _editArgMax = _editArgMax is null ? -1 : null;
+                    }
+
+                    break;
+                case 2:
+                    var dfsel = _editEnumValues.Keys.ToList().IndexOf(_editArgDefault);
+                    ImGui.Combo("##defval", ref dfsel, _editEnumValues.Values.ToArray(), _editEnumValues.Keys.Count);
+                    if (dfsel != _editEnumValues.Keys.ToList().IndexOf(_editArgDefault))
+                    {
+                        _editArgDefault = _editEnumValues.Keys.ElementAt(dfsel);
+                    }
+                    int? removeAt = null;
+                    if (ImGui.BeginTable("##enumvalues", 3, _tableFlags,
+                                        new(ImGui.GetContentRegionAvail().X, 150)))
+                    {
+                        ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                        ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.9f);
+                        ImGui.TableSetupColumn("Value", ImGuiTableColumnFlags.None);
+                        ImGui.TableSetupColumn("##delete", ImGuiTableColumnFlags.None, 0.1f);
+                        ImGui.TableHeadersRow();
+                        foreach (int i in _editEnumValues.Keys)
+                        {
+                            ImGui.TableNextRow();
+                            ImGui.TableSetColumnIndex(0);
+                            if (ImGui.Selectable(_editEnumValues[i] + $"##{i}sl", false))
+                            {
+                                _editEnNm = _editEnumValues[i];
+                                _editEnVal = i;
+                            }
+                            ImGui.TableSetColumnIndex(1);
+                            if (ImGui.Selectable(i + $"##{i}slid", false))
+                            {
+                                _editEnNm = _editEnumValues[i];
+                                _editEnVal = i;
+                            }
+                            ImGui.TableSetColumnIndex(2);
+                            if (ImGui.Selectable(IconUtils.MINUS + $"##{i}dl"))
+                            {
+                                removeAt = i;
+                            }
+                        }
+                        ImGui.EndTable();
+                    }
+                    if (removeAt != null)
+                    {
+                        _editEnumValues.Remove((int)removeAt);
+                    }
+                    if (_editEnumValues.ContainsKey(_editEnVal))
+                        ImGui.BeginDisabled();
+                    if (ImGui.Button("Add", new(ImGui.GetContentRegionAvail().X, 25)))
+                    {
+                        _editEnumValues[_editEnVal] = _editEnNm;
+                    }
+                    if (_editEnumValues.ContainsKey(_editEnVal))
+                        ImGui.EndDisabled();
+
+                    ImGui.Text("Name:");
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg Name"));
+                    if (ImGui.InputText("##opName", ref _editEnNm, 128) && _editEnumValues.ContainsKey(_editEnVal))
+                    {
+                        _editEnumValues[_editEnVal] = _editEnNm;
+                    }
+                    if (!string.IsNullOrWhiteSpace(_editEnNm))
+                        ImGui.SetItemTooltip(_editEnNm);
+                    ImGui.Text("Value:");
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Arg Value"));
+                    ImGui.InputInt("##opVal", ref _editEnVal, 1);
+                    break;
+            }
+
+            ImGui.Separator();
+            bool canSave = entry.Args == null || !entry.Args.ContainsKey($"Arg{_editArgId}") || _editArgCanOverwrite;
+
+            if (ImGui.Button("Cancel", new(ImGui.GetContentRegionAvail().X / 2, 30)))
+            {
+                _argEdit = false;
+            }
+            ImGui.SameLine(default, style.ItemSpacing.X / 2);
+
+            if (!canSave)
+                ImGui.BeginDisabled();
+            if (ImGui.Button("OK", new(ImGui.GetContentRegionAvail().X, 30)))
+            {
+                SaveNewArg();
+                UpdateEntry();
+                _argEdit = false;
+            }
+            if (!canSave)
+                ImGui.EndDisabled();
+
+        }
+        ImGui.End();
+    }
+
+
 }

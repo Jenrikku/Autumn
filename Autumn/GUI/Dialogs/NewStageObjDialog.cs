@@ -45,7 +45,7 @@ internal class NewStageObjDialog(MainWindowContext window)
         if (!_isOpened)
             return;
 
-        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape) && !ImGui.GetIO().WantTextInput) // prevent exiting when input is focused
         {
             _isOpened = false;
             ImGui.CloseCurrentPopup();

@@ -57,7 +57,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
         if (!_isOpened)
             return;
 
-        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape) && !ImGui.GetIO().WantTextInput) // prevent exiting when input is focused
         {
             Reset();
             _isOpened = false;
