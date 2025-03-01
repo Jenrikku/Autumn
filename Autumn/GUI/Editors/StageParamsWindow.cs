@@ -50,7 +50,11 @@ internal class ParametersWindow(MainWindowContext window)
     public void Render()
     {
         if (!IsEnabled)
+        {
+            if (window.CurrentScene != null && window.CurrentScene.PreviewLight != null)
+                window.CurrentScene.PreviewLight = null;
             return;
+        }
         unsafe
         {
             fixed (ImGuiWindowClass* tmp = &windowClass)
@@ -193,6 +197,8 @@ internal class ParametersWindow(MainWindowContext window)
                 }
                 ImGui.EndTabItem();
             }
+            else
+                scn.PreviewLight = null;
             if (ImGui.BeginTabItem("Light Areas", ref LightEnabled))
             {
                 LightAreaTab(scn, prevW, style);

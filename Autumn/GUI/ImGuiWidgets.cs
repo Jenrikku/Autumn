@@ -1,6 +1,7 @@
 using System.Numerics;
 using Autumn.ActionSystem;
 using Autumn.Enums;
+using static Autumn.Utils.IconUtils;
 using Autumn.GUI.Windows;
 using ImGuiNET;
 using TinyFileDialogsSharp;
@@ -80,19 +81,19 @@ internal static class ImGuiWidgets
         switch (dir)
         {
             case ImGuiDir.Up:
-                str = "\uf062##" + str;
+                str = ARROW_UP + "##" + str;
                 break;
             case ImGuiDir.Down:
-                str = "\uf063##" + str;
+                str = ARROW_DOWN + "##" + str;
                 break;
             case ImGuiDir.Left:
-                str = "\uf060##" + str;
+                str = ARROW_LEFT + "##" + str;
                 break;
             case ImGuiDir.Right:
-                str = "\uf061##" + str;
+                str = ARROW_RIGHT + "##" + str;
                 break;
             case ImGuiDir.COUNT:
-                str = "\uf078##" + str;
+                str = DOWN + "##" + str;
                 break;
         }
         return ImGui.Button(str, size ?? default);
@@ -295,5 +296,12 @@ internal static class ImGuiWidgets
         ImGui.SameLine();
         SetPropertyWidthGen(str + ":");
         return ImGui.InputText("##" + str, ref rf, max);
+    }
+
+    public static bool IsMouseHoveringRect(Vector2 v_min, Vector2 v_max)
+    {
+        bool r = v_max.X > ImGui.GetMousePos().X && ImGui.GetMousePos().X > v_min.X;
+        r = r && v_max.Y > ImGui.GetMousePos().Y && ImGui.GetMousePos().Y > v_min.Y;
+        return r;
     }
 }

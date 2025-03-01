@@ -28,6 +28,7 @@ internal class ActionHandler
                 CommandID.NewProject => NewProject(),
                 CommandID.OpenProject => OpenProject(),
                 CommandID.OpenSettings => OpenSettings(),
+                CommandID.CloseScene => CloseScene(),
                 CommandID.Exit => Exit(),
                 CommandID.AddStage => AddStage(),
                 CommandID.SaveStage => SaveStage(),
@@ -266,6 +267,18 @@ internal class ActionHandler
                 mainWindow.OpenSettingsDialog();
             },
             enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
+        );
+    private static Command CloseScene() =>
+        new(
+            displayName: "Close Current Scene",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainWindow)
+                    return;
+
+                mainWindow.CloseCurrentScene();
+            },
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
 
     private static Command SaveStage() =>

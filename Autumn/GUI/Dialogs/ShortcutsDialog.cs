@@ -42,6 +42,7 @@ internal class ShortcutsDialog(MainWindowContext window)
         ShortcutText(CommandID.NewProject);
         ShortcutText(CommandID.OpenProject);
         ShortcutText(CommandID.AddStage);
+        ShortcutText(CommandID.CloseScene);
         ShortcutText(CommandID.OpenSettings);
         ShortcutText(CommandID.AddObject);
         ShortcutText(CommandID.Undo);

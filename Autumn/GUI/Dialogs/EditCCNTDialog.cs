@@ -8,6 +8,7 @@ using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
 using ImGuiNET;
 using Autumn.Wrappers;
+using Autumn.Utils;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -115,7 +116,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
                 }
                 ImGui.EndTable();
             }
-            if (ImGui.Button("\uf068", new(ImGui.GetWindowWidth() / 2, default))) // -
+            if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetWindowWidth() / 2, default))) // -
             {
                 _tmpCCNT.Remove(_oname);
                 _oname = "";
@@ -124,7 +125,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
                 _class = "";
             }
             ImGui.SameLine(default, ImGui.GetStyle().ItemSpacing.X / 2);
-            if (ImGui.Button("\uf067", new(ImGui.GetWindowWidth() / 2, default))) // +
+            if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetWindowWidth() / 2, default))) // +
             {
                 for (int i = 0; i < 999; i++)
                 {

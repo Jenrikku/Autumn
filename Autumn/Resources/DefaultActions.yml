@@ -43,3 +43,8 @@ AddStage:
   Ctrl: false
   Key: A
   Shift: false
+CloseScene:
+  Alt: false
+  Ctrl: true
+  Key: W
+  Shift: false
