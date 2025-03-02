@@ -227,8 +227,14 @@ internal class LayeredFSHandler
             yield return OriginalFS.Root;
     }
 
-    public ReadOnlyDictionary<string,string> TryReadCCNT(string path)
+    public ReadOnlyDictionary<string, string> TryReadCCNT(string path)
     {
         return RomFSHandler.ReadAnyCreatorClassNameTable(path);
+    }
+    public Stage? TryReadStage(string path)
+    {
+        if (ModFS == null || !File.Exists(path))
+            return null;
+        return ModFS.TryReadStage(path);
     }
 }

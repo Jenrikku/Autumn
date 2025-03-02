@@ -3,6 +3,7 @@ using Autumn.ActionSystem;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
+using Autumn.FileSystems;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;
@@ -217,6 +218,29 @@ internal class MainWindowContext : WindowContext
 
             if (Directory.Exists(path))
                 ContextHandler.OpenProject(path);
+            else if (ContextHandler.IsProjectLoaded && File.Exists(path) && Path.GetExtension(path) == ".szs")
+            {
+                BackgroundManager.Add(
+                    $"Importing stage from {path}...",
+                    manager =>
+                    {
+                        Stage? stage = ContextHandler.FSHandler.TryReadStage(path);
+                        if (stage == null)
+                            return;
+                        Scene scene =
+                            new(
+                                stage,
+                                ContextHandler.FSHandler,
+                                GLTaskScheduler,
+                                ref manager.StatusMessageSecondary
+                            );
+
+                        Scenes.Add(scene);
+                        ImGui.SetWindowFocus("Objects");
+                    }
+                );
+            }
+
         };
     }
 

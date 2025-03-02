@@ -32,6 +32,7 @@ internal partial class RomFSHandler
     public string Root { get; }
 
     private readonly string _stagesPath;
+    public string StagesPath { get { return _stagesPath; } }
     private readonly string _soundPath;
     private readonly string _actorsPath;
     private readonly string _ccntPath;
@@ -120,15 +121,34 @@ internal partial class RomFSHandler
 
     #region Stage Writing
 
+    public Stage? TryReadStage(string pth)
+    {
+        string stg = Path.GetFileName(pth);
+        string dir = Path.GetDirectoryName(pth)!;
+        var match = _stagesRegex.Match(stg);
+        string name = match.Groups[1].Value;
+        byte scenario = byte.Parse(match.Groups[3].Value);
+    
+        if (ExistsStage(name, scenario))
+            return null;
+        return ReadStageFull(dir, name, scenario);
+    }
+
     public Stage ReadStage(string name, byte scenario)
     {
+        return ReadStageFull(_stagesPath, name, scenario);
+    }
+
+    private Stage ReadStageFull(string dir, string name, byte scenario)
+    {
+
         Stage stage = new(initialize: false) { Name = name, Scenario = scenario };
 
         (string, StageFileType)[] paths =
         [
-            (Path.Join(_stagesPath, $"{name}Design{scenario}.szs"), StageFileType.Design),
-            (Path.Join(_stagesPath, $"{name}Map{scenario}.szs"), StageFileType.Map),
-            (Path.Join(_stagesPath, $"{name}Sound{scenario}.szs"), StageFileType.Sound)
+            (Path.Join(dir, $"{name}Design{scenario}.szs"), StageFileType.Design),
+            (Path.Join(dir, $"{name}Map{scenario}.szs"), StageFileType.Map),
+            (Path.Join(dir, $"{name}Sound{scenario}.szs"), StageFileType.Sound)
         ];
 
         foreach (var (path, fileType) in paths)
@@ -363,9 +383,9 @@ internal partial class RomFSHandler
                 }
             }
         }
-
         return stage;
     }
+
 
     public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
@@ -535,7 +555,8 @@ internal partial class RomFSHandler
     //String Dictionary Array
     public bool WriteCCNT(Dictionary<string, string> ccnt)
     {
-        try {
+        try
+        {
             List<BYAMLNode> classObjectList = new();
             foreach (string obj in ccnt.Keys)
             {
@@ -555,7 +576,7 @@ internal partial class RomFSHandler
             File.WriteAllBytes(_ccntPath, compressedFile);
             _creatorClassNameTable = new(ccnt); // Replace old ccnt with edited one
         }
-        catch 
+        catch
         {
             return false;
         }
