@@ -44,6 +44,7 @@ internal class DatabaseEditor(MainWindowContext _window)
     Dictionary<int, string> _editEnumValues = new();
     string _editEnNm = "";
     int _editEnVal = -1;
+    bool setscroll = false;
 
     public void Open()
     {
@@ -108,6 +109,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
             ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length);
+            var keys = _dbEntries.Keys.ToList();
             if (ImGui.BeginTable("ClassTable", 2,
                                     _tableFlags,
                                     new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - 30)))
@@ -149,6 +151,11 @@ internal class DatabaseEditor(MainWindowContext _window)
                     ImGui.TableSetColumnIndex(0);
                     ImGui.Text(_dbEntries[s].Name != null ? _dbEntries[s].Name : "");
                     ImGui.TableSetColumnIndex(1);
+                    if (s == entry.ClassName && setscroll)
+                    {
+                        ImGui.SetScrollHereY();
+                        setscroll = false;
+                    }
                     if (ImGui.Selectable(s + $"##{i}", s == entry.ClassName, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         entry = _dbEntries[s];
@@ -161,6 +168,28 @@ internal class DatabaseEditor(MainWindowContext _window)
             }
             if (entry.ClassName == null)
                 ImGui.BeginDisabled();
+            if (entry.ClassName != null)
+            {
+                if (!ImGui.GetIO().WantTextInput)
+                {
+                    if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
+                    {
+                        int d = keys.IndexOf(entry.ClassName);
+                        entry = _dbEntries.ElementAt(d + 1 < _dbEntries.Count ? d + 1 : d).Value;
+                        _editClassName = false;
+                        _argsel = -1;
+                        setscroll = true;
+                    }
+                    else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
+                    {
+                        int d = keys.IndexOf(entry.ClassName);
+                        entry = _dbEntries.ElementAt(d - 1 > -1 ? d - 1 : d).Value;
+                        _editClassName = false;
+                        _argsel = -1;
+                        setscroll = true;
+                    }
+                }
+            }
             if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetContentRegionAvail().X / 2, default))) // -
             {
                 RemoveEntry(entry.ClassName!);
@@ -177,6 +206,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                     _dbEntries.Add(entry.ClassName, entry);
                     break;
                 }
+                setscroll = true;
                 update = true;
             }
         }
@@ -479,7 +509,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             foreach (string s in _modifiedEntries)
             {
                 string pth = Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml");
-                if (!_dbEntries.ContainsKey(s)) 
+                if (!_dbEntries.ContainsKey(s))
                 {
                     File.Delete(pth); // Erase the files that will no longer be there
                 }
