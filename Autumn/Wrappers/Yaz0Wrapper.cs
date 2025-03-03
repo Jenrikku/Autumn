@@ -8,7 +8,6 @@ internal static class Yaz0Wrapper
         MemoryStream resultStream = new();
         MemoryStream dataStream = new(data);
         BinaryWriter bw = new(resultStream);
-        var curtime = System.DateTime.Now;
         bw.Write((byte)'Y');
         bw.Write((byte)'a');
         bw.Write((byte)'z');
