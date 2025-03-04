@@ -12,7 +12,6 @@ internal class DatabaseEditor(MainWindowContext _window)
 {
     private bool _isOpened = false;
     private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
-    private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
     private int _argsel = -1;
     readonly string[] switches = ["A", "B", "Appear", "Kill", "DeadOn"];
     readonly string[] switchTypes = ["None", "Read", "Write"];
@@ -345,10 +344,6 @@ internal class DatabaseEditor(MainWindowContext _window)
                                     argType = argData.Type;
                                 if (argData.Description is not null)
                                     argDescription = argData.Description;
-                                if (argData.Default is double)
-                                    _args[i] = Convert.ToInt32(argData.Default);
-                                else
-                                    _args[i] = (int)argData.Default;
                             }
                             else continue;
 
@@ -649,7 +644,12 @@ internal class DatabaseEditor(MainWindowContext _window)
             _editArgType = arg.Type == null || arg.Type == "int" ? 1 : arg.Type == "bool" ? 0 : 2;
             _editArgDesc = arg.Description ?? "";
             _editArgName = arg.Name ?? "";
-            _editArgDefault = (int)arg.Default;
+            if (arg.Default is double)
+                _editArgDefault = Convert.ToInt32(arg.Default);
+            else if (arg.Default is int)
+                _editArgDefault = (int)arg.Default;
+            else
+                _editArgDefault = -1;
             _editArgMin = arg.Min;
             _editArgMax = arg.Max;
             _editEnumValues = new();
