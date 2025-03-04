@@ -634,7 +634,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             _editArgDefault = -1;
             _editArgMin = null;
             _editArgMax = null;
-            _editEnumValues.Clear();
+            _editEnumValues = new();
             _editArgCanOverwrite = false;
         }
         else
@@ -743,11 +743,12 @@ internal class DatabaseEditor(MainWindowContext _window)
 
                     break;
                 case 2:
-                    var dfsel = _editEnumValues.Keys.ToList().IndexOf(_editArgDefault);
-                    ImGui.Combo("##defval", ref dfsel, _editEnumValues.Values.ToArray(), _editEnumValues.Keys.Count);
-                    if (dfsel != _editEnumValues.Keys.ToList().IndexOf(_editArgDefault))
+                    var argEnumList = _editEnumValues.Keys.ToList();
+                    var dfsel = argEnumList.IndexOf(_editArgDefault);
+                    ImGui.Combo("##defval", ref dfsel, _editEnumValues.Values.ToArray(), argEnumList.Count);
+                    if (dfsel != argEnumList.IndexOf(_editArgDefault))
                     {
-                        _editArgDefault = _editEnumValues.Keys.ElementAt(dfsel);
+                        _editArgDefault = argEnumList.ElementAt(dfsel);
                     }
                     int? removeAt = null;
                     if (ImGui.BeginTable("##enumvalues", 3, _tableFlags,
@@ -758,7 +759,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.TableSetupColumn("Value", ImGuiTableColumnFlags.None);
                         ImGui.TableSetupColumn("##delete", ImGuiTableColumnFlags.None, 0.1f);
                         ImGui.TableHeadersRow();
-                        foreach (int i in _editEnumValues.Keys)
+                        foreach (int i in argEnumList)
                         {
                             ImGui.TableNextRow();
                             ImGui.TableSetColumnIndex(0);
