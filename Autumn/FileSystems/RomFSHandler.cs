@@ -130,7 +130,7 @@ internal partial class RomFSHandler
             return null;
         string name = match.Groups[1].Value;
         byte scenario = byte.Parse(match.Groups[3].Value);
-    
+
         if (ExistsStage(name, scenario))
             return null;
         return ReadStageFull(dir, name, scenario);
@@ -1251,127 +1251,118 @@ internal partial class RomFSHandler
             }
             else
             {
-                try
+                dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
+                dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
+                dict.Add("LayerInfos", new(BYAMLNodeType.Array));
+
+                Dictionary<string, BYAMLNode> allInfosDict = new(); // dictionary of arrays of dictionaries
+                                                                    // design , map, sound StageData.byaml
+                currentId = 0;
+                Dictionary<string, BYAMLNode> allRailDict;
+                dict["AllRailInfos"].TryGetValueAs(out allRailDict);
+
+                allRailDict.Add("RailInfo", new(BYAMLNodeType.Array));
+                List<BYAMLNode> railInfo = new();//= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
+                Dictionary<RailObj, BYAMLNode> railObjNodes = new();
+                foreach (RailObj rail in st.GetRailInfos())
                 {
-                    dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
-                    dict.Add("AllRailInfos", new(BYAMLNodeType.Dictionary));
-                    dict.Add("LayerInfos", new(BYAMLNodeType.Array));
+                    var nodeRail = WriteRail(rail, currentId);
+                    railInfo.Add(nodeRail);
+                    railObjNodes.Add(rail, nodeRail);
+                    currentId++;
+                }
+                allRailDict["RailInfo"].Value = railInfo.ToArray();
+                dict["AllRailInfos"].Value = allRailDict;
 
-                    Dictionary<string, BYAMLNode> allInfosDict = new(); // dictionary of arrays of dictionaries
-                                                                        // design , map, sound StageData.byaml
+                //List<BYAMLNode> layerInfos = new();
+                //Dictionary<string, BYAMLNode> layerInfosNames = new(); // "Common", BYAML_Array[] -> "ObjInfo", "CameraAreaInfo"...
+                Dictionary<string, Dictionary<string, List<BYAMLNode>>> layerInfosList = new(); // "Common", List_Array[] -> "ObjInfo", "CameraAreaInfo"...
 
-                    currentId = 0;
-                    Dictionary<string, BYAMLNode> allRailDict;
-                    dict["AllRailInfos"].TryGetValueAs(out allRailDict);
+                //currentLayer
+                currentId = 0;
 
-                    allRailDict.Add("RailInfo", new(BYAMLNodeType.Array));
-                    List<BYAMLNode> railInfo = new();//= railDict["RailInfo"].GetValueAs<BYAMLNode[]>();
-                    Dictionary<RailObj, BYAMLNode> railObjNodes = new();
-                    foreach (RailObj rail in st.GetRailInfos())
+                foreach (StageObjType Infos in Enum.GetValues<StageObjType>())
+                {
+                    if (Infos != StageObjType.Rail && Infos != StageObjType.Child && Infos != StageObjType.AreaChild)
                     {
-                        var nodeRail = WriteRail(rail, currentId);
-                        railInfo.Add(nodeRail);
-                        railObjNodes.Add(rail, nodeRail);
-                        currentId++;
-                    }
-                    allRailDict["RailInfo"].Value = railInfo.ToArray();
-                    dict["AllRailInfos"].Value = allRailDict;
+                        /* AllInfos (dictionary)
+                (Dict entry) -> "CameraAreaInfo"[] (array)
+                            (array entry 0) -> CameraArea (dictionary)
+                            (array entry 1) -> CameraArea (dictionary)
+                            (array entry 2) -> CameraArea (dictionary)
+                (Dict entry) -> "StartInfo"[] (array)
+                            (array entry) -> Mario (dictionary)
+                        */
 
-                    //List<BYAMLNode> layerInfos = new();
-                    //Dictionary<string, BYAMLNode> layerInfosNames = new(); // "Common", BYAML_Array[] -> "ObjInfo", "CameraAreaInfo"...
-                    Dictionary<string, Dictionary<string, List<BYAMLNode>>> layerInfosList = new(); // "Common", List_Array[] -> "ObjInfo", "CameraAreaInfo"...
-
-                    //currentLayer
-                    currentId = 0;
-
-                    foreach (StageObjType Infos in Enum.GetValues<StageObjType>())
-                    {
-                        if (Infos != StageObjType.Rail && Infos != StageObjType.Child && Infos != StageObjType.AreaChild)
+                        List<StageObj> objs = st.GetObjInfos(Infos);
+                        if (!objs.Any()) continue;
+                        List<BYAMLNode> currentInfosList = new();
+                        foreach (StageObj currentObj in objs)
                         {
-                            /* AllInfos (dictionary)
-                    (Dict entry) -> "CameraAreaInfo"[] (array)
-                                (array entry 0) -> CameraArea (dictionary)
-                                (array entry 1) -> CameraArea (dictionary)
-                                (array entry 2) -> CameraArea (dictionary)
-                    (Dict entry) -> "StartInfo"[] (array)
-                                (array entry) -> Mario (dictionary)
-                            */
-
-                            List<StageObj> objs = st.GetObjInfos(Infos);
-                            if (!objs.Any()) continue;
-                            List<BYAMLNode> currentInfosList = new();
-                            foreach (StageObj currentObj in objs)
+                            if (currentObj.Parent != null) continue;
+                            string scenarioLayer = "";
+                            int cId = currentId;
+                            if (currentObj.Layer.Contains("シナリオ"))
                             {
-                                if (currentObj.Parent != null) continue;
-                                string scenarioLayer = "";
-                                int cId = currentId;
-                                if (currentObj.Layer.Contains("シナリオ"))
+                                scenarioLayer = "Scenario";
+                                if (currentObj.Layer.Contains("＆") || currentObj.Layer.Contains("&"))
                                 {
-                                    scenarioLayer = "Scenario";
-                                    if (currentObj.Layer.Contains("＆") || currentObj.Layer.Contains("&"))
-                                    {
-                                        scenarioLayer += currentObj.Layer.ElementAt(4) + "And" + currentObj.Layer.ElementAt(6);
-                                    }
-                                    else
-                                    {
-                                        scenarioLayer += currentObj.Layer.ElementAt(4);
-                                        // add to ScenarioX
-                                    }
+                                    scenarioLayer += currentObj.Layer.ElementAt(4) + "And" + currentObj.Layer.ElementAt(6);
                                 }
-                                else if (currentObj.Layer.Contains("共通")) // common / commons
+                                else
                                 {
-                                    scenarioLayer = "Common";
-                                    if (currentObj.Layer.Contains("サブ"))
-                                    {
-                                        scenarioLayer += "Sub";
-                                        // add to CommonSub
-                                    }
+                                    scenarioLayer += currentObj.Layer.ElementAt(4);
+                                    // add to ScenarioX
                                 }
-                                else if (currentObj.Layer == string.Empty)
-                                { // if we have an incorrect layer we default to Common
-                                    scenarioLayer = "Common";
-                                    currentObj.Layer = "共通";
-                                }
-                                else // if the layer is valid but not predefined we let it save as is
-                                {
-                                    scenarioLayer = currentObj.Layer;
-                                }
-                                var scObj = WriteSceneObjects(currentObj, ref currentId, railObjNodes, useClassNames: _useClassNames);
-                                if (scenarioLayer != "")
-                                {
-                                    if (!layerInfosList.Keys.Contains(scenarioLayer))
-                                    {
-                                        BYAMLNode n = MakeNewLayerInfos(scenarioLayer);
-                                        layerInfosList.Add(scenarioLayer, new());
-                                        layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
-                                    }
-                                    else if (!layerInfosList[scenarioLayer].Keys.Contains(InfosToString(Infos)))
-                                    {
-                                        layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
-                                    }
-                                }
-                                layerInfosList[scenarioLayer][InfosToString(Infos)].Add(scObj);
-                                currentInfosList.Add(scObj);
-                                currentId += 1;
                             }
-                            BYAMLNode currentInfos = new(BYAMLNodeType.Array, currentInfosList.ToArray());
-                            string ObjectType = InfosToString(Infos);
-                            allInfosDict.Add(ObjectType, currentInfos);
+                            else if (currentObj.Layer.Contains("共通")) // common / commons
+                            {
+                                scenarioLayer = "Common";
+                                if (currentObj.Layer.Contains("サブ"))
+                                {
+                                    scenarioLayer += "Sub";
+                                    // add to CommonSub
+                                }
+                            }
+                            else if (currentObj.Layer == string.Empty)
+                            { // if we have an incorrect layer we default to Common
+                                scenarioLayer = "Common";
+                                currentObj.Layer = "共通";
+                            }
+                            else // if the layer is valid but not predefined we let it save as is
+                            {
+                                scenarioLayer = currentObj.Layer;
+                            }
+                            var scObj = WriteSceneObjects(currentObj, ref currentId, railObjNodes, useClassNames: _useClassNames);
+                            if (scenarioLayer != "")
+                            {
+                                if (!layerInfosList.Keys.Contains(scenarioLayer))
+                                {
+                                    BYAMLNode n = MakeNewLayerInfos(scenarioLayer);
+                                    layerInfosList.Add(scenarioLayer, new());
+                                    layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
+                                }
+                                else if (!layerInfosList[scenarioLayer].Keys.Contains(InfosToString(Infos)))
+                                {
+                                    layerInfosList[scenarioLayer].Add(InfosToString(Infos), new());
+                                }
+                            }
+                            layerInfosList[scenarioLayer][InfosToString(Infos)].Add(scObj);
+                            currentInfosList.Add(scObj);
+                            currentId += 1;
                         }
+                        BYAMLNode currentInfos = new(BYAMLNodeType.Array, currentInfosList.ToArray());
+                        string ObjectType = InfosToString(Infos);
+                        allInfosDict.Add(ObjectType, currentInfos);
                     }
-
-
-                    dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
-                    BYAMLNode[] layInfos = GetLayerInfos(layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary());
-                    dict["LayerInfos"].Value = layInfos;
-                    rootdict = dict;
-                    root.Value = rootdict;
-                    file.RootNode = root;
                 }
-                catch
-                {
-                    Console.WriteLine("SOMETHING WENT WRONG DURING STAGE SAVING PLEASE CHECK THE LOGGED FILES");
-                }
+
+                dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
+                BYAMLNode[] layInfos = GetLayerInfos(layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary());
+                dict["LayerInfos"].Value = layInfos;
+                rootdict = dict;
+                root.Value = rootdict;
+                file.RootNode = root;
             }
 
             NARCFileSystem narcFS = new(new());
