@@ -8,8 +8,6 @@ internal enum CommandID
     CloseScene,
     Exit,
     AddStage,
-    AddALL,
-    SaveALL,
     SaveStage,
     Undo,
     Redo,
@@ -18,4 +16,6 @@ internal enum CommandID
     RemoveObj,
     HideObj,
     GotoParent,
+    AddALL,
+    SaveALL,
 }

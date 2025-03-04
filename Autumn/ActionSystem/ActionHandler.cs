@@ -33,14 +33,16 @@ internal class ActionHandler
                 CommandID.AddStage => AddStage(),
                 CommandID.SaveStage => SaveStage(),
                 CommandID.AddObject => AddObj(),
-                CommandID.AddALL => AddAllStages(),
-                CommandID.SaveALL => SaveAllStages(),
                 CommandID.RemoveObj => RemoveObj(),
                 CommandID.DuplicateObj => DuplicateObj(),
                 CommandID.HideObj => HideObj(),
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
                 CommandID.GotoParent => GotoParent(),
+                #if DEBUG
+                CommandID.AddALL => AddAllStages(),
+                CommandID.SaveALL => SaveAllStages(),
+                #endif
                 _ => null
             };
 
@@ -202,7 +204,7 @@ internal class ActionHandler
         );
     public static Command AddAllStages() =>
         new(
-            displayName: "Add ALL Stages",
+            displayName: "Open All Project Stages",
             action: window =>
             {
                 if (window is not MainWindowContext mainWindow)
@@ -232,7 +234,7 @@ internal class ActionHandler
         );
     public static Command SaveAllStages() =>
         new(
-            displayName: "Save ALL Stages",
+            displayName: "Save Open Stages",
             action: window =>
             {
                 if (window is not MainWindowContext mainWindow)

@@ -126,6 +126,8 @@ internal partial class RomFSHandler
         string stg = Path.GetFileName(pth);
         string dir = Path.GetDirectoryName(pth)!;
         var match = _stagesRegex.Match(stg);
+        if (!match.Success)
+            return null;
         string name = match.Groups[1].Value;
         byte scenario = byte.Parse(match.Groups[3].Value);
     
@@ -1223,7 +1225,7 @@ internal partial class RomFSHandler
     {
         Console.WriteLine(Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}"));
         int currentId = 0;
-        bool saveBackup = true;
+        //bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =
             new()
@@ -1397,20 +1399,20 @@ internal partial class RomFSHandler
             }
             if (!st.IsEmpty())
                 narcFS.AddFileRoot("StageData.byml", binFile);
-            if (saveBackup)
-            {
-                if (File.Exists(paths[StageType]))
-                    File.Copy(paths[StageType], Path.Join(paths[StageType] + ".BACKUP"), true);
-                if (File.Exists(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc")))
-                    File.Copy(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), Path.Join(paths[StageType] + ".narc.BACKUP"), true);
-                if (File.Exists(paths[StageType] + "_StageData.byml"))
-                    File.Copy(paths[StageType] + "_StageData.byml", Path.Join(paths[StageType] + "_StageData.byml" + ".BACKUP"), true);
-            }
-            byte[] uncompressed = NARCParser.Write(narcFS.ToNARC());
+            //if (saveBackup)
+            //{
+            //    if (File.Exists(paths[StageType]))
+            //        File.Copy(paths[StageType], Path.Join(paths[StageType] + ".BACKUP"), true);
+            //    if (File.Exists(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc")))
+            //        File.Copy(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), Path.Join(paths[StageType] + ".narc.BACKUP"), true);
+            //    if (File.Exists(paths[StageType] + "_StageData.byml"))
+            //        File.Copy(paths[StageType] + "_StageData.byml", Path.Join(paths[StageType] + "_StageData.byml" + ".BACKUP"), true);
+            //}
+            //byte[] uncompressed = NARCParser.Write(narcFS.ToNARC());
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-            File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
+            //File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
             File.WriteAllBytes(paths[StageType], compressedFile);
-            File.WriteAllBytes(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), uncompressed);
+            //File.WriteAllBytes(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), uncompressed);
         }
         return true;
     }
