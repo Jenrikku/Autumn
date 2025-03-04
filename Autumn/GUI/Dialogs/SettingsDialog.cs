@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
+using Autumn.Wrappers;
 using ImGuiNET;
 
 namespace Autumn.GUI.Dialogs;
@@ -17,7 +18,9 @@ internal class SettingsDialog
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
     private bool _enableVSync = false;
+    private int _compLevel = 1;
 
+    private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
     private int _selectedStyle = 0;
     private int _mouseSpeed = 20;
@@ -46,6 +49,8 @@ internal class SettingsDialog
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
         _oldStyle = _window.ContextHandler.SystemSettings.Theme;
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
+        _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
+
     }
 
     /// <summary>
@@ -127,6 +132,7 @@ internal class SettingsDialog
 
         ImGui.Checkbox("Use ClassNames", ref _useClassNames);
         ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
+        ImGui.Combo("Yaz0 Compression Level", ref _compLevel, compressionLevels, 5);
 
         ImGui.SeparatorText("Reset");
 
@@ -140,6 +146,8 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.Theme = 0;
             _window.ContextHandler.SystemSettings.MouseSpeed = 20;
             _window.ContextHandler.SystemSettings.EnableDBEditor = false;
+            _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
+            Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
@@ -199,6 +207,8 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.Theme = _selectedStyle;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
             _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
+            _window.ContextHandler.SystemSettings.Yaz0Compression = Enum.GetValues<Yaz0Wrapper.CompressionLevel>()[_compLevel];
+            Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _window.ContextHandler.SaveSettings();

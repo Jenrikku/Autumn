@@ -2,6 +2,22 @@ namespace Autumn.Wrappers;
 
 internal static class Yaz0Wrapper
 {
+    /// <summary>
+    /// Defines the level of compression used when compressing.
+    /// </summary>
+    public static CompressionLevel Level { get; set; } = CompressionLevel.Medium;
+
+    /// <summary>
+    /// Recommended compression levels.
+    /// </summary>
+    public enum CompressionLevel
+    {
+        Small = 0x1ff,
+        Medium = 0x4c0,
+        Great = 0xAff,
+        Max = 0xfff,
+        None = 0,
+    }
     public static unsafe byte[] Compress(byte[] data)
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -20,8 +36,8 @@ internal static class Yaz0Wrapper
 
         const int max_2Byte_length = 0x11;  // -2
         const int max_length = 0x111; // -0x12
-        const int max_back_distance = 0xfff; //
-        bool bad_compression = false; // if enabled, nothing actually gets compressed and the yaz0 file ends up being bigger than the original, but the resulting file is still valid
+        int max_back_distance = (int)Level;
+        bool bad_compression = Level == CompressionLevel.None; // if enabled, nothing actually gets compressed and the yaz0 file ends up being bigger than the original, but the resulting file is still valid
 
         while (dataStream.Position < dataStream.Length)
         {
