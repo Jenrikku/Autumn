@@ -9,7 +9,7 @@ internal static class RailMaterial
 {
     private static readonly ShaderSource s_vertexShader =
         new(
-            "Area.vert",
+            "Rail.vert",
             ShaderType.VertexShader,
             """
             #version 330
@@ -22,14 +22,14 @@ internal static class RailMaterial
             };
 
             void main() {
-                gl_Position = uViewProjection * uTransform;
+                gl_Position = uViewProjection * uTransform * vec4(aPos, 1.0);
             }
             """
         );
 
     private static readonly ShaderSource s_fragmentShader =
         new(
-            "Area.frag",
+            "Rail.frag",
             ShaderType.FragmentShader,
             """
             #version 330

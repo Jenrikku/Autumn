@@ -17,7 +17,7 @@ internal class SettingsDialog
     private bool _dbEditor = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
-    private bool _enableVSync = false;
+    private bool _enableVSync = true;
     private int _compLevel = 1;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));

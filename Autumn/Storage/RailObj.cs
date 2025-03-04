@@ -21,4 +21,12 @@ internal class RailObj : StageObj
     {
         return r.RailNo != rb.RailNo || r.Closed != rb.Closed || r.Name != rb.Name;
     }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not RailObj rail)
+            return false;
+
+        return RailNo == rail.RailNo && Closed == rail.Closed && Name == rail.Name;
+    }
 }
