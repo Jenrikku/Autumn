@@ -349,12 +349,11 @@ internal class Scene
             return;
         }
 
-        float rotX = (float)(mario.Rotation.X * (Math.PI / 180f));
-        float rotY = (float)(mario.Rotation.Y * (Math.PI / 180f));
-        float rotZ = (float)(mario.Rotation.Z * (Math.PI / 180f));
+        float rotX = 0;
+        float rotY = (float)(mario.Rotation.Y * (Math.PI / 180f)); // Horizontal rotation
+        float rotZ = (float)(25 * (Math.PI / 180f)); // Vertical rotation
 
         Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotY, rotZ, rotX);
-        rotation.X += 0.5f;
         rotation = Quaternion.Normalize(rotation);
 
         Vector3 cameraDistance = Vector3.Transform(Vector3.UnitZ, rotation) * 13;
