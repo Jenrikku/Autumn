@@ -99,7 +99,7 @@ internal class ObjectWindow(MainWindowContext window)
                 else
                     ImGui.PushStyleColor(ImGuiCol.Text, 0xffffffff & ImGui.GetColorU32(ImGuiCol.Text));
 
-                if (ImGui.Button(obj.IsVisible ? "\uF06E" : "\uF070", new(ImGui.GetColumnWidth(), default))) // Hide / Show
+                if (ImGui.Button(obj.IsVisible ? IconUtils.EYE_OPEN : IconUtils.EYE_CLOSED, new(ImGui.GetColumnWidth(), default))) // Hide / Show
                 {
                     ChangeHandler.ChangePropertyValue(
                         window.CurrentScene.History,

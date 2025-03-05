@@ -1,8 +1,6 @@
 using System.Numerics;
-using Autumn.GUI;
 using Autumn.Rendering.CtrH3D;
 using BYAMLSharp;
-using SPICA.Formats.CtrH3D.Model.Material;
 
 namespace Autumn.Storage;
 
@@ -71,6 +69,21 @@ internal class StageLight
 
     public StageLight()
     {
+    }
+
+    public StageLight(StageLight l)
+    {
+        
+        for( int i = 0; i < 6; i++)
+        {
+            ConstantColors[i] = l.ConstantColors[i];
+        }
+        Ambient = l.Ambient;
+        Diffuse = l.Diffuse;
+        Specular0 = l.Specular0;
+        Specular1 = l.Specular1;
+        IsCameraFollow = l.IsCameraFollow;
+        Direction = l.Direction;
     }
 
     public StageLight(Dictionary<string, BYAMLNode> dict)

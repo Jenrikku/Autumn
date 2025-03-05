@@ -2,6 +2,7 @@ using System.Numerics;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
+using Autumn.FileSystems;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;
@@ -31,18 +32,28 @@ internal class MainWindowContext : WindowContext
 
     private bool _isFirstFrame = true;
 
+    #region Dialogs
     private readonly AddStageDialog _addStageDialog;
     private readonly ClosingDialog _closingDialog;
     private readonly NewStageObjDialog _newStageObjDialog;
-    private SettingsDialog _settingsDialog;
-    public EditChildrenDialog _editChildrenDialog;
+    private readonly SettingsDialog _settingsDialog;
+    private readonly ShortcutsDialog _shortcutsDialog;
+    private readonly DatabaseEditor _DBEditorDialog;
+    #endregion
 
+    #region Editor Dialogs
+    public readonly EditChildrenDialog _editChildrenDialog;
+    public readonly EditCreatorClassNameTable _editCCNT;
+    #endregion
+
+    #region Editor Windows 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
     private readonly ParametersWindow _paramsWindow;
     private readonly SceneWindow _sceneWindow;
     private readonly WelcomeDialog _welcomeDialog;
+    #endregion
 
 #if DEBUG
     private bool _showDemoWindow = false;
@@ -58,6 +69,9 @@ internal class MainWindowContext : WindowContext
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
         _settingsDialog = new(this);
+        _editCCNT = new(this);
+        _shortcutsDialog = new(this);
+        _DBEditorDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -182,6 +196,9 @@ internal class MainWindowContext : WindowContext
             _closingDialog.Render();
             _newStageObjDialog.Render();
             _editChildrenDialog.Render();
+            _editCCNT.Render();
+            _DBEditorDialog.Render();
+            _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
 
@@ -202,6 +219,29 @@ internal class MainWindowContext : WindowContext
 
             if (Directory.Exists(path))
                 ContextHandler.OpenProject(path);
+            else if (ContextHandler.IsProjectLoaded && File.Exists(path) && Path.GetExtension(path) == ".szs")
+            {
+                BackgroundManager.Add(
+                    $"Importing stage from {path}...",
+                    manager =>
+                    {
+                        Stage? stage = ContextHandler.FSHandler.TryReadStage(path);
+                        if (stage == null)
+                            return;
+                        Scene scene =
+                            new(
+                                stage,
+                                ContextHandler.FSHandler,
+                                GLTaskScheduler,
+                                ref manager.StatusMessageSecondary
+                            );
+
+                        Scenes.Add(scene);
+                        ImGui.SetWindowFocus("Objects");
+                    }
+                );
+            }
+
         };
     }
 
@@ -236,7 +276,21 @@ internal class MainWindowContext : WindowContext
         _paramsWindow.CurrentTab = 0;
     }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
-    
+    internal void CloseCurrentScene()
+    {
+        int i = Scenes.IndexOf(CurrentScene!) - 1;
+        Scenes.Remove(CurrentScene!);
+        if (i < 0)
+            CurrentScene = null;
+        else
+            CurrentScene = Scenes[i];
+        if (Scenes.Count == 0)
+        {
+            ImGui.SetWindowFocus("Stages");
+        }
+
+    }
+
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
     /// </summary>
@@ -312,7 +366,7 @@ internal class MainWindowContext : WindowContext
 
             ImGui.EndMenu();
         }
-        // TODO
+
         if (ImGui.BeginMenu("Stage"))
         {
             if (ImGui.MenuItem("Edit General Params"))
@@ -325,10 +379,34 @@ internal class MainWindowContext : WindowContext
                 _paramsWindow.LightEnabled = true;
             ImGui.Separator();
             ImGui.BeginDisabled();
+            // TODO
             if (ImGui.MenuItem("Edit Cameras"))
                 _paramsWindow.CamerasEnabled = true;
 
             ImGui.EndDisabled();
+            ImGui.EndMenu();
+        }
+
+        if (ImGui.BeginMenu("General"))
+        {
+            if (ImGui.MenuItem("CreatorClassNameTable"))
+                _editCCNT.Open();
+            ImGui.BeginDisabled();
+            if (ImGui.MenuItem("Audio"))
+                _editCCNT.Open();
+            if (ImGui.MenuItem("Light Areas"))
+                _editCCNT.Open();
+            if (ImGui.MenuItem("Stage List"))
+                _editCCNT.Open();
+            if (ImGui.MenuItem("Effects"))
+                _editCCNT.Open();
+            ImGui.EndDisabled();
+            if (ContextHandler.SystemSettings.EnableDBEditor)
+            {
+                ImGui.Separator();
+                if (ImGui.MenuItem("Edit Object Database"))
+                    _DBEditorDialog.Open();
+            }
             ImGui.EndMenu();
         }
 
@@ -373,7 +451,6 @@ internal class MainWindowContext : WindowContext
             }
 
             ImGui.Separator();
-
             if (ImGui.MenuItem("Show all params"))
             {
                 _paramsWindow.MiscEnabled = true;
@@ -381,11 +458,26 @@ internal class MainWindowContext : WindowContext
                 _paramsWindow.FogEnabled = true;
                 _paramsWindow.LightEnabled = true;
             }
+            ImGui.Separator();
+            ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.SaveALL, ContextHandler.ActionHandler, this);
 
             ImGui.EndMenu();
         }
 #endif
+        var c = ImGui.GetCursorPos();
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Help").X - ImGui.GetStyle().ItemSpacing.X * 2);
+        if (ImGui.BeginMenu("Help"))
+        {
+            if (ImGui.MenuItem("Shortcuts"))
+                _shortcutsDialog.Open();
+            if (ImGui.MenuItem("About"))
+            {
 
+            }
+            ImGui.EndMenu();
+        }
+        ImGui.SetCursorPos(c);
         #region SceneTabs
         // Opened stages are displayed in tabs in the main menu bar.
 
@@ -437,7 +529,7 @@ internal class MainWindowContext : WindowContext
                     if (Scenes.Count == 0)
                     {
                         ImGui.SetWindowFocus("Stages");
-                    }    
+                    }
                 }
             }
 

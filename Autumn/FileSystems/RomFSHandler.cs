@@ -32,6 +32,7 @@ internal partial class RomFSHandler
     public string Root { get; }
 
     private readonly string _stagesPath;
+    public string StagesPath { get { return _stagesPath; } }
     private readonly string _soundPath;
     private readonly string _actorsPath;
     private readonly string _ccntPath;
@@ -120,15 +121,36 @@ internal partial class RomFSHandler
 
     #region Stage Writing
 
+    public Stage? TryReadStage(string pth)
+    {
+        string stg = Path.GetFileName(pth);
+        string dir = Path.GetDirectoryName(pth)!;
+        var match = _stagesRegex.Match(stg);
+        if (!match.Success)
+            return null;
+        string name = match.Groups[1].Value;
+        byte scenario = byte.Parse(match.Groups[3].Value);
+
+        if (ExistsStage(name, scenario))
+            return null;
+        return ReadStageFull(dir, name, scenario);
+    }
+
     public Stage ReadStage(string name, byte scenario)
     {
+        return ReadStageFull(_stagesPath, name, scenario);
+    }
+
+    private Stage ReadStageFull(string dir, string name, byte scenario)
+    {
+
         Stage stage = new(initialize: false) { Name = name, Scenario = scenario };
 
         (string, StageFileType)[] paths =
         [
-            (Path.Join(_stagesPath, $"{name}Design{scenario}.szs"), StageFileType.Design),
-            (Path.Join(_stagesPath, $"{name}Map{scenario}.szs"), StageFileType.Map),
-            (Path.Join(_stagesPath, $"{name}Sound{scenario}.szs"), StageFileType.Sound)
+            (Path.Join(dir, $"{name}Design{scenario}.szs"), StageFileType.Design),
+            (Path.Join(dir, $"{name}Map{scenario}.szs"), StageFileType.Map),
+            (Path.Join(dir, $"{name}Sound{scenario}.szs"), StageFileType.Sound)
         ];
 
         foreach (var (path, fileType) in paths)
@@ -363,9 +385,9 @@ internal partial class RomFSHandler
                 }
             }
         }
-
         return stage;
     }
+
 
     public Actor ReadActor(string name, GLTaskScheduler scheduler)
     {
@@ -481,50 +503,86 @@ internal partial class RomFSHandler
     {
         if (_creatorClassNameTable is null)
         {
-            NARCFileSystem? narc = SZSWrapper.ReadFile(_ccntPath);
-
-            Dictionary<string, string> dict = new();
-
-            do
-            {
-                if (narc is null)
-                    break;
-
-                byte[] tableData = narc.GetFile("CreatorClassNameTable.byml");
-
-                if (tableData.Length == 0)
-                    break;
-
-                BYAML byaml = BYAMLParser.Read(tableData, s_byamlEncoding);
-
-                if (byaml.RootNode.NodeType != BYAMLNodeType.Array)
-                    break;
-
-                BYAMLNode[] nodes = byaml.RootNode.GetValueAs<BYAMLNode[]>()!;
-
-                foreach (BYAMLNode node in nodes)
-                {
-                    if (node.NodeType != BYAMLNodeType.Dictionary)
-                        continue;
-
-                    var entry = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
-
-                    if (
-                        !entry.TryGetValue("ObjectName", out BYAMLNode? objectName)
-                        || !entry.TryGetValue("ClassName", out BYAMLNode? className)
-                        || objectName.NodeType != BYAMLNodeType.String
-                        || className.NodeType != BYAMLNodeType.String
-                    )
-                        continue;
-
-                    dict.Add(objectName.GetValueAs<string>()!, className.GetValueAs<string>()!);
-                }
-            } while (false);
-
-            _creatorClassNameTable = new(dict);
+            _creatorClassNameTable = ReadAnyCreatorClassNameTable(_ccntPath);
         }
 
         return _creatorClassNameTable;
+    }
+    public static ReadOnlyDictionary<string, string> ReadAnyCreatorClassNameTable(string path)
+    {
+        NARCFileSystem? narc = SZSWrapper.ReadFile(path);
+
+        Dictionary<string, string> dict = new();
+
+        do
+        {
+            if (narc is null)
+                break;
+
+            byte[] tableData = narc.GetFile("CreatorClassNameTable.byml");
+
+            if (tableData.Length == 0)
+                break;
+
+            BYAML byaml = BYAMLParser.Read(tableData, s_byamlEncoding);
+
+            if (byaml.RootNode.NodeType != BYAMLNodeType.Array)
+                break;
+
+            BYAMLNode[] nodes = byaml.RootNode.GetValueAs<BYAMLNode[]>()!;
+
+            foreach (BYAMLNode node in nodes)
+            {
+                if (node.NodeType != BYAMLNodeType.Dictionary)
+                    continue;
+
+                var entry = node.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+
+                if (
+                    !entry.TryGetValue("ObjectName", out BYAMLNode? objectName)
+                    || !entry.TryGetValue("ClassName", out BYAMLNode? className)
+                    || objectName.NodeType != BYAMLNodeType.String
+                    || className.NodeType != BYAMLNodeType.String
+                )
+                    continue;
+
+                dict.Add(objectName.GetValueAs<string>()!, className.GetValueAs<string>()!);
+            }
+        } while (false);
+
+        return new(dict);
+
+    }
+
+    //String Dictionary Array
+    public bool WriteCCNT(Dictionary<string, string> ccnt)
+    {
+        try
+        {
+            List<BYAMLNode> classObjectList = new();
+            foreach (string obj in ccnt.Keys)
+            {
+                classObjectList.Add(new(
+                    new Dictionary<string, BYAMLNode>
+                    {
+                        { "ClassName", new(ccnt[obj])},
+                        { "ObjectName", new(obj)}
+                    }
+                    ));
+            }
+            BYAML byml = new(new(classObjectList.ToArray()), s_byamlEncoding, default);
+            NARCFileSystem narcFS = new(new());
+            byte[] bin = BYAMLParser.Write(byml);
+            narcFS.AddFileRoot("CreatorClassNameTable.byml", bin);
+            byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
+            File.WriteAllBytes(_ccntPath, compressedFile);
+            _creatorClassNameTable = new(ccnt); // Replace old ccnt with edited one
+        }
+        catch
+        {
+            return false;
+        }
+        return true;
     }
 
     public BgmTable ReadBgmTable()
@@ -661,6 +719,10 @@ internal partial class RomFSHandler
         return _bgmTable;
     }
 
+    /// <summary>
+    /// Reads the contents of ObjectData/GameSystemDataTable.szs
+    /// </summary>
+    /// <returns>SystemDataTable</returns>
     public SystemDataTable ReadGSDTable()
     {
         if (_GSDTable is null)
@@ -1161,7 +1223,9 @@ internal partial class RomFSHandler
 
     public bool WriteStage(Stage stage, bool _useClassNames)
     {
+        Console.WriteLine(Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}"));
         int currentId = 0;
+        //bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =
             new()
@@ -1184,7 +1248,7 @@ internal partial class RomFSHandler
             {
                 if (StageType == StageFileType.Sound)
                     continue;
-            }   
+            }
             else
             {
                 dict.Add("AllInfos", new(BYAMLNodeType.Dictionary));
@@ -1193,7 +1257,6 @@ internal partial class RomFSHandler
 
                 Dictionary<string, BYAMLNode> allInfosDict = new(); // dictionary of arrays of dictionaries
                                                                     // design , map, sound StageData.byaml
-
                 currentId = 0;
                 Dictionary<string, BYAMLNode> allRailDict;
                 dict["AllRailInfos"].TryGetValueAs(out allRailDict);
@@ -1294,7 +1357,6 @@ internal partial class RomFSHandler
                     }
                 }
 
-
                 dict["AllInfos"].Value = allInfosDict.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary();
                 BYAMLNode[] layInfos = GetLayerInfos(layerInfosList.OrderBy(x => x.Key, StringComparer.Ordinal).ToDictionary());
                 dict["LayerInfos"].Value = layInfos;
@@ -1328,15 +1390,20 @@ internal partial class RomFSHandler
             }
             if (!st.IsEmpty())
                 narcFS.AddFileRoot("StageData.byml", binFile);
+            //if (saveBackup)
+            //{
+            //    if (File.Exists(paths[StageType]))
+            //        File.Copy(paths[StageType], Path.Join(paths[StageType] + ".BACKUP"), true);
+            //    if (File.Exists(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc")))
+            //        File.Copy(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), Path.Join(paths[StageType] + ".narc.BACKUP"), true);
+            //    if (File.Exists(paths[StageType] + "_StageData.byml"))
+            //        File.Copy(paths[StageType] + "_StageData.byml", Path.Join(paths[StageType] + "_StageData.byml" + ".BACKUP"), true);
+            //}
+            //byte[] uncompressed = NARCParser.Write(narcFS.ToNARC());
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-
-            //          #if DEBUG
-            //          if (st.StageFileType == StageFileType.Map)
-            //          {
-            //              File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
-            //          }
-            //          #endif
+            //File.WriteAllBytes(Path.Join(paths[StageType] + "_StageData.byml"), binFile);
             File.WriteAllBytes(paths[StageType], compressedFile);
+            //File.WriteAllBytes(Path.Join(_stagesPath, $"{stage.Name}{StageType}{stage.Scenario}.narc"), uncompressed);
         }
         return true;
     }

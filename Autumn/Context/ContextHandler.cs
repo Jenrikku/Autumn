@@ -39,6 +39,7 @@ internal class ContextHandler
         Settings = new(_globalSettings);
         SystemSettings = YAMLWrapper.Deserialize<SystemSettings>(sysSettingsFile) ?? new();
 
+        Yaz0Wrapper.Level = SystemSettings.Yaz0Compression;
         FSHandler = new(Settings.RomFSPath);
 
         var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile);

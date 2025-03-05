@@ -19,7 +19,7 @@ internal static class ClassDatabaseWrapper
     public struct Arg
     {
         public object Default { get; set; }
-        public string Type { get; set; }
+        public string? Type { get; set; }
         public string Description { get; set; }
         public string Name { get; set; }
         public bool Required { get; set; }
@@ -40,7 +40,7 @@ internal static class ClassDatabaseWrapper
     {
         get
         {
-            if (s_DatabaseEntries is null)
+            if (s_DatabaseEntries is null || ReloadEntries)
             {
                 s_DatabaseEntries = new();
                 string path = Path.Join(Path.Join("Resources", "RedPepper-ClassDataBase"), "Data");
@@ -52,9 +52,12 @@ internal static class ClassDatabaseWrapper
                     if(entry.ClassName is not null)
                         s_DatabaseEntries[entry.ClassName] = entry;
                 }
+                ReloadEntries = false;
             }
 
             return s_DatabaseEntries;
         }
     }
+
+    public static bool ReloadEntries = false;
 }

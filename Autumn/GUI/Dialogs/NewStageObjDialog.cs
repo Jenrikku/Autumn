@@ -45,7 +45,7 @@ internal class NewStageObjDialog(MainWindowContext window)
         if (!_isOpened)
             return;
 
-        if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape) && !ImGui.GetIO().WantTextInput) // prevent exiting when input is focused
         {
             _isOpened = false;
             ImGui.CloseCurrentPopup();
@@ -66,7 +66,7 @@ internal class NewStageObjDialog(MainWindowContext window)
             !ImGui.BeginPopupModal(
                 "Add New Object",
                 ref _isOpened,
-                 ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse
+                ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse
             )
         )
             return;

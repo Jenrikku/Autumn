@@ -175,6 +175,13 @@ internal class LayeredFSHandler
 
         return new(new Dictionary<string, string>());
     }
+    public bool WriteCreatorClassNameTable(Dictionary<string, string> ccnt)
+    {
+        if (ModFS is not null)
+            return ModFS.WriteCCNT(ccnt);
+
+        return true;
+    }
 
     public BgmTable? ReadBgmTable()
     {
@@ -218,5 +225,16 @@ internal class LayeredFSHandler
             yield return ModFS.Root;
         if (OriginalFS is not null)
             yield return OriginalFS.Root;
+    }
+
+    public ReadOnlyDictionary<string, string> TryReadCCNT(string path)
+    {
+        return RomFSHandler.ReadAnyCreatorClassNameTable(path);
+    }
+    public Stage? TryReadStage(string path)
+    {
+        if (ModFS == null || !File.Exists(path))
+            return null;
+        return ModFS.TryReadStage(path);
     }
 }

@@ -1,3 +1,6 @@
+using System.IO.Compression;
+using Autumn.Wrappers;
+
 namespace Autumn.Context;
 
 /// <summary>
@@ -17,6 +20,8 @@ internal class SystemSettings
     public int MouseSpeed = 20;
     public bool UseWASD = false;
     public bool UseMiddleMouse = false;
+    public bool EnableDBEditor = false;
+    public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
 
     public void AddRecentlyOpenedPath(string path)
     {

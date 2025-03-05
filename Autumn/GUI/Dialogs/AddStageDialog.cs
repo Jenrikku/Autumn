@@ -118,7 +118,7 @@ internal class AddStageDialog
         {
             if (currentItem == 0)
             {
-                _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains(_name, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains(_name, StringComparison.InvariantCultureIgnoreCase)).ToList();
 
                 // Remove already opened stages:
                 foreach (var stage in _window.ContextHandler.ProjectStages)

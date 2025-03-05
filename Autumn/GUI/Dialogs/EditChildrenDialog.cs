@@ -11,7 +11,7 @@ using ImGuiNET;
 namespace Autumn.GUI.Dialogs;
 
 /// <summary>
-/// A dialog that allows the user to set and unset objects as children of another.
+/// A dialog that allows the user to set, remove and move objects as children of another.
 /// </summary>
 internal class EditChildrenDialog(MainWindowContext _window)
 {
@@ -121,7 +121,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                 {
                     StageObj stageObj = obj.StageObj;
 
-                    if (_search != "" && !stageObj.Name.Contains(_search, StringComparison.CurrentCultureIgnoreCase))
+                    if (_search != "" && !stageObj.Name.Contains(_search, StringComparison.InvariantCultureIgnoreCase))
                         continue;
 
                     if (!(!_newChildren.Contains(stageObj) && _oldChildren.Contains(stageObj)))

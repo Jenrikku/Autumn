@@ -5,6 +5,7 @@ internal enum CommandID
     NewProject,
     OpenProject,
     OpenSettings,
+    CloseScene,
     Exit,
     AddStage,
     SaveStage,
@@ -15,4 +16,6 @@ internal enum CommandID
     RemoveObj,
     HideObj,
     GotoParent,
+    AddALL,
+    SaveALL,
 }

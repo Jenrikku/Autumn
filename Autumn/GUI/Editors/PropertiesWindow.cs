@@ -26,20 +26,20 @@ internal class PropertiesWindow(MainWindowContext window)
     DragFloat3 RotDrag = new(window);
     LinkedDragFloat3 ScaleDrag = new(window);
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar }; //ImGuiWidgets.NO_TAB_BAR };
-    
+
     public void Render()
     {
         ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0x00000000);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0x00000000);
-        unsafe 
+        unsafe
         {
             fixed (ImGuiWindowClass* tmp = &windowClass)
-            ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
         bool begun = ImGui.Begin("Properties");
         ImGui.PopStyleColor(3);
-        
+
         if (!begun)
             return;
         if (window.CurrentScene is null)
@@ -79,7 +79,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
             // Fake dock
             bool usedbName = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(GetClassFromCCNT(oldName)) && ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(oldName)].Name != null;
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY()-4);
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
             ImGui.Text(stageObj.Type.ToString() + ": " + (usedbName ? ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(oldName)].Name : oldName));
             ImGui.SetWindowFontScale(1.0f);
 
@@ -237,12 +237,13 @@ internal class PropertiesWindow(MainWindowContext window)
                                         if (ClassDatabaseWrapper.DatabaseEntries[cls].Args != null && ClassDatabaseWrapper.DatabaseEntries[cls].Args.ContainsKey(name))
                                         {
                                             var argEntry = ClassDatabaseWrapper.DatabaseEntries[cls].Args[name];
-                                            ImGui.Text(argEntry.Name + ":");
+                                            string aName = string.IsNullOrEmpty(argEntry.Name) ? "Unknown" : argEntry.Name;
+                                            ImGui.Text(aName + ":");
                                             if (argEntry.Type == "enum")
                                             {
                                                 var rf = argEntry.Values.Keys.ToList().IndexOf(intBuf);
                                                 ImGui.SameLine();
-                                                ImGuiWidgets.SetPropertyWidth(argEntry.Name);
+                                                ImGuiWidgets.SetPropertyWidth(aName);
                                                 if (rf < 0)
                                                 {
                                                     rf = intBuf;
@@ -270,7 +271,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             {
                                                 var rf = intBuf != -1;
                                                 ImGui.SameLine();
-                                                ImGuiWidgets.SetPropertyWidth(argEntry.Name);
+                                                ImGuiWidgets.SetPropertyWidth(aName);
                                                 ImGui.Checkbox("##" + argEntry.Name + "cb", ref rf);
                                                 if ((intBuf != -1) != rf)
                                                 {
@@ -281,9 +282,9 @@ internal class PropertiesWindow(MainWindowContext window)
                                             {
                                                 var rf = intBuf;
                                                 ImGui.SameLine();
-                                                ImGuiWidgets.SetPropertyWidth(argEntry.Name);
+                                                ImGuiWidgets.SetPropertyWidth(aName);
                                                 ImGui.InputInt("##" + argEntry.Name + "i", ref rf, 1, default);
-                                                int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
+                                                rf = int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
                                                 if (intBuf != rf)
                                                 {
                                                     stageObj.Properties[name] = rf;
@@ -351,7 +352,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 string pName = stageObj.Parent is not null ? stageObj.Parent.Name : "No parent";
                                 if (stageObj.Parent == null)
                                     ImGui.BeginDisabled();
-                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize("\uf127").X * 1.65f * window.ScalingFactor , default)))
+                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.UNLINK).X * 1.65f * window.ScalingFactor, default)))
                                 {
                                     var p = window.CurrentScene.GetSceneObjFromStageObj(stageObj.Parent!);
                                     ChangeHandler.ToggleObjectSelection(
@@ -368,7 +369,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 }
 
                                 ImGui.SameLine(default, style.ItemSpacing.X / 2);
-                                if (ImGui.Button("\uf127##" + pName))
+                                if (ImGui.Button(IconUtils.UNLINK + "##" + pName))
                                 {
                                     window.CurrentScene.Stage.GetStageFile(StageFileType.Map).UnlinkChild(stageObj);
                                 }
@@ -677,11 +678,11 @@ internal class PropertiesWindow(MainWindowContext window)
                 if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * 3 / 4 - ImGui.GetStyle().ItemSpacing.X / 2) > (stringWidth + 12))
                 {
                     ImGui.SetCursorPosX(ImGui.GetWindowWidth() / 4);
-                    itemWidth = ImGui.GetWindowWidth() * 3 / 4 - ImGui.GetStyle().ItemSpacing.X / 2 - 24* _window.ScalingFactor;
+                    itemWidth = ImGui.GetWindowWidth() * 3 / 4 - ImGui.GetStyle().ItemSpacing.X / 2 - 24 * _window.ScalingFactor;
                 }
                 else
                 {
-                    itemWidth = ImGui.GetWindowWidth() - stringWidth - ImGui.GetStyle().ItemSpacing.X * 2 - 24* _window.ScalingFactor;
+                    itemWidth = ImGui.GetWindowWidth() - stringWidth - ImGui.GetStyle().ItemSpacing.X * 2 - 24 * _window.ScalingFactor;
                 }
             }
             else
@@ -694,7 +695,7 @@ internal class PropertiesWindow(MainWindowContext window)
             itemWidth = itemWidth / 3 - style.ItemSpacing.X - 7;
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_04_04_6C); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "XTest", new(20* _window.ScalingFactor, 20* _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(str + "XTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("X") / 2);
                 ImGui.Text("X");
@@ -710,7 +711,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_15_6C_15); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "YTest", new(20* _window.ScalingFactor, 20* _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(str + "YTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Y") / 2);
                 ImGui.Text("Y");
@@ -726,7 +727,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_6C_27_15); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "ZTest", new(20* _window.ScalingFactor, 20* _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(str + "ZTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Z") / 2);
                 ImGui.Text("Z");
@@ -830,7 +831,7 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             bool ret = ScaleDrag3.Use(str, ref rf, ref sto, v_speed, itemWidth, isLinked);
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button(isLinked ? "\uf0c1" : "\uf127"))
+            if (ImGui.Button(isLinked ? IconUtils.LINK : IconUtils.UNLINK))
             {
                 isLinked = !isLinked;
             }
@@ -913,6 +914,17 @@ internal class PropertiesWindow(MainWindowContext window)
     private bool InputSwitch(string str, ref int rf, int step, ref ISceneObj sco)
     {
         int i = rf;
+
+        string tt = "";
+        if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(GetClassFromCCNT(sco.StageObj.Name)))
+        {
+            var c = ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(sco.StageObj.Name)];
+            if (c.Switches != null && c.Switches.ContainsKey($"Switch{str}") && c.Switches[$"Switch{str}"] != null)
+            {
+                tt = c.Switches[$"Switch{str}"]?.Type + ": " + c.Switches[$"Switch{str}"]?.Description;
+            }
+        }
+
         bool disable = rf < 0;
         if (disable)
             ImGui.BeginDisabled();
@@ -922,6 +934,10 @@ internal class PropertiesWindow(MainWindowContext window)
         }
         if (disable)
             ImGui.EndDisabled();
+        
+        if (tt != "")
+        ImGui.SetItemTooltip(tt);
+
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() * 2 / 3 - ImGui.GetStyle().ItemSpacing.X * 2);
         if (ImGui.InputInt("##" + str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
@@ -931,6 +947,9 @@ internal class PropertiesWindow(MainWindowContext window)
             rf = i;
             //ChangeHandler.ChangeSwitch(window.CurrentScene.History, sto, str, rf, i);
         }
+        if (tt != "")
+        ImGui.SetItemTooltip(tt);
+
         return false;
     }
     private string GetClassFromCCNT(string objectName)

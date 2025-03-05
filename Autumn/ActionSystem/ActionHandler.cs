@@ -28,6 +28,7 @@ internal class ActionHandler
                 CommandID.NewProject => NewProject(),
                 CommandID.OpenProject => OpenProject(),
                 CommandID.OpenSettings => OpenSettings(),
+                CommandID.CloseScene => CloseScene(),
                 CommandID.Exit => Exit(),
                 CommandID.AddStage => AddStage(),
                 CommandID.SaveStage => SaveStage(),
@@ -38,6 +39,10 @@ internal class ActionHandler
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
                 CommandID.GotoParent => GotoParent(),
+                #if DEBUG
+                CommandID.AddALL => AddAllStages(),
+                CommandID.SaveALL => SaveAllStages(),
+                #endif
                 _ => null
             };
 
@@ -197,6 +202,61 @@ internal class ActionHandler
             },
             enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
         );
+    public static Command AddAllStages() =>
+        new(
+            displayName: "Open All Project Stages",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainWindow)
+                    return;
+                foreach (var st in mainWindow.ContextHandler.ProjectStages)
+                {
+                    mainWindow.BackgroundManager.Add(
+                        $"Importing stage \"{st.Name + st.Scenario}\" from RomFS...",
+                        manager =>
+                        {
+                            Stage stage = mainWindow.ContextHandler.FSHandler.ReadStage(st.Name, st.Scenario);
+                            Scene scene =
+                                new(
+                                    stage,
+                                    mainWindow.ContextHandler.FSHandler,
+                                    mainWindow.GLTaskScheduler,
+                                    ref manager.StatusMessageSecondary
+                                );
+
+                            mainWindow.Scenes.Add(scene);
+                            
+                        }
+                    );
+                }
+            },
+            enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
+        );
+    public static Command SaveAllStages() =>
+        new(
+            displayName: "Save Open Stages",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainWindow)
+                    return;
+                foreach (Scene sc in mainWindow.Scenes)
+                {
+
+                mainWindow.BackgroundManager.Add(
+                    "Saving...",
+                    manager =>
+                    {
+                        Scene scene = sc;
+                        Stage stage = sc.Stage!;
+                        window.ContextHandler.FSHandler.WriteStage(stage, window.ContextHandler.Settings.UseClassNames);
+                        scene.IsSaved = true;
+                        scene.SaveUndoCount = sc.History.UndoSteps;
+                    }
+                );
+                } 
+            },
+            enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
+        );
 
     private static Command OpenSettings() =>
         new(
@@ -209,6 +269,18 @@ internal class ActionHandler
                 mainWindow.OpenSettingsDialog();
             },
             enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
+        );
+    private static Command CloseScene() =>
+        new(
+            displayName: "Close Current Scene",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainWindow)
+                    return;
+
+                mainWindow.CloseCurrentScene();
+            },
+            enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );
 
     private static Command SaveStage() =>
@@ -316,7 +388,7 @@ internal class ActionHandler
                 newPickIds.Add(newestPickId);
                 CheckPickChildren(StageObj.Children[i], ref newPickIds, ref newestPickId);
             }
-            
+
         }
     }
 
