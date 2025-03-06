@@ -235,7 +235,7 @@ internal class MainWindowContext : WindowContext
                                 GLTaskScheduler,
                                 ref manager.StatusMessageSecondary
                             );
-
+                        scene.ResetCamera();
                         Scenes.Add(scene);
                         ImGui.SetWindowFocus("Objects");
                     }

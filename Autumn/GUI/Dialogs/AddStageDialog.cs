@@ -299,6 +299,7 @@ internal class AddStageDialog
 
                         if (ResetOnDone)
                             Reset();
+                        scene.ResetCamera();
                     }
                 );
             }
@@ -321,6 +322,7 @@ internal class AddStageDialog
 
                         if (ResetOnDone)
                             Reset();
+                        scene.ResetCamera();
                     }
                 );
             }
