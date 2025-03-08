@@ -258,15 +258,18 @@ internal class ParametersWindow(MainWindowContext window)
                 ImGui.SetNextItemWidth(prevW - 16 * window.ScalingFactor);
                 ImGui.TextDisabled("This Stage isn't present in the Default Bgm List");
             }
-            ImGui.Text("Music Areas:");
+            ImGui.Text("Music Types:");
+            ImGuiWidgets.HelpTooltip("Ids determine the music type to play on a BgmChangeArea");
             var bgmlist = b.StageBgmList.FirstOrDefault(x => x.StageName == scn.Stage.Name && x.Scenario == scn.Stage.Scenario);
+            if (bgmlist == null) 
+                bgmlist = b.StageBgmList.FirstOrDefault(x => x.StageName == scn.Stage.Name && x.Scenario == null);
             if (bgmlist != null && bgmlist.LineList.ContainsKey("LineStage"))
             {
                 if (ImGui.BeginTable("MusicAreaIdTables", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.Resizable))
                 {
                     ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                     ImGui.TableSetupColumn("Id", ImGuiTableColumnFlags.WidthFixed, 0.22f);
-                    ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.7f);
+                    ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 0.7f);
                     ImGui.TableSetupColumn("Song", ImGuiTableColumnFlags.WidthStretch, 0.9f);
                     ImGui.TableHeadersRow();
 
