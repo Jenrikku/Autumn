@@ -98,8 +98,13 @@ internal class SceneWindow(MainWindowContext window)
         if (sceneReady)
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
-        if (!ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+        bool begin = ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        if (!begin)
+        {
+            if (sceneReady)
+                ImGui.PopStyleVar();
             return;
+        }
 
         if (!sceneReady)
         {

@@ -555,9 +555,12 @@ internal class MainWindowContext : WindowContext
 
         ImGuiWindowFlags flags =
             ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs;
-
-        if (!ImGui.Begin("StatusBar", flags))
+        bool beginStatusBar = ImGui.Begin("StatusBar", flags);
+        if (!beginStatusBar)
+        {
+            ImGui.PopStyleVar();
             return;
+        }
 
         ImGui.SetCursorPosX(10);
 
