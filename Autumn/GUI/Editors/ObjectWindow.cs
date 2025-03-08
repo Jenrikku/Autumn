@@ -30,6 +30,8 @@ internal class ObjectWindow(MainWindowContext window)
     }
 
     private int selectedIndex = -1;
+    private int nextIdx = -1;
+    private int prevIdx = -1;
     bool manualClick = false;
 
     public void Render()
@@ -116,25 +118,16 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableSetColumnIndex(1);
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
-                if (
-                    window.CurrentScene.SelectedObjects.Count() <= 1
-                    && !lastKeyPressed
-                    && selectedIndex != listId
-                    && obj.Selected
-                    && !manualClick
-                )
-                {
-                    selectedIndex = listId;
-                    ImGui.SetScrollHereY();
-                }
 
-                if (selectedIndex == listId && !obj.Selected && lastKeyPressed)
+                if (selectedIndex == listId && !obj.Selected && lastKeyPressed && !manualClick)
                 {
                     ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, obj.PickingId, true);
                     ImGui.SetScrollHereY();
+                    nextIdx = listId;
+                    prevIdx = listId;
                 }
 
-                if (selectedIndex != listId && obj.Selected && manualClick)
+                if (selectedIndex != listId && obj.Selected && manualClick && selectedIndex > listId)
                 {
                     manualClick = false;
                     selectedIndex = listId;
@@ -142,13 +135,10 @@ internal class ObjectWindow(MainWindowContext window)
 
                 if (ImGui.Selectable(stageObj.Name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
                 {
-                    ChangeHandler.ToggleObjectSelection(
-                        window,
-                        window.CurrentScene.History,
-                        obj.PickingId,
-                        !window.Keyboard?.IsShiftPressed() ?? true
-                    );
+                    // NEXT SELECTION = listId;
+                    nextIdx = listId;
                     manualClick = true;
+                    selectedIndex = listId;
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                     {
                         AxisAlignedBoundingBox aabb =
@@ -163,6 +153,20 @@ internal class ObjectWindow(MainWindowContext window)
 
                 ImGui.SetItemTooltip(stageObj.Name);
 
+                if (
+                    window.CurrentScene.SelectedObjects.Count() <= 1
+                    && !lastKeyPressed
+                    && selectedIndex != listId
+                    && obj.Selected
+                    && !manualClick
+                )
+                {
+                    selectedIndex = listId;
+                    ImGui.SetScrollHereY();
+                    nextIdx = listId;
+                    prevIdx = listId;
+                }
+
                 listId++;
                 ImGui.TableSetColumnIndex(2);
 
@@ -170,6 +174,55 @@ internal class ObjectWindow(MainWindowContext window)
             }
 
             ImGui.EndTable();
+        }
+        if (nextIdx != -1)
+        {
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift) && nextIdx != prevIdx)
+            {
+                int max;
+                int init;
+                if (prevIdx > nextIdx)
+                {
+                    max = prevIdx-1;
+                    init = nextIdx;
+                }
+                else
+                {
+                    init = prevIdx+1;
+                    max = nextIdx;
+                }
+                while (init <= max)
+                {
+                    ChangeHandler.ToggleObjectSelection(
+                        window,
+                        window.CurrentScene.History,
+                        (uint)init,
+                        false
+                    );
+                    init++;
+                }
+            }
+            else if (ImGui.IsKeyDown(ImGuiKey.ModCtrl) && nextIdx != prevIdx)
+            {
+
+                ChangeHandler.ToggleObjectSelection(
+                    window,
+                    window.CurrentScene.History,
+                    (uint)nextIdx,
+                    false
+                );
+            }
+            else
+            {
+                ChangeHandler.ToggleObjectSelection(
+                    window,
+                    window.CurrentScene.History,
+                    (uint)nextIdx,
+                    true
+                );
+            }
+            prevIdx = nextIdx;
+            nextIdx = -1;
         }
 
         lastKeyPressed = false;

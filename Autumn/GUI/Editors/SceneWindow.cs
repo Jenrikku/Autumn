@@ -151,7 +151,7 @@ internal class SceneWindow(MainWindowContext window)
 
         Vector2 mousePos = ImGui.GetMousePos();
 
-        _mouseMoveKey = window.ContextHandler.SystemSettings.UseMiddleMouse ? ImGuiMouseButton.Middle: ImGuiMouseButton.Right;
+        _mouseMoveKey = window.ContextHandler.SystemSettings.UseMiddleMouse ? ImGuiMouseButton.Middle : ImGuiMouseButton.Right;
 
         if ((isSceneHovered || _persistentMouseDrag) && ImGui.IsMouseDragging(_mouseMoveKey))
         {
@@ -338,6 +338,7 @@ internal class SceneWindow(MainWindowContext window)
             radius: 45,
             out Vector3 facingDirection
         );
+        GizmoDrawer.EndGizmoDrawing();
 
         if (window.CurrentScene is not null)
         {
@@ -386,21 +387,21 @@ internal class SceneWindow(MainWindowContext window)
                 if (orientationCubeHovered)
                 {
                     camera.LookAt(camera.Eye, camera.Eye - facingDirection);
-                    return;
                 }
 
-                if (_mouseClickActions.TryDequeue(out var action))
+                else if (_mouseClickActions.TryDequeue(out var action))
                 {
                     action(window, worldMousePos);
-                    return;
                 }
-
-                ChangeHandler.ToggleObjectSelection(
-                    window,
-                    window.CurrentScene.History,
-                    pixel,
-                    !(window.Keyboard?.IsShiftPressed() ?? false)
-                );
+                else
+                {
+                    ChangeHandler.ToggleObjectSelection(
+                        window,
+                        window.CurrentScene.History,
+                        pixel,
+                        !(window.Keyboard?.IsShiftPressed() ?? false)
+                    );
+                }
             }
             else if ((_mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                 && isSceneHovered
@@ -471,11 +472,10 @@ internal class SceneWindow(MainWindowContext window)
                 ScaleAction(_ndcMousePos3D);
             }
         }
-
-        GizmoDrawer.EndGizmoDrawing();
-
         ActionPanel(contentAvail);
+
         ActionMenu(deltaSeconds);
+
 
         ImGui.End();
     }
