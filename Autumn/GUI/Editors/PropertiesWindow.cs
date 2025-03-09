@@ -21,6 +21,7 @@ internal class PropertiesWindow(MainWindowContext window)
     private int mClip = -1;
     private int mCamera = -1;
     private string mLayer = "共通";
+    private ISceneObj? prevObj = null;
     private StageObj multiselector = new();
     DragFloat3 PosDrag = new(window);
     DragFloat3 RotDrag = new(window);
@@ -73,8 +74,20 @@ internal class PropertiesWindow(MainWindowContext window)
             // Only one object selected:
             ISceneObj sceneObj = selectedObjects.First();
             StageObj stageObj = sceneObj.StageObj;
+            if (sceneObj != prevObj)
+            {
+                if (prevObj != null)
+                {
+                    PosDrag.Finish(ref prevObj.StageObj.Translation);
+                    RotDrag.Finish(ref prevObj.StageObj.Rotation);
+                    ScaleDrag.Finish(ref prevObj.StageObj.Scale);
+                    prevObj.UpdateTransform();
+                }
+                prevObj = sceneObj;
+            }
+
             string oldName = stageObj.Name;
-            ImGui.GetIO().ConfigDragClickToInputText = true;
+            ImGui.GetIO().ConfigDragClickToInputText = true; // MOVE TO EDITOR STARTUP SETUP
             ImGui.SetWindowFontScale(1.20f);
 
             // Fake dock
@@ -577,13 +590,21 @@ internal class PropertiesWindow(MainWindowContext window)
             min = ImGui.GetCursorPos() + ImGui.GetWindowPos();
             ImGui.DragFloat(isSingle ? str : "##" + str, ref reference, v_speed, default, default, "%.2f"); // C printf formatting
             max = min + ImGui.GetItemRectSize();
-            if (ImGui.IsMouseDown(ImGuiMouseButton.Left))
+
+            if (ImGui.IsMouseDown(ImGuiMouseButton.Left) || ImGui.IsItemFocused())
             {
                 if (ImGui.IsMouseHoveringRect(min, max) && !ImGui.IsMouseDragging(ImGuiMouseButton.Left))
                 {
                     isActive = true;
                     isDragging = false;
                     isFinished = false;
+                }
+                else if (ImGui.IsItemActivated())
+                {
+                    isActive = true;
+                    isDragging = false;
+                    isFinished = false;
+                    isEditing = true;
                 }
             }
             if (ImGui.IsMouseDragging(ImGuiMouseButton.Left) && isActive && !isDragging)
@@ -625,6 +646,7 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             return false;
         }
+        public void Finish(ref float rf) => Reset(ref rf);
 
         void Complete(ref float rf)
         {
@@ -808,6 +830,13 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             return false;
         }
+
+        public void Finish(ref Vector3 rf)
+        {
+            DragFloatX.Finish(ref rf.X);
+            DragFloatY.Finish(ref rf.Y);
+            DragFloatZ.Finish(ref rf.Z);
+        }
     }
 
     private class LinkedDragFloat3(MainWindowContext window)
@@ -836,6 +865,11 @@ internal class PropertiesWindow(MainWindowContext window)
                 isLinked = !isLinked;
             }
             return ret;
+        }
+
+        public void Finish(ref Vector3 rf)
+        {
+            ScaleDrag3.Finish(ref rf);
         }
     }
 
@@ -936,7 +970,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.EndDisabled();
         
         if (tt != "")
-        ImGui.SetItemTooltip(tt);
+            ImGui.SetItemTooltip(tt);
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() * 2 / 3 - ImGui.GetStyle().ItemSpacing.X * 2);
@@ -948,7 +982,7 @@ internal class PropertiesWindow(MainWindowContext window)
             //ChangeHandler.ChangeSwitch(window.CurrentScene.History, sto, str, rf, i);
         }
         if (tt != "")
-        ImGui.SetItemTooltip(tt);
+            ImGui.SetItemTooltip(tt);
 
         return false;
     }
