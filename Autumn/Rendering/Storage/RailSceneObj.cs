@@ -90,7 +90,7 @@ internal class RailSceneObj : ISceneObj
                     Matrix4x4 translate = Matrix4x4.CreateTranslation(point.Translation * 0.01f);
                     Matrix4x4 identity = Matrix4x4.Identity;
 
-                    PointTransforms.Add(new(identity, translate, identity));
+                    PointTransforms.Add(new(translate, identity, identity));
                 }
 
                 break;

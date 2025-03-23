@@ -10,6 +10,7 @@ namespace Autumn.Rendering.Rail;
 
 internal static class RailRenderer
 {
+    private static readonly Matrix4x4 s_railTranslate = Matrix4x4.CreateTranslation(new(0.01f));
     private static readonly Matrix4x4 s_pointHandleScale = Matrix4x4.CreateScale(0.5f);
 
     private static RenderableModel? s_pointModel;
@@ -24,6 +25,8 @@ internal static class RailRenderer
         CommonMaterialParameters railPointMaterial
     )
     {
+        scene.Transform = s_railTranslate;
+
         if (!RailMaterial.TryUse(gl, scene, railMaterial, out ProgramUniformScope scope))
             return;
 
@@ -43,14 +46,12 @@ internal static class RailRenderer
 
                 for (int i = 0; i < rail.Points.Count; i++)
                 {
-                    RailPointBezier point = (RailPointBezier)rail.Points[i];
-
                     var pickingId = railSceneObj.PointsPickingIds[i];
                     var selected = railSceneObj.PointsSelected[i];
                     var transforms = railSceneObj.PointTransforms[i];
 
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P0, selected.P0, true, transforms.P0);
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P1, selected.P1, false, transforms.P1);
+                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P0, selected.P0, false, transforms.P0);
+                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P1, selected.P1, true, transforms.P1);
                     DrawRailPoint(gl, scene, railPointMaterial, pickingId.P2, selected.P2, true, transforms.P2);
                 }
 
@@ -60,13 +61,11 @@ internal static class RailRenderer
 
                 for (int i = 0; i < rail.Points.Count; i++)
                 {
-                    RailPointLinear point = (RailPointLinear)rail.Points[i];
-
                     var pickingId = railSceneObj.PointsPickingIds[i];
                     var selected = railSceneObj.PointsSelected[i];
                     var transforms = railSceneObj.PointTransforms[i];
 
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P1, selected.P1, false, transforms.P1);
+                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P0, selected.P0, false, transforms.P0);
                 }
 
                 break;
@@ -87,9 +86,6 @@ internal static class RailRenderer
     {
         if (isHandle) transform = s_pointHandleScale * transform;
 
-        if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
-            gl.Uniform1(location, pickingId);
-
         scene.Transform = transform;
         material.Selected = selected;
 
@@ -98,6 +94,9 @@ internal static class RailRenderer
 
         using (scope)
         {
+            if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+                gl.Uniform1(location, pickingId);
+
             s_pointModel!.Draw(gl);
         }
     }
