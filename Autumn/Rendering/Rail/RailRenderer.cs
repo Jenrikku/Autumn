@@ -21,13 +21,14 @@ internal static class RailRenderer
         GL gl,
         RailSceneObj railSceneObj,
         CommonSceneParameters scene,
+        RailGeometryParameters railGeometry,
         CommonMaterialParameters railMaterial,
         CommonMaterialParameters railPointMaterial
     )
     {
         scene.Transform = s_railTranslate;
 
-        if (!RailMaterial.TryUse(gl, scene, railMaterial, out ProgramUniformScope scope))
+        if (!RailMaterial.TryUse(gl, scene, railGeometry, railMaterial, out ProgramUniformScope scope))
             return;
 
         using (scope)
@@ -89,12 +90,12 @@ internal static class RailRenderer
         scene.Transform = transform;
         material.Selected = selected;
 
-        if (!RailMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
+        if (!RailPointMaterial.TryUse(gl, scene, material, out ProgramUniformScope scope))
             return;
 
         using (scope)
         {
-            if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+            if (RailPointMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
                 gl.Uniform1(location, pickingId);
 
             s_pointModel!.Draw(gl);

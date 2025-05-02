@@ -24,6 +24,8 @@ internal static class ModelRenderer
 
     private static CommonSceneParameters? s_commonSceneParams;
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
+
+    private static RailGeometryParameters? s_railGeometryParams;
     private static CommonMaterialParameters? s_railMaterialParams;
     private static CommonMaterialParameters? s_railPointMaterialParams;
 
@@ -57,6 +59,7 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
         
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
+        s_railGeometryParams = new(lineWidth: 6f, viewport: new(1));
         s_railMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
         s_railPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
 
@@ -88,9 +91,9 @@ internal static class ModelRenderer
         }
     }
 
-    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
+    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, in Quaternion camera, in Vector2 viewport)
     {
-        if (s_commonSceneParams is null)
+        if (s_commonSceneParams is null || s_railGeometryParams is null)
             throw new InvalidOperationException(
                 $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateSceneParams)}"
             );
@@ -100,6 +103,7 @@ internal static class ModelRenderer
         s_cameraRotation = Vector3.Transform(Vector3.UnitZ, camera);
 
         s_commonSceneParams.ViewProjection = view * projection;
+        s_railGeometryParams.Viewport = viewport;
     }
 
     public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
@@ -145,7 +149,9 @@ internal static class ModelRenderer
         {
             s_railMaterialParams!.Selected = railSceneObj.Selected;
 
-            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_railMaterialParams, s_railPointMaterialParams!);
+            gl.Disable(EnableCap.CullFace);
+            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_railGeometryParams!, s_railMaterialParams, s_railPointMaterialParams!);
+            gl.Enable(EnableCap.CullFace);
 
             return;
         }

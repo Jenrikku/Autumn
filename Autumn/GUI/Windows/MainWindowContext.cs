@@ -267,7 +267,7 @@ internal class MainWindowContext : WindowContext
         _sceneWindow.AddMouseClickAction(action);
 
     public void SetSceneDuplicateTranslation() =>
-        _sceneWindow.isTranslationFromDuplicate = true;
+        _sceneWindow.IsTranslationFromDuplicate = true;
 
     public void SetSwitchSelected(int i)
     {
