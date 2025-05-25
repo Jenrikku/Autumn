@@ -790,8 +790,6 @@ internal class ImGuiController : IDisposable
     {
         _window.Resize -= WindowResized;
         _keyboard.KeyChar -= OnKeyChar;
-        _keyboard.KeyDown -= OnKeyDown;
-        _keyboard.KeyUp -= OnKeyUp;
 
         _gl.DeleteBuffer(_vboHandle);
         _gl.DeleteBuffer(_elementsHandle);
