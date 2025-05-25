@@ -108,7 +108,7 @@ internal class ActionHandler
                     projectChooser.SuccessCallback += result =>
                     {
                         window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                        window.ContextHandler.OpenProject(result[0]);
+                        window.ContextHandler.NewProject(result[0]);
                     };
 
                     return;
