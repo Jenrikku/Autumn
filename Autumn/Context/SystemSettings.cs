@@ -11,10 +11,11 @@ namespace Autumn.Context;
 internal class SystemSettings
 {
     public List<string> RecentlyOpenedPaths = new();
-    public string LastProjectOpenPath = string.Empty;
+    public string LastProjectOpenPath = string.Empty; // File chooser
+    public bool RestoreNativeFileDialogs = false;
     public bool SkipWelcomeDialog = false;
     public bool OpenLastProject = false;
-    public string LastOpenedProject = string.Empty;
+    public string LastOpenedProject = string.Empty; // Open last project
     public bool EnableVSync = true;
     public int Theme = 0;
     public int MouseSpeed = 20;

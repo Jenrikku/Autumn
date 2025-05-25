@@ -36,6 +36,9 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
         foreach (FileSystemInfo info in DirectoryEntries)
         {
+            if (!info.Name.Contains(SearchString))
+                continue;
+
             ImGui.TableNextRow();
 
             ImGui.TableSetColumnIndex(0);

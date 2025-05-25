@@ -100,6 +100,20 @@ internal class ActionHandler
             displayName: "New Project",
             action: window =>
             {
+                if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                {
+                    ProjectCreateChooserContext projectChooser = new(window.ContextHandler, window.WindowManager);
+                    window.WindowManager.Add(projectChooser);
+
+                    projectChooser.SuccessCallback += result =>
+                    {
+                        window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
+                        window.ContextHandler.OpenProject(result[0]);
+                    };
+
+                    return;
+                }
+
                 bool isEmpty = false;
                 string? output;
 
@@ -148,6 +162,20 @@ internal class ActionHandler
             displayName: "Open Project",
             action: window =>
             {
+                if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                {
+                    ProjectChooserContext projectChooser = new(window.ContextHandler, window.WindowManager);
+                    window.WindowManager.Add(projectChooser);
+
+                    projectChooser.SuccessCallback += result =>
+                    {
+                        window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
+                        window.ContextHandler.OpenProject(result[0]);
+                    };
+
+                    return;
+                }
+
                 string? output;
 
                 do

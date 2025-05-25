@@ -22,7 +22,7 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
 
         foreach (FileSystemInfo info in DirectoryEntries)
         {
-            if (info is not DirectoryInfo dir)
+            if (info is not DirectoryInfo dir || !dir.Name.Contains(SearchString))
                 continue;
 
             ImGui.TableNextRow();

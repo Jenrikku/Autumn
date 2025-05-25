@@ -418,30 +418,6 @@ internal class MainWindowContext : WindowContext
 
             ImGui.Separator();
 
-            if (ImGui.MenuItem("Test New Project"))
-            {
-                ProjectCreateChooserContext projectChooser = new(ContextHandler, WindowManager);
-                WindowManager.Add(projectChooser);
-
-                projectChooser.SuccessCallback += result =>
-                {
-                    ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                    ContextHandler.NewProject(result[0]);
-                };
-            }
-
-            if (ImGui.MenuItem("Test Open Project"))
-            {
-                ProjectChooserContext projectChooser = new(ContextHandler, WindowManager);
-                WindowManager.Add(projectChooser);
-
-                projectChooser.SuccessCallback += result =>
-                {
-                    ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                    ContextHandler.OpenProject(result[0]);
-                };
-            }
-
             if (ImGui.MenuItem("Single File Choose"))
             {
                 SingleFileChooserContext fileChooserContext = new(ContextHandler, WindowManager);
