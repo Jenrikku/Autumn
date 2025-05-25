@@ -24,7 +24,8 @@ internal class ImGuiController : IDisposable
     private IWindow _window;
     private IInputContext _input;
     private bool _frameBegun;
-    private readonly List<char> _pressedChars = new List<char>();
+    private readonly List<char> _pressedChars = [];
+    private readonly List<ImGuiKey> _pressedActionKeys = [];
     private IKeyboard _keyboard;
 
     private int _attribLocationTex;
@@ -141,8 +142,6 @@ internal class ImGuiController : IDisposable
         _keyboard = _input.Keyboards[0];
         _window.Resize += WindowResized;
         _keyboard.KeyChar += OnKeyChar;
-        _keyboard.KeyDown += OnKeyDown;
-        _keyboard.KeyUp += OnKeyUp;
     }
 
     private void OnKeyChar(IKeyboard arg1, char arg2)
@@ -151,28 +150,6 @@ internal class ImGuiController : IDisposable
     }
 
     private Func<Key, Key>? LocalizeKeyFunc;
-
-    private void OnKeyDown(IKeyboard keyboard, Key key, int scanCode)
-    {
-        if (key == Key.Unknown)
-            return;
-
-        if (TryMapKey(key, out ImGuiKey imguikey))
-        {
-            ImGui.GetIO().AddKeyEvent(imguikey, true);
-        }
-    }
-
-    private void OnKeyUp(IKeyboard keyboard, Key key, int scanCode)
-    {
-        if (key == Key.Unknown)
-            return;
-
-        if (TryMapKey(key, out ImGuiKey imguikey))
-        {
-            ImGui.GetIO().AddKeyEvent(imguikey, false);
-        }
-    }
 
     private void WindowResized(Vector2D<int> size)
     {
@@ -341,7 +318,35 @@ internal class ImGuiController : IDisposable
         ImGuiIOPtr io = ImGui.GetIO();
 
         var mouseState = _input.Mice[0].CaptureState();
-        var keyboardState = _input.Keyboards[0];
+        var keyboardState = _input.Keyboards[0].CaptureState();
+
+        Span<Key> pressedKeys = keyboardState.GetPressedKeys();
+        List<ImGuiKey> pressedImGuiKeys = new(pressedKeys.Length);
+
+        foreach (Key key in pressedKeys)
+        {
+            if (key == Key.Unknown)
+                continue;
+
+            if (TryMapKey(key, out ImGuiKey imguikey))
+                pressedImGuiKeys.Add(imguikey);
+        }
+
+        foreach (ImGuiKey key in _pressedActionKeys)
+        {
+            if (pressedImGuiKeys.Contains(key))
+                continue; // Still pressed.
+
+            io.AddKeyEvent(key, false);
+        }
+
+        foreach (ImGuiKey key in pressedImGuiKeys)
+        {
+            if (_pressedActionKeys.Contains(key))
+                continue; // New key pressed.
+
+            io.AddKeyEvent(key, true);
+        }
 
         io.AddMousePosEvent(mouseState.Position.X, mouseState.Position.Y);
         io.AddMouseButtonEvent(0, mouseState.IsButtonPressed(MouseButton.Left));
@@ -357,6 +362,9 @@ internal class ImGuiController : IDisposable
         }
 
         _pressedChars.Clear();
+
+        _pressedActionKeys.Clear();
+        _pressedActionKeys.AddRange(pressedImGuiKeys);
 
         ImGui
             .GetIO()
