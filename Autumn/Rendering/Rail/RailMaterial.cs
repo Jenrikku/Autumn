@@ -24,7 +24,7 @@ internal static class RailMaterial
             };
 
             void main() {
-                gl_Position = uViewProjection * uTransform * vec4(aPos, 1.0);
+                gl_Position = uTransform * vec4(aPos, 1.0);
             }
             """
         );
@@ -39,35 +39,37 @@ internal static class RailMaterial
             layout(lines) in;
             layout(triangle_strip, max_vertices = 4) out;
 
-            layout(std140) uniform ubGeometry {
-                float uWidth;
-                vec2 uViewport;
+            layout(std140) uniform ubScene {
+                mat4x4 uViewProjection;
+                mat4x4 uTransform;
             };
 
-            vec2 toScreenSpace(vec4 vertex) {
-                return vec2(vertex.xy / vertex.w) * uViewport;
-            }
-
-            float toZValue(vec4 vertex) {
-                return (vertex.z / vertex.w);
-            }
+            layout(std140) uniform ubGeometry {
+                float uWidth;
+                vec3 camera;
+            };
 
             void main() {
-                vec2 p0 = toScreenSpace(gl_in[0].gl_Position);
-                vec2 p1 = toScreenSpace(gl_in[1].gl_Position);
-                float z0 = toZValue(gl_in[0].gl_Position);
-                float z1 = toZValue(gl_in[1].gl_Position);
+                vec3 p0 = gl_in[0].gl_Position.xyz;
+                vec3 p1 = gl_in[1].gl_Position.xyz;
 
-                gl_Position = vec4((p0 + uWidth) / uViewport, z0, 1.0);
+                vec3 line = p1 - p0;
+
+                vec3 middle = (p0 + p1) / 2;
+                vec3 normal = camera - middle;
+
+                vec3 c = normalize(cross(normal, line));
+
+                gl_Position = uViewProjection * vec4(p0 + c * uWidth, 1.0);
                 EmitVertex();
 
-                gl_Position = vec4((p0 - uWidth) / uViewport, z0, 1.0);
+                gl_Position = uViewProjection * vec4(p0 - c * uWidth, 1.0);
                 EmitVertex();
 
-                gl_Position = vec4((p1 + uWidth) / uViewport, z1, 1.0);
+                gl_Position = uViewProjection * vec4(p1 + c * uWidth, 1.0);
                 EmitVertex();
 
-                gl_Position = vec4((p1 - uWidth) / uViewport, z1, 1.0);
+                gl_Position = uViewProjection * vec4(p1 - c * uWidth, 1.0);
                 EmitVertex();
 
                 EndPrimitive();
@@ -120,14 +122,15 @@ internal sealed class RailGeometryParameters
     public struct GeometryData
     {
         public float LineWidth;
-        private int _padding;
-        public Vector2 Viewport;
+        private Vector3 _padding0;
+        public Vector3 Camera;
+        private float _padding1;
     }
 
-    public RailGeometryParameters(float lineWidth, Vector2 viewport) =>
+    public RailGeometryParameters(float lineWidth, Vector3 camera) =>
         ShaderParameters = ShaderParams.FromUniformBlockDataAndSamplers(
             "ubGeometry",
-            new GeometryData() { LineWidth = lineWidth, Viewport = viewport },
+            new GeometryData() { LineWidth = lineWidth, Camera = camera },
             "ubGeometryBuffer",
             [],
             out _buffer
@@ -139,9 +142,9 @@ internal sealed class RailGeometryParameters
         set => _buffer.SetData(_buffer.Data with { LineWidth = value });
     }
 
-    public Vector2 Viewport
+    public Vector3 Camera
     {
-        get => _buffer.Data.Viewport;
-        set => _buffer.SetData(_buffer.Data with { Viewport = value });
+        get => _buffer.Data.Camera;
+        set => _buffer.SetData(_buffer.Data with { Camera = value });
     }
 }

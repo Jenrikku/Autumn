@@ -102,7 +102,7 @@ internal class RailModel(RailObj rail)
         Vector3 p2 = point1.Point1Trans * 0.01f;
         Vector3 p3 = point1.Point0Trans * 0.01f;
 
-        for (float t = 0; t < 1; t += step)
+        for (float t = 0; t <= 1; t += step)
         {
             Vector3 r = MathUtils.BezierPoint(p0, p1, p2, p3, t);
             yield return r;

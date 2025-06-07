@@ -2,7 +2,6 @@ using System.Numerics;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
-using Autumn.FileSystems;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;

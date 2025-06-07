@@ -300,7 +300,13 @@ internal class SceneWindow(MainWindowContext window)
         window.SceneFramebuffer.Use(window.GL!);
         window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix, window.CurrentScene.Camera.Rotation, _viewportSize);
+        window.CurrentScene?.Render(
+            window.GL,
+            viewMatrix,
+            projectionMatrix,
+            window.CurrentScene.Camera.Rotation,
+            window.CurrentScene.Camera.Eye
+        );
 
         if (ModelRenderer.VisibleGrid)
             InfiniteGrid.Render(window.GL, viewProjection);

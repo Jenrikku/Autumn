@@ -59,7 +59,7 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
         
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
-        s_railGeometryParams = new(lineWidth: 6f, viewport: new(1));
+        s_railGeometryParams = new(lineWidth: 0.15f, camera: new(1));
         s_railMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
         s_railPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
 
@@ -91,7 +91,7 @@ internal static class ModelRenderer
         }
     }
 
-    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, in Quaternion camera, in Vector2 viewport)
+    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, in Quaternion cameraRot, in Vector3 cameraEye)
     {
         if (s_commonSceneParams is null || s_railGeometryParams is null)
             throw new InvalidOperationException(
@@ -100,10 +100,10 @@ internal static class ModelRenderer
 
         s_viewMatrix = view;
         s_projectionMatrix = projection;
-        s_cameraRotation = Vector3.Transform(Vector3.UnitZ, camera);
+        s_cameraRotation = Vector3.Transform(Vector3.UnitZ, cameraRot);
 
         s_commonSceneParams.ViewProjection = view * projection;
-        s_railGeometryParams.Viewport = viewport;
+        s_railGeometryParams.Camera = cameraEye;
     }
 
     public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
