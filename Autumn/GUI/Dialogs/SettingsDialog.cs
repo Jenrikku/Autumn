@@ -19,6 +19,7 @@ internal class SettingsDialog
     private bool _middleMovesCamera = false;
     private bool _enableVSync = true;
     private int _compLevel = 1;
+    private bool[] _visibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
@@ -50,7 +51,7 @@ internal class SettingsDialog
         _oldStyle = _window.ContextHandler.SystemSettings.Theme;
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
-
+        _window.ContextHandler.SystemSettings.VisibleDefaults.CopyTo(_visibleDefaults, 0);
     }
 
     /// <summary>
@@ -133,6 +134,14 @@ internal class SettingsDialog
         ImGui.Checkbox("Use ClassNames", ref _useClassNames);
         ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
         ImGui.Combo("Yaz0 Compression Level", ref _compLevel, compressionLevels, 5);
+        
+        ImGui.SeparatorText("Defaults");
+
+        ImGui.TextDisabled("These settings require a restart!");
+        ImGui.Checkbox("Show Areas", ref _visibleDefaults[0]);
+        ImGui.Checkbox("Show CameraAreas", ref _visibleDefaults[1]);
+        ImGui.Checkbox("Show Rails", ref _visibleDefaults[2]);
+        ImGui.Checkbox("Show Grid", ref _visibleDefaults[3]);
 
         ImGui.SeparatorText("Reset");
 
@@ -209,6 +218,8 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Enum.GetValues<Yaz0Wrapper.CompressionLevel>()[_compLevel];
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
+            _visibleDefaults.CopyTo(_window.ContextHandler.SystemSettings.VisibleDefaults, 0);
+            
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _window.ContextHandler.SaveSettings();

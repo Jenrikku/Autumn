@@ -3,6 +3,7 @@ using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
+using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
@@ -25,6 +26,8 @@ internal class ParametersWindow(MainWindowContext window)
     int selectedlightarea = -1;
     int selectedlightName = -1;
     ImGuiWidgets.InputComboBox lightAreaCombo = new();
+
+    int selectedcam = -1;
 
     string[] lightTypes = ["Map Obj Light", "Obj Light", "Player Light", "Stage Map Light"];
     int copyLight = 0;
@@ -80,17 +83,9 @@ internal class ParametersWindow(MainWindowContext window)
                 MiscParamTab(scn, prevW, style);
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Camera", ref CamerasEnabled))
-            {
-                ImGui.Text("Currently unsupported");
-                ImGui.EndTabItem();
-            }
             if (ImGui.BeginTabItem("Switches", ref SwitchEnabled, CurrentTab == 0 ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None))
             {
-                ImGui.SetWindowFontScale(1.20f);
-                ImGui.Text("Stage Switches:");
-                ImGui.Separator();
-                ImGui.SetWindowFontScale(1f);
+                ImGuiWidgets.TextHeader("Stage Switches:");
                 var sw = scn.GetSwitches();
 
                 if (ImGui.BeginTable("SwitchSelect", 2, _stageTableFlags,
@@ -120,11 +115,7 @@ internal class ParametersWindow(MainWindowContext window)
 
                 if (SelectedSwitch > -1)
                 {
-
-                    ImGui.SetWindowFontScale(1.20f);
-                    ImGui.Text($"Switch {SelectedSwitch}");
-                    ImGui.Separator();
-                    ImGui.SetWindowFontScale(1f);
+                    ImGuiWidgets.TextHeader($"Switch {SelectedSwitch}");
                     var swObj = scn.GetObjectsFromSwitch(SelectedSwitch);
                     if (swObj != null)
                     {
@@ -176,11 +167,7 @@ internal class ParametersWindow(MainWindowContext window)
             }
             if (ImGui.BeginTabItem("Light Params", ref LightEnabled))
             {
-
-                ImGui.SetWindowFontScale(1.20f);
-                ImGui.Text("Light Params:");
-                ImGui.Separator();
-                ImGui.SetWindowFontScale(1f);
+                ImGuiWidgets.TextHeader("Light Params:");
                 if (scn.Stage.LightParams is null && ImGui.Button("Enable Light Params for this stage", new(-1, default)))
                 {
                     scn.Stage.LightParams = new();
@@ -218,20 +205,15 @@ internal class ParametersWindow(MainWindowContext window)
 
     void MiscParamTab(Scene scn, float prevW, ImGuiStylePtr style)
     {
-        ImGui.SetWindowFontScale(1.20f);
-        ImGui.Text("Stage Params:");
-        ImGui.Separator();
-        ImGui.SetWindowFontScale(1f);
+        ImGuiWidgets.TextHeader("Stage Params:");
 
         ImGuiWidgets.InputInt("Timer", ref scn.Stage.StageParams.Timer, 10);
         ImGuiWidgets.InputInt("Restart", ref scn.Stage.StageParams.RestartTimer, 10);
         ImGuiWidgets.InputInt("MaxPow", ref scn.Stage.StageParams.MaxPowerUps, 1);
         ImGui.NewLine();
         ImGui.Separator();
-        ImGui.SetWindowFontScale(1.20f);
-        ImGui.Text("Stage Music:");
-        ImGui.Separator();
-        ImGui.SetWindowFontScale(1f);
+
+        ImGuiWidgets.TextHeader("Stage Music:");
         BgmTable? b = window.ContextHandler.FSHandler.ReadBgmTable();
         if (b != null)
         {
@@ -259,6 +241,7 @@ internal class ParametersWindow(MainWindowContext window)
                 ImGui.TextDisabled("This Stage isn't present in the Default Bgm List");
             }
             ImGui.Text("Music Types:");
+            ImGui.SameLine();
             ImGuiWidgets.HelpTooltip("Ids determine the music type to play on a BgmChangeArea");
             var bgmlist = b.StageBgmList.FirstOrDefault(x => x.StageName == scn.Stage.Name && x.Scenario == scn.Stage.Scenario);
             if (bgmlist == null) 
@@ -352,10 +335,7 @@ internal class ParametersWindow(MainWindowContext window)
     void FogAreasTab(Scene scn, float prevW, ImGuiStylePtr style)
     {
 
-        ImGui.SetWindowFontScale(1.20f);
-        ImGui.Text("Stage Fogs:");
-        ImGui.Separator();
-        ImGui.SetWindowFontScale(1f);
+        ImGuiWidgets.TextHeader("Stage Fogs:");
         bool autoResize = scn.Stage.StageFogs.Count < 12;
         var fg = scn.GetFogs();
         if (ImGui.BeginTable("FogSelect", 2, _stageTableFlags,
@@ -390,17 +370,19 @@ internal class ParametersWindow(MainWindowContext window)
         if (scn.Stage.StageFogs.Count > selectedfog && selectedfog > -1)
         {
 
-            ImGui.SetWindowFontScale(1.20f);
-            if (scn.Stage.StageFogs[selectedfog].AreaId == -1)
-                ImGui.Text("Main Fog:");
-            else
-                ImGui.Text("Fog " + scn.Stage.StageFogs[selectedfog].AreaId.ToString() + ":");
-            ImGui.Separator();
-            ImGui.SetWindowFontScale(1f);
+            string sfog = scn.Stage.StageFogs[selectedfog].AreaId == -1 ? "Main Fog" : "Fog " + scn.Stage.StageFogs[selectedfog].AreaId.ToString() + ":";
+            ImGuiWidgets.TextHeader(sfog);
+            // ImGui.SetWindowFontScale(1.20f);
+            // if (scn.Stage.StageFogs[selectedfog].AreaId == -1)
+            //     ImGui.Text("Main Fog:");
+            // else
+            //     ImGui.Text("Fog " + scn.Stage.StageFogs[selectedfog].AreaId.ToString() + ":");
+            // ImGui.Separator();
+            // ImGui.SetWindowFontScale(1f);
             bool _disabled = selectedfog == 0;
             if (_disabled)
                 ImGui.BeginDisabled();
-            if (ImGui.Button("-", new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
                 scn.RemoveFogAt(selectedfog);
                 selectedfog -= 1;
@@ -408,13 +390,14 @@ internal class ParametersWindow(MainWindowContext window)
             if (_disabled)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button("Duplicate", new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.PASTE, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
                 scn.DuplicateFog(selectedfog);
                 selectedfog = scn.CountFogs() - 1;
             }
+            ImGui.SetItemTooltip("Duplicate Fog");
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button("+", new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
                 scn.AddFog(new() { AreaId = 0 });
                 selectedfog = scn.CountFogs() - 1;
@@ -619,11 +602,7 @@ internal class ParametersWindow(MainWindowContext window)
     }
     void LightAreaTab(Scene scn, float prevW, ImGuiStylePtr style)
     {
-
-        ImGui.SetWindowFontScale(1.20f);
-        ImGui.Text("Light Areas:");
-        ImGui.Separator();
-        ImGui.SetWindowFontScale(1f);
+        ImGuiWidgets.TextHeader("Light Areas:");
         if (ImGui.BeginTable("LAreaSelect", 2, _stageTableFlags,
 
         new(default, ImGui.GetWindowHeight() / 3.2f / window.ScalingFactor)))
@@ -658,10 +637,7 @@ internal class ParametersWindow(MainWindowContext window)
 
         if (!_disabled)
         {
-            ImGui.SetWindowFontScale(1.20f);
-            ImGui.Text("Light Area " + scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea) + ":");
-            ImGui.Separator();
-            ImGui.SetWindowFontScale(1f);
+            ImGuiWidgets.TextHeader("Light Area " + scn.Stage.LightAreaNames.Keys.ElementAt(selectedlightarea) + ":");
         }
 
         if (_disabled)
@@ -783,7 +759,7 @@ internal class ParametersWindow(MainWindowContext window)
                             {
                                 Vector4 ColorEdit = (Vector4)selectedlight.ConstantColors[i]!;
                                 ImGuiWidgets.PrePropertyWidthName($"Constant {i}", A, B);
-                                ImGui.ColorEdit4($"Constant {i}", ref ColorEdit, _colorEditFlags);
+                                ImGui.ColorEdit4($"##Constant {i}", ref ColorEdit, _colorEditFlags);
                                 if (ColorEdit != selectedlight.ConstantColors[i])
                                 {
                                     selectedlight.ConstantColors[i] = ColorEdit;

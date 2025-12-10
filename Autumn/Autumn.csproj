@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <ApplicationIcon>Resources/Icons/Autumn.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -28,11 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content 
-      Include="$(MSBuildProjectDirectory)\Resources\**"
-      CopyToOutputDirectory="Always"
-      CopyToPublishDirectory="Always"
-    />
+    <Content Include="$(MSBuildProjectDirectory)\Resources\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
 </Project>

@@ -21,6 +21,7 @@ internal class SystemSettings
     public bool UseWASD = false;
     public bool UseMiddleMouse = false;
     public bool EnableDBEditor = false;
+    public bool[] VisibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
     public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
 
     public void AddRecentlyOpenedPath(string path)

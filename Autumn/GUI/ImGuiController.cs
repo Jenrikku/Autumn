@@ -285,8 +285,8 @@ internal class ImGuiController : IDisposable
             Key.ControlRight => ImGuiKey.RightCtrl,
             Key.AltLeft => ImGuiKey.LeftAlt,
             Key.AltRight => ImGuiKey.RightAlt,
-            Key.SuperLeft => ImGuiKey.LeftSuper,
-            Key.SuperRight => ImGuiKey.RightSuper,
+            Key.SuperLeft => ImGuiKey.LeftCtrl,
+            Key.SuperRight => ImGuiKey.RightCtrl,
             Key.Menu => ImGuiKey.Menu,
             Key.Up => ImGuiKey.UpArrow,
             Key.Down => ImGuiKey.DownArrow,
@@ -362,7 +362,7 @@ internal class ImGuiController : IDisposable
             .GetIO()
             .AddKeyEvent(
                 ImGuiKey.ModCtrl,
-                ImGui.IsKeyDown(ImGuiKey.LeftCtrl) || ImGui.IsKeyDown(ImGuiKey.RightCtrl)
+                ImGui.IsKeyDown(ImGuiKey.LeftCtrl) || ImGui.IsKeyDown(ImGuiKey.RightCtrl) || ImGui.IsKeyDown(ImGuiKey.LeftSuper) || ImGui.IsKeyDown(ImGuiKey.RightSuper)
             );
         ImGui
             .GetIO()
@@ -375,12 +375,6 @@ internal class ImGuiController : IDisposable
             .AddKeyEvent(
                 ImGuiKey.ModShift,
                 ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift)
-            );
-        ImGui
-            .GetIO()
-            .AddKeyEvent(
-                ImGuiKey.ModSuper,
-                ImGui.IsKeyDown(ImGuiKey.LeftSuper) || ImGui.IsKeyDown(ImGuiKey.RightSuper)
             );
     }
 

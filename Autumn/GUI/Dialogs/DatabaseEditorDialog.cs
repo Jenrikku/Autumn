@@ -214,13 +214,14 @@ internal class DatabaseEditor(MainWindowContext _window)
 
         if (ImGui.BeginChild("RIGHTSIDE", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30)))
         {
-            ImGui.SetWindowFontScale(1.3f);
-            if (string.IsNullOrEmpty(entry.ClassName))
-                ImGui.TextDisabled("No entry selected");
-            else
-                ImGui.Text("Class: " + entry.ClassName);
-            ImGui.SetWindowFontScale(1f);
-            ImGui.Separator();
+            ImGuiWidgets.TextHeader(string.IsNullOrEmpty(entry.ClassName) ? "No entry selected" : "Class: " + entry.ClassName, 1.3f);
+            // ImGui.SetWindowFontScale(1.3f);
+            // if (string.IsNullOrEmpty(entry.ClassName))
+            //     ImGui.TextDisabled("No entry selected");
+            // else
+            //     ImGui.Text("Class: " + entry.ClassName);
+            // ImGui.SetWindowFontScale(1f);
+            // ImGui.Separator();
             ImGui.Spacing();
             if (string.IsNullOrEmpty(entry.ClassName))
                 ImGui.BeginDisabled();

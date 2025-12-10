@@ -55,6 +55,11 @@ internal class MainWindowContext : WindowContext
     private readonly WelcomeDialog _welcomeDialog;
     #endregion
 
+    #region Params Windows
+    private readonly MiscParamsWindow _miscParams;
+    private readonly CameraParamsWindow _camParams;
+    #endregion
+
 #if DEBUG
     private bool _showDemoWindow = false;
 #endif
@@ -79,6 +84,10 @@ internal class MainWindowContext : WindowContext
         _propertiesWindow = new(this);
         _paramsWindow = new(this);
         _sceneWindow = new(this);
+
+        // Initialize param editors
+        _miscParams = new(this);
+        _camParams = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -128,6 +137,11 @@ internal class MainWindowContext : WindowContext
 
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
+
+                ModelRenderer.VisibleAreas = ContextHandler.SystemSettings.VisibleDefaults[0];
+                ModelRenderer.VisibleCameraAreas = ContextHandler.SystemSettings.VisibleDefaults[1];
+                ModelRenderer.VisibleRails = ContextHandler.SystemSettings.VisibleDefaults[2];
+                ModelRenderer.VisibleGrid = ContextHandler.SystemSettings.VisibleDefaults[3];
 
                 switch (ContextHandler.SystemSettings.Theme)
                 {
@@ -191,7 +205,6 @@ internal class MainWindowContext : WindowContext
             if (_showDemoWindow)
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
-
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
@@ -201,6 +214,9 @@ internal class MainWindowContext : WindowContext
             _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
+
+            _miscParams.Render();
+            _camParams.Render();
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 
@@ -370,7 +386,10 @@ internal class MainWindowContext : WindowContext
         if (ImGui.BeginMenu("Stage"))
         {
             if (ImGui.MenuItem("Edit General Params"))
-                _paramsWindow.MiscEnabled = true;
+            {
+                //_paramsWindow.MiscEnabled = true;
+                _miscParams._isOpen = true;
+            }
             if (ImGui.MenuItem("Edit Switches"))
                 _paramsWindow.SwitchEnabled = true;
             if (ImGui.MenuItem("Edit Fogs"))
@@ -378,12 +397,8 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Edit Lights"))
                 _paramsWindow.LightEnabled = true;
             ImGui.Separator();
-            ImGui.BeginDisabled();
-            // TODO
             if (ImGui.MenuItem("Edit Cameras"))
-                _paramsWindow.CamerasEnabled = true;
-
-            ImGui.EndDisabled();
+                _camParams._isOpen = true;
             ImGui.EndMenu();
         }
 

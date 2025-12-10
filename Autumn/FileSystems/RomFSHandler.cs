@@ -214,6 +214,37 @@ internal partial class RomFSHandler
                             }
                         }
                         break;
+                    case string s when s.Contains("CameraParam"):
+                        if (!s.Contains($"{scenario}") && s != "CameraParam.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        BYAML CamParamByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (CamParamByaml.RootNode == null || CamParamByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+
+                        // Console.WriteLine(stageInfoByaml.RootNode.Value.GetType());
+
+                        var rootCamDict = CamParamByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                        rootCamDict.TryGetValue("CameraParams", out BYAMLNode? cPar);
+                        rootCamDict.TryGetValue("VisionParam", out BYAMLNode? vPar);
+
+                        if (vPar is not null)
+                        {
+                            var vDict = vPar.GetValueAs<Dictionary<string, BYAMLNode>>();
+                            stage.CameraParams.VisionParam = new(vDict!);
+                        }
+                        if (cPar is not null)
+                        {
+                            var cArr = cPar.GetValueAs<BYAMLNode[]>();
+                            foreach (BYAMLNode nd in cArr!)
+                            {
+                                var cam = nd.GetValueAs<Dictionary<string, BYAMLNode>>();
+                                if (cam is null) continue;
+                                stage.CameraParams.Cameras.Add(new(cam));
+                            }
+                        }
+                        break;
                     case string s when s.Contains("FogParam"):
                         if (!s.Contains($"{scenario}") && s != "FogParam.byml")
                         {
@@ -1376,6 +1407,8 @@ internal partial class RomFSHandler
                 var stageInfoBYML = MakeStageInfo(stage);
                 if (stageInfoBYML != null)
                     narcFS.AddFileRoot("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));
+                if (stage.CameraParams.Cameras.Count > 0)
+                    narcFS.AddFileRoot("CameraParam.byml", BYAMLParser.Write(MakeCameraParam(stage)));
             }
             if (st.StageFileType == StageFileType.Design)
             {
@@ -1433,6 +1466,14 @@ internal partial class RomFSHandler
             rd.Add("FogAreas", new(BYAMLNodeType.Array, stagefogs.ToArray()));
         }
         root = new(rd);
+        BYAML ret = new(root, s_byamlEncoding, default);
+        ret.RootNode = root;
+        return ret;
+    }
+    private BYAML MakeCameraParam(Stage stage)
+    {
+        BYAMLNode root;
+        root = stage.CameraParams.GetNodes();
         BYAML ret = new(root, s_byamlEncoding, default);
         ret.RootNode = root;
         return ret;

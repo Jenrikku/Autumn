@@ -14,6 +14,7 @@ internal class Stage
     
     public StageDefaultBgm DefaultBgm;
     public bool RebuildMusicAreas = false;
+    public CameraParams CameraParams { get; set; } = new();
     public StageParams StageParams { get; set; } = new();
     public List<StageFog> StageFogs = new() { new() }; // Main fog.
     public LightParams? LightParams { get; set; }

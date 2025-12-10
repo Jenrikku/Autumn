@@ -11,6 +11,7 @@ namespace Autumn.GUI;
 internal static class ImGuiWidgets
 {
     public const ImGuiDockNodeFlags NO_TAB_BAR = (ImGuiDockNodeFlags)0x1000;
+    public const ImGuiDockNodeFlags NO_WINDOW_MENU_BUTTON = (ImGuiDockNodeFlags)(1 << 14);
     public static void DirectoryPathSelector(
         ref string input,
         ref bool isValidPath,
@@ -99,6 +100,19 @@ internal static class ImGuiWidgets
         return ImGui.Button(str, size ?? default);
     }
 
+    /// <summary>
+    /// Adds a text "header" with a line below it
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="scale"></param>
+    /// <param name="original"></param>
+    public static void TextHeader(string str, float scale = 1.2f, float original = 1.0f)
+    {
+        ImGui.SetWindowFontScale(scale);
+        ImGui.Text(str);
+        ImGui.SetWindowFontScale(original);
+        ImGui.Separator();
+    }
     public static float SetPropertyWidth(string str)
     {
         float ret = 0;
@@ -124,9 +138,9 @@ internal static class ImGuiWidgets
         }
         else
         {
-            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 2);
+            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 4);
         }
-        ImGui.SetNextItemWidth(ret);
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         return ret;
     }
 

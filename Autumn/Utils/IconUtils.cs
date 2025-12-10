@@ -14,5 +14,14 @@ internal static class IconUtils
     public const string ARROW_RIGHT = "\uf061";
     public const string ARROW_UP = "\uf062";
     public const string DOWN = "\uf078";
+    public const string COPY = "\uf0c6";
+    public const string PASTE = "\uf0c5";
+    public const string MAGNET = "\uf076";
+    public const string USER = "\uf007";
+    public const string CAMERA = "\uf03d";
+    public const string AREA = "\uf065";
+    public const string GRID = "\uF43C";
+    public const string PATH = "\uf542";
+
 
 }

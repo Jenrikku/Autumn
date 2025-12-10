@@ -26,6 +26,7 @@ internal class PropertiesWindow(MainWindowContext window)
     DragFloat3 PosDrag = new(window);
     DragFloat3 RotDrag = new(window);
     LinkedDragFloat3 ScaleDrag = new(window);
+    ImGuiWidgets.InputComboBox namebox = new();
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar }; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
@@ -124,19 +125,19 @@ internal class PropertiesWindow(MainWindowContext window)
             //ImGui.Separator();
             var style = ImGui.GetStyle();
             float prevW = ImGui.GetWindowWidth();
-
-            ImGui.SetNextItemWidth(prevW + 200);
-            if (ImGui.BeginChild("PropertiesReal", new(prevW - style.ItemSpacing.X, default)))
+            //ImGui.SetNextItemWidth(prevW + 200);
+            if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
             {
-                ImGui.PushStyleColor(ImGuiCol.ChildBg, ImGui.GetColorU32(ImGuiCol.FrameBg));
+                //ImGui.PushStyleColor(ImGuiCol.ChildBg, ImGui.GetColorU32(ImGuiCol.Border));
                 if (ImGui.CollapsingHeader("General Info", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild("gen", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                    ImGui.BeginChild("gen", default, ImGuiChildFlags.AutoResizeY );
 
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                     //ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 3.1f);
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
+                    //namebox.Use("Name", ref stageObj.Name, window.ContextHandler.FSHandler.ReadCreatorClassNameTable().Keys.ToList());
                     InputText("Name", ref stageObj.Name, 128, ref stageObj);
                     if (stageObj is not RailObj)
                     {
@@ -166,17 +167,63 @@ internal class PropertiesWindow(MainWindowContext window)
                     InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
                     if (stageObj.Type != StageObjType.Start)
                     {
-                        InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
-                        InputInt("CameraId", ref stageObj.CameraId, 1, ref stageObj);
+                        InputInt("View Id", ref stageObj.ViewId, 1, ref stageObj);
+                        //InputInt("Camera Id", ref stageObj.CameraId, 1, ref stageObj);
+                        ImGui.Text("Camera Id:"); ImGui.SameLine();
+                        List<StageCamera> cameraslinks = stageObj.Type == StageObjType.CameraArea ?
+                            window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList() :
+                            window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category != StageCamera.CameraCategory.Map).ToList();
+                        string[] cameraStrings = new string[cameraslinks.Count() + 1]; //TODO - DONT REBUILD THE CAMERA STRINGS EVERY FRAME
+                        cameraStrings[0] = "No camera selected";
+                        for (int cs = 1; cs < cameraStrings.Length; cs++)
+                        {
+                            cameraStrings[cs] = cameraslinks[cs - 1].CameraName();
+                        }
+                        var csd = cameraslinks.FirstOrDefault(x => x.UserGroupId == stageObj.CameraId);
+                        int rff = 0;
+                        if (csd != null) rff = cameraslinks.IndexOf(csd)+1;
+                        else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
+                        int orff = rff;
+                        ImGuiWidgets.SetPropertyWidth("Camera Id");
+                        ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
+                        if (rff != orff)
+                        {
+                            if (rff == 0) stageObj.CameraId = -1;
+                            else stageObj.CameraId = cameraslinks[rff-1].UserGroupId;
+                        }
                         InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
                     if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
                     {
-                        int prior = !stageObj.Properties.ContainsKey("ShapeModelNo") ? -989 : (int)stageObj.Properties["Priority"]!;
-                        InputIntProperties("Priority", ref prior, 1, ref stageObj);
+                        if (!stageObj.Properties.ContainsKey("Priority"))
+                        {
+                            ImGui.Text("Priority :");
+                            ImGui.SameLine();
+                            ImGuiWidgets.SetPropertyWidth("Priority");
+                            if (ImGui.Button("Add property"))
+                            {
+                                stageObj.Properties["Priority"] = -1;
+                            }
+                        }
+                        else{
+                            int shp = (int)stageObj.Properties["Priority"]!;
+                            InputIntProperties("Priority", ref shp, 1, ref stageObj);
+                        }
 
-                        int shp = !stageObj.Properties.ContainsKey("ShapeModelNo") ? 989 : (int)stageObj.Properties["ShapeModelNo"]!;
-                        InputIntProperties("ShapeModelNo", ref shp, 1, ref stageObj);
+                        if (!stageObj.Properties.ContainsKey("ShapeModelNo"))
+                        {
+                            ImGui.Text("ShapeModelNo:");
+                            ImGui.SameLine();
+                            ImGuiWidgets.SetPropertyWidth("ShapeModelNo");
+                            if (ImGui.Button("No shape property"))
+                            {
+                                stageObj.Properties["ShapeModelNo"] = 0;
+                            }
+                        }
+                        else{
+                            int shp = (int)stageObj.Properties["ShapeModelNo"]!;
+                            InputIntProperties("ShapeModelNo", ref shp, 1, ref stageObj);
+                        }
                     }
                     ImGui.PopItemWidth();
                     //ImGui.PopStyleVar();
@@ -186,7 +233,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 if (ImGui.CollapsingHeader("Object Transform", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild("trl", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                    ImGui.BeginChild("trl", default, ImGuiChildFlags.AutoResizeY );
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                     PosDrag.Use("Position", ref stageObj.Translation, ref sceneObj, 10);
                     RotDrag.Use("Rotation", ref stageObj.Rotation, ref sceneObj, 0.5f);
@@ -199,7 +246,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (ImGui.CollapsingHeader("Object Arguments", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                        ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                        ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY );
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                         ImGui.PopStyleVar();
                         //ImGui.GetWindowWidth() - style.WindowPadding.X - 
@@ -336,7 +383,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (ImGui.CollapsingHeader("Object Switches", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                        ImGui.BeginChild("swc", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                        ImGui.BeginChild("swc", default, ImGuiChildFlags.AutoResizeY );
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                         ImGui.PushItemWidth(prevW - PROP_WIDTH);
                         InputSwitch("A", ref stageObj.SwitchA, 1, ref sceneObj);
@@ -357,7 +404,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         if (ImGui.CollapsingHeader("Object Relations", ImGuiTreeNodeFlags.DefaultOpen))
                         {
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                            if (ImGui.BeginChild("pnt", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle))
+                            if (ImGui.BeginChild("pnt", default, ImGuiChildFlags.AutoResizeY ))
                             {
                                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                                 ImGui.Text("Parent:");
@@ -464,17 +511,31 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (ImGui.CollapsingHeader("Rail", ImGuiTreeNodeFlags.DefaultOpen))
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                        ImGui.BeginChild("rl", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                        ImGui.BeginChild("rl", default, ImGuiChildFlags.AutoResizeY );
                         //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
+
+                        ImGui.Text("Rail: ");
+                        ImGui.SameLine();
+
+                        var rails = window.CurrentScene.EnumerateSceneObjs().Where(x => x is RailSceneObj);
+                        string[] railStrings = new string[rails.Count() + 1];
+                        int bbbb = 1;
+                        railStrings[0] = "No Rail selected";
+                        foreach (RailSceneObj rail in rails)
+                        {
+                            railStrings[bbbb] = rail.RailObj.Name;
+                            bbbb += 1;
+                        }
+                        int rfrail = 0;
                         if (stageObj.Rail is not null)
                         {
-                            ImGui.Text("Rail: " + stageObj.Rail.Name);
+                            rfrail = rails.ToList().IndexOf(rails.First(x => x.StageObj.Name == stageObj.Rail.Name));
                         }
-                        else
+                        ImGuiWidgets.SetPropertyWidth("Rail");
+                        ImGui.Combo("##Railselector", ref rfrail, railStrings, rails.Count());
+                        if (rfrail > 0)
                         {
-                            ImGui.Text("Rail: ");
-                            ImGui.SameLine();
-                            ImGui.TextDisabled("No rail assigned.");
+                            stageObj.Rail = (RailObj)rails.ElementAt(rfrail).StageObj;
                         }
 
                         ImGui.EndChild();
@@ -484,7 +545,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 if (ImGui.CollapsingHeader("General Properties", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                    ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY );
                     //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
                     foreach (var (name, property) in stageObj.Properties)
@@ -550,7 +611,19 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.TextDisabled("Multiple objects selected.");
             InputText("Layer", ref multiselector.Layer, 30, ref multiselector);
             InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
-            InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
+            //InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
+            ImGui.Text("CameraId"); ImGui.SameLine();
+            var cameraslinks = window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
+            string[] cameraStrings = new string[cameraslinks.Count() + 1];
+            cameraStrings[0] = "No camera selected";
+            for (int cs = 1; cs < cameraStrings.Length; cs++)
+            {
+                cameraStrings[cs] = cameraslinks[cs - 1].Category.ToString();
+                cameraStrings[cs] += "Camera";
+                cameraStrings[cs] += cameraslinks[cs - 1].UserGroupId;
+            }
+            int rff = 0;
+            ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
             InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
 
             foreach (ISceneObj sceneObj in window.CurrentScene.SelectedObjects)
@@ -968,7 +1041,7 @@ internal class PropertiesWindow(MainWindowContext window)
         }
         if (disable)
             ImGui.EndDisabled();
-        
+
         if (tt != "")
             ImGui.SetItemTooltip(tt);
 

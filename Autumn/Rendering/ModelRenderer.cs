@@ -47,6 +47,7 @@ internal static class ModelRenderer
 
     public static bool VisibleAreas = false;
     public static bool VisibleCameraAreas = true;
+    public static bool VisibleRails = true;
     public static bool VisibleGrid = true;
 
     public static void Initialize(GL gl, LayeredFSHandler fsHandler)
@@ -55,7 +56,7 @@ internal static class ModelRenderer
         AreaRenderer.Initialize(gl);
 
         s_commonSceneParams = new();
-        
+
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
         s_RailMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
         s_RailPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
@@ -143,10 +144,12 @@ internal static class ModelRenderer
 
         if (sceneObj is RailSceneObj railSceneObj)
         {
-            s_RailMaterialParams!.Selected = railSceneObj.Selected;
+            if (VisibleRails)
+            {
+                s_RailMaterialParams!.Selected = railSceneObj.Selected;
 
-            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_RailMaterialParams, s_RailPointMaterialParams!);
-
+                RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_RailMaterialParams, s_RailPointMaterialParams!);
+            }
             return;
         }
 
@@ -185,7 +188,7 @@ internal static class ModelRenderer
 
                     if (material.BlendingEnabled)
                     {
-                        gl.Enable(EnableCap.Blend);
+                        gl.Enable(EnableCap.Blend | (EnableCap)0x0B60);// Attempt at Fog rendering
 
                         gl.BlendColor(
                             material.BlendingColor.X,

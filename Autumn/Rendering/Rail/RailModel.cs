@@ -97,10 +97,10 @@ internal class RailModel(RailObj rail)
 
     private static IEnumerable<Vector3> CalcBezierCurveFrom(RailPointBezier point0, RailPointBezier point1, float step)
     {
-        Vector3 p0 = point0.Point1Trans * 0.01f;
+        Vector3 p0 = point0.Point0Trans * 0.01f;
         Vector3 p1 = point0.Point2Trans * 0.01f;
-        Vector3 p2 = point1.Point0Trans * 0.01f;
-        Vector3 p3 = p1;
+        Vector3 p2 = point1.Point1Trans * 0.01f;
+        Vector3 p3 = point1.Point0Trans * 0.01f;
 
         for (float t = 0; t < 1; t += step)
         {

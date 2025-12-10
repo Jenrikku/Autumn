@@ -441,35 +441,34 @@ internal class SceneWindow(MainWindowContext window)
             else if ((isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || isTranslationActive || isScaleActive || isRotationActive)
             {
                 Vector3 _ndcMousePos3D =
-                    new(
-                        ndcMousePos.X * sceneImageSize.X / 2,
+                    new(ndcMousePos.X * sceneImageSize.X / 2,
                         ndcMousePos.Y * sceneImageSize.Y / 2,
-                        (normPickingDepth * 10 - 1) / 10f
-                    );
-
+                        (normPickingDepth * 10 - 1) / 10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);
-
-                if (ImGui.IsKeyPressed(ImGuiKey.G, false) && window.Keyboard!.IsShiftPressed())
+                if (!ImGui.GetIO().WantTextInput)
                 {
-                    var sobj = window.CurrentScene.SelectedObjects.First();
-                    ChangeHandler.ChangeTransform(
-                        window.CurrentScene.History,
-                        sobj,
-                        "Translation",
-                        sobj.StageObj.Translation,
-                        100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
-                    );
+                    if (ImGui.IsKeyPressed(ImGuiKey.G, false) && window.Keyboard!.IsShiftPressed())
+                    {
+                        var sobj = window.CurrentScene.SelectedObjects.First();
+                        ChangeHandler.ChangeTransform(
+                            window.CurrentScene.History,
+                            sobj,
+                            "Translation",
+                            sobj.StageObj.Translation,
+                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                        );
 
-                    if (!isSceneWindowFocused)
-                        ImGui.SetWindowFocus();
-                }
-                else
-                {
-                    TranslateAction(_ndcMousePos3D);
-                }
+                        if (!isSceneWindowFocused)
+                            ImGui.SetWindowFocus();
+                    }
+                    else
+                    {
+                        TranslateAction(_ndcMousePos3D);
+                    }
 
-                RotateAction(ndcMousePos);
-                ScaleAction(_ndcMousePos3D);
+                    RotateAction(ndcMousePos);
+                    ScaleAction(_ndcMousePos3D);
+                }
             }
         }
         ActionPanel(contentAvail);
@@ -491,10 +490,7 @@ internal class SceneWindow(MainWindowContext window)
             float w = ImGui.CalcTextSize(_pickObject.StageObj.Name).X * 1.3f + 10;
             if (ImGui.BeginListBox("##SelectableListbox", new(w > 140 ? w : 140, 150)))
             {
-                ImGui.SetWindowFontScale(1.3f);
-                ImGui.Text(_pickObject.StageObj.Name);
-                ImGui.SetWindowFontScale(0.95f);
-                ImGui.Separator();
+                ImGuiWidgets.TextHeader(_pickObject.StageObj.Name, 1.3f, 0.95f);
 
                 if (_selCantParent)
                     ImGui.BeginDisabled();
@@ -629,29 +625,33 @@ internal class SceneWindow(MainWindowContext window)
         //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = /*ImGui.CalcTextSize("Toggle Paths").X + 1 +*/ ImGui.CalcTextSize("Toggle Grid").X + 1 + ImGui.CalcTextSize("Toggle Areas").X + 1 + ImGui.CalcTextSize("Toggle CameraAreas").X + 1;
-        ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons - 24, opos.Y - 3f));
-        // if (ImGui.Button("Toggle Paths"))
-        // {
-        //     ModelRenderer.visibleAreas = !ModelRenderer.visibleAreas;
-        // }
-        // ImGui.SameLine();
-        if (ImGui.Button("Toggle Grid"))
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*4 + 4*10;
+        ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
+        if (ImGui.Button(IconUtils.GRID))
         {
             ModelRenderer.VisibleGrid = !ModelRenderer.VisibleGrid;
         }
-
+        ImGui.SetItemTooltip("Toggle Grid");
+        ImGui.SameLine();
+        
+        if (ImGui.Button(IconUtils.PATH))
+        {
+            ModelRenderer.VisibleRails = !ModelRenderer.VisibleRails;
+        }
+        ImGui.SetItemTooltip("Toggle Rails");
         ImGui.SameLine();
 
-        if (ImGui.Button("Toggle Areas"))
+        if (ImGui.Button(IconUtils.AREA))
         {
             ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
         }
+        ImGui.SetItemTooltip("Toggle Areas");
         ImGui.SameLine();
-        if (ImGui.Button("Toggle CameraAreas"))
+        if (ImGui.Button(IconUtils.CAMERA))
         {
             ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
+        ImGui.SetItemTooltip("Toggle CameraAreas");
 
         ImGui.PopStyleVar(2);
         //ImGui.PopFont();
@@ -684,7 +684,7 @@ internal class SceneWindow(MainWindowContext window)
                 window.CurrentScene.Camera.Eye
             );
 
-            _ndcMousePos3D *= dist / 8;
+            _ndcMousePos3D *= dist / 11;
 
             foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
             {
@@ -736,7 +736,7 @@ internal class SceneWindow(MainWindowContext window)
                 window.CurrentScene.Camera.Eye
             );
 
-            _ndcMousePos3D *= dist / 8;
+            _ndcMousePos3D *= dist / 11;
 
             foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
             {
