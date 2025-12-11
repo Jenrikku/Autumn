@@ -54,8 +54,8 @@ internal class ParametersWindow(MainWindowContext window)
     {
         if (!IsEnabled)
         {
-            if (window.CurrentScene != null && window.CurrentScene.PreviewLight != null)
-                window.CurrentScene.PreviewLight = null;
+//            if (window.CurrentScene != null && window.CurrentScene.PreviewLight != null)
+//                window.CurrentScene.PreviewLight = null;
             return;
         }
         unsafe

@@ -388,7 +388,6 @@ internal class SceneWindow(MainWindowContext window)
                 {
                     camera.LookAt(camera.Eye, camera.Eye - facingDirection);
                 }
-
                 else if (_mouseClickActions.TryDequeue(out var action))
                 {
                     action(window, worldMousePos);

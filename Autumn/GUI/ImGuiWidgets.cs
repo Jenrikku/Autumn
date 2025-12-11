@@ -296,12 +296,19 @@ internal static class ImGuiWidgets
         return ImGui.DragInt("##" + str, ref rf, v_speed);
 
     }
-    public static bool InputInt(string str, ref int rf, int step = 1)
+    public static bool InputInt(string str, ref int rf, int step = 1, int ratioA = 2, int ratioB = 3)
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str + ":");
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
         return ImGui.InputInt("##" + str, ref rf, step);
+    }
+    public static bool InputFloat(string str, ref float rf, float step = 1, int ratioA = 2, int ratioB = 3)
+    {
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
+        return ImGui.InputFloat("##" + str, ref rf, step);
     }
 
     internal static bool InputText(string str, ref string rf, uint max)

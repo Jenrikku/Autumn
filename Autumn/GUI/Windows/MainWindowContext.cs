@@ -58,6 +58,9 @@ internal class MainWindowContext : WindowContext
     #region Params Windows
     private readonly MiscParamsWindow _miscParams;
     private readonly CameraParamsWindow _camParams;
+    private readonly FogParamsWindow _fogParams;
+    private readonly LightParamsWindow _lightParams;
+    private readonly SwitchesWindow _switchParams;
     #endregion
 
 #if DEBUG
@@ -88,6 +91,9 @@ internal class MainWindowContext : WindowContext
         // Initialize param editors
         _miscParams = new(this);
         _camParams = new(this);
+        _fogParams = new(this);
+        _lightParams = new(this);
+        _switchParams = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -217,6 +223,9 @@ internal class MainWindowContext : WindowContext
 
             _miscParams.Render();
             _camParams.Render();
+            _fogParams.Render();
+            _lightParams.Render();
+            _switchParams.Render();
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 
@@ -391,11 +400,11 @@ internal class MainWindowContext : WindowContext
                 _miscParams._isOpen = true;
             }
             if (ImGui.MenuItem("Edit Switches"))
-                _paramsWindow.SwitchEnabled = true;
+                _switchParams._isOpen = true;
             if (ImGui.MenuItem("Edit Fogs"))
-                _paramsWindow.FogEnabled = true;
+                _fogParams._isOpen = true;
             if (ImGui.MenuItem("Edit Lights"))
-                _paramsWindow.LightEnabled = true;
+                _lightParams._isOpen = true;
             ImGui.Separator();
             if (ImGui.MenuItem("Edit Cameras"))
                 _camParams._isOpen = true;
@@ -468,10 +477,11 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
             if (ImGui.MenuItem("Show all params"))
             {
-                _paramsWindow.MiscEnabled = true;
-                _paramsWindow.SwitchEnabled = true;
-                _paramsWindow.FogEnabled = true;
-                _paramsWindow.LightEnabled = true;
+                _fogParams._isOpen = true;
+                _lightParams._isOpen = true;
+                _miscParams._isOpen = true;
+                _switchParams._isOpen = true;
+                _camParams._isOpen = true;
             }
             ImGui.Separator();
             ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);

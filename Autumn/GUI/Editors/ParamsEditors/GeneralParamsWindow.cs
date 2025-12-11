@@ -21,7 +21,7 @@ internal class MiscParamsWindow(MainWindowContext window)
         }
         unsafe
         {
-            ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON | ImGuiDockNodeFlags.NoUndocking};
+            ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking};
             ImGuiWindowClass* tmp = &windowClass;
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }

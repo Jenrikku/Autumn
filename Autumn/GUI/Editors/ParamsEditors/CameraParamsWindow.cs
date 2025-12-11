@@ -99,10 +99,13 @@ internal class CameraParamsWindow(MainWindowContext window)
         InputFloat("FOV", ref scn.Stage.CameraParams.VisionParam.FovyDegree, 1);
         ImGui.NewLine();
         ImGui.Separator();
+        
+        float wh = ImGui.GetWindowHeight() / 5.1f / window.ScalingFactor;
+        wh = wh < 180 ? 180 : wh;
 
         ImGuiWidgets.TextHeader("Stage Cameras:");
         if (ImGui.BeginTable("CamSelect", 4, _stageTableFlags,
-                new(default, ImGui.GetWindowHeight() / 5.1f / window.ScalingFactor)))
+                new(default, wh)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Id", ImGuiTableColumnFlags.WidthStretch, 0.3f);
@@ -120,6 +123,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                 if (ImGui.Selectable(st, _i == selectedcam, ImGuiSelectableFlags.SpanAllColumns))
                 {
                     selectedcam = _i;
+                    scn.SelectedCam = selectedcam;
                 }
                 ImGui.PopID();
 
@@ -134,6 +138,8 @@ internal class CameraParamsWindow(MainWindowContext window)
             ImGui.EndTable();
         }
 
+        if (selectedcam != scn.SelectedCam) selectedcam = scn.SelectedCam; // idx in list vs UserGroupId
+
         if (selectedcam > scn.Stage.CameraParams.Cameras.Count - 1)
             selectedcam = -1;
         if (selectedcam > -1)
@@ -143,7 +149,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam < 0)
             ImGui.BeginDisabled();
-        if (ImGui.Button(IconUtils.MINUS + "## remcam", new Vector2(ImGui.GetWindowWidth() / 3 - 8, default)))
+        if (ImGui.Button(IconUtils.MINUS + "## remcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
             scn.Stage.CameraParams.Cameras.RemoveAt(selectedcam);
             selectedcam = -1;
@@ -151,7 +157,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
 
         ImGui.SameLine();
-        if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetWindowWidth() / 3 - 8, default)))
+        if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
             scn.Stage.CameraParams.Cameras.Add(new(scn.Stage.CameraParams.Cameras[selectedcam]) { UserGroupId = 333 });
         }
@@ -160,14 +166,14 @@ internal class CameraParamsWindow(MainWindowContext window)
         if (selectedcam < 0)
             ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetWindowWidth() / 3 - 8, default)))
+        if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
             scn.Stage.CameraParams.Cameras.Add(new() { UserGroupId = 333 });
         }
 
         if (selectedcam > -1)
         {
-            ImGui.BeginChild("CmaeraPorps");
+            //ImGui.BeginChild("CmaeraPorps", new Vector2(default, 500));
             //ImGuiWidgets.PrePropertyWidthName("Id");
             ImGui.Text("Id:");
             ImGui.SameLine();
@@ -177,7 +183,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             var op = ImGui.GetCursorPosX();
             ImGui.Text("UserName:");
             ImGui.SameLine();
-            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName", 20, 30));
+            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - 14);
             //ImGui.InputText("##UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, 128);
             ImGui.SetCursorPosX(op);
             var cls = Enum.GetNames<StageCamera.CameraClass>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString());
@@ -198,33 +204,15 @@ internal class CameraParamsWindow(MainWindowContext window)
             //typeof(StageCamera).GetField(s);
             foreach (var CamField in StageCameraFields)
             {
+                bool skip = false; 
                 var val = CamField.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
                 if (!StageCamera.SpecialProperties.ContainsKey(CamField.Name))
                 {
-                    switch (val)
-                    {
-                        case float f:
-                            ImGui.InputFloat(CamField.Name, ref f, 1);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
-                            break;
-                        case int i:
-                            ImGui.InputInt(CamField.Name, ref i, 1);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, i);
-                            break;
-                        case string f:
-                            ImGui.InputText(CamField.Name, ref f, 128);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
-                            break;
-                        case bool b:
-                            ImGui.Checkbox(CamField.Name, ref b);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, b);
-                            break;
-                    }
                     if (Nullable.GetUnderlyingType(CamField.FieldType) != null)
                     {
                         if (val is null)
                         {
-                            if (ImGui.Button("Add " + CamField.Name))
+                            if (ImGui.Button("Add " + CamField.Name, new Vector2(-1, default)))
                             {
                                 if (CamField.FieldType == typeof(float?))
                                 {
@@ -242,21 +230,50 @@ internal class CameraParamsWindow(MainWindowContext window)
                         }
                         else
                         {
-                            ImGui.SameLine();
-                            if (ImGui.Button(IconUtils.MINUS + "##"+CamField)) // remove the property, only if nullable
+                            if (ImGui.Button(IconUtils.MINUS + "##" + CamField)) // remove the property, only if nullable
                             {
                                 CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, null);
-                            }   
+                                skip = true;
+                            }
+                            ImGui.SetItemTooltip("Remove property");
+                            ImGui.SameLine();
                         }
+                    }
+                    switch (val)
+                    {
+                        case float f:
+                            ImGuiWidgets.InputFloat(CamField.Name, ref f, 1, 10, 20);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
+                            break;
+                        case int i:
+                            ImGuiWidgets.InputInt(CamField.Name, ref i, 1, 10, 20);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, i);
+                            break;
+                        case string f:
+                            ImGuiWidgets.InputText(CamField.Name, ref f, 128);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
+                            break;
+                        case bool b:
+                            ImGui.Text(CamField.Name+":");
+                            ImGui.SameLine();
+                            ImGuiWidgets.SetPropertyWidth(CamField.Name+":");
+                            ImGui.Checkbox("##a"+CamField.Name, ref b);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, b);
+                            break;
                     }
                 }
             }
 
-            ImGui.TextColored(new Vector4(0.4f, 1, 0, 1), "WEIRD TEST ENDS HERE!!!");
+            //ImGui.TextColored(new Vector4(0.4f, 1, 0, 1), "WEIRD TEST ENDS HERE!!!");
             
             bool js = false;
             foreach (var CamField in StageCameraFields)
             {
+                bool skip = false; 
                 if (!StageCamera.SpecialProperties.ContainsKey(CamField.Name)) continue;
                 var val = CamField.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
                 if (StageCamera.SpecialProperties[CamField.Name].Contains(scn.Stage.CameraParams.Cameras[selectedcam].Class))
@@ -266,29 +283,6 @@ internal class CameraParamsWindow(MainWindowContext window)
                     {
                         ImGuiWidgets.TextHeader(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString() + " Class Properties");
                         js = true;
-                    }
-                    switch (val)
-                    {
-                        case float f:
-                            ImGui.InputFloat(CamField.Name, ref f, 1);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
-                            break;
-                        case int i:
-                            ImGui.InputInt(CamField.Name, ref i, 1);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, i);
-                            break;
-                        case string f:
-                            ImGui.InputText(CamField.Name, ref f, 128);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
-                            break;
-                        case bool b:
-                            ImGui.Checkbox(CamField.Name, ref b);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, b);
-                            break;
-                        case Vector3 v:
-                            ImGui.InputFloat3(CamField.Name, ref v);
-                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, v);
-                            break;
                     }
                     if (Nullable.GetUnderlyingType(CamField.FieldType) != null)
                     {
@@ -316,15 +310,44 @@ internal class CameraParamsWindow(MainWindowContext window)
                         }
                         else
                         {
-                            ImGui.SameLine();
                             if (ImGui.Button(IconUtils.MINUS + "##"+CamField)) // remove the property, only if nullable
                             {
                                 CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, null);
+                                skip = true;
                             }   
+                            ImGui.SameLine();
                         }
                     }
-                        
+                    switch (val)
+                    {
+                        case float f:
+                            ImGui.InputFloat(CamField.Name, ref f, 1);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
+                            break;
+                        case int i:
+                            ImGui.InputInt(CamField.Name, ref i, 1);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, i);
+                            break;
+                        case string f:
+                            ImGui.InputText(CamField.Name, ref f, 128);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
+                            break;
+                        case bool b:
+                            ImGui.Checkbox(CamField.Name, ref b);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, b);
+                            break;
+                        case Vector3 v:
+                            ImGui.InputFloat3(CamField.Name, ref v);
+                            if (skip) break;
+                            CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, v);
+                            break;
                     }
+                        
+                }
             }
 
             ImGuiWidgets.TextHeader("Special Properties");
@@ -448,7 +471,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                     ImGui.EndChild();
                 }
             }
-            ImGui.EndChild();
+            //ImGui.EndChild();
         }
         
         // window.CurrentScene!.Camera.Animate(0.1, out Vector3 eyeAnimated, out Quaternion rotAnimated);
@@ -481,6 +504,11 @@ internal class CameraParamsWindow(MainWindowContext window)
 
     bool InputFloat(string str, ref float? val, int step)
     {
+        if (ImGui.Button((val is null ? IconUtils.PLUS : IconUtils.MINUS) + "##" + str + "btn"))
+        {
+            val = val is null ? -1 : null;
+        }
+        ImGui.SameLine();
         ImGui.Text(str + ":");
         ImGui.SameLine();
         float rval = val ?? -1f;
@@ -494,11 +522,6 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
         if (val is null)
             ImGui.EndDisabled();
-        ImGui.SameLine();
-        if (ImGui.Button((val is null ? IconUtils.PLUS : IconUtils.MINUS) + "##" + str + "btn"))
-        {
-            val = val is null ? -1 : null;
-        }
         return false;
     }
     bool InputFloat3(string str, ref Vector3? val)
