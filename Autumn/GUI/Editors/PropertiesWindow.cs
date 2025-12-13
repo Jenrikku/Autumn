@@ -27,7 +27,7 @@ internal class PropertiesWindow(MainWindowContext window)
     DragFloat3 RotDrag = new(window);
     LinkedDragFloat3 ScaleDrag = new(window);
     ImGuiWidgets.InputComboBox namebox = new();
-    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar }; //ImGuiWidgets.NO_TAB_BAR };
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
     {
@@ -320,7 +320,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     argEntry.Values.Values.ToArray(),
                                                     argEntry.Values.Count
                                                     );
-                                                    ImGui.SetItemTooltip(argEntry.Values[argEntry.Values.Keys.ElementAt(rf)]);
+                                                    //ImGui.SetItemTooltip(argEntry.Values[argEntry.Values.Keys.ElementAt(rf)]);
                                                     if (intBuf != argEntry.Values.Keys.ElementAt(rf))
                                                     {
                                                         stageObj.Properties[name] = argEntry.Values.Keys.ElementAt(rf);
@@ -350,10 +350,13 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     stageObj.Properties[name] = rf;
                                                 }
                                             }
+                                            ImGui.SetItemTooltip(argEntry.Description != null && !string.IsNullOrEmpty(argEntry.Description) ? argEntry.Description : "No description");
                                         }
                                         else
+                                        {
                                             InputIntProperties(name, ref intBuf, 1, ref stageObj);
-
+                                            ImGui.SetItemTooltip("No description");
+                                        }
                                         break;
 
                                     case string:
@@ -512,7 +515,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     {
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("rl", default, ImGuiChildFlags.AutoResizeY );
-                        //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
 
                         ImGui.Text("Rail: ");
                         ImGui.SameLine();
@@ -529,24 +532,25 @@ internal class PropertiesWindow(MainWindowContext window)
                         int rfrail = 0;
                         if (stageObj.Rail is not null)
                         {
-                            rfrail = rails.ToList().IndexOf(rails.First(x => x.StageObj.Name == stageObj.Rail.Name));
+                            rfrail = rails.ToList().IndexOf(rails.First(x => x.StageObj.Name == stageObj.Rail.Name)) + 1;
                         }
                         ImGuiWidgets.SetPropertyWidth("Rail");
-                        ImGui.Combo("##Railselector", ref rfrail, railStrings, rails.Count());
+                        ImGui.Combo("##Railselector", ref rfrail, railStrings, rails.Count() + 1);
                         if (rfrail > 0)
                         {
-                            stageObj.Rail = (RailObj)rails.ElementAt(rfrail).StageObj;
+                            stageObj.Rail = (RailObj)rails.ElementAt(rfrail - 1).StageObj;
                         }
 
                         ImGui.EndChild();
                     }
                 }
 
-                if (ImGui.CollapsingHeader("General Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                if (ImGui.CollapsingHeader("Miscellaneous Properties", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                     ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY );
-                    //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
                     foreach (var (name, property) in stageObj.Properties)
                     {

@@ -296,9 +296,9 @@ internal class MainWindowContext : WindowContext
 
     public void SetSwitchSelected(int i)
     {
-        _paramsWindow.SwitchEnabled = true;
-        _paramsWindow.SelectedSwitch = i;
-        _paramsWindow.CurrentTab = 0;
+        _switchParams._isOpen = true;
+        _switchParams._selectedSwitch = i;
+        ImGui.SetWindowFocus("Switches##SwitchWindow");
     }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
     internal void CloseCurrentScene()

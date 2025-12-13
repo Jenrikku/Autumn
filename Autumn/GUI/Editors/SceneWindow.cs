@@ -82,6 +82,7 @@ internal class SceneWindow(MainWindowContext window)
         }
     }
 
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public unsafe void Render(double deltaSeconds)
     {
         if (window.CurrentScene is null)
@@ -98,8 +99,12 @@ internal class SceneWindow(MainWindowContext window)
         if (sceneReady)
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
-        bool begin = ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-        if (!begin)
+        unsafe
+        {
+            fixed (ImGuiWindowClass* tmp = &windowClass)
+            ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+        }
+        if (!ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (sceneReady)
                 ImGui.PopStyleVar();

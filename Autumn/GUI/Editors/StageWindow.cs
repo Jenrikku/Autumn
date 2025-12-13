@@ -46,9 +46,15 @@ internal class StageWindow
             "Special 8"
         ];
     }
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
     {
+        unsafe
+        {
+            fixed (ImGuiWindowClass* tmp = &windowClass)
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+        }
         if (!ImGui.Begin("Stages"))
             return;
 

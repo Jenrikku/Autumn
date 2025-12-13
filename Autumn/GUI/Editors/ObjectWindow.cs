@@ -33,9 +33,15 @@ internal class ObjectWindow(MainWindowContext window)
     private int nextIdx = -1;
     private int prevIdx = -1;
     bool manualClick = false;
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
     {
+        unsafe
+        {
+            fixed (ImGuiWindowClass* tmp = &windowClass)
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+        }
         if (!ImGui.Begin("Objects"))
             return;
 
@@ -65,6 +71,7 @@ internal class ObjectWindow(MainWindowContext window)
         );
 
         List<uint> ints = new();
+        bool doubleclick = false;
         if (ImGui.BeginTable("objectTable", 3, _objectTableFlags))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -77,10 +84,8 @@ internal class ObjectWindow(MainWindowContext window)
             foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
                 StageObj stageObj = obj.StageObj;
-                if (
-                    (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1)
-                    && (!IsChild(stageObj) && !IsChildArea(stageObj))
-                )
+                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1
+                    && !IsChild(stageObj) && !IsChildArea(stageObj))
                     continue;
                 ints.Add(obj.PickingId);
                 ImGui.TableNextRow();
@@ -140,16 +145,7 @@ internal class ObjectWindow(MainWindowContext window)
                     nextIdx = (int)obj.PickingId;
                     manualClick = true;
                     selectedIndex = (int)obj.PickingId;
-                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                    {
-                        AxisAlignedBoundingBox aabb =
-                            window.CurrentScene.SelectedObjects.First().AABB
-                            * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                        window.CurrentScene!.Camera.LookFrom(
-                            window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
-                            aabb.GetDiagonal() * 0.01f
-                        );
-                    }
+                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = _objectFilterCurrent == 8 ? false : true; // REMOVE WHEN RAILS ARE FUNCTIONAL AND SELECTABLE                    
                 }
 
                 ImGui.SetItemTooltip(stageObj.Name);
@@ -184,12 +180,12 @@ internal class ObjectWindow(MainWindowContext window)
                 int init;
                 if (prevIdx > nextIdx)
                 {
-                    max = ints.IndexOf((uint)(prevIdx));
+                    max = ints.IndexOf((uint)prevIdx);
                     init = ints.IndexOf((uint)nextIdx);
                 }
                 else
                 {
-                    init = ints.IndexOf((uint)(prevIdx));
+                    init = ints.IndexOf((uint)prevIdx);
                     max = ints.IndexOf((uint)nextIdx);
                 }
                 while (init <= max)
@@ -221,6 +217,16 @@ internal class ObjectWindow(MainWindowContext window)
                     window.CurrentScene.History,
                     (uint)nextIdx,
                     true
+                );
+            }
+            if (doubleclick)
+            {
+                AxisAlignedBoundingBox aabb =
+                    window.CurrentScene.SelectedObjects.First().AABB
+                    * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                window.CurrentScene!.Camera.LookFrom(
+                    window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
+                    aabb.GetDiagonal() * 0.01f
                 );
             }
             prevIdx = nextIdx;

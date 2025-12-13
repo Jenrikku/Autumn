@@ -31,7 +31,7 @@ internal class LightParamsWindow(MainWindowContext window)
                 | ImGuiColorEditFlags.Float
                 | ImGuiColorEditFlags.NoAlpha; // We ignore alpha because the game seems to do so too
     private const float PROP_WIDTH = 105f;
-    
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {
         if (!_isOpen)                
@@ -41,8 +41,7 @@ internal class LightParamsWindow(MainWindowContext window)
         }
         unsafe
         {
-            ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking};
-            ImGuiWindowClass* tmp = &windowClass;
+            fixed (ImGuiWindowClass* tmp = &windowClass)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
         

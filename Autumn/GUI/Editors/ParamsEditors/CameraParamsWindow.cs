@@ -65,6 +65,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 "DemoCamera_DemoEndRollA"];
 
     private FieldInfo[] StageCameraFields = typeof(StageCamera.CameraProperties).GetFields();
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {
         if (!_isOpen)
@@ -73,8 +74,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
         unsafe
         {
-            ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
-            ImGuiWindowClass* tmp = &windowClass;
+            fixed (ImGuiWindowClass* tmp = &windowClass)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
         if (!ImGui.Begin("Cameras", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
