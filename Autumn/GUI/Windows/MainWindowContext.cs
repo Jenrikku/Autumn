@@ -300,6 +300,12 @@ internal class MainWindowContext : WindowContext
         _switchParams._selectedSwitch = i;
         ImGui.SetWindowFocus("Switches##SwitchWindow");
     }
+    public void SetCameraSelected(int i)
+    {
+        _camParams._isOpen = true;
+        CurrentScene!.SelectedCam = i;
+        ImGui.SetWindowFocus("cameras");
+    }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
     internal void CloseCurrentScene()
     {

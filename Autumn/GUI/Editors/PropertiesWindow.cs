@@ -170,10 +170,13 @@ internal class PropertiesWindow(MainWindowContext window)
                         InputInt("View Id", ref stageObj.ViewId, 1, ref stageObj);
                         //InputInt("Camera Id", ref stageObj.CameraId, 1, ref stageObj);
                         ImGui.Text("Camera Id:"); ImGui.SameLine();
-                        List<StageCamera> cameraslinks = stageObj.Type == StageObjType.CameraArea ?
-                            window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList() :
-                            window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category != StageCamera.CameraCategory.Map).ToList();
-                        string[] cameraStrings = new string[cameraslinks.Count() + 1]; //TODO - DONT REBUILD THE CAMERA STRINGS EVERY FRAME
+                        var cams = window.CurrentScene.Stage.CameraParams.Cameras;
+                        List<StageCamera> cameraslinks;
+                        if (sceneObj.StageObj.Name == "EntranceCameraObj") cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Entrance).ToList();
+                        else if (sceneObj.StageObj.Type == StageObjType.CameraArea) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList();
+                        else if (sceneObj.StageObj.Type == StageObjType.DemoScene) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Event).ToList();
+                        else cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
+                        string[] cameraStrings = new string[cameraslinks.Count() + 1]; //TODO - DONT REBUILD THE CAMERA STRINGS EVERY FRAME -> move to Stage.CameraParams.CameraStrings, rebuilt every time we edit the category, userid or add / remove a camera. Include Map and otehrs as 2 lists.
                         cameraStrings[0] = "No camera selected";
                         for (int cs = 1; cs < cameraStrings.Length; cs++)
                         {
@@ -184,13 +187,27 @@ internal class PropertiesWindow(MainWindowContext window)
                         if (csd != null) rff = cameraslinks.IndexOf(csd)+1;
                         else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
                         int orff = rff;
-                        ImGuiWidgets.SetPropertyWidth("Camera Id");
+                        //ImGuiWidgets.PrePropertyWidthName("Camera Id", 30, 20);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor);
                         ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
                         if (rff != orff)
                         {
                             if (rff == 0) stageObj.CameraId = -1;
                             else stageObj.CameraId = cameraslinks[rff-1].UserGroupId;
                         }
+                        if (rff == 0)
+                            ImGui.BeginDisabled();
+                        ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                        if (ImGui.Button(IconUtils.PENCIL)) // Edit the camera -> open the camera window and select it
+                        {
+                            ImGui.SetWindowFocus("Cameras");
+                            StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
+                            var cm = window.CurrentScene.Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
+                            window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.IndexOf(cm!));
+                        }
+                        if (rff == 0)
+                            ImGui.EndDisabled();
+
                         InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
                     if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
@@ -545,7 +562,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     }
                 }
 
-                if (ImGui.CollapsingHeader("Miscellaneous Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                if (ImGui.CollapsingHeader("Extra Properties", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                     ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY );
@@ -580,7 +597,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 );
                         }
                     }
-                    if (ImGui.Button("Edit Misc Properties", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
+                    if (ImGui.Button("Edit Extra Properties", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
                     {
                         if (!stageObj.Properties.ContainsKey("ShapeModelNo"))
                         {

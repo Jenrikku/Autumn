@@ -13,7 +13,6 @@ internal class CameraParamsWindow(MainWindowContext window)
 {
     int selectedcam = -1;
     public bool _isOpen = true;
-
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
@@ -63,6 +62,10 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 "DemoCamera_DemoEndRollC",
                                 "DemoCamera_DemoEndRollB",
                                 "DemoCamera_DemoEndRollA"];
+
+    private bool fakebool = false;
+    private int fakeint = -1;
+    private float fakefl = -1;
 
     private FieldInfo[] StageCameraFields = typeof(StageCamera.CameraProperties).GetFields();
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
@@ -212,7 +215,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                     {
                         if (val is null)
                         {
-                            if (ImGui.Button("Add " + CamField.Name, new Vector2(-1, default)))
+                            if (ImGui.Button(IconUtils.PLUS + "##A" + CamField))
                             {
                                 if (CamField.FieldType == typeof(float?))
                                 {
@@ -227,6 +230,23 @@ internal class CameraParamsWindow(MainWindowContext window)
                                     CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, true);
                                 }
                             }
+                            ImGui.SameLine();
+                            ImGui.BeginDisabled();
+                            if (CamField.FieldType == typeof(float?))
+                            {
+                                ImGuiWidgets.InputFloat(CamField.Name, ref fakefl, 1, 10, 20);
+                            }
+                            else if (CamField.FieldType == typeof(int?))
+                            {
+                                ImGuiWidgets.InputInt(CamField.Name, ref fakeint, 1, 10, 20);
+                            }
+                            else if (CamField.FieldType == typeof(bool?))
+                            {
+                                ImGuiWidgets.PrePropertyWidthName(CamField.Name, 10, 20);
+                                ImGui.Checkbox("##a"+CamField.Name, ref fakebool);
+                            }
+                        
+                            ImGui.EndDisabled();
                         }
                         else
                         {
@@ -257,9 +277,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                             CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
                             break;
                         case bool b:
-                            ImGui.Text(CamField.Name+":");
-                            ImGui.SameLine();
-                            ImGuiWidgets.SetPropertyWidth(CamField.Name+":");
+                            ImGuiWidgets.PrePropertyWidthName(CamField.Name, 10, 20);
                             ImGui.Checkbox("##a"+CamField.Name, ref b);
                             if (skip) break;
                             CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, b);

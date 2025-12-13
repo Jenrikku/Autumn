@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Reflection;
+using Autumn.Enums;
 using Autumn.Rendering;
 using BYAMLSharp;
 
@@ -23,6 +24,23 @@ internal class CameraParams
         };
 
         return new(rd);
+    }
+
+    // Editor stuff
+    
+    public StageCamera? GetCamera(int id, StageCamera.CameraCategory type)
+    {
+        return Cameras.Where(i => i.UserGroupId == id && i.Category == type).FirstOrDefault();
+    }
+
+    public static StageCamera.CameraCategory GetObjectCategory(StageObj stageObj)
+    {
+        StageCamera.CameraCategory camType;
+        if (stageObj.Name == "EntranceCameraObj") camType = StageCamera.CameraCategory.Entrance;
+        else if (stageObj.Type == StageObjType.CameraArea) camType = StageCamera.CameraCategory.Map;
+        else if (stageObj.Type == StageObjType.DemoScene) camType = StageCamera.CameraCategory.Event;
+        else camType = StageCamera.CameraCategory.Object;
+        return camType;
     }
 }
 

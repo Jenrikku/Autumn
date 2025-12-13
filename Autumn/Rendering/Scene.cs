@@ -81,24 +81,10 @@ internal class Scene
         {
             if (sceneObj.StageObj.CameraId > -1) 
             {
-                bool checkformaporother = sceneObj.StageObj.Type == StageObjType.CameraArea;  
-                var sl = Stage.CameraParams.Cameras.Where(i => i.UserGroupId == sceneObj.StageObj.CameraId).ToList();
-                if (sl.Count == 0) SelectedCam = -1;
-                else 
-                {
-                    if (checkformaporother)
-                    { 
-                        var ssl = sl.Where(i => i.Category == StageCamera.CameraCategory.Map).FirstOrDefault();
-                        if (ssl == null) SelectedCam = -1;
-                        else SelectedCam = Stage.CameraParams.Cameras.IndexOf(ssl);
-                    }
-                    else
-                    {
-                        var ssl = sl.Where(i => i.Category != StageCamera.CameraCategory.Map).FirstOrDefault();
-                        if (ssl == null) SelectedCam = -1;
-                        else SelectedCam = Stage.CameraParams.Cameras.IndexOf(ssl);
-                    }
-                }
+                var camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
+                var sl = Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
+                if (sl == null) SelectedCam = -1;
+                else SelectedCam = Stage.CameraParams.Cameras.IndexOf(sl);
             }
             _selectedObjects.Add(sceneObj);
         }
