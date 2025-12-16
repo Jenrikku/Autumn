@@ -92,10 +92,14 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SetWindowFontScale(1.20f);
 
             // Fake dock
-            bool usedbName = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(GetClassFromCCNT(oldName)) && ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(oldName)].Name != null;
+            string oldClassCCNT = GetClassFromCCNT(oldName);
+            bool usedb = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(oldClassCCNT);
+            bool usedbName = usedb && ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Name != null;
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
-            ImGui.Text(stageObj.Type.ToString() + ": " + (usedbName ? ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(oldName)].Name : oldName));
+            ImGui.Text(stageObj.Type.ToString() + ": " + (usedbName ? ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Name : oldName));
             ImGui.SetWindowFontScale(1.0f);
+            bool useDesc = usedb && ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Description != null;
+            if (useDesc) ImGui.SetItemTooltip(ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Description);
 
             var ypos = ImGui.GetCursorPosY();
             bool scrollToChild = false;
@@ -139,6 +143,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
                     //namebox.Use("Name", ref stageObj.Name, window.ContextHandler.FSHandler.ReadCreatorClassNameTable().Keys.ToList());
                     InputText("Name", ref stageObj.Name, 128, ref stageObj);
+                    string newClassCCNT = GetClassFromCCNT(stageObj.Name);
                     if (stageObj is not RailObj)
                     {
                         if (window.ContextHandler.Settings.UseClassNames)
@@ -146,7 +151,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             string hint = string.Empty;
 
                             if (string.IsNullOrEmpty(stageObj.ClassName))
-                                hint = GetClassFromCCNT(stageObj.Name);
+                                hint = newClassCCNT;
 
                             stageObj.ClassName ??= ""; // So that input text works well.
 
@@ -154,10 +159,10 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                         else
                         {
-                            ImGui.SetItemTooltip(GetClassFromCCNT(stageObj.Name));
+                            ImGui.SetItemTooltip(newClassCCNT);
                             ImGui.BeginDisabled();
                             var s = "";
-                            InputText("ClassName", ref s, 128, ref stageObj, GetClassFromCCNT(stageObj.Name));
+                            InputText("ClassName", ref s, 128, ref stageObj, newClassCCNT);
                             ImGui.EndDisabled();
                         }
                         //ImGui.Text("File type: " + stageObj.FileType);
@@ -167,7 +172,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
                     if (stageObj.Type != StageObjType.Start)
                     {
-                        InputInt("View Id", ref stageObj.ViewId, 1, ref stageObj);
+                        InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
                         //InputInt("Camera Id", ref stageObj.CameraId, 1, ref stageObj);
                         ImGui.Text("Camera Id:"); ImGui.SameLine();
                         var cams = window.CurrentScene.Stage.CameraParams.Cameras;
@@ -1044,9 +1049,10 @@ internal class PropertiesWindow(MainWindowContext window)
         int i = rf;
 
         string tt = "";
-        if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(GetClassFromCCNT(sco.StageObj.Name)))
+        string db = GetClassFromCCNT(sco.StageObj.Name);
+        if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(db))
         {
-            var c = ClassDatabaseWrapper.DatabaseEntries[GetClassFromCCNT(sco.StageObj.Name)];
+            var c = ClassDatabaseWrapper.DatabaseEntries[db];
             if (c.Switches != null && c.Switches.ContainsKey($"Switch{str}") && c.Switches[$"Switch{str}"] != null)
             {
                 tt = c.Switches[$"Switch{str}"]?.Type + ": " + c.Switches[$"Switch{str}"]?.Description;
