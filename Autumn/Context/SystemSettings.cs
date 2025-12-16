@@ -13,7 +13,7 @@ internal class SystemSettings
     public List<string> RecentlyOpenedPaths = new();
     public string LastProjectOpenPath = string.Empty;
     public bool SkipWelcomeDialog = false;
-    public bool OpenLastProject = false;
+    public bool OpenLastProject = true;
     public string LastOpenedProject = string.Empty;
     public bool EnableVSync = true;
     public int Theme = 0;

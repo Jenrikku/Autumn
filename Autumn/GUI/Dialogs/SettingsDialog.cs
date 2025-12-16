@@ -19,6 +19,7 @@ internal class SettingsDialog
     private bool _middleMovesCamera = false;
     private bool _enableVSync = true;
     private int _compLevel = 1;
+    private bool _loadLast = true;
     private bool[] _visibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
@@ -52,6 +53,7 @@ internal class SettingsDialog
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
         _window.ContextHandler.SystemSettings.VisibleDefaults.CopyTo(_visibleDefaults, 0);
+        _loadLast = _window.ContextHandler.SystemSettings.OpenLastProject;
     }
 
     /// <summary>
@@ -121,7 +123,7 @@ internal class SettingsDialog
 
         ImGui.Checkbox("Use WASD to move the viewport camera", ref _wasd);
         ImGui.SameLine();
-        ImGuiWidgets.HelpTooltip("Please be aware that this WILL interfere with other editor commands.");
+        ImGuiWidgets.HelpTooltip("Please be aware that this WILL interfere with other editor commands for now.");
 
         ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
         ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1, default);
@@ -137,12 +139,14 @@ internal class SettingsDialog
         
         ImGui.SeparatorText("Defaults");
 
-        ImGui.TextDisabled("These settings require a restart!");
+        ImGui.Checkbox("Load last project on launch", ref _loadLast);
+        ImGui.Separator();
         ImGui.Checkbox("Show Areas", ref _visibleDefaults[0]);
         ImGui.Checkbox("Show CameraAreas", ref _visibleDefaults[1]);
         ImGui.Checkbox("Show Rails", ref _visibleDefaults[2]);
         ImGui.Checkbox("Show Grid", ref _visibleDefaults[3]);
-
+        ImGui.TextDisabled("These settings require a restart!");
+        ImGui.Separator();
         ImGui.SeparatorText("Reset");
 
         float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X*1.65f;
@@ -219,7 +223,8 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.Yaz0Compression = Enum.GetValues<Yaz0Wrapper.CompressionLevel>()[_compLevel];
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             _visibleDefaults.CopyTo(_window.ContextHandler.SystemSettings.VisibleDefaults, 0);
-            
+            _window.ContextHandler.SystemSettings.OpenLastProject = _loadLast;
+
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _window.ContextHandler.SaveSettings();
