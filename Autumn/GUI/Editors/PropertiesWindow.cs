@@ -574,25 +574,49 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
 
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
+                    
                     foreach (var (name, property) in stageObj.Properties)
                     {
                         if (property is null)
                         {
                             ImGui.TextDisabled(name);
-                            return;
+                            continue;
                         }
                         if (name.Contains("Arg") || name == "Priority" || name == "ShapeModelNo") continue;
 
+                        if (ImGui.Button(IconUtils.TRASH + "##rmp" + name))
+                        {
+                            stageObj.Properties.Remove(name); 
+                            continue;
+                        } 
+                        ImGui.SameLine();
+                        if (ImGui.Button(IconUtils.PENCIL + "##edit" + name)) 
+                        {
+                            window.SetupExtraPropsDialog(stageObj, name);
+                        }
+                        ImGui.SameLine();
                         switch (property)
                         {
                             case object p when p is int:
                                 int intBuf = (int)(p ?? -1);
-                                InputIntProperties(name, ref intBuf, 1, ref stageObj);
+                                InputInt(name, ref intBuf, 1, ref stageObj);
                                 break;
-
+                            case object p when p is float:
+                                float flBuf = (float)(p ?? -1);
+                                InputFloatProperties2(name, ref flBuf, 1, ref stageObj);
+                                break;
                             case object p when p is string:
                                 string strBuf = (string)(p ?? string.Empty);
                                 InputTextProperties(name, ref strBuf, 128, ref stageObj);
+                                break;
+                            case object p when p is bool:
+                                ImGui.SameLine();
+                                ImGui.Text(name+":");
+                                ImGui.SameLine();
+                                ImGuiWidgets.SetPropertyWidth(name);
+                                bool bl = (bool)(p ?? false);
+                                ImGui.Checkbox("##a"+name, ref bl);
+                                stageObj.Properties[name] = bl;
                                 break;
 
                             default:
@@ -602,12 +626,10 @@ internal class PropertiesWindow(MainWindowContext window)
                                 );
                         }
                     }
-                    if (ImGui.Button("Edit Extra Properties", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
+
+                    if (ImGui.Button("Add Property", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
                     {
-                        if (!stageObj.Properties.ContainsKey("ShapeModelNo"))
-                        {
-                            stageObj.Properties.Add("ShapeModelNo", 0);
-                        }
+                        window.SetupExtraPropsDialogNew(stageObj);
                     }
 
                     ImGui.PopItemWidth();
@@ -1036,6 +1058,19 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str);
         ImGui.SameLine(default, ImGui.CalcTextSize(str).X);
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str).X - ImGui.GetStyle().ItemSpacing.X * 2);
+        if (ImGui.InputFloat("##" + str + "i", ref i, step, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+        }
+
+        return false;
+    }
+    private bool InputFloatProperties2(string str, ref float rf, int step, ref StageObj sto)
+    {
+        float i = rf;
+        ImGui.Text(str);
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
         if (ImGui.InputFloat("##" + str + "i", ref i, step, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);

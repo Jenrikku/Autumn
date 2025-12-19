@@ -22,6 +22,7 @@ internal static class IconUtils
     public const string AREA = "\uf065";
     public const string GRID = "\uF43C";
     public const string PATH = "\uf542";
+    public const string TRASH = "\uF2ED";
 
 
 }

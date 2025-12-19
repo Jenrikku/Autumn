@@ -282,7 +282,7 @@ internal class LightParamsWindow(MainWindowContext window)
             }
         }
         ImGui.EndTable();
-        bool _disabled = selectedlightarea < 0 || selectedlightarea > scn.Stage.LightAreaNames.Count;
+        bool _disabled = selectedlightarea < 0 || (scn.Stage.LightAreaNames.Count == 0);
 
         if (!_disabled)
         {

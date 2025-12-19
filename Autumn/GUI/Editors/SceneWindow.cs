@@ -488,7 +488,7 @@ internal class SceneWindow(MainWindowContext window)
         if (_isObjectOptionsEnabled)
         {
             ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.WindowBg));
-            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 3);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
             var mpos = _objectOptionsPos - new Vector2(0, -20);
             ImGui.SetCursorPos(mpos);
             float w = ImGui.CalcTextSize(_pickObject.StageObj.Name).X * 1.3f + 10;
@@ -568,7 +568,7 @@ internal class SceneWindow(MainWindowContext window)
             }
             else
                 _objectOptionsTime = 0;
-            if (_objectOptionsTime >= 0.45)
+            if (_objectOptionsTime >= 1.15)
             {
                 _isObjectOptionsEnabled = false;
 

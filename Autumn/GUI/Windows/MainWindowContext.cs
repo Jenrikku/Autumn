@@ -43,6 +43,7 @@ internal class MainWindowContext : WindowContext
 
     #region Editor Dialogs
     public readonly EditChildrenDialog _editChildrenDialog;
+    public readonly EditExtraPropsDialog _editExtraPropsDialog;
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
@@ -76,6 +77,7 @@ internal class MainWindowContext : WindowContext
         _newStageObjDialog = new(this);
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
+        _editExtraPropsDialog = new(this);
         _settingsDialog = new(this);
         _editCCNT = new(this);
         _shortcutsDialog = new(this);
@@ -215,6 +217,7 @@ internal class MainWindowContext : WindowContext
             _closingDialog.Render();
             _newStageObjDialog.Render();
             _editChildrenDialog.Render();
+            _editExtraPropsDialog.Render();
             _editCCNT.Render();
             _DBEditorDialog.Render();
             _shortcutsDialog.Render();
@@ -307,6 +310,8 @@ internal class MainWindowContext : WindowContext
         ImGui.SetWindowFocus("cameras");
     }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
+    internal void SetupExtraPropsDialog(StageObj stageObj, string propName) => _editExtraPropsDialog.Open(stageObj, propName);
+    internal void SetupExtraPropsDialogNew(StageObj stageObj) => _editExtraPropsDialog.New(stageObj);
     internal void CloseCurrentScene()
     {
         int i = Scenes.IndexOf(CurrentScene!) - 1;
