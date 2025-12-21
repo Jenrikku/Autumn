@@ -155,8 +155,6 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
             break;
         }
 
-
-
         ImGui.SetCursorPosX(dimensions.X - 90);
         ImGui.SetCursorPosY(dimensions.Y - ImGui.GetTextLineHeight() - 14);
 

@@ -69,6 +69,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
     private FieldInfo[] StageCameraFields = typeof(StageCamera.CameraProperties).GetFields();
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
+
     public void Render()
     {
         if (!_isOpen)
@@ -156,6 +157,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         {
             scn.Stage.CameraParams.Cameras.RemoveAt(selectedcam);
             selectedcam = -1;
+            window.UpdateCameraList();
         }
 
 
@@ -163,6 +165,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
             scn.Stage.CameraParams.Cameras.Add(new(scn.Stage.CameraParams.Cameras[selectedcam]) { UserGroupId = 333 });
+            window.UpdateCameraList();
         }
         ImGui.SetItemTooltip("Duplicate Camera");
 
@@ -172,6 +175,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
             scn.Stage.CameraParams.Cameras.Add(new() { UserGroupId = 333 });
+            window.UpdateCameraList();
         }
 
         if (selectedcam > -1)
@@ -202,6 +206,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             if (ImGui.Combo("##CategoryCombo", ref cat, Enum.GetNames<StageCamera.CameraCategory>(), 4))
             {
                 scn.Stage.CameraParams.Cameras[selectedcam].Category = Enum.Parse<StageCamera.CameraCategory>(Enum.GetNames<StageCamera.CameraCategory>().ToList()[cat]);
+                window.UpdateCameraList();
             }
             ImGuiWidgets.TextHeader("General Properties");
             //typeof(StageCamera).GetField(s);

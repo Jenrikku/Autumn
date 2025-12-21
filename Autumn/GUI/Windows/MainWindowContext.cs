@@ -309,6 +309,10 @@ internal class MainWindowContext : WindowContext
         CurrentScene!.SelectedCam = i;
         ImGui.SetWindowFocus("cameras");
     }
+    public void UpdateCameraList()
+    {
+        _propertiesWindow.updateCameras = true;
+    }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
     internal void SetupExtraPropsDialog(StageObj stageObj, string propName) => _editExtraPropsDialog.Open(stageObj, propName);
     internal void SetupExtraPropsDialogNew(StageObj stageObj) => _editExtraPropsDialog.New(stageObj);

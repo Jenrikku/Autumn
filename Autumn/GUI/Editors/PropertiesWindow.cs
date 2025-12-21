@@ -29,6 +29,10 @@ internal class PropertiesWindow(MainWindowContext window)
     ImGuiWidgets.InputComboBox namebox = new();
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
+    private List<StageCamera> cameraslinks;
+    private string[] cameraStrings;
+
+    public bool updateCameras = false;
     public void Render()
     {
         ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
@@ -84,11 +88,26 @@ internal class PropertiesWindow(MainWindowContext window)
                     ScaleDrag.Finish(ref prevObj.StageObj.Scale);
                     prevObj.UpdateTransform();
                 }
+                updateCameras = true;
                 prevObj = sceneObj;
             }
 
+            if (updateCameras)
+            {
+                var cams = window.CurrentScene.Stage.CameraParams.Cameras;
+                if (sceneObj.StageObj.Name == "EntranceCameraObj") cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Entrance).ToList();
+                else if (sceneObj.StageObj.Type == StageObjType.CameraArea) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList();
+                else if (sceneObj.StageObj.Type == StageObjType.DemoScene) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Event).ToList();
+                else cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
+
+                cameraStrings = new string[cameraslinks.Count() + 1];
+                cameraStrings[0] = "No camera selected";
+                updateCameras = false;
+            }
+
+
             string oldName = stageObj.Name;
-            ImGui.GetIO().ConfigDragClickToInputText = true; // MOVE TO EDITOR STARTUP SETUP
+            ImGui.GetIO().ConfigDragClickToInputText = true; //TODO - MOVE TO EDITOR STARTUP SETUP
             ImGui.SetWindowFontScale(1.20f);
 
             // Fake dock
@@ -173,16 +192,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (stageObj.Type != StageObjType.Start)
                     {
                         InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
-                        //InputInt("Camera Id", ref stageObj.CameraId, 1, ref stageObj);
                         ImGui.Text("Camera Id:"); ImGui.SameLine();
-                        var cams = window.CurrentScene.Stage.CameraParams.Cameras;
-                        List<StageCamera> cameraslinks;
-                        if (sceneObj.StageObj.Name == "EntranceCameraObj") cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Entrance).ToList();
-                        else if (sceneObj.StageObj.Type == StageObjType.CameraArea) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList();
-                        else if (sceneObj.StageObj.Type == StageObjType.DemoScene) cameraslinks =  cams.Where(x => x.Category == StageCamera.CameraCategory.Event).ToList();
-                        else cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
-                        string[] cameraStrings = new string[cameraslinks.Count() + 1]; //TODO - DONT REBUILD THE CAMERA STRINGS EVERY FRAME -> move to Stage.CameraParams.CameraStrings, rebuilt every time we edit the category, userid or add / remove a camera. Include Map and otehrs as 2 lists.
-                        cameraStrings[0] = "No camera selected";
                         for (int cs = 1; cs < cameraStrings.Length; cs++)
                         {
                             cameraStrings[cs] = cameraslinks[cs - 1].CameraName();
