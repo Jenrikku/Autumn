@@ -489,7 +489,7 @@ internal class SceneWindow(MainWindowContext window)
         {
             ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.WindowBg));
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
-            var mpos = _objectOptionsPos - new Vector2(0, -20);
+            var mpos = _objectOptionsPos - new Vector2(2.5f, 25);
             ImGui.SetCursorPos(mpos);
             float w = ImGui.CalcTextSize(_pickObject.StageObj.Name).X * 1.3f + 10;
             if (ImGui.BeginListBox("##SelectableListbox", new(w > 140 ? w : 140, 150)))

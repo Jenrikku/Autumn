@@ -19,7 +19,7 @@ internal class SystemSettings
     public int Theme = 0;
     public int MouseSpeed = 20;
     public bool UseWASD = false;
-    public bool UseMiddleMouse = false;
+    public bool UseMiddleMouse = true;
     public bool EnableDBEditor = false;
     public bool[] VisibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
     public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
