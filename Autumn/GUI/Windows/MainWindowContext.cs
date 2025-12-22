@@ -414,15 +414,16 @@ internal class MainWindowContext : WindowContext
                 //_paramsWindow.MiscEnabled = true;
                 _miscParams._isOpen = true;
             }
-            if (ImGui.MenuItem("Edit Switches"))
-                _switchParams._isOpen = true;
+            if (ImGui.MenuItem("Edit Cameras"))
+                _camParams._isOpen = true;
+            //ImGui.SetWindowFocus("cameras");
+            ImGui.Separator();
             if (ImGui.MenuItem("Edit Fogs"))
                 _fogParams._isOpen = true;
             if (ImGui.MenuItem("Edit Lights"))
                 _lightParams._isOpen = true;
-            ImGui.Separator();
-            if (ImGui.MenuItem("Edit Cameras"))
-                _camParams._isOpen = true;
+            if (ImGui.MenuItem("Edit Switches"))
+                _switchParams._isOpen = true;
             ImGui.EndMenu();
         }
 

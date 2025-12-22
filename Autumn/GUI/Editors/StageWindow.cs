@@ -59,8 +59,17 @@ internal class StageWindow
             return;
 
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
+
+        if (window.ContextHandler.FSHandler.ReadGameSystemDataTable() == null)
+            ImGui.BeginDisabled();
         ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length);
 
+        if (window.ContextHandler.FSHandler.ReadGameSystemDataTable() == null)
+        {
+            ImGui.EndDisabled();
+            ImGui.SetItemTooltip("Can't find GameSystemDataTable.szs, so world selection is disabled");
+        }
+        
         // Stage table:
 
         if (ImGui.BeginTable("stageTable", 2, _stageTableFlags))

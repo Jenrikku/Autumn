@@ -15,6 +15,7 @@ internal class SettingsDialog
     private bool _isOpened = false;
     private bool _useClassNames = false;
     private bool _dbEditor = false;
+    private bool _rememberLayout = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
     private bool _enableVSync = true;
@@ -54,6 +55,7 @@ internal class SettingsDialog
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
         _window.ContextHandler.SystemSettings.VisibleDefaults.CopyTo(_visibleDefaults, 0);
         _loadLast = _window.ContextHandler.SystemSettings.OpenLastProject;
+        _rememberLayout = _window.ContextHandler.SystemSettings.RememberLayout;   
     }
 
     /// <summary>
@@ -118,6 +120,9 @@ internal class SettingsDialog
         ImGui.Checkbox("Enable VSync", ref _enableVSync);
         ImGui.SameLine();
         ImGuiWidgets.HelpTooltip("This option requires restarting the editor");
+        ImGui.Checkbox("Remember layout", ref _rememberLayout);
+        ImGui.SameLine();
+        ImGuiWidgets.HelpTooltip("Will save the window positions and sizes when closing the program");
 
         ImGui.SeparatorText("Viewport");
 
@@ -174,14 +179,13 @@ internal class SettingsDialog
 
         if (ImGui.Button("Layout", new(resetWidth,0)))
         {
-            string stpth = Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini");
-            if (File.Exists(stpth))
-                File.Delete(stpth);
-            File.Copy(Path.Join("Resources", "DefaultLayout.ini"), Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini"));
+            
+            File.Copy(Path.Join("Resources", "DefaultLayout.ini"), Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini"), true);
             ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _isOpened = false;
+            _window.ContextHandler.SystemSettings.RememberLayout = false;
             Reset();
             return;
         }
@@ -224,6 +228,7 @@ internal class SettingsDialog
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             _visibleDefaults.CopyTo(_window.ContextHandler.SystemSettings.VisibleDefaults, 0);
             _window.ContextHandler.SystemSettings.OpenLastProject = _loadLast;
+            _window.ContextHandler.SystemSettings.RememberLayout = _rememberLayout;
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();

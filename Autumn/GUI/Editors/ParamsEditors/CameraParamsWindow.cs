@@ -12,7 +12,7 @@ namespace Autumn.GUI.Editors;
 internal class CameraParamsWindow(MainWindowContext window)
 {
     int selectedcam = -1;
-    public bool _isOpen = true;
+    public bool _isOpen = false;
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY

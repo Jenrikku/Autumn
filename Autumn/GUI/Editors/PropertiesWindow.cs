@@ -481,26 +481,29 @@ internal class PropertiesWindow(MainWindowContext window)
                                         window.SetupChildrenDialog(stageObj);
                                     }
                                     bool autoResize = stageObj.Children.Count < 6;
-                                    if (ImGui.BeginTable("childrenTable", 2,
+                                    if (ImGui.BeginTable("childrenTable", 4,
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
                                         | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, autoResize ? default : 150 * window.ScalingFactor)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                                        ImGui.TableSetupColumn("View", ImGuiTableColumnFlags.None);
+                                        ImGui.TableSetupColumn("Remove  ", ImGuiTableColumnFlags.None);
                                         ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.WidthStretch, 0.4f);
                                         ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None);
                                         ImGui.TableHeadersRow();
                                         if (autoResize) ImGui.SetScrollY(0);
                                         int cidx = 0;
+                                        StageObj? remch = null;
                                         foreach (StageObj ch in stageObj.Children) // This keeps child order!
                                         {
                                             ImGui.TableNextRow();
 
-                                            ImGui.TableSetColumnIndex(0);
+                                            ImGui.TableSetColumnIndex(2);
 
                                             ImGui.PushID("SceneChildSelectable" + cidx);
-                                            if (ImGui.Selectable(ch.Name, false, ImGuiSelectableFlags.SpanAllColumns))
+                                            if (ImGui.Selectable(ch.Name, false))
                                             {
                                                 var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
                                                 ChangeHandler.ToggleObjectSelection(
@@ -513,11 +516,29 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 window.CurrentScene!.Camera.LookFrom(ch.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
                                             }
 
-                                            ImGui.TableNextColumn();
+                                            ImGui.TableSetColumnIndex(3);
 
                                             ImGui.Text(ch.Type.ToString());
+                                            
+                                            ImGui.TableSetColumnIndex(0);
+                                            ImGui.PushID("SceneChildView" + cidx);
+                                            if (ImGui.Button(IconUtils.EYE_OPEN,new(-1, 25)))
+                                            {
+                                                var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
+                                                AxisAlignedBoundingBox aabb = child.AABB * ch.Scale;
+                                                window.CurrentScene!.Camera.LookFrom(ch.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                                            }
+
+                                            ImGui.TableSetColumnIndex(1);
+                                            ImGui.PushID("SceneChildUnlink" + cidx);
+                                            if (ImGui.Button(IconUtils.MINUS, new(-1, 25)))
+                                            {
+                                                remch = ch;
+                                            }
+
                                             cidx++;
                                         }
+                                        if (remch != null) window.CurrentScene.Stage.GetStageFile(StageFileType.Map).UnlinkChild(remch);
 
                                         ImGui.EndTable();
                                     }
