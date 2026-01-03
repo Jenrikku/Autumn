@@ -725,7 +725,6 @@ internal class PropertiesWindow(MainWindowContext window)
 
     private class CustomDragFloat
     {
-        bool isActive = false;
         bool isEditing = false;
         bool isDragging = false;
         bool isFinished = true;
@@ -743,41 +742,19 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.DragFloat(isSingle ? str : "##" + str, ref reference, v_speed, default, default, "%.2f"); // C printf formatting
             max = min + ImGui.GetItemRectSize();
 
-            if (ImGui.IsMouseDown(ImGuiMouseButton.Left) || ImGui.IsItemFocused())
+            if (ImGui.IsItemActive() && ImGui.IsItemFocused() && !ImGui.IsMouseDragging(ImGuiMouseButton.Left) && isFinished)
             {
-                if (ImGui.IsMouseHoveringRect(min, max) && !ImGui.IsMouseDragging(ImGuiMouseButton.Left))
-                {
-                    isActive = true;
-                    isDragging = false;
-                    isFinished = false;
-                }
-                else if (ImGui.IsItemActivated())
-                {
-                    isActive = true;
-                    isDragging = false;
-                    isFinished = false;
-                    isEditing = true;
-                }
-            }
-            if (ImGui.IsMouseDragging(ImGuiMouseButton.Left) && isActive && !isDragging)
-            {
-                isDragging = true;
-                isEditing = false;
+                isEditing = true;
                 isFinished = false;
             }
-            if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+            else if (ImGui.IsMouseDragging(ImGuiMouseButton.Left) && ImGui.IsItemActive() && ImGui.IsItemFocused() ) 
             {
-                // if we release on top of the object we enter editing mode
-                // if we release elsewhere while we're dragging we push the change value (true)
-                if (ImGui.IsMouseHoveringRect(min, max) && !isDragging)
-                {
-                    isEditing = true;
-                }
-                else if (!isDragging)
-                {
-                    isActive = false;
-                }
-                else if (isDragging)
+                isDragging = true;
+                isFinished = false;
+            }
+            if (isDragging)
+            {
+                if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
                 {
                     Complete(ref rf);
                     return true;
@@ -785,7 +762,7 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             if (isEditing)
             {
-                if (ImGui.IsKeyPressed(ImGuiKey.Tab) || ImGui.IsKeyPressed(ImGuiKey.Enter) || !isActive)
+                if (ImGui.IsKeyPressed(ImGuiKey.Tab) || ImGui.IsKeyPressed(ImGuiKey.Enter))
                 {
                     Complete(ref rf);
                     return true;
@@ -803,7 +780,6 @@ internal class PropertiesWindow(MainWindowContext window)
         void Complete(ref float rf)
         {
             isEditing = false;
-            isActive = false;
             isDragging = false;
             isFinished = true;
             rf = reference;
@@ -811,7 +787,6 @@ internal class PropertiesWindow(MainWindowContext window)
         void Reset(ref float rf)
         {
             isEditing = false;
-            isActive = false;
             isDragging = false;
             isFinished = true;
             reference = rf;
