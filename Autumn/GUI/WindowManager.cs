@@ -52,7 +52,7 @@ internal class WindowManager
 
         context.Window.DoEvents();
         context.Window.Reset();
-        context.InputContext?.Dispose();
+        context.InputContext?.Dispose(); // Broken on DEBUG windows builds, not an issue for RELEASE versions or any other OS
     }
 
     public void Run(ActionHandler actionHandler)

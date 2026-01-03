@@ -51,7 +51,6 @@ internal class MainWindowContext : WindowContext
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
-    private readonly ParametersWindow _paramsWindow;
     private readonly SceneWindow _sceneWindow;
     private readonly WelcomeDialog _welcomeDialog;
     #endregion
@@ -87,7 +86,6 @@ internal class MainWindowContext : WindowContext
         _stageWindow = new(this);
         _objectWindow = new(this);
         _propertiesWindow = new(this);
-        _paramsWindow = new(this);
         _sceneWindow = new(this);
 
         // Initialize param editors
@@ -204,7 +202,6 @@ internal class MainWindowContext : WindowContext
             {
                 _objectWindow.Render();
                 _propertiesWindow.Render();
-                _paramsWindow.Render();
                 _sceneWindow.Render(deltaSeconds);
                 _stageWindow.Render();
             }
