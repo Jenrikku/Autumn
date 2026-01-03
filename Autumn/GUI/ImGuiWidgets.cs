@@ -128,10 +128,10 @@ internal static class ImGuiWidgets
         ImGui.SetNextItemWidth(ret);
         return ret;
     }
-    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3, bool colon = true)
+    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3, bool colon = true, float padding = 12)
     {
         float ret = 0;
-        if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X / 2) > (ImGui.CalcTextSize(str + ":").X + 12))
+        if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X / 2) > (ImGui.CalcTextSize(str + ":").X + padding))
         {
             ImGui.SetCursorPosX(ImGui.GetWindowWidth() * (ratioB - ratioA) / ratioB);
             ret = float.Round(ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X);

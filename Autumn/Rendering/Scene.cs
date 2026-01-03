@@ -25,6 +25,7 @@ internal class Scene
     public IEnumerable<ISceneObj> SelectedObjects => _selectedObjects;
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
+    public Camera PreviewCamera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
     public StageLight? PreviewLight { get; set; } = null;
     public int SelectedCam { get; set; } = -1;
 

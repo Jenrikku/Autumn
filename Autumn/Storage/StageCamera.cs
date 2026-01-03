@@ -291,11 +291,13 @@ internal class StageCamera
         FixAllSpot,
         Tower,
         Rail,
+        RailTower,
         ParallelTarget,
         FixPos,
         FixPosSpot,
         ParallelVersus,
         DemoTarget,
+        TowerTarget,
         Anim,
         Follow
     }

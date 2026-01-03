@@ -23,6 +23,7 @@ internal class MainWindowContext : WindowContext
     public Scene? CurrentScene { get; set; }
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
+    public SceneGL.GLWrappers.Framebuffer CameraFramebuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
     public GLTaskScheduler GLTaskScheduler { get; } = new();
@@ -103,6 +104,11 @@ internal class MainWindowContext : WindowContext
             SceneGL.PixelFormat.R8_G8_B8_A8_UNorm, // Regular color.
             SceneGL.PixelFormat.R32_UInt // Used for object selection.
         );
+        CameraFramebuffer = new(
+            initialSize: null,
+            depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm // Regular color.
+        );
 
         Window.Load += () =>
         {
@@ -163,7 +169,6 @@ internal class MainWindowContext : WindowContext
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
 
-                _isFirstFrame = false;
             }
 
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
@@ -226,6 +231,12 @@ internal class MainWindowContext : WindowContext
             _fogParams.Render();
             _lightParams.Render();
             _switchParams.Render();
+
+            if (_isFirstFrame)
+            {
+                _isFirstFrame = false;
+                ImGui.SetWindowFocus("Stages");
+            }
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 

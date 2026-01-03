@@ -47,6 +47,10 @@ internal class Camera
 
     public void Animate(double deltaTime, out Vector3 eyeAnimated, out Quaternion rotAnimated)
     {
+        if (_rotAnimated.Length() is float.NaN || _rotAnimated.Length() is float.PositiveInfinity  || _rotAnimated.Length() is float.NegativeInfinity) 
+            _rotAnimated = Quaternion.Zero;
+        if (_eyeAnimated.Length() is float.NaN || _eyeAnimated.Length() is float.PositiveInfinity  || _eyeAnimated.Length() is float.NegativeInfinity) 
+            _eyeAnimated = Vector3.Zero;
         _rotAnimated = Quaternion.Slerp(
             _rotAnimated,
             Rotation,
