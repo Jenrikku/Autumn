@@ -1,6 +1,8 @@
+using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Storage;
+using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
@@ -58,8 +60,13 @@ internal class StageWindow
         if (!ImGui.Begin("Stages"))
             return;
 
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
-
+        if (ImGui.Button(IconUtils.PLUS))
+        {
+            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.AddStage, window);
+        }
+        ImGui.SetItemTooltip("Add stage");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         if (window.ContextHandler.FSHandler.ReadGameSystemDataTable() == null)
             ImGui.BeginDisabled();
         ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length);

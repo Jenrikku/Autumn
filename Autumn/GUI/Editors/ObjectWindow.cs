@@ -51,8 +51,13 @@ internal class ObjectWindow(MainWindowContext window)
             return;
         }
 
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2);
-
+        if (ImGui.Button(IconUtils.PLUS))
+        {
+            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.AddObject, window);
+        }
+        ImGui.SetItemTooltip("Add object");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.Combo(
             "",
             ref _objectFilterCurrent,
