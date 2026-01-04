@@ -2,7 +2,6 @@ using System.Numerics;
 using Autumn.Background;
 using Autumn.Context;
 using Autumn.Enums;
-using Autumn.FileSystems;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
 using Autumn.Rendering;
@@ -303,7 +302,7 @@ internal class MainWindowContext : WindowContext
         _sceneWindow.AddMouseClickAction(action);
 
     public void SetSceneDuplicateTranslation() =>
-        _sceneWindow.isTranslationFromDuplicate = true;
+        _sceneWindow.IsTranslationFromDuplicate = true;
 
     public void SetSwitchSelected(int i)
     {
@@ -465,30 +464,6 @@ internal class MainWindowContext : WindowContext
                 _showDemoWindow = true;
 
             ImGui.Separator();
-
-            if (ImGui.MenuItem("Test New Project"))
-            {
-                ProjectCreateChooserContext projectChooser = new(ContextHandler, WindowManager);
-                WindowManager.Add(projectChooser);
-
-                projectChooser.SuccessCallback += result =>
-                {
-                    ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                    ContextHandler.NewProject(result[0]);
-                };
-            }
-
-            if (ImGui.MenuItem("Test Open Project"))
-            {
-                ProjectChooserContext projectChooser = new(ContextHandler, WindowManager);
-                WindowManager.Add(projectChooser);
-
-                projectChooser.SuccessCallback += result =>
-                {
-                    ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                    ContextHandler.OpenProject(result[0]);
-                };
-            }
 
             if (ImGui.MenuItem("Single File Choose"))
             {

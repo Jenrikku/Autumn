@@ -794,7 +794,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
             window.CameraFramebuffer.Use(window.GL!);
             window.GL!.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
-            window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix, camera.Rotation);
+            window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix, camera.Rotation, camera.Eye);
             ImGui.End();
         }
     }

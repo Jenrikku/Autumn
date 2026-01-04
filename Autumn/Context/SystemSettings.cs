@@ -11,7 +11,8 @@ namespace Autumn.Context;
 internal class SystemSettings
 {
     public List<string> RecentlyOpenedPaths = new();
-    public string LastProjectOpenPath = string.Empty;
+    public string LastProjectOpenPath = string.Empty; // File chooser
+    public bool RestoreNativeFileDialogs = false;
     public bool SkipWelcomeDialog = false;
     public bool OpenLastProject = true;
     public string LastOpenedProject = string.Empty;

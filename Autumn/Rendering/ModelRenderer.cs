@@ -24,8 +24,10 @@ internal static class ModelRenderer
 
     private static CommonSceneParameters? s_commonSceneParams;
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
-    private static CommonMaterialParameters? s_RailMaterialParams;
-    private static CommonMaterialParameters? s_RailPointMaterialParams;
+
+    private static RailGeometryParameters? s_railGeometryParams;
+    private static CommonMaterialParameters? s_railMaterialParams;
+    private static CommonMaterialParameters? s_railPointMaterialParams;
 
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
@@ -58,8 +60,9 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
 
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
-        s_RailMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
-        s_RailPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
+        s_railGeometryParams = new(lineWidth: 0.15f, camera: new(1));
+        s_railMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
+        s_railPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
 
         var narc = fsHandler.ReadShaders();
         if (narc is not null)
@@ -89,18 +92,19 @@ internal static class ModelRenderer
         }
     }
 
-    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, Quaternion camera)
+    public static void UpdateSceneParams(in Matrix4x4 view, in Matrix4x4 projection, in Quaternion cameraRot, in Vector3 cameraEye)
     {
-        if (s_commonSceneParams is null)
+        if (s_commonSceneParams is null || s_railGeometryParams is null)
             throw new InvalidOperationException(
                 $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(UpdateSceneParams)}"
             );
 
         s_viewMatrix = view;
         s_projectionMatrix = projection;
-        s_cameraRotation = Vector3.Transform(Vector3.UnitZ, camera);
+        s_cameraRotation = Vector3.Transform(Vector3.UnitZ, cameraRot);
 
         s_commonSceneParams.ViewProjection = view * projection;
+        s_railGeometryParams.Camera = cameraEye;
     }
 
     public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
@@ -144,12 +148,10 @@ internal static class ModelRenderer
 
         if (sceneObj is RailSceneObj railSceneObj)
         {
-            if (VisibleRails)
-            {
-                s_RailMaterialParams!.Selected = railSceneObj.Selected;
+            s_railMaterialParams!.Selected = railSceneObj.Selected;
 
-                RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_RailMaterialParams, s_RailPointMaterialParams!);
-            }
+            gl.Disable(EnableCap.CullFace);
+            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_railGeometryParams!, s_railMaterialParams, s_railPointMaterialParams!);
             return;
         }
 
