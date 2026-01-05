@@ -89,13 +89,11 @@ internal class AddStageDialog
         )
             return;
         if (_noReference) RenderNoRomfs();
-        else RenderYesRomfs();
+        else RenderWithRomfs();
     }
 
-    void RenderYesRomfs()
+    void RenderWithRomfs()
     {
-
-        
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         ImGuiStylePtr style = ImGui.GetStyle();
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
