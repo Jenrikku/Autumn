@@ -96,6 +96,7 @@ internal class StageObj
 
     public static bool Compare(StageObj A, StageObj B, bool lean = false)
     {
+        if (A.Name != B.Name) return false;
         if (lean)
         {
             return
