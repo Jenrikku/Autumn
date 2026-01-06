@@ -122,6 +122,7 @@ internal class StageFile
                     child.Parent = null;
                     UnlinkChild(child);
                 }
+                stageObj.Children.Clear();
             }
             return;
         }
@@ -145,6 +146,7 @@ internal class StageFile
                 child.Parent = null;
                 UnlinkChild(child);
             }
+            stageObj.Children.Clear();
         }
 
         list.Remove(stageObj);

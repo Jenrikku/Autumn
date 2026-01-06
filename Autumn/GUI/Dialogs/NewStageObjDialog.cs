@@ -229,7 +229,8 @@ internal class NewStageObjDialog(MainWindowContext window)
                         ResetArgs();
                     }
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.Text(pair.Value.Name ?? "");
+                    if (pair.Value.Name != null) ImGui.Text(pair.Value.Name);
+                    else ImGui.TextDisabled("Undocumented");
                     obj++;
                 }
             }
@@ -307,8 +308,9 @@ internal class NewStageObjDialog(MainWindowContext window)
 
                     ImGui.TableNextRow();
 
-                    ImGui.TableSetColumnIndex(0);
-                    if (ImGui.Selectable((ClassDatabaseWrapper.DatabaseEntries.ContainsKey(ccnt[k]) ? ClassDatabaseWrapper.DatabaseEntries[ccnt[k]].Name ?? "" : "") + "##" + obj, false, ImGuiSelectableFlags.SpanAllColumns))
+                    ImGui.TableSetColumnIndex(1);
+                    bool useName = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(ccnt[k]) && ClassDatabaseWrapper.DatabaseEntries[ccnt[k]].Name != null;
+                    if (ImGui.Selectable($"{k}##{obj}", false, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         _class = ccnt[k];
                         _name = k;
@@ -319,9 +321,9 @@ internal class NewStageObjDialog(MainWindowContext window)
                         );
                         ResetArgs();
                     }
-
-                    ImGui.TableSetColumnIndex(1);
-                    ImGui.Text(k);
+                    ImGui.TableSetColumnIndex(0);
+                    if (useName) ImGui.Text(ClassDatabaseWrapper.DatabaseEntries[ccnt[k]].Name);
+                    else ImGui.TextDisabled($"Undocumented ({ccnt[k]})");
                     obj++;
                 }
             }

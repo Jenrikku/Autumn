@@ -282,7 +282,7 @@ internal static class ChangeHandler
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
         var oldSO = del.StageObj.Clone();
-	var oldParent = del.StageObj.Parent;
+        var oldParent = del.StageObj.Parent;
         var delete = del;
 
         Change change =

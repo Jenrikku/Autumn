@@ -161,10 +161,32 @@ internal class PropertiesWindow(MainWindowContext window)
                     //ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 3.1f);
                     ImGui.PushItemWidth(prevW - PROP_WIDTH);
                     //namebox.Use("Name", ref stageObj.Name, window.ContextHandler.FSHandler.ReadCreatorClassNameTable().Keys.ToList());
-                    InputText("Name", ref stageObj.Name, 128, ref stageObj);
-                    string newClassCCNT = GetClassFromCCNT(stageObj.Name);
+                    //InputText("Name", ref stageObj.Name, 128, ref stageObj);
+
+                    string namae =  stageObj.Name;
+
+                    ImGui.Text("Name:");
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Name")- ((stageObj is not RailObj) ? 28 : 0));
+                    if (ImGui.InputTextWithHint("##namest", "Object Name", ref namae, 128, ImGuiInputTextFlags.EnterReturnsTrue))
+                    {
+                        ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, stageObj, "Name", stageObj.Name, namae);
+                    }
                     if (stageObj is not RailObj)
                     {
+                        string newClassCCNT = GetClassFromCCNT(stageObj.Name);
+
+                        ImGui.SameLine(default, style.ItemInnerSpacing.X);
+
+                        bool hascl = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(newClassCCNT);
+
+                        if (!hascl) ImGui.BeginDisabled();
+
+                        if (ImGui.Button(IconUtils.BOOK))
+                        {
+                            window.OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntries[newClassCCNT]);
+                        }
+                        if (!hascl) ImGui.EndDisabled();
                         if (window.ContextHandler.Settings.UseClassNames)
                         {
                             string hint = string.Empty;
@@ -489,7 +511,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("View", ImGuiTableColumnFlags.None);
-                                        ImGui.TableSetupColumn("Remove  ", ImGuiTableColumnFlags.None);
+                                        ImGui.TableSetupColumn("Unlink", ImGuiTableColumnFlags.None);
                                         ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.WidthStretch, 0.4f);
                                         ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None);
                                         ImGui.TableHeadersRow();
@@ -520,6 +542,9 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.Text(ch.Type.ToString());
                                             
+                                            ImGui.PushStyleColor(ImGuiCol.Button, 0);
+                                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
+                                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
                                             if (ImGui.Button(IconUtils.EYE_OPEN,new(-1, 25)))
@@ -531,10 +556,11 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.TableSetColumnIndex(1);
                                             ImGui.PushID("SceneChildUnlink" + cidx);
-                                            if (ImGui.Button(IconUtils.MINUS, new(-1, 25)))
+                                            if (ImGui.Button(IconUtils.UNLINK, new(-1, 25)))
                                             {
                                                 remch = ch;
                                             }
+                                            ImGui.PopStyleColor(3);
 
                                             cidx++;
                                         }
@@ -1130,6 +1156,9 @@ internal class PropertiesWindow(MainWindowContext window)
     private string GetClassFromCCNT(string objectName)
     {
         var table = window.ContextHandler.FSHandler.ReadCreatorClassNameTable();
+
+        if (table.Count == 0) // Will only happen if there's no CCNT in either project or original romfs, so we assume the object is in the CCNT 
+            return objectName;
 
         if (!table.TryGetValue(objectName, out string? className))
             return "NotFound";

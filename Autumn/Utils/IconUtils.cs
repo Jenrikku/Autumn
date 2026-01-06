@@ -28,6 +28,7 @@ internal static class IconUtils
     public const string PATH = "\uf542";
     public const string TRASH = "\uF2ED";
     public const string DASH = "\uF70C";
+    public const string BOOK = "\uF02D";
 
 
 }

@@ -293,6 +293,17 @@ internal class Scene
         }
         else
             Stage.AddStageObj(stageObj);
+        if (stageObj.Children != null)
+        {
+            var cnt = new List<StageObj>(stageObj.Children);
+            stageObj.Children.Clear();
+            foreach (var ch in cnt)
+            {
+                StageObjType chtype = ch.Type == StageObjType.Child ? StageObjType.Regular : StageObjType.Area;
+                // Find the children on the stage file
+                Stage.GetStageFile(StageFileType.Map).SetChild(Stage.GetStageFile(StageFileType.Map).GetObjInfos(chtype).First(x => StageObj.Compare(x, ch)), stageObj);
+            }
+        }
         GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
 

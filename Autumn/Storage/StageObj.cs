@@ -93,4 +93,34 @@ internal class StageObj
         if (SwitchKill == sw) ret.Add("SwitchKill"); 
         return ret;
     }
+
+    public static bool Compare(StageObj A, StageObj B, bool lean = false)
+    {
+        if (lean)
+        {
+            return
+            (
+                A.Translation == B.Translation &&
+                A.Rotation == B.Rotation &&
+                A.Scale == B.Scale &&
+                A.Name == B.Name
+            );
+        }
+        else
+        return
+        (            
+            A.ViewId == B.ViewId &&
+            A.CameraId == B.CameraId &&
+            A.ClippingGroupId == B.ClippingGroupId &&
+            A.SwitchA == B.SwitchA &&
+            A.SwitchB == B.SwitchB &&
+            A.SwitchDeadOn == B.SwitchDeadOn &&
+            A.SwitchAppear == B.SwitchAppear &&
+            A.SwitchKill == B.SwitchKill &&
+            A.Translation == B.Translation &&
+            A.Rotation == B.Rotation &&
+            A.Scale == B.Scale &&
+            A.Name == B.Name
+        );
+    }
 }

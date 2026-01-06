@@ -8,6 +8,7 @@ using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
 using Autumn.Storage;
+using Autumn.Wrappers;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
@@ -297,6 +298,7 @@ internal class MainWindowContext : WindowContext
     public void OpenAddObjectDialog() => _newStageObjDialog.Open();
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
+    public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
@@ -448,12 +450,10 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Effects"))
                 _editCCNT.Open();
             ImGui.EndDisabled();
-            if (ContextHandler.SystemSettings.EnableDBEditor)
-            {
-                ImGui.Separator();
-                if (ImGui.MenuItem("Edit Object Database"))
-                    _DBEditorDialog.Open();
-            }
+            ImGui.Separator();
+            if (ImGui.MenuItem("Object Database"))
+                _DBEditorDialog.Open();
+            
             ImGui.EndMenu();
         }
 

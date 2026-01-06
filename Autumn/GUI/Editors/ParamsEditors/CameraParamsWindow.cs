@@ -781,13 +781,13 @@ internal class CameraParamsWindow(MainWindowContext window)
             );
 
             // Draw preview
-            float ww = ImGui.GetContentRegionAvail().X;
-            window.CameraFramebuffer.SetSize((uint)ww, (uint)(ww * r));
+            float ww = ImGui.GetContentRegionAvail().Y > 100 ? ImGui.GetContentRegionAvail().Y : 100;
+            window.CameraFramebuffer.SetSize((uint)(ww * r), (uint)(ww));
             window.CameraFramebuffer.Create(window.GL!);
 
             ImGui.Image(
                 new IntPtr(window.CameraFramebuffer.GetColorTexture(0)),
-                new Vector2(ww, ww / r),
+                new Vector2(ww * r, ww),
                 new Vector2(0, 1),
                 new Vector2(1, 0)
             );
