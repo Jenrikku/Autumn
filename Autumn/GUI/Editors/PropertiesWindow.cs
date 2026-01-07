@@ -1157,9 +1157,6 @@ internal class PropertiesWindow(MainWindowContext window)
     {
         var table = window.ContextHandler.FSHandler.ReadCreatorClassNameTable();
 
-        if (table.Count == 0) // Will only happen if there's no CCNT in either project or original romfs, so we assume the object is in the CCNT 
-            return objectName;
-
         if (!table.TryGetValue(objectName, out string? className))
             return "NotFound";
 
