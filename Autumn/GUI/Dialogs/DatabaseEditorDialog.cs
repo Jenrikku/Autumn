@@ -511,7 +511,18 @@ internal class DatabaseEditor(MainWindowContext _window)
                                     swUpdate = false;
                                 }
                             }
-                            else ImGui.TextDisabled(string.IsNullOrWhiteSpace(swType) ? "No description." : swType);
+                            else 
+                            {
+                                if (string.IsNullOrWhiteSpace(swDescription))
+                                {
+                                    ImGui.TextDisabled("No description.");
+                                }
+                                else
+                                    {
+                                    ImGui.Text(swDescription);
+                                    ImGui.SetItemTooltip(swDescription);
+                                }
+                            }
                         }
                         ImGui.EndTable();
                     }
