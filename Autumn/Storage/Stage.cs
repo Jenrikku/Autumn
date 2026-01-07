@@ -19,6 +19,7 @@ internal class Stage
     public List<StageFog> StageFogs = new() { new() }; // Main fog.
     public LightParams? LightParams { get; set; }
     public Dictionary<int, string> LightAreaNames = new();
+    public string UserPath = "";
 
     /// <summary>
     /// Creates a new stage.

@@ -145,7 +145,7 @@ internal partial class RomFSHandler
     {
 
         Stage stage = new(initialize: false) { Name = name, Scenario = scenario };
-
+        stage.UserPath = dir+ Path.DirectorySeparatorChar + name + scenario;
         (string, StageFileType)[] paths =
         [
             (Path.Join(dir, $"{name}Design{scenario}.szs"), StageFileType.Design),
@@ -1256,6 +1256,7 @@ internal partial class RomFSHandler
     {
         Console.WriteLine(Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}"));
         int currentId = 0;
+        stage.UserPath = _stagesPath + Path.DirectorySeparatorChar + stage.Name + stage.Scenario;
         //bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =

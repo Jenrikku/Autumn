@@ -11,7 +11,7 @@ internal class MiscParamsWindow(MainWindowContext window)
 {
 
     int musicIdx = 0;
-    public bool _isOpen = true;
+    public bool _isOpen = false;
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {

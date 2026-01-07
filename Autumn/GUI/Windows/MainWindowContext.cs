@@ -534,6 +534,7 @@ internal class MainWindowContext : WindowContext
                     CurrentScene = scene;
 
                 ImGui.EndTabItem();
+                ImGui.SetItemTooltip(scene.Stage.UserPath);
 
                 ImGui.PopID();
 

@@ -1,7 +1,9 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
+using Autumn.Utils;
 using Autumn.Wrappers;
 using ImGuiNET;
+using TinyFileDialogsSharp;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -28,6 +30,8 @@ internal class SettingsDialog
     private int _oldStyle = 0;
     private int _selectedStyle = 0;
     private int _mouseSpeed = 20;
+    private string _romfspath = "";
+    private bool _romfsIsValidPath = true;
     Vector2 dimensions = new(450, 0);
 
     /// <summary>
@@ -57,7 +61,9 @@ internal class SettingsDialog
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
         _window.ContextHandler.SystemSettings.VisibleDefaults.CopyTo(_visibleDefaults, 0);
         _loadLast = _window.ContextHandler.SystemSettings.OpenLastProject;
-        _rememberLayout = _window.ContextHandler.SystemSettings.RememberLayout;   
+        _rememberLayout = _window.ContextHandler.SystemSettings.RememberLayout;
+        _romfspath = _window.ContextHandler.Settings.RomFSPath ?? "";
+        _romfsIsValidPath = Directory.Exists(_romfspath);
     }
 
     /// <summary>
@@ -81,7 +87,7 @@ internal class SettingsDialog
     {
         if (!_isOpened)
             return;
-            
+
         if (ImGui.IsKeyPressed(ImGuiKey.Escape))
         {
             Reset();
@@ -148,11 +154,39 @@ internal class SettingsDialog
 
         ImGui.SeparatorText("Editor Functionality");
 
+        string rfs = _romfspath;
+        if (ImGui.Button(IconUtils.FOLDER))
+        {
+            if (!_window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+            {
+                ProjectChooserContext projectChooser = new(_window.ContextHandler, _window.WindowManager);
+                _window.WindowManager.Add(projectChooser);
+
+                projectChooser.SuccessCallback += result =>
+                {
+                    _romfspath = result[0];
+                };
+            }
+            else
+            {
+                if (TinyFileDialogs.SelectFolderDialog(out string? dialogOutput, "Select the folder containing the RomFS"))
+                {
+                    _romfspath = dialogOutput;
+                }
+            }
+        }
+        ImGui.SameLine();
+        ImGuiWidgets.InputTextRedWhenInvalid("Base ROMFS Path", ref rfs, 128, !_romfsIsValidPath, "Path to ROMFS folder");
+        if (rfs != _romfspath) 
+        {
+            _romfspath = rfs;
+            _romfsIsValidPath = Directory.Exists(_romfspath);
+        }
         ImGui.Checkbox("Use ClassNames", ref _useClassNames);
         ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
         ImGui.Checkbox("Restore Native File Dialogs", ref _restoreNativeFileDialogs);
         ImGui.Combo("Yaz0 Compression Level", ref _compLevel, compressionLevels, 5);
-        
+
         ImGui.SeparatorText("Defaults");
 
         ImGui.Checkbox("Load last project on launch", ref _loadLast);
@@ -165,8 +199,8 @@ internal class SettingsDialog
         ImGui.Separator();
         ImGui.SeparatorText("Reset");
 
-        float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X*1.65f;
-        if (ImGui.Button("Values", new(resetWidth,0)))
+        float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X * 1.65f;
+        if (ImGui.Button("Values", new(resetWidth, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
@@ -178,7 +212,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = false;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
-            
+
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
@@ -189,9 +223,8 @@ internal class SettingsDialog
         ImGui.SetItemTooltip("This will set all values to their default.");
         ImGui.SameLine();
 
-        if (ImGui.Button("Layout", new(resetWidth,0)))
+        if (ImGui.Button("Layout", new(resetWidth, 0)))
         {
-            
             File.Copy(Path.Join("Resources", "DefaultLayout.ini"), Path.Join(_window.ContextHandler.SettingsPath, "imgui.ini"), true);
             ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
             ImGui.CloseCurrentPopup();
@@ -229,6 +262,7 @@ internal class SettingsDialog
 
         if (ImGui.Button("Ok", new(80, 0)))
         {
+            _window.ContextHandler.SetGlobalSetting("RomFSPath", _romfspath);
             _window.ContextHandler.SetProjectSetting("UseClassNames", _useClassNames);
             _window.ContextHandler.SystemSettings.UseWASD = _wasd;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = _middleMovesCamera;
