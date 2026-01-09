@@ -42,6 +42,16 @@ internal class CameraParams
         else camType = StageCamera.CameraCategory.Object;
         return camType;
     }
+    public void AddCamera(StageCamera cam)
+    {
+        int nid = cam.UserGroupId; 
+        while (Cameras.Where(x => x.Category == cam.Category && x.UserGroupId == nid).Count() > 0)
+        {
+            nid+=1;
+        }
+        cam.UserGroupId = nid;
+        Cameras.Add(cam);
+    }
 }
 
 internal class VisionParams

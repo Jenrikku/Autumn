@@ -172,7 +172,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.SameLine();
         if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
-            scn.Stage.CameraParams.Cameras.Add(new(scn.Stage.CameraParams.Cameras[selectedcam]) { UserGroupId = 333 });
+            scn.Stage.CameraParams.AddCamera(new(scn.Stage.CameraParams.Cameras[selectedcam]));
             window.UpdateCameraList();
         }
         ImGui.SetItemTooltip("Duplicate Camera");
@@ -182,7 +182,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.SameLine();
         if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
         {
-            scn.Stage.CameraParams.Cameras.Add(new() { UserGroupId = 333 });
+            scn.Stage.CameraParams.AddCamera(new());
             window.UpdateCameraList();
         }
 

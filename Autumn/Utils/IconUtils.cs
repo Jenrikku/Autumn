@@ -30,5 +30,6 @@ internal static class IconUtils
     public const string DASH = "\uF70C";
     public const string BOOK = "\uF02D";
     public const string FOLDER = "\uF07B";
+    public const string MAG_GLASS = "\uF002";
 
 }

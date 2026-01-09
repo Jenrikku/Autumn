@@ -232,18 +232,28 @@ internal class PropertiesWindow(MainWindowContext window)
                             if (rff == 0) stageObj.CameraId = -1;
                             else stageObj.CameraId = cameraslinks[rff-1].UserGroupId;
                         }
-                        if (rff == 0)
-                            ImGui.BeginDisabled();
+
                         ImGui.SameLine(default, style.ItemSpacing.X / 2);
-                        if (ImGui.Button(IconUtils.PENCIL)) // Edit the camera -> open the camera window and select it
+                        if (ImGui.Button(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL)) // Edit the camera -> open the camera window and select it. Add if no camera selected
                         {
+                            
                             ImGui.SetWindowFocus("Cameras");
-                            StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
-                            var cm = window.CurrentScene.Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
-                            window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.IndexOf(cm!));
+                            if (rff == 0)
+                            {
+                                StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
+                                StageCamera newCam = new() {Category = camType};
+                                window.CurrentScene.Stage.CameraParams.AddCamera(newCam);
+                                window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.Count-1);
+                                window.UpdateCameraList();
+                                sceneObj.StageObj.CameraId = newCam.UserGroupId;
+                            }
+                            else
+                            {
+                                StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
+                                var cm = window.CurrentScene.Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
+                                window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.IndexOf(cm!));
+                            }
                         }
-                        if (rff == 0)
-                            ImGui.EndDisabled();
 
                         InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
@@ -510,7 +520,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, autoResize ? default : 150 * window.ScalingFactor)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                                        ImGui.TableSetupColumn("View", ImGuiTableColumnFlags.None);
+                                        ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
                                         ImGui.TableSetupColumn("Unlink", ImGuiTableColumnFlags.None);
                                         ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.WidthStretch, 0.4f);
                                         ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None);
@@ -547,7 +557,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
-                                            if (ImGui.Button(IconUtils.EYE_OPEN,new(-1, 25)))
+                                            if (ImGui.Button(IconUtils.MAG_GLASS,new(-1, 25)))
                                             {
                                                 var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
                                                 AxisAlignedBoundingBox aabb = child.AABB * ch.Scale;
