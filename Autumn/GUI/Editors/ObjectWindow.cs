@@ -48,6 +48,7 @@ internal class ObjectWindow(MainWindowContext window)
         if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");
+            ImGui.End();
             return;
         }
 
@@ -70,7 +71,7 @@ internal class ObjectWindow(MainWindowContext window)
                 "Start Events",
                 "Start Objects",
                 "Demo Scene Objects",
-                "Rail"
+                "Rails"
             ],
             9
         );

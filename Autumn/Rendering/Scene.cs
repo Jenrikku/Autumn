@@ -461,6 +461,7 @@ internal class Scene
             CommonMaterialParameters matParams = new(color, new());
 
             BasicSceneObj areaSceneObj = new(stageObj, matParams, 20f, _lastPickingId);
+            AddSwitchFromStageObj(stageObj, areaSceneObj);
             _sceneObjects.Add(areaSceneObj);
             _pickableObjs.Add(_lastPickingId++, areaSceneObj);
             return;

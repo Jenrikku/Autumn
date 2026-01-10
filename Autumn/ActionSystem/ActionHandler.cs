@@ -328,6 +328,10 @@ internal class ActionHandler
                         window.ContextHandler.FSHandler.WriteStage(stage, window.ContextHandler.Settings.UseClassNames);
                         scene.IsSaved = true;
                         scene.SaveUndoCount = mainContext.CurrentScene.History.UndoSteps;
+                        if (!window.ContextHandler.ProjectStages.Contains(new(stage.Name, stage.Scenario)))
+                        {
+                            window.ContextHandler.AddProjectStage(stage.Name, stage.Scenario);
+                        }
                     }
                 );
             },

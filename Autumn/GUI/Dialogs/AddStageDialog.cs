@@ -241,7 +241,6 @@ internal class AddStageDialog
 
         #region Bottom bar
 
-        
 
         float okButtonWidth = 50 * _window.ScalingFactor;
 
@@ -305,31 +304,13 @@ internal class AddStageDialog
                         if (ResetOnDone)
                             Reset();
                         scene.ResetCamera();
+                        ImGui.SetWindowFocus("Objects");
                     }
                 );
             }
             else
             {
-                _window.BackgroundManager.Add(
-                    $"Creating the stage \"{_name + _scenarioNo}\"...",
-                    manager =>
-                    {
-                        Stage stage = new() { Name = _name, Scenario = (byte)_scenarioNo };
-                        Scene scene =
-                            new(
-                                stage,
-                                _window.ContextHandler.FSHandler,
-                                _window.GLTaskScheduler,
-                                ref manager.StatusMessageSecondary
-                            );
-
-                        _window.Scenes.Add(scene);
-
-                        if (ResetOnDone)
-                            Reset();
-                        scene.ResetCamera();
-                    }
-                );
+                NewEmptyStage();
             }
 
             _isOpened = false;
@@ -349,7 +330,6 @@ internal class AddStageDialog
     }
     void RenderNoRomfs()
     {
-        
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         ImGuiStylePtr style = ImGui.GetStyle();
 
@@ -373,32 +353,12 @@ internal class AddStageDialog
         if (string.IsNullOrEmpty(_name) || stageExists)
             _disable = true;
 
-        
         if (_disable)
             ImGui.BeginDisabled();
 
         if (ImGui.Button("Ok", new(-1, 0)) || (_skipOk && !_disable))
         {
-            _window.BackgroundManager.Add(
-                $"Creating the stage \"{_name + _scenarioNo}\"...",
-                manager =>
-                {
-                    Stage stage = new() { Name = _name, Scenario = (byte)_scenarioNo };
-                    Scene scene =
-                        new(
-                            stage,
-                            _window.ContextHandler.FSHandler,
-                            _window.GLTaskScheduler,
-                            ref manager.StatusMessageSecondary
-                        );
-
-                    _window.Scenes.Add(scene);
-
-                    if (ResetOnDone)
-                        Reset();
-                    scene.ResetCamera();
-                }
-            );
+            NewEmptyStage();
             _isOpened = false;
             ImGui.CloseCurrentPopup();
         }
@@ -408,8 +368,32 @@ internal class AddStageDialog
         // Warn the user if the stage already exists:
         if (stageExists)
             ImGui.TextColored(new Vector4(1, 0, 0, 1), "A stage with this name already exists.");
-        
+
         ImGui.EndPopup();
     }
 
+    private void NewEmptyStage()
+    {
+        _window.BackgroundManager.Add(
+            $"Creating the stage \"{_name + _scenarioNo}\"...",
+            manager =>
+            {
+                Stage stage = new() { Name = _name, Scenario = (byte)_scenarioNo };
+                Scene scene =
+                    new(
+                        stage,
+                        _window.ContextHandler.FSHandler,
+                        _window.GLTaskScheduler,
+                        ref manager.StatusMessageSecondary
+                    );
+
+                _window.Scenes.Add(scene);
+
+                if (ResetOnDone)
+                    Reset();
+                scene.ResetCamera();
+                ImGui.SetWindowFocus("Objects");
+            }
+        );
+    }
 }
