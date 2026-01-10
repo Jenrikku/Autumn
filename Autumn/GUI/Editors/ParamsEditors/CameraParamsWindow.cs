@@ -628,7 +628,6 @@ internal class CameraParamsWindow(MainWindowContext window)
                     addangle = (float)(currcam.Rotator.AngleMax * Math.PI / 180);
                 else
                     addangle = (float)(15 * Math.PI / 180);
-                Console.WriteLine("Rotate Left");
             }
             if (disrot) ImGui.EndDisabled();
             ImGui.SameLine();
@@ -648,7 +647,6 @@ internal class CameraParamsWindow(MainWindowContext window)
                 {
                     dashangle = currcam.DashAngleTuner!.AddAngleMax ?? 15;
                     dashdistance = currcam.DashAngleTuner!.ZoomOutOffsetMax ?? 100;
-                    Console.WriteLine("Dashing");
                 }
             }
             ImGui.SetItemTooltip("Preview dashing camera");
@@ -662,7 +660,6 @@ internal class CameraParamsWindow(MainWindowContext window)
                     addangle = -(float)(currcam.Rotator.AngleMax * Math.PI / 180);
                 else
                     addangle = -(float)(15 * Math.PI / 180);
-                Console.WriteLine("Rotate Right");
             }
             if (disrot) ImGui.EndDisabled();
             ImGui.PopStyleColor(4);

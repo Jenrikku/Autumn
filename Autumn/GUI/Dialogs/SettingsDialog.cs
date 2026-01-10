@@ -170,6 +170,7 @@ internal class SettingsDialog
                     if (!_window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                     {
                         ProjectChooserContext projectChooser = new(_window.ContextHandler, _window.WindowManager);
+                        projectChooser.Title = "Autumn: Select Base ROMFS folder";
                         _window.WindowManager.Add(projectChooser);
 
                         projectChooser.SuccessCallback += result =>

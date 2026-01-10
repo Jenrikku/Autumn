@@ -105,7 +105,7 @@ internal class WelcomeDialog
                     if (!_window.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                     {
                         ProjectChooserContext projectChooser = new(_window.ContextHandler, _window.WindowManager);
-                        projectChooser.Title = "Select the folder containing the RomFS";
+                        projectChooser.Title = "Autumn: Select Base ROMFS folder";
                         _window.WindowManager.Add(projectChooser);
                         projectChooser.SuccessCallback += result =>
                         {

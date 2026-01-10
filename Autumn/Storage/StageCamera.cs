@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Reflection;
 using Autumn.Enums;
-using Autumn.Rendering;
 using BYAMLSharp;
 
 namespace Autumn.Storage;
@@ -110,10 +109,10 @@ internal class StageCamera
     public CameraProperties CamProperties = new();
 
     public VisionParams? VisionParam = null;
-    public VOff? VelocityOffsetter; // Max offset or MaxOffsetAxisTwo
-    public Rot? Rotator; //AngleMax, IsEnable
-    public VAbsorb? VerticalAbsorber; // IsInvalidate (only useful if TRUE)
-    public DATuner? DashAngleTuner; //AddAngleMax, ZoomOutOffsetMax
+    public VOff? VelocityOffsetter; // Max offset or MaxOffsetAxisTwo, Offsets the camera as the player moves, MaxOffset only does it on the camera's X axis, while MaxOffsetAxisTwo does it on X and Z (Assuming Y up), horizontal space
+    public Rot? Rotator; //AngleMax, IsEnable, Rotates the camera left or right a given angle (AngleMax)
+    public VAbsorb? VerticalAbsorber; // IsInvalidate (only useful if TRUE) 
+    public DATuner? DashAngleTuner; //AddAngleMax, ZoomOutOffsetMax, Moves and rotates the camera (on X axis) when the player runs
     public bool HasLimitBox = false; // Editor property
 
     internal class VOff
@@ -247,8 +246,6 @@ internal class StageCamera
         //public float? AddAngleMax;
         //public float? ZoomOutOffsetMax;
         public int? InterpoleFrame;
-        public bool? IsLimitAngleFix;
-
         public Vector3? LimitBoxMax;
         public Vector3? LimitBoxMin;
         // Rotator
@@ -267,7 +264,8 @@ internal class StageCamera
         //public VisionParams? VisionParam;
         public Vector3? CameraPos;
         public Vector3? LookAtPos;
-        public bool? IsCalcStartPosUseLookAtPos;
+        public bool? IsCalcStartPosUseLookAtPos; // Only used in Rail cameras ?
+        public bool? IsLimitAngleFix; // Only used in Parallel cameras ?
         public int? RailId;
         // Follow class only?
         public float? HighAngle;
@@ -276,7 +274,7 @@ internal class StageCamera
         public float? PushDistance;
         public float? TargetLookRate;
         public float? TargetRadius;
-        public bool? IsDistanceFix;
+        public bool? IsDistanceFix; // Only used in Tower cameras ?
         // Tower Only?
         public float? LimitYMax;
         public float? LimitYMin;
@@ -325,11 +323,11 @@ internal class StageCamera
         UserName = cam.UserName;
         Class = cam.Class;
         UserGroupId = cam.UserGroupId;
-        VisionParam = new(cam.VisionParam);
-        VelocityOffsetter = new(cam.VelocityOffsetter);
-        Rotator = new(cam.Rotator);
-        VerticalAbsorber = new(cam.VerticalAbsorber);
-        DashAngleTuner = new(cam.DashAngleTuner);
+        VisionParam = cam.VisionParam != null ? new(cam.VisionParam) : null;
+        VelocityOffsetter = cam.VelocityOffsetter != null ? new(cam.VelocityOffsetter) : null;
+        Rotator = cam.Rotator != null ? new(cam.Rotator) : null;
+        VerticalAbsorber = cam.VerticalAbsorber != null ? new(cam.VerticalAbsorber) : null;
+        DashAngleTuner = cam.DashAngleTuner != null ? new(cam.DashAngleTuner) : null;
         CamProperties = cam.CamProperties.Clone();
         HasLimitBox = cam.HasLimitBox;
     }
