@@ -623,11 +623,16 @@ internal class PropertiesWindow(MainWindowContext window)
                         {
                             rfrail = rails.ToList().IndexOf(rails.First(x => x.StageObj.Name == stageObj.Rail.Name)) + 1;
                         }
+                        int rfr2 = rfrail;
                         ImGuiWidgets.SetPropertyWidth("Rail");
-                        ImGui.Combo("##Railselector", ref rfrail, railStrings, rails.Count() + 1);
-                        if (rfrail > 0)
+                        ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
+                        if (rfr2 != rfrail)
                         {
-                            stageObj.Rail = (RailObj)rails.ElementAt(rfrail - 1).StageObj;
+                            if (rfr2 > 0)
+                            {
+                                stageObj.Rail = (RailObj)rails.ElementAt(rfr2 - 1).StageObj;
+                            }
+                            else stageObj.Rail = null;
                         }
 
                         ImGui.EndChild();
