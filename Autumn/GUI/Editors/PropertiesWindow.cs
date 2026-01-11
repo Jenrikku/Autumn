@@ -672,7 +672,6 @@ internal class PropertiesWindow(MainWindowContext window)
                         {
                             case object p when p is int:
                                 int intBuf = (int)(p ?? -1);
-                                //InputInt(name, ref intBuf, 1, ref stageObj);
                                 int i = intBuf;
                                 if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
                                 {
@@ -697,8 +696,11 @@ internal class PropertiesWindow(MainWindowContext window)
                                 break;
                             case object p when p is bool:
                                 bool bl = (bool)(p ?? false);
-                                ImGui.Checkbox("##a"+name, ref bl);
-                                stageObj.Properties[name] = bl;
+                                bool b = bl;
+                                if (ImGui.Checkbox("##" + name + "i", ref b))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, bl, b);
+                                }
                                 break;
 
                             default:
