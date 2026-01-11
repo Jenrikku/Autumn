@@ -661,31 +661,41 @@ internal class PropertiesWindow(MainWindowContext window)
                             stageObj.Properties.Remove(name); 
                             continue;
                         } 
-                        ImGui.SameLine();
+                        ImGui.SameLine(default, style.ItemInnerSpacing.X);
                         if (ImGui.Button(IconUtils.PENCIL + "##edit" + name)) 
                         {
                             window.SetupExtraPropsDialog(stageObj, name);
                         }
                         ImGui.SameLine();
+                        ExtraPropName(name);
                         switch (property)
                         {
                             case object p when p is int:
                                 int intBuf = (int)(p ?? -1);
-                                InputInt(name, ref intBuf, 1, ref stageObj);
+                                //InputInt(name, ref intBuf, 1, ref stageObj);
+                                int i = intBuf;
+                                if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene?.History!, stageObj.Properties, name, intBuf, i);
+                                }
                                 break;
                             case object p when p is float:
                                 float flBuf = (float)(p ?? -1);
-                                InputFloatProperties2(name, ref flBuf, 1, ref stageObj);
+                                float f = flBuf;
+                                if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, flBuf, f);
+                                }
                                 break;
                             case object p when p is string:
                                 string strBuf = (string)(p ?? string.Empty);
-                                InputTextProperties(name, ref strBuf, 128, ref stageObj);
+                                string s = strBuf;
+                                if (ImGui.InputText("##" + name + "i", ref s, 128, ImGuiInputTextFlags.EnterReturnsTrue))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, strBuf, s);
+                                }
                                 break;
                             case object p when p is bool:
-                                ImGui.SameLine();
-                                ImGui.Text(name+":");
-                                ImGui.SameLine();
-                                ImGuiWidgets.SetPropertyWidth(name);
                                 bool bl = (bool)(p ?? false);
                                 ImGui.Checkbox("##a"+name, ref bl);
                                 stageObj.Properties[name] = bl;
@@ -1112,18 +1122,11 @@ internal class PropertiesWindow(MainWindowContext window)
 
         return false;
     }
-    private bool InputFloatProperties2(string str, ref float rf, int step, ref StageObj sto)
+    private void ExtraPropName(string name)
     {
-        float i = rf;
-        ImGui.Text(str);
+        ImGui.Text(name+":");
         ImGui.SameLine();
-        ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputFloat("##" + str + "i", ref i, step, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
-        {
-            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
-        }
-
-        return false;
+        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(name + IconUtils.TRASH + IconUtils.TRASH + IconUtils.TRASH, 1, 2));
     }
 
     private bool InputSwitch(string str, ref int rf, int step, ref ISceneObj sco)
