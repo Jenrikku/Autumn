@@ -284,12 +284,16 @@ internal class Scene
         GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
 
-    public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler, StageObj? parent = null)
+    public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
-        if (parent != null)
+        if (stageObj.Parent != null)
         {
-            if (parent.Children == null) parent.Children = new();
-            parent.Children.Add(stageObj);
+            StageObj parent = stageObj.Parent;
+            // Find the parent on the stage file
+            StageObj? newParent = Stage.GetStageFile(stageObj.FileType).GetObjInfos(stageObj.Parent.Type).FirstOrDefault(x => StageObj.Compare(x, stageObj.Parent));
+            if (newParent != null) Stage.GetStageFile(stageObj.FileType).SetChild(stageObj, newParent);
+            else stageObj.Parent = null;
+    
         }
         else
             Stage.AddStageObj(stageObj);
@@ -301,7 +305,8 @@ internal class Scene
             {
                 StageObjType chtype = ch.Type == StageObjType.Child ? StageObjType.Regular : StageObjType.Area;
                 // Find the children on the stage file
-                Stage.GetStageFile(StageFileType.Map).SetChild(Stage.GetStageFile(StageFileType.Map).GetObjInfos(chtype).First(x => StageObj.Compare(x, ch)), stageObj);
+                StageObj? nch = Stage.GetStageFile(stageObj.FileType).GetObjInfos(chtype).FirstOrDefault(x => StageObj.Compare(x, ch));
+                if (nch != null) Stage.GetStageFile(stageObj.FileType).SetChild(nch, stageObj);
             }
         }
         GenerateSceneObject(stageObj, fsHandler, scheduler);
