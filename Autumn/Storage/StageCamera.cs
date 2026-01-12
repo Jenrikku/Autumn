@@ -274,7 +274,7 @@ internal class StageCamera
         public float? PushDistance;
         public float? TargetLookRate;
         public float? TargetRadius;
-        public bool? IsDistanceFix; // Only used in Tower cameras ?
+        public bool? IsDistanceFix; // Only used in Tower cameras ? Sets the distance to be relative to the tower Position, instead of relative to the player
         // Tower Only?
         public float? LimitYMax;
         public float? LimitYMin;

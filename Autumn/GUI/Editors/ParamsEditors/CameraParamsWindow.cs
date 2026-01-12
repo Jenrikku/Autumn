@@ -31,6 +31,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 "WarpPorter_ワープアウトカメラ",
                                 "WarpAreaPoint",
                                 "Pole",
+                                "TreeA",
                                 "TrickHintPanel",
                                 //"BlockNoteSuper_着地",       // Unused object that doesn't exist
                                 //"BlockNoteSuper_ジャンプ",        
