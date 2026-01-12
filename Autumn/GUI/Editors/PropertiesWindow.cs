@@ -371,15 +371,15 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 if (rf < 0)
                                                 {
                                                     rf = intBuf;
-                                                    ImGui.InputInt("##" + argEntry.Name, ref rf, 1, default);
+                                                    ImGui.InputInt("##" + name, ref rf, 1, default);
                                                     if (intBuf != rf)
                                                     {
-                                                        stageObj.Properties[name] = rf;
+                                                        ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf);
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    ImGui.Combo("##" + argEntry.Name + "c",
+                                                    ImGui.Combo("##" + name + "c",
                                                     ref rf,
                                                     argEntry.Values.Values.ToArray(),
                                                     argEntry.Values.Count
@@ -387,7 +387,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     //ImGui.SetItemTooltip(argEntry.Values[argEntry.Values.Keys.ElementAt(rf)]);
                                                     if (intBuf != argEntry.Values.Keys.ElementAt(rf))
                                                     {
-                                                        stageObj.Properties[name] = argEntry.Values.Keys.ElementAt(rf);
+                                                        ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, argEntry.Values.Keys.ElementAt(rf));
                                                     }
                                                 }
                                             }
@@ -396,10 +396,10 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 var rf = intBuf != -1;
                                                 ImGui.SameLine();
                                                 ImGuiWidgets.SetPropertyWidth(aName);
-                                                ImGui.Checkbox("##" + argEntry.Name + "cb", ref rf);
+                                                ImGui.Checkbox("##" + name + "cb", ref rf);
                                                 if ((intBuf != -1) != rf)
                                                 {
-                                                    stageObj.Properties[name] = rf ? 1 : -1;
+                                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf ? 1 : -1);
                                                 }
                                             }
                                             else // if (argEntry.Type is null || argEntry.Type == "int")
@@ -407,11 +407,12 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 var rf = intBuf;
                                                 ImGui.SameLine();
                                                 ImGuiWidgets.SetPropertyWidth(aName);
-                                                ImGui.InputInt("##" + argEntry.Name + "i", ref rf, 1, default);
+                                                ImGui.InputInt("##" + name + "i", ref rf, 1, default);
                                                 rf = int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
                                                 if (intBuf != rf)
                                                 {
-                                                    stageObj.Properties[name] = rf;
+                                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf);
+                                                    //stageObj.Properties[name] = rf;
                                                 }
                                             }
                                             ImGui.SetItemTooltip(argEntry.Description != null && !string.IsNullOrEmpty(argEntry.Description) ? argEntry.Description : "No description");
