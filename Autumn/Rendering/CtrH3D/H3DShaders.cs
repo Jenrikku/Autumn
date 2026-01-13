@@ -416,24 +416,32 @@ internal class H3DShaders
             		reg_temp[3].y = dot(TexMtx0[1].xywz, reg_temp[6].xyzw);
             		reg_temp[3].zw = vec4(0, 1, 2, 3).xx;
             		TexCoord0.xyzw = reg_temp[3].xyzw;
-            	} else {
+            	}
+            	else
+            	{
             		reg_cmp.x = vec4(3, 4, 5, 6).x == reg_temp[0].x;
             		reg_cmp.y = vec4(3, 4, 5, 6).y == reg_temp[0].y;
             		reg_temp[6].zw = vec4(0, 1, 2, 3).yy;
-            		if (!reg_cmp.x && !reg_cmp.y) {
+            		if (!reg_cmp.x && !reg_cmp.y)
+            		{
             			reg_temp[6].xyzw = reg_temp[10].xyzw;
             			reg_temp[3].x = dot(TexMtx0[0].xyzw, reg_temp[6].xyzw);
             			reg_temp[3].y = dot(TexMtx0[1].xyzw, reg_temp[6].xyzw);
             			reg_temp[3].z = dot(TexMtx0[2].xyzw, reg_temp[6].xyzw);
             			reg_temp[0].xy = TexTran.xy * reg_temp[3].zz;
             			reg_temp[3].xy = reg_temp[3].xy + reg_temp[0].xy;
-            		} else {
-            			if (reg_cmp.x && !reg_cmp.y) {
+            		}
+            		else 
+            		{
+            			if (reg_cmp.x && !reg_cmp.y) 
+            			{
             				proc_gen_texcoord_reflection();
             				reg_temp[3].x = dot(TexMtx0[0].xyz, reg_temp[6].xyz);
             				reg_temp[3].y = dot(TexMtx0[1].xyz, reg_temp[6].xyz);
             				reg_temp[3].z = dot(TexMtx0[2].xyz, reg_temp[6].xyz);
-            			} else {
+            			}
+            			else 
+            			{
             				proc_gen_texcoord_sphere_reflection();
             				reg_temp[3].x = dot(TexMtx0[0].xyzw, reg_temp[6].xyzw);
             				reg_temp[3].y = dot(TexMtx0[1].xyzw, reg_temp[6].xyzw);

@@ -307,6 +307,11 @@ internal class H3DRenderingMaterial
             };
 
         // Scales:
+
+        sceneData.IrScale.Row2.X = 1; // Default scale for TexCoord is 1 NOT 0, if a model doesn't have a TexCoord attribute we use 1. 
+        sceneData.IrScale.Row2.Y = 1;
+        sceneData.IrScale.Row2.Z = 1;
+        
         foreach (PICAAttribute attribute in mesh.Attributes)
             switch (attribute.Name)
             {
