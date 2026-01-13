@@ -508,6 +508,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                                             Description = swDescription,
                                             Type = swType
                                         };
+                                    update = true;
                                     swUpdate = false;
                                 }
                             }
