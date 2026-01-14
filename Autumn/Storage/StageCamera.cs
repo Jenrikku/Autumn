@@ -425,20 +425,8 @@ internal class StageCamera
         {"TargetRadius", [CameraClass.DemoTarget, CameraClass.ParallelTarget]},
         {"TargetLookRate", [CameraClass.DemoTarget, CameraClass.ParallelTarget]},
 
-        {"Category", []},
-        {"Class", []},
-        {"UserGroupId", []},
-        {"UserName", []},
-
-        {"VisionParam", []},
-        {"VelocityOffsetter", []},
-        {"Rotator", []},
-        {"VerticalAbsorber", []},
-        {"DashAngleTuner", []},
-        
-        {"LimitBoxMin", [/*CameraClass.Parallel, CameraClass.ParallelVersus, CameraClass.ParallelTarget, CameraClass.Follow*/]},
-        {"LimitBoxMax", [/*CameraClass.Parallel, CameraClass.ParallelVersus, CameraClass.ParallelTarget, CameraClass.Follow*/]},
-        
+        {"LimitBoxMin", [CameraClass.Parallel, CameraClass.ParallelVersus, CameraClass.ParallelTarget, CameraClass.Follow]},
+        {"LimitBoxMax", [CameraClass.Parallel, CameraClass.ParallelVersus, CameraClass.ParallelTarget, CameraClass.Follow]},
     };
 
     public static Vector3? DictToVec3(Dictionary<string, BYAMLNode>? dict)

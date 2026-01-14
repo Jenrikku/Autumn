@@ -5,14 +5,13 @@ using Autumn.Rendering;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
-using Silk.NET.Input;
 
 namespace Autumn.GUI.Editors;
 
 internal class CameraParamsWindow(MainWindowContext window)
 {
-    int selectedcam = -1;
-    public bool _isOpen = false;
+    public bool IsOpen = false;
+    private int selectedcam = -1;
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
@@ -81,7 +80,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
     public void Render()
     {
-        if (!_isOpen)
+        if (!IsOpen)
         {
             return;
         }
@@ -90,7 +89,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             fixed (ImGuiWindowClass* tmp = &windowClass)
                 ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
-        if (!ImGui.Begin("Cameras", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        if (!ImGui.Begin("Cameras", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
             return;
 
         if (window.CurrentScene == null)
@@ -189,11 +188,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam > -1)
         {
-            //ImGui.BeginChild("CmaeraPorps", new Vector2(default, 500));
-            //ImGuiWidgets.PrePropertyWidthName("Id");
-            ImGui.Text("Id:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGuiWidgets.PrePropertyWidthName("Id");
             ImGui.InputInt("##Id", ref scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId, 1);
 
             var op = ImGui.GetCursorPosX();
@@ -243,33 +238,6 @@ internal class CameraParamsWindow(MainWindowContext window)
             }
 
             ImGuiWidgets.TextHeader("Special Properties");
-
-
-            if (ImGui.Checkbox("Limit Box##limbox", ref scn.Stage.CameraParams.Cameras[selectedcam].HasLimitBox))
-            {
-                if (!scn.Stage.CameraParams.Cameras[selectedcam].HasLimitBox)
-                {
-                    scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMin = null;
-                    scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMax = null;
-                }
-                else
-                {
-                    scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMin = Vector3.Zero;
-                    scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMax = Vector3.Zero;
-                }
-            }
-
-            if (scn.Stage.CameraParams.Cameras[selectedcam].HasLimitBox)
-            {
-                if (ImGui.CollapsingHeader("Limit Box", ImGuiTreeNodeFlags.DefaultOpen))
-                {
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                    ImGui.BeginChild("lbox", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
-                    InputFloat3("LimitBoxMax", ref scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMax);
-                    InputFloat3("LimitBoxMin", ref scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.LimitBoxMin);
-                    ImGui.EndChild();
-                }
-            }
 
             bool dt = scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner != null;
 

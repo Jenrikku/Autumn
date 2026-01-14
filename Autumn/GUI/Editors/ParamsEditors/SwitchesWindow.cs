@@ -11,25 +11,16 @@ namespace Autumn.GUI.Editors;
 internal class SwitchesWindow(MainWindowContext window)
 {
 
-    public bool _isOpen = false;
-    public int _selectedSwitch = -1;
+    public bool IsOpen = false;
+    public int SelectedSwitch = -1;
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
                 | ImGuiTableFlags.Resizable;
-
-    private const ImGuiColorEditFlags _colorEditFlags = ImGuiColorEditFlags.DisplayRGB
-                | ImGuiColorEditFlags.NoSidePreview
-                | ImGuiColorEditFlags.PickerHueBar
-                | ImGuiColorEditFlags.Float
-                | ImGuiColorEditFlags.NoAlpha; // We ignore alpha because the game seems to do so too
-
-    public int CurrentTab = -1;
-    private const float PROP_WIDTH = 105f;
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {
-        if (!_isOpen)
+        if (!IsOpen)
         {
             return;
         }
@@ -39,7 +30,7 @@ internal class SwitchesWindow(MainWindowContext window)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
 
-        if (!ImGui.Begin("Switches##SwitchWindow", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        if (!ImGui.Begin("Switches##SwitchWindow", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
             return;
         if (window.CurrentScene == null)
         {
@@ -67,9 +58,9 @@ internal class SwitchesWindow(MainWindowContext window)
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
                 ImGui.PushID("switchselect" + _i);
-                if (ImGui.Selectable(_i.ToString(), _i == _selectedSwitch, ImGuiSelectableFlags.SpanAllColumns))
+                if (ImGui.Selectable(_i.ToString(), _i == SelectedSwitch, ImGuiSelectableFlags.SpanAllColumns))
                 {
-                    _selectedSwitch = _i;
+                    SelectedSwitch = _i;
                 }
 
                 ImGui.PopID();
@@ -80,10 +71,10 @@ internal class SwitchesWindow(MainWindowContext window)
             ImGui.EndTable();
         }
 
-        if (_selectedSwitch > -1)
+        if (SelectedSwitch > -1)
         {
-            ImGuiWidgets.TextHeader($"Switch {_selectedSwitch}");
-            var swObj = scn.GetObjectsFromSwitch(_selectedSwitch);
+            ImGuiWidgets.TextHeader($"Switch {SelectedSwitch}");
+            var swObj = scn.GetObjectsFromSwitch(SelectedSwitch);
             if (swObj != null)
             {
                 if (ImGui.BeginTable("ObjectSwitch", 2, _stageTableFlags))
@@ -100,7 +91,7 @@ internal class SwitchesWindow(MainWindowContext window)
                             ii += 1;
                             continue;
                         }
-                        foreach (string s in sobj.StageObj.GetSwitches(_selectedSwitch))
+                        foreach (string s in sobj.StageObj.GetSwitches(SelectedSwitch))
                         {
                             ImGui.TableNextRow();
                             ImGui.TableSetColumnIndex(0);

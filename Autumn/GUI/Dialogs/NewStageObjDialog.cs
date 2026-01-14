@@ -16,12 +16,14 @@ internal class NewStageObjDialog(MainWindowContext window)
     private string _name = "";
     private string _class = "";
     private string _searchQuery = "";
-    private bool _prevClassValid = false;
     private int[] _args = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+    private int[] _switch = [-1, -1, -1, -1, -1];
     private int _objectType = 0;
     private string[] _objectTypeNames = ["Object", "Goal", "StartEvent", "Start", "Demo"];
     private int _areaType = 0;
-    private string[] _areaTypeNames = ["Area", "CameraArea"];
+    readonly string[] _areaTypeNames = ["Area", "CameraArea"];
+    readonly string[] _switches = ["A", "B", "Appear", "DeadOn", "Kill"];
+    readonly string[] _switchTypes = ["None", "Read", "Write"];
     int _priority = 0;
     int _shape = 0;
 
@@ -38,6 +40,8 @@ internal class NewStageObjDialog(MainWindowContext window)
     {
         _isOpened = true;
         _selectedTab = -1;
+        ResetArgs(null);
+        _switch = [-1, -1, -1, -1, -1];
     }
 
     public void Render()
@@ -221,12 +225,11 @@ internal class NewStageObjDialog(MainWindowContext window)
                     if (ImGui.Selectable(pair.Key + "##" + obj, false, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         _class = pair.Key;
-                        _prevClassValid = databaseHasEntry;
                         databaseHasEntry = ClassDatabaseWrapper.DatabaseEntries.TryGetValue(
                             _class,
                             out dbEntry
                         );
-                        ResetArgs();
+                        ResetArgs(dbEntry);
                     }
                     ImGui.TableSetColumnIndex(0);
                     if (pair.Value.Name != null) ImGui.Text(pair.Value.Name);
@@ -314,12 +317,11 @@ internal class NewStageObjDialog(MainWindowContext window)
                     {
                         _class = ccnt[k];
                         _name = k;
-                        _prevClassValid = databaseHasEntry;
                         databaseHasEntry = ClassDatabaseWrapper.DatabaseEntries.TryGetValue(
                             _class,
                             out dbEntry
                         );
-                        ResetArgs();
+                        ResetArgs(dbEntry);
                     }
                     ImGui.TableSetColumnIndex(0);
                     if (useName) ImGui.Text(ClassDatabaseWrapper.DatabaseEntries[ccnt[k]].Name);
@@ -376,20 +378,23 @@ internal class NewStageObjDialog(MainWindowContext window)
             else
                 ImGui.TextWrapped(description);
             ImGui.EndChild();
+            if (ImGui.BeginTabBar("argswitch")){
+                Vector2 table = new Vector2(pvw / 2 - style.ItemSpacing.X * 2 - 4, pvh - (isArea ? 355 : 300) / window.ScalingFactor - 28);
+                if (ImGui.BeginTabItem("Args"))
+                {
             if (
                 ImGui.BeginTable(
                     "ArgTable",
                     4,
-                    _newObjectClassTableFlags,
-                    new Vector2(pvw / 2 - style.ItemSpacing.X * 2, pvh - (isArea ? 355 : 300) / window.ScalingFactor)
+                    _newObjectClassTableFlags, table
                 )
             )
             {
                 ImGui.TableSetupScrollFreeze(0, 1);
                 ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
-                ImGui.TableSetupColumn("Val", ImGuiTableColumnFlags.None, 0.35f);
+                ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.35f);
                 ImGui.TableSetupColumn("Name");
-                ImGui.TableSetupColumn("Desc");
+                ImGui.TableSetupColumn("Value");
                 ImGui.TableHeadersRow();
                 var m = isArea ? 8 : _objectType == 0 ? 10 : 8;
                 for (int i = 0; i < m; i++)
@@ -397,50 +402,87 @@ internal class NewStageObjDialog(MainWindowContext window)
                     string arg = $"Arg{i}";
                     string name = "";
                     string argDescription = "";
-                    if (
-                        databaseHasEntry
+                    string argType = "int";
+                    if (databaseHasEntry
                         && dbEntry.Args is not null
-                        && dbEntry.Args.TryGetValue(arg, out var argData)
-                    )
+                        && dbEntry.Args.TryGetValue(arg, out var argData))
                     {
                         if (argData.Name is not null)
                             name = argData.Name;
+                        if (argData.Type is not null)
+                            argType = argData.Type;
                         if (argData.Description is not null)
                             argDescription = argData.Description;
-                        if (!_prevClassValid)
-                            if (argData.Default is double)
-                                _args[i] = Convert.ToInt32(argData.Default);
-                            else
-                                _args[i] = (int)argData.Default;
                     }
+                    else continue;
 
                     ImGui.TableNextRow();
 
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.Text(arg);
+                    ImGui.Text($"{i}");
                     ImGui.TableSetColumnIndex(1);
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    ImGui.DragInt($"##{arg}", ref _args[i]);
+                    ImGui.Text(argType);
                     ImGui.TableSetColumnIndex(2);
-                    ImGui.Text(name);
+                    if (string.IsNullOrEmpty(name)) ImGui.TextDisabled("Unknown");
+                    else ImGui.Text(name);
+                    if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
                     ImGui.TableSetColumnIndex(3);
-                    bool needScrollbar =
-                        ImGui.CalcTextSize(argDescription).X
-                        > ImGui.GetContentRegionAvail().X;
-                    float ysize =
-                        ImGui.GetFont().FontSize
-                        * (ImGui.GetFont().Scale * (needScrollbar ? 1.8f : 1.0f));
-                    ImGui.BeginChild(
-                        $"##ArgDescription{i}",
-                        new Vector2(0, ysize),
-                        ImGuiChildFlags.None,
-                        ImGuiWindowFlags.HorizontalScrollbar
-                    );
-                    ImGui.Text(argDescription);
-                    ImGui.EndChild();
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    ImGui.InputInt($"##{arg}input", ref _args[i]);
+                    if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
                 }
 
                 ImGui.EndTable();
+            }   
+            ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Switches"))
+                {
+
+                    if (
+                        ImGui.BeginTable(
+                            "SwitchTable",
+                            3,
+                    _newObjectClassTableFlags, table
+                    ))
+                    {
+                        ImGui.TableSetupScrollFreeze(0, 1);
+                        ImGui.TableSetupColumn("Switch", ImGuiTableColumnFlags.None, 0.3f);
+                        ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.4f);
+                        ImGui.TableSetupColumn("Value");
+                        ImGui.TableHeadersRow();
+                        int sw = 0;
+                        foreach (string swn in _switches)
+                        {
+                            string swName = $"Switch{swn}";
+                            string swDescription = "";
+                            string swType = "";
+
+                            if (dbEntry.Switches != null && dbEntry.Switches.ContainsKey(swName) && dbEntry.Switches[swName] != null)
+                            {
+                                swDescription = dbEntry.Switches[swName]!.Value.Description;
+                                swType = dbEntry.Switches[swName]!.Value.Type;
+                            }
+                            ImGui.TableNextRow();
+
+                            ImGui.TableSetColumnIndex(0);
+                            ImGui.Text(swn);
+                            ImGui.TableSetColumnIndex(1);
+                            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                            int swi = Array.IndexOf(_switchTypes, string.IsNullOrWhiteSpace(swType) ? "None" : swType);
+                            ImGui.Text(string.IsNullOrWhiteSpace(swType) ? "None" : swType);
+                            ImGui.TableSetColumnIndex(2);
+                            if (!string.IsNullOrWhiteSpace(swDescription)) ImGui.SetItemTooltip(swDescription);
+                            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                            ImGui.InputInt($"##switch{swn} changer", ref _switch[sw]);
+                            if (!string.IsNullOrWhiteSpace(swDescription)) ImGui.SetItemTooltip(swDescription);
+                            sw += 1;
+                        }
+                        ImGui.EndTable();
+                    }
+                    ImGui.EndTabItem();
+                }
+                ImGui.EndTabBar();
             }
             if (isArea)
             {
@@ -470,11 +512,6 @@ internal class NewStageObjDialog(MainWindowContext window)
         ImGuiWidgets.InputTextRedWhenEmpty("##ObjectName", ref _name, 128, txtName);
         ImGui.SetItemTooltip(txtName);
 
-        // float buttonTextSizeX = ImGui.CalcTextSize("<-").X;
-        // float objectNameWidth =
-        //     width * 0.5f - (paddingX * 2 + spacingX * 2 + buttonTextSizeX);
-        //ImGui.PushItemWidth(objectNameWidth);
-        //ImGui.PopItemWidth();
         ImGui.SameLine();
         if (!_useClassName)
             ImGui.BeginDisabled();
@@ -483,12 +520,11 @@ internal class NewStageObjDialog(MainWindowContext window)
         ImGui.SameLine();
         ImGui.SetNextItemWidth(pvw / 2 - style.ItemSpacing.X * 4 - ImGui.CalcTextSize("<-").X/2 + 5);
         if (ImGuiWidgets.InputTextRedWhenEmpty("##ClassName", ref _class, 128, "ClassName"))
-            ResetArgs();
+            ResetArgs(dbEntry);
         ImGui.SetItemTooltip("ClassName");
         if (!_useClassName)
             ImGui.EndDisabled();
 
-        //ImGui.SetNextItemWidth(100);
         bool canCreate = _name != string.Empty && (_useClassName ? (_class != string.Empty) : true);
         if (canCreate && ImGui.Button("Add", new(ImGui.GetWindowWidth() - style.ItemSpacing.X * 2, default)))
         {
@@ -507,22 +543,24 @@ internal class NewStageObjDialog(MainWindowContext window)
                 _ => StageObjType.Regular
             };
             if (!isArea)
-                window.AddSceneMouseClickAction(new AddObjectAction(_name, _class, _args, _type).AddQueuedObject);
+                window.AddSceneMouseClickAction(new AddObjectAction(_name, _class, _args, _switch, _type).AddQueuedObject);
             else
-                window.AddSceneMouseClickAction(new AddObjectAction(_name, _class, _args, _type, _priority, _shape).AddQueuedObject);
+                window.AddSceneMouseClickAction(new AddObjectAction(_name, _class, _args, _switch, _type, _priority, _shape).AddQueuedObject);
             _isOpened = false;
             ImGui.CloseCurrentPopup();
         }
     }
 
-    private void ResetArgs()
+    private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)
     {
         for (int i = 0; i < 10; i++)
-            _args[i] = -1;
+            _args[i] = dbEntry != null && dbEntry.Value.Args != null && dbEntry.Value.Args.ContainsKey($"Arg{i}") ? (int)dbEntry.Value.Args[$"Arg{i}"].Default : -1;
     }
 
-    public class AddObjectAction(string _name, string _class, int[] _args, StageObjType _type, int _priority = -1, int _shape = 0)
+    public class AddObjectAction(string _name, string _class, int[] _args, int[] _sw, StageObjType _type, int _priority = -1, int _shape = 0)
     {
+        string[] _designList = ["LightArea", "FogAreaCameraPos", "FogArea"];
+        string[] _soundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
         public void AddQueuedObject(MainWindowContext window, Vector4 trans)
         {
             if (window.CurrentScene is null || window.GL is null)
@@ -534,13 +572,15 @@ internal class NewStageObjDialog(MainWindowContext window)
                 Name = _name,
                 ClassName = window.ContextHandler.Settings.UseClassNames ? _class : null,
                 Translation = new(trans.X * 100, trans.Y * 100, trans.Z * 100),
+                SwitchA = _sw[0],
+                SwitchB = _sw[1],
+                SwitchAppear = _sw[2],
+                SwitchDeadOn = _sw[3],
+                SwitchKill = _sw[4]
             };
 
-	    List<string> DesignList = ["LightArea", "FogAreaCameraPos", "FogArea"];
-            List<string> SoundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
-
-            if (DesignList.Contains(newObj.Name)) newObj.FileType = StageFileType.Design;
-            else if (SoundList.Contains(newObj.Name)) newObj.FileType = StageFileType.Sound;
+            if (_designList.Contains(newObj.Name)) newObj.FileType = StageFileType.Design;
+            else if (_soundList.Contains(newObj.Name)) newObj.FileType = StageFileType.Sound;
             else newObj.FileType = StageFileType.Map;
 
             // set up arguments
@@ -550,7 +590,7 @@ internal class NewStageObjDialog(MainWindowContext window)
             for (int i = 0; i < argNum; i++)
                 newObj.Properties.Add($"Arg{i}", _args[i]);
 
-            // set up 
+            // set up extra properties
             if (newObj.Type == StageObjType.Area || newObj.Type == StageObjType.CameraArea)
             {
                 newObj.Properties.Add("Priority", _priority);

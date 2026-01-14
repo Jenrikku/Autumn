@@ -18,7 +18,7 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
     private int _type = 0;
     private string[] _types = ["int", "float", "bool", "string"]; // int, float, bool, string?
     private object _value = -1f;
-    private StageObj obj;
+    private StageObj _obj;
     private string[] _properties;
     Vector2 dimensions = new(340, 170);
 
@@ -56,7 +56,7 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
                 );
         };
         _isOpened = true;
-        obj = stageObj;
+        _obj = stageObj;
     }
     public void New(StageObj stageObj)
     {
@@ -65,7 +65,7 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
         _properties = stageObj.Properties.Keys.ToArray();
         _isOpened = true;
         _isnew = true;
-        obj = stageObj;
+        _obj = stageObj;
     }
 
     /// <summary>
@@ -162,8 +162,8 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
 
         if (ImGui.Button("Ok", new(80, 0)))
         {   
-            if (!_isnew && !_properties.Contains(_name)) obj.Properties.Remove(_oname); 
-            obj.Properties[_name] = _value;
+            if (!_isnew && !_properties.Contains(_name)) _obj.Properties.Remove(_oname); 
+            _obj.Properties[_name] = _value;
             Reset();
 
             _isOpened = false;

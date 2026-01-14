@@ -13,7 +13,7 @@ internal class DatabaseEditor(MainWindowContext _window)
     private bool _isOpened = false;
     private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
     private int _argsel = -1;
-    readonly string[] switches = ["A", "B", "Appear", "Kill", "DeadOn"];
+    readonly string[] switches = ["A", "B", "Appear", "DeadOn", "Kill"];
     readonly string[] switchTypes = ["None", "Read", "Write"];
     readonly string[] argTypes = ["bool", "int", "enum"];
     readonly string[] actorTypes = ["Obj", "AreaObj", "CameraAreaObj", "GoalObj", "StartEventObj", "Demo"];
@@ -43,8 +43,9 @@ internal class DatabaseEditor(MainWindowContext _window)
     Dictionary<int, string> _editEnumValues = new();
     string _editEnNm = "";
     int _editEnVal = -1;
-    bool setscroll = false;
-
+    bool _setscroll = false;
+    List<string> _filteredKeys = new();
+    bool _filterUpdate = true;
     public void Open()
     {
         Reset();
@@ -86,7 +87,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                 }
             }
         }
-        string popupType = _isEditor ? "Editor" : "Viewer"; 
+        string popupType = _isEditor ? "Editor" : "Viewer";
         ImGui.OpenPopup($"Class Database {popupType}##ClassDatabaseEditor");
 
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
@@ -113,11 +114,41 @@ internal class DatabaseEditor(MainWindowContext _window)
         if (ImGui.BeginChild("LEFTSIDE", new(ImGui.GetContentRegionAvail().X * 18 / 30, ImGui.GetContentRegionAvail().Y - 30)))
         {
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
-            ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100);
+            if (ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100))
+                _filterUpdate = true;
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
-            ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length);
+            if (ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length))
+                _filterUpdate = true;
             var keys = _dbEntries.Keys.ToList();
+
+            if (_filterUpdate)
+            {
+                _filteredKeys = _dbEntries.Keys.Where(x => x.Contains(_search, StringComparison.InvariantCultureIgnoreCase)
+                || (_dbEntries[x].Name != null && _dbEntries[x].Name!.Contains(_search, StringComparison.InvariantCultureIgnoreCase))).ToList();
+                switch (_filterIdx)
+                {
+                    case 1:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == null).ToList();
+                        break;
+                    case 2:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "AreaObj").ToList();
+                        break;
+                    case 3:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "CameraAreaObj").ToList();
+                        break;
+                    case 4:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "GoalObj").ToList();
+                        break;
+                    case 5:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "StartEventObj").ToList();
+                        break;
+                    case 6:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "Demo").ToList();
+                        break;
+                }
+                _filterUpdate = false;
+            }
             if (ImGui.BeginTable("ClassTable", 2,
                                     _tableFlags,
                                     new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - (_isEditor ? 30 : 3))))
@@ -129,32 +160,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                 ImGui.TableHeadersRow();
                 foreach (string s in _dbEntries.Keys)
                 {
-                    if (!string.IsNullOrEmpty(_search)
-                    && !s.Contains(_search, StringComparison.InvariantCultureIgnoreCase)
-                    && (_dbEntries[s].Name == null
-                    || !_dbEntries[s].Name!.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+                    if (!_filteredKeys.Contains(s))
                         continue;
-                    switch (_filterIdx)
-                    {
-                        case 1:
-                            if (_dbEntries[s].Type != null) continue;
-                            break;
-                        case 2:
-                            if (_dbEntries[s].Type != "AreaObj") continue;
-                            break;
-                        case 3:
-                            if (_dbEntries[s].Type != "CameraAreaObj") continue;
-                            break;
-                        case 4:
-                            if (_dbEntries[s].Type != "GoalObj") continue;
-                            break;
-                        case 5:
-                            if (_dbEntries[s].Type != "StartEventObj") continue;
-                            break;
-                        case 6:
-                            if (_dbEntries[s].Type != "Demo") continue;
-                            break;
-                    }
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
                     if (_dbEntries[s].Name != null)
@@ -166,10 +173,10 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.TextDisabled("Undocumented");
                     }
                     ImGui.TableSetColumnIndex(1);
-                    if (s == entry.ClassName && setscroll)
+                    if (s == entry.ClassName && _setscroll)
                     {
                         ImGui.SetScrollHereY();
-                        setscroll = false;
+                        _setscroll = false;
                     }
                     if (ImGui.Selectable(s + $"##{i}", s == entry.ClassName, ImGuiSelectableFlags.SpanAllColumns))
                     {
@@ -189,19 +196,21 @@ internal class DatabaseEditor(MainWindowContext _window)
                 {
                     if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
                     {
-                        int d = keys.IndexOf(entry.ClassName);
-                        entry = _dbEntries.ElementAt(d + 1 < _dbEntries.Count ? d + 1 : d).Value;
+                        int d = _filteredKeys.IndexOf(entry.ClassName);
+
+                        entry = _dbEntries[_filteredKeys[d + 1 < _filteredKeys.Count ? d + 1 : d]];
                         _editClassName = false;
                         _argsel = -1;
-                        setscroll = true;
+                        _setscroll = true;
                     }
                     else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
                     {
-                        int d = keys.IndexOf(entry.ClassName);
-                        entry = _dbEntries.ElementAt(d - 1 > -1 ? d - 1 : d).Value;
+                        int d = _filteredKeys.IndexOf(entry.ClassName);
+
+                        entry = _dbEntries[_filteredKeys[d - 1 > -1 ? d - 1 : d]];
                         _editClassName = false;
                         _argsel = -1;
-                        setscroll = true;
+                        _setscroll = true;
                     }
                 }
             }
@@ -226,7 +235,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                         _dbEntries.Add(entry.ClassName, entry);
                         break;
                     }
-                    setscroll = true;
+                    _setscroll = true;
                     update = true;
                 }
             }
@@ -332,7 +341,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                 ImGui.SameLine();
                 if (entry.Name is null) ImGui.TextDisabled($"Undocumented");
                 else ImGui.Text($"{entry.Name}");
-                
+
                 string entryType = entry.Type ?? "Obj";
                 if (entryType == "Obj")
                 {
@@ -360,7 +369,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             "ArgTable",
                             3,
                             _tableFlags,
-                            new(descriptionSize.X, descriptionSize.Y + (_isEditor ? (- 23 - style.ItemSpacing.Y) : -1)))
+                            new(descriptionSize.X, descriptionSize.Y + (_isEditor ? (-23 - style.ItemSpacing.Y) : -1)))
                     )
                     {
                         bool isObj = entry.Type == null;
@@ -376,10 +385,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                             string argName = "";
                             string argDescription = "";
                             string argType = "int";
-                            if (
-                                entry.Args is not null
-                                && entry.Args.TryGetValue(arg, out var argData)
-                            )
+                            if (entry.Args is not null
+                                && entry.Args.TryGetValue(arg, out var argData))
                             {
                                 if (argData.Name is not null)
                                     argName = argData.Name;
@@ -410,7 +417,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                             ImGui.Text(argType);
                             ImGui.TableSetColumnIndex(2);
-                            ImGui.Text(argName);
+                            if (string.IsNullOrEmpty(argName)) ImGui.TextDisabled("Unknown");
+                            else ImGui.Text(argName);
                         }
 
                         ImGui.EndTable();
@@ -472,7 +480,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                             int swi = Array.IndexOf(switchTypes, string.IsNullOrWhiteSpace(swType) ? "None" : swType);
                             if (_isEditor)
-                            { 
+                            {
                                 ImGui.Combo($"##swcombo{swn}", ref swi, switchTypes, 3);
                                 if (swi != Array.IndexOf(switchTypes, string.IsNullOrWhiteSpace(swType) ? "None" : swType))
                                 {
@@ -512,14 +520,14 @@ internal class DatabaseEditor(MainWindowContext _window)
                                     swUpdate = false;
                                 }
                             }
-                            else 
+                            else
                             {
                                 if (string.IsNullOrWhiteSpace(swDescription))
                                 {
                                     ImGui.TextDisabled("No description.");
                                 }
                                 else
-                                    {
+                                {
                                     ImGui.Text(swDescription);
                                     ImGui.SetItemTooltip(swDescription);
                                 }

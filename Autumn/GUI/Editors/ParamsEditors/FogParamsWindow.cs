@@ -9,8 +9,8 @@ namespace Autumn.GUI.Editors;
 
 internal class FogParamsWindow(MainWindowContext window)
 {
-    int selectedfog = -1;
-    public bool _isOpen = false;
+    public bool IsOpen = false;
+    int _selectedfog = -1;
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
@@ -22,11 +22,10 @@ internal class FogParamsWindow(MainWindowContext window)
                 | ImGuiColorEditFlags.Float
                 | ImGuiColorEditFlags.NoAlpha; // We ignore alpha because the game seems to do so too
     private const float PROP_WIDTH = 105f;
-
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {
-        if (!_isOpen)
+        if (!IsOpen)
         {
             return;
         }
@@ -36,7 +35,7 @@ internal class FogParamsWindow(MainWindowContext window)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
         
-        if (!ImGui.Begin("Fog##FogParams", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        if (!ImGui.Begin("Fog##FogParams", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
         return;
         if (window.CurrentScene == null)
         {
@@ -65,9 +64,9 @@ internal class FogParamsWindow(MainWindowContext window)
                 ImGui.PushID("fogselect" + _i);
                 var st = _i == 0 ? "Main" : scn.Stage.StageFogs[_i].AreaId.ToString();
 
-                if (ImGui.Selectable(st, _i == selectedfog, ImGuiSelectableFlags.SpanAllColumns))
+                if (ImGui.Selectable(st, _i == _selectedfog, ImGuiSelectableFlags.SpanAllColumns))
                 {
-                    selectedfog = _i;
+                    _selectedfog = _i;
                 }
 
                 ImGui.PopID();
@@ -80,10 +79,10 @@ internal class FogParamsWindow(MainWindowContext window)
 
         //                ImGui.Text("Currently unsupported");
 
-        if (scn.Stage.StageFogs.Count > selectedfog && selectedfog > -1)
+        if (scn.Stage.StageFogs.Count > _selectedfog && _selectedfog > -1)
         {
 
-            string sfog = scn.Stage.StageFogs[selectedfog].AreaId == -1 ? "Main Fog" : "Fog " + scn.Stage.StageFogs[selectedfog].AreaId.ToString() + ":";
+            string sfog = scn.Stage.StageFogs[_selectedfog].AreaId == -1 ? "Main Fog" : "Fog " + scn.Stage.StageFogs[_selectedfog].AreaId.ToString() + ":";
             ImGuiWidgets.TextHeader(sfog);
             // ImGui.SetWindowFontScale(1.20f);
             // if (scn.Stage.StageFogs[selectedfog].AreaId == -1)
@@ -92,28 +91,28 @@ internal class FogParamsWindow(MainWindowContext window)
             //     ImGui.Text("Fog " + scn.Stage.StageFogs[selectedfog].AreaId.ToString() + ":");
             // ImGui.Separator();
             // ImGui.SetWindowFontScale(1f);
-            bool _disabled = selectedfog == 0;
+            bool _disabled = _selectedfog == 0;
             if (_disabled)
                 ImGui.BeginDisabled();
             if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
-                scn.RemoveFogAt(selectedfog);
-                selectedfog -= 1;
+                scn.RemoveFogAt(_selectedfog);
+                _selectedfog -= 1;
             }
             if (_disabled)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
             if (ImGui.Button(IconUtils.PASTE, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
-                scn.DuplicateFog(selectedfog);
-                selectedfog = scn.CountFogs() - 1;
+                scn.DuplicateFog(_selectedfog);
+                _selectedfog = scn.CountFogs() - 1;
             }
             ImGui.SetItemTooltip("Duplicate Fog");
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
             if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
             {
                 scn.AddFog(new() { AreaId = 0 });
-                selectedfog = scn.CountFogs() - 1;
+                _selectedfog = scn.CountFogs() - 1;
             }
 
             if (_disabled)
@@ -122,33 +121,33 @@ internal class FogParamsWindow(MainWindowContext window)
 
             ImGui.PushItemWidth(prevW - PROP_WIDTH);
 
-            var old = scn.Stage.StageFogs[selectedfog].AreaId;
-            if (ImGuiWidgets.InputInt("Area Id", ref scn.Stage.StageFogs[selectedfog].AreaId))
+            var old = scn.Stage.StageFogs[_selectedfog].AreaId;
+            if (ImGuiWidgets.InputInt("Area Id", ref scn.Stage.StageFogs[_selectedfog].AreaId))
             {
-                scn.Stage.StageFogs[selectedfog].AreaId = int.Clamp(scn.Stage.StageFogs[selectedfog].AreaId, 0, 9999);
-                scn.UpdateFog(selectedfog, old);
+                scn.Stage.StageFogs[_selectedfog].AreaId = int.Clamp(scn.Stage.StageFogs[_selectedfog].AreaId, 0, 9999);
+                scn.UpdateFog(_selectedfog, old);
             }
             if (_disabled)
                 ImGui.EndDisabled();
 
-            ImGuiWidgets.DragFloat("Density", ref scn.Stage.StageFogs[selectedfog].Density);
-            ImGuiWidgets.DragFloat("Min depth", ref scn.Stage.StageFogs[selectedfog].MinDepth);
-            ImGuiWidgets.DragFloat("Max depth", ref scn.Stage.StageFogs[selectedfog].MaxDepth);
-            ImGuiWidgets.InputInt("Interpolation", ref scn.Stage.StageFogs[selectedfog].InterpFrame);
-            if (selectedfog == 0)
+            ImGuiWidgets.DragFloat("Density", ref scn.Stage.StageFogs[_selectedfog].Density);
+            ImGuiWidgets.DragFloat("Min depth", ref scn.Stage.StageFogs[_selectedfog].MinDepth);
+            ImGuiWidgets.DragFloat("Max depth", ref scn.Stage.StageFogs[_selectedfog].MaxDepth);
+            ImGuiWidgets.InputInt("Interpolation", ref scn.Stage.StageFogs[_selectedfog].InterpFrame);
+            if (_selectedfog == 0)
             {
-                int fogtype = (int)scn.Stage.StageFogs[selectedfog].FogType;
+                int fogtype = (int)scn.Stage.StageFogs[_selectedfog].FogType;
 
                 ImGui.Text("Type:");
                 ImGui.SameLine();
                 ImGuiWidgets.SetPropertyWidthGen("Type:");
                 ImGui.Combo("##Type", ref fogtype, Enum.GetNames(typeof(StageFog.FogTypes)), 3);
-                scn.Stage.StageFogs[selectedfog].FogType = (StageFog.FogTypes)fogtype;
+                scn.Stage.StageFogs[_selectedfog].FogType = (StageFog.FogTypes)fogtype;
             }
             ImGui.Text("Color:");
             ImGui.SameLine();
             ImGuiWidgets.SetPropertyWidthGen("Color:");
-            ImGui.ColorEdit3("##Color", ref scn.Stage.StageFogs[selectedfog].Color,
+            ImGui.ColorEdit3("##Color", ref scn.Stage.StageFogs[_selectedfog].Color,
             _colorEditFlags);
             ImGui.PopItemWidth();
             // ImGui.Text("Fogareas that use this fog");

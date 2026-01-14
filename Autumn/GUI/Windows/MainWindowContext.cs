@@ -308,13 +308,13 @@ internal class MainWindowContext : WindowContext
 
     public void SetSwitchSelected(int i)
     {
-        _switchParams._isOpen = true;
-        _switchParams._selectedSwitch = i;
+        _switchParams.IsOpen = true;
+        _switchParams.SelectedSwitch = i;
         ImGui.SetWindowFocus("Switches##SwitchWindow");
     }
     public void SetCameraSelected(int i)
     {
-        _camParams._isOpen = true;
+        _camParams.IsOpen = true;
         CurrentScene!.SelectedCam = i;
         ImGui.SetWindowFocus("cameras");
     }
@@ -421,18 +421,18 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Edit General Params"))
             {
                 //_paramsWindow.MiscEnabled = true;
-                _miscParams._isOpen = true;
+                _miscParams.IsOpen = true;
             }
             if (ImGui.MenuItem("Edit Cameras"))
-                _camParams._isOpen = true;
+                _camParams.IsOpen = true;
             //ImGui.SetWindowFocus("cameras");
             ImGui.Separator();
             if (ImGui.MenuItem("Edit Fogs"))
-                _fogParams._isOpen = true;
+                _fogParams.IsOpen = true;
             if (ImGui.MenuItem("Edit Lights"))
-                _lightParams._isOpen = true;
+                _lightParams.IsOpen = true;
             if (ImGui.MenuItem("Edit Switches"))
-                _switchParams._isOpen = true;
+                _switchParams.IsOpen = true;
             ImGui.EndMenu();
         }
 
@@ -476,11 +476,11 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
             if (ImGui.MenuItem("Show all params"))
             {
-                _fogParams._isOpen = true;
-                _lightParams._isOpen = true;
-                _miscParams._isOpen = true;
-                _switchParams._isOpen = true;
-                _camParams._isOpen = true;
+                _fogParams.IsOpen = true;
+                _lightParams.IsOpen = true;
+                _miscParams.IsOpen = true;
+                _switchParams.IsOpen = true;
+                _camParams.IsOpen = true;
             }
             ImGui.Separator();
             ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);

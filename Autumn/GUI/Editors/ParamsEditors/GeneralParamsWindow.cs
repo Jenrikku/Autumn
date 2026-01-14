@@ -10,12 +10,12 @@ namespace Autumn.GUI.Editors;
 internal class MiscParamsWindow(MainWindowContext window)
 {
 
-    int musicIdx = 0;
-    public bool _isOpen = false;
+    public bool IsOpen = false;
+    private int _musicIdx = 0;
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {
-        if (!_isOpen)
+        if (!IsOpen)
         {
             return;
         }
@@ -25,7 +25,7 @@ internal class MiscParamsWindow(MainWindowContext window)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
         
-        if (!ImGui.Begin("General##MiscParams", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        if (!ImGui.Begin("General##MiscParams", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
         return;
         if (window.CurrentScene == null)
         {
@@ -55,14 +55,14 @@ internal class MiscParamsWindow(MainWindowContext window)
                 if (scn.Stage.DefaultBgm == null)
                     scn.Stage.DefaultBgm = new(bgmdefault);
 
-                musicIdx = Array.IndexOf(b.BgmArray, scn.Stage.DefaultBgm.BgmLabel);
-                int oldIdx = musicIdx;
+                _musicIdx = Array.IndexOf(b.BgmArray, scn.Stage.DefaultBgm.BgmLabel);
+                int oldIdx = _musicIdx;
 
                 ImGui.SetNextItemWidth(prevW - 16 * window.ScalingFactor);
-                ImGui.Combo("##musSelect", ref musicIdx, b.BgmArray, b.BgmFiles.Count);
-                if (musicIdx != oldIdx)
+                ImGui.Combo("##musSelect", ref _musicIdx, b.BgmArray, b.BgmFiles.Count);
+                if (_musicIdx != oldIdx)
                 {
-                    scn.Stage.DefaultBgm.BgmLabel = b.BgmFiles[musicIdx];
+                    scn.Stage.DefaultBgm.BgmLabel = b.BgmFiles[_musicIdx];
                 }
 
             }
