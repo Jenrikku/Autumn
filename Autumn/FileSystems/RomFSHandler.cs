@@ -1399,31 +1399,36 @@ internal partial class RomFSHandler
 
             NARCFileSystem narcFS = new(new());
             byte[] binFile = BYAMLParser.Write(file);
+            SortedDictionary<string, byte[]> files = new(); 
             foreach (var (key, value) in st.EnumerateAdditionalFiles())
             {
-                narcFS.AddFile(key, value);
+                files.Add(key, value);
             }
             if (st.StageFileType == StageFileType.Map)
             {
                 var stageInfoBYML = MakeStageInfo(stage);
                 if (stageInfoBYML != null)
-                    narcFS.AddFileRoot("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));
+                    files.Add("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));                   
                 if (stage.CameraParams.Cameras.Count > 0)
-                    narcFS.AddFileRoot("CameraParam.byml", BYAMLParser.Write(MakeCameraParam(stage)));
+                    files.Add("CameraParam.byml", BYAMLParser.Write(MakeCameraParam(stage)));
             }
             if (st.StageFileType == StageFileType.Design)
             {
                 if (stage.StageFogs.Count > 0)
-                    narcFS.AddFileRoot("FogParam" + stage.Scenario + ".byml", BYAMLParser.Write(MakeFogParam(stage)));
+                    files.Add("FogParam" + stage.Scenario + ".byml", BYAMLParser.Write(MakeFogParam(stage)));
                 if (stage.LightParams != null)
-                    narcFS.AddFileRoot("LightParam" + stage.Scenario + ".byml", BYAMLParser.Write(new(stage.LightParams.GetNodes(), s_byamlEncoding, default)));
+                    files.Add("LightParam" + stage.Scenario + ".byml", BYAMLParser.Write(new(stage.LightParams.GetNodes(), s_byamlEncoding, default)));
                 if (stage.LightAreaNames.Count > 0)
                 {
-                    narcFS.AddFileRoot("AreaIdToLightNameTable" + stage.Scenario + ".byml", BYAMLParser.Write(MakeLightAreas(stage)));
+                    files.Add("AreaIdToLightNameTable" + stage.Scenario + ".byml", BYAMLParser.Write(MakeLightAreas(stage)));
                 }
             }
-            if (!st.IsEmpty())
-                narcFS.AddFileRoot("StageData.byml", binFile);
+            if (!st.IsEmpty()) files.Add("StageData.byml", binFile);
+
+            foreach (string f in files.Keys)
+            {
+                narcFS.AddFileRoot(f, files[f]);
+            }
             //if (saveBackup)
             //{
             //    if (File.Exists(paths[StageType]))

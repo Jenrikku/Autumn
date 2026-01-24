@@ -168,7 +168,7 @@ internal class StageCamera
         {
             Dictionary<string, BYAMLNode> ret = new();
             if (AngleMax != null) ret.Add("AngleMax", new((float)AngleMax));
-            if (IsEnable != null) ret.Add("IsEnable", new((bool)IsEnable));
+            if (IsEnable != null && IsEnable != false) ret.Add("IsEnable", new((bool)IsEnable));
             return new(ret);
         }
 
@@ -484,6 +484,16 @@ internal class StageCamera
         FieldInfo[] StageCameraFields = typeof(CameraProperties).GetFields();
         foreach (var CamField in StageCameraFields)
         {
+            if (Class == CameraClass.FixAll || Class == CameraClass.FixAllSpot)
+            {
+                if (! new List<string> {"LookAtPos", "InterpoleFrame","CameraPos"}.Contains(CamField.Name)) 
+                    continue;
+            }
+            if (Class == CameraClass.ParallelVersus)
+            {
+                if (new List<string> {"Distance"}.Contains(CamField.Name)) 
+                    continue;
+            }
             var vl = CamField.GetValue(CamProperties);
             if (vl == null) continue;
             if (CamField.FieldType == typeof(Vector3?)) TryAdd(rd, CamField.Name, new(Vec3ToDict((Vector3)vl)));
