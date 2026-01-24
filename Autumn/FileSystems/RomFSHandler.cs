@@ -145,7 +145,7 @@ internal partial class RomFSHandler
     {
 
         Stage stage = new(initialize: false) { Name = name, Scenario = scenario };
-
+        stage.UserPath = dir+ Path.DirectorySeparatorChar + name + scenario;
         (string, StageFileType)[] paths =
         [
             (Path.Join(dir, $"{name}Design{scenario}.szs"), StageFileType.Design),
@@ -211,6 +211,37 @@ internal partial class RomFSHandler
                                 stage.StageParams.FootPrint.Model = d["Model"].GetValueAs<string>()!;
                                 stage.StageParams.FootPrint.AnimName = aN?.GetValueAs<string>();
                                 stage.StageParams.FootPrint.AnimType = aT?.GetValueAs<string>();
+                            }
+                        }
+                        break;
+                    case string s when s.Contains("CameraParam"):
+                        if (!s.Contains($"{scenario}") && s != "CameraParam.byml")
+                        {
+                            stage.AddAdditionalFile(fileType, filename, contents);
+                            break;
+                        }
+                        BYAML CamParamByaml = BYAMLParser.Read(contents, s_byamlEncoding);
+                        if (CamParamByaml.RootNode == null || CamParamByaml.RootNode.NodeType != BYAMLNodeType.Dictionary) break;
+
+                        // Console.WriteLine(stageInfoByaml.RootNode.Value.GetType());
+
+                        var rootCamDict = CamParamByaml.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                        rootCamDict.TryGetValue("CameraParams", out BYAMLNode? cPar);
+                        rootCamDict.TryGetValue("VisionParam", out BYAMLNode? vPar);
+
+                        if (vPar is not null)
+                        {
+                            var vDict = vPar.GetValueAs<Dictionary<string, BYAMLNode>>();
+                            stage.CameraParams.VisionParam = new(vDict!);
+                        }
+                        if (cPar is not null)
+                        {
+                            var cArr = cPar.GetValueAs<BYAMLNode[]>();
+                            foreach (BYAMLNode nd in cArr!)
+                            {
+                                var cam = nd.GetValueAs<Dictionary<string, BYAMLNode>>();
+                                if (cam is null) continue;
+                                stage.CameraParams.Cameras.Add(new(cam));
                             }
                         }
                         break;
@@ -1225,6 +1256,7 @@ internal partial class RomFSHandler
     {
         Console.WriteLine(Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}"));
         int currentId = 0;
+        stage.UserPath = _stagesPath + Path.DirectorySeparatorChar + stage.Name + stage.Scenario;
         //bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =
@@ -1367,29 +1399,36 @@ internal partial class RomFSHandler
 
             NARCFileSystem narcFS = new(new());
             byte[] binFile = BYAMLParser.Write(file);
+            SortedDictionary<string, byte[]> files = new(); 
             foreach (var (key, value) in st.EnumerateAdditionalFiles())
             {
-                narcFS.AddFile(key, value);
+                files.Add(key, value);
             }
             if (st.StageFileType == StageFileType.Map)
             {
                 var stageInfoBYML = MakeStageInfo(stage);
                 if (stageInfoBYML != null)
-                    narcFS.AddFileRoot("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));
+                    files.Add("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));                   
+                if (stage.CameraParams.Cameras.Count > 0)
+                    files.Add("CameraParam.byml", BYAMLParser.Write(MakeCameraParam(stage)));
             }
             if (st.StageFileType == StageFileType.Design)
             {
                 if (stage.StageFogs.Count > 0)
-                    narcFS.AddFileRoot("FogParam" + stage.Scenario + ".byml", BYAMLParser.Write(MakeFogParam(stage)));
+                    files.Add("FogParam" + stage.Scenario + ".byml", BYAMLParser.Write(MakeFogParam(stage)));
                 if (stage.LightParams != null)
-                    narcFS.AddFileRoot("LightParam" + stage.Scenario + ".byml", BYAMLParser.Write(new(stage.LightParams.GetNodes(), s_byamlEncoding, default)));
+                    files.Add("LightParam" + stage.Scenario + ".byml", BYAMLParser.Write(new(stage.LightParams.GetNodes(), s_byamlEncoding, default)));
                 if (stage.LightAreaNames.Count > 0)
                 {
-                    narcFS.AddFileRoot("AreaIdToLightNameTable" + stage.Scenario + ".byml", BYAMLParser.Write(MakeLightAreas(stage)));
+                    files.Add("AreaIdToLightNameTable" + stage.Scenario + ".byml", BYAMLParser.Write(MakeLightAreas(stage)));
                 }
             }
-            if (!st.IsEmpty())
-                narcFS.AddFileRoot("StageData.byml", binFile);
+            if (!st.IsEmpty()) files.Add("StageData.byml", binFile);
+
+            foreach (string f in files.Keys)
+            {
+                narcFS.AddFileRoot(f, files[f]);
+            }
             //if (saveBackup)
             //{
             //    if (File.Exists(paths[StageType]))
@@ -1433,6 +1472,14 @@ internal partial class RomFSHandler
             rd.Add("FogAreas", new(BYAMLNodeType.Array, stagefogs.ToArray()));
         }
         root = new(rd);
+        BYAML ret = new(root, s_byamlEncoding, default);
+        ret.RootNode = root;
+        return ret;
+    }
+    private BYAML MakeCameraParam(Stage stage)
+    {
+        BYAMLNode root;
+        root = stage.CameraParams.GetNodes();
         BYAML ret = new(root, s_byamlEncoding, default);
         ret.RootNode = root;
         return ret;

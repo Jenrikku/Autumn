@@ -13,7 +13,7 @@ internal class DatabaseEditor(MainWindowContext _window)
     private bool _isOpened = false;
     private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
     private int _argsel = -1;
-    readonly string[] switches = ["A", "B", "Appear", "Kill", "DeadOn"];
+    readonly string[] switches = ["A", "B", "Appear", "DeadOn", "Kill"];
     readonly string[] switchTypes = ["None", "Read", "Write"];
     readonly string[] argTypes = ["bool", "int", "enum"];
     readonly string[] actorTypes = ["Obj", "AreaObj", "CameraAreaObj", "GoalObj", "StartEventObj", "Demo"];
@@ -43,13 +43,23 @@ internal class DatabaseEditor(MainWindowContext _window)
     Dictionary<int, string> _editEnumValues = new();
     string _editEnNm = "";
     int _editEnVal = -1;
-    bool setscroll = false;
-
+    bool _setscroll = false;
+    List<string> _filteredKeys = new();
+    bool _filterUpdate = true;
     public void Open()
     {
+        Reset();
         _isOpened = true;
         _dbEntries = new(ClassDatabaseWrapper.DatabaseEntries);
         _isEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
+    }
+    public void Open(ClassDatabaseWrapper.DatabaseEntry entr) // used for information  
+    {
+        Reset();
+        _isOpened = true;
+        _dbEntries = new(ClassDatabaseWrapper.DatabaseEntries);
+        _isEditor = false;
+        entry = entr;
     }
     public void Reset()
     {
@@ -77,15 +87,15 @@ internal class DatabaseEditor(MainWindowContext _window)
                 }
             }
         }
-
-        ImGui.OpenPopup("Class Database Editor");
+        string popupType = _isEditor ? "Editor" : "Viewer";
+        ImGui.OpenPopup($"Class Database {popupType}##ClassDatabaseEditor");
 
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
         ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
 
         if (
             !ImGui.BeginPopupModal(
-                "Class Database Editor",
+                $"Class Database {popupType}##ClassDatabaseEditor",
                 ref _isOpened,
                 ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar
             )
@@ -104,14 +114,44 @@ internal class DatabaseEditor(MainWindowContext _window)
         if (ImGui.BeginChild("LEFTSIDE", new(ImGui.GetContentRegionAvail().X * 18 / 30, ImGui.GetContentRegionAvail().Y - 30)))
         {
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
-            ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100);
+            if (ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100))
+                _filterUpdate = true;
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
-            ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length);
+            if (ImGui.Combo("##Filter", ref _filterIdx, filter, filter.Length))
+                _filterUpdate = true;
             var keys = _dbEntries.Keys.ToList();
+
+            if (_filterUpdate)
+            {
+                _filteredKeys = _dbEntries.Keys.Where(x => x.Contains(_search, StringComparison.InvariantCultureIgnoreCase)
+                || (_dbEntries[x].Name != null && _dbEntries[x].Name!.Contains(_search, StringComparison.InvariantCultureIgnoreCase))).ToList();
+                switch (_filterIdx)
+                {
+                    case 1:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == null).ToList();
+                        break;
+                    case 2:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "AreaObj").ToList();
+                        break;
+                    case 3:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "CameraAreaObj").ToList();
+                        break;
+                    case 4:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "GoalObj").ToList();
+                        break;
+                    case 5:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "StartEventObj").ToList();
+                        break;
+                    case 6:
+                        _filteredKeys = _filteredKeys.Where(x => _dbEntries[x].Type == "Demo").ToList();
+                        break;
+                }
+                _filterUpdate = false;
+            }
             if (ImGui.BeginTable("ClassTable", 2,
                                     _tableFlags,
-                                    new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - 30)))
+                                    new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - (_isEditor ? 30 : 3))))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -120,40 +160,23 @@ internal class DatabaseEditor(MainWindowContext _window)
                 ImGui.TableHeadersRow();
                 foreach (string s in _dbEntries.Keys)
                 {
-                    if (!string.IsNullOrEmpty(_search)
-                    && !s.Contains(_search, StringComparison.InvariantCultureIgnoreCase)
-                    && (_dbEntries[s].Name == null
-                    || !_dbEntries[s].Name!.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+                    if (!_filteredKeys.Contains(s))
                         continue;
-                    switch (_filterIdx)
-                    {
-                        case 1:
-                            if (_dbEntries[s].Type != null) continue;
-                            break;
-                        case 2:
-                            if (_dbEntries[s].Type != "AreaObj") continue;
-                            break;
-                        case 3:
-                            if (_dbEntries[s].Type != "CameraAreaObj") continue;
-                            break;
-                        case 4:
-                            if (_dbEntries[s].Type != "GoalObj") continue;
-                            break;
-                        case 5:
-                            if (_dbEntries[s].Type != "StartEventObj") continue;
-                            break;
-                        case 6:
-                            if (_dbEntries[s].Type != "Demo") continue;
-                            break;
-                    }
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
-                    ImGui.Text(_dbEntries[s].Name != null ? _dbEntries[s].Name : "");
+                    if (_dbEntries[s].Name != null)
+                    {
+                        ImGui.Text(_dbEntries[s].Name);
+                    }
+                    else
+                    {
+                        ImGui.TextDisabled("Undocumented");
+                    }
                     ImGui.TableSetColumnIndex(1);
-                    if (s == entry.ClassName && setscroll)
+                    if (s == entry.ClassName && _setscroll)
                     {
                         ImGui.SetScrollHereY();
-                        setscroll = false;
+                        _setscroll = false;
                     }
                     if (ImGui.Selectable(s + $"##{i}", s == entry.ClassName, ImGuiSelectableFlags.SpanAllColumns))
                     {
@@ -173,40 +196,48 @@ internal class DatabaseEditor(MainWindowContext _window)
                 {
                     if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
                     {
-                        int d = keys.IndexOf(entry.ClassName);
-                        entry = _dbEntries.ElementAt(d + 1 < _dbEntries.Count ? d + 1 : d).Value;
+                        int d = _filteredKeys.IndexOf(entry.ClassName);
+
+                        entry = _dbEntries[_filteredKeys[d + 1 < _filteredKeys.Count ? d + 1 : d]];
                         _editClassName = false;
                         _argsel = -1;
-                        setscroll = true;
+                        _setscroll = true;
                     }
                     else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
                     {
-                        int d = keys.IndexOf(entry.ClassName);
-                        entry = _dbEntries.ElementAt(d - 1 > -1 ? d - 1 : d).Value;
+                        int d = _filteredKeys.IndexOf(entry.ClassName);
+
+                        entry = _dbEntries[_filteredKeys[d - 1 > -1 ? d - 1 : d]];
                         _editClassName = false;
                         _argsel = -1;
-                        setscroll = true;
+                        _setscroll = true;
                     }
                 }
             }
-            if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetContentRegionAvail().X / 2, default))) // -
+            if (_isEditor)
             {
-                RemoveEntry(entry.ClassName!);
+                if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetContentRegionAvail().X / 2, default))) // -
+                {
+                    RemoveEntry(entry.ClassName!);
+                }
             }
             if (entry.ClassName == null)
                 ImGui.EndDisabled();
-            ImGui.SameLine(default, ImGui.GetStyle().ItemSpacing.X / 2);
-            if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetContentRegionAvail().X, default))) // +
+            if (_isEditor)
             {
-                for (int i = 0; i < 999; i++)
+                ImGui.SameLine(default, ImGui.GetStyle().ItemSpacing.X / 2);
+                if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetContentRegionAvail().X, default))) // +
                 {
-                    if (_dbEntries.ContainsKey($"NewObj{i}")) continue;
-                    entry = new() { ClassName = $"NewObj{i}" };
-                    _dbEntries.Add(entry.ClassName, entry);
-                    break;
+                    for (int i = 0; i < 999; i++)
+                    {
+                        if (_dbEntries.ContainsKey($"NewObj{i}")) continue;
+                        entry = new() { ClassName = $"NewObj{i}" };
+                        _dbEntries.Add(entry.ClassName, entry);
+                        break;
+                    }
+                    _setscroll = true;
+                    update = true;
                 }
-                setscroll = true;
-                update = true;
             }
         }
         ImGui.EndChild();
@@ -214,100 +245,121 @@ internal class DatabaseEditor(MainWindowContext _window)
 
         if (ImGui.BeginChild("RIGHTSIDE", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30)))
         {
-            ImGui.SetWindowFontScale(1.3f);
-            if (string.IsNullOrEmpty(entry.ClassName))
-                ImGui.TextDisabled("No entry selected");
-            else
-                ImGui.Text("Class: " + entry.ClassName);
-            ImGui.SetWindowFontScale(1f);
-            ImGui.Separator();
+            string hdr = string.IsNullOrEmpty(entry.ClassName) ? "No entry selected" : "Class: " + entry.ClassName;
+            ImGuiWidgets.TextHeader(hdr, 1.4f);
             ImGui.Spacing();
-            if (string.IsNullOrEmpty(entry.ClassName))
-                ImGui.BeginDisabled();
-            if (!_editClassName)
-                ImGui.BeginDisabled();
-            ImGui.Text("Class Name:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Class Name", 20, 30) + style.ItemSpacing.X - 24);
-            string className = entry.ClassName ?? "";
-
-            if (ImGui.InputText("##clsname", ref className, 128, ImGuiInputTextFlags.EnterReturnsTrue) && !_dbEntries.ContainsKey(className) && className != entry.ClassName)
+            if (_isEditor)
             {
-                UpdateClassEntry(className != "" ? className : null!);
-            }
-            if (!_editClassName)
-                ImGui.EndDisabled();
-            ImGui.SameLine(default, 0);
-            if (ImGui.Button(IconUtils.PENCIL))
-            {
-                _editClassName = !_editClassName;
-            }
-
-            ImGui.Text("Entry Name:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Entry Name", 20, 30) + style.ItemSpacing.X);
-            string entryName = entry.Name ?? "";
-            ImGui.InputText("##name", ref entryName, 128);
-            if (entryName != (entry.Name ?? ""))
-            {
-                entry.Name = entryName != "" ? entryName : null;
-                update = true;
-            }
-
-            ImGui.Text("Description:");
-            ImGui.SameLine();
-            string entryDesc = entry.Description ?? "";
-            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Description", 20, 30) + style.ItemSpacing.X);
-            ImGui.InputText("##Descriptionname", ref entryDesc, 1024);
-            if (entryDesc != (entry.Description ?? ""))
-            {
-                entry.Description = entryDesc != "" ? entryDesc : null!;
-                update = true;
-            }
-
-            string entryType = entry.Type ?? "Obj";
-            if (entryType == "Obj")
-            {
-                ImGui.Text("Archive:");
+                if (string.IsNullOrEmpty(entry.ClassName))
+                    ImGui.BeginDisabled();
+                if (!_editClassName)
+                    ImGui.BeginDisabled();
+                ImGui.Text("Class Name:");
                 ImGui.SameLine();
-                string entryArchive = entry.ArchiveName ?? "";
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Archive", 20, 30) + style.ItemSpacing.X);
-                ImGui.InputText("##archive", ref entryArchive, 1024);
-                if (entryArchive != (entry.ArchiveName ?? ""))
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Class Name", 20, 30) + style.ItemSpacing.X - 24);
+                string className = entry.ClassName ?? "";
+
+                if (ImGui.InputText("##clsname", ref className, 128, ImGuiInputTextFlags.EnterReturnsTrue) && !_dbEntries.ContainsKey(className) && className != entry.ClassName)
                 {
-                    entry.ArchiveName = entryArchive != "" ? entryArchive : null;
+                    UpdateClassEntry(className != "" ? className : null!);
+                }
+                if (!_editClassName)
+                    ImGui.EndDisabled();
+                ImGui.SameLine(default, 0);
+                if (ImGui.Button(IconUtils.PENCIL))
+                {
+                    _editClassName = !_editClassName;
+                }
+
+                ImGui.Text("Entry Name:");
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Entry Name", 20, 30) + style.ItemSpacing.X);
+                string entryName = entry.Name ?? "";
+                ImGui.InputText("##name", ref entryName, 128);
+                if (entryName != (entry.Name ?? ""))
+                {
+                    entry.Name = entryName != "" ? entryName : null;
                     update = true;
                 }
-                ImGui.SetItemTooltip("Default model to use for this object if it cannot be found from class or object name");
+
+                ImGui.Text("Description:");
+                ImGui.SameLine();
+                string entryDesc = entry.Description ?? "";
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Description", 20, 30) + style.ItemSpacing.X);
+                ImGui.InputText("##Descriptionname", ref entryDesc, 1024);
+                if (entryDesc != (entry.Description ?? ""))
+                {
+                    entry.Description = entryDesc != "" ? entryDesc : null!;
+                    update = true;
+                }
+
+                string entryType = entry.Type ?? "Obj";
+                if (entryType == "Obj")
+                {
+                    ImGui.Text("Archive:");
+                    ImGui.SameLine();
+                    string entryArchive = entry.ArchiveName ?? "";
+                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Archive", 20, 30) + style.ItemSpacing.X);
+                    ImGui.InputText("##archive", ref entryArchive, 1024);
+                    if (entryArchive != (entry.ArchiveName ?? ""))
+                    {
+                        entry.ArchiveName = entryArchive != "" ? entryArchive : null;
+                        update = true;
+                    }
+                    ImGui.SetItemTooltip("Default model to use for this object if it cannot be found from class or object name");
+                }
+                else if (entry.ArchiveName != null) // Disable archivename for non objs
+                {
+                    entry.ArchiveName = null;
+                }
+
+                ImGui.Text("Needs Rail:");
+                ImGui.SameLine();
+                bool needsRail = entry.RailRequired;
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Needs Rail", 20, 30) + style.ItemSpacing.X);
+                ImGui.Checkbox("##railr", ref needsRail);
+                if (needsRail != entry.RailRequired)
+                {
+                    entry.RailRequired = needsRail;
+                    update = true;
+                }
+
+                ImGui.Text("Type:");
+                ImGui.SameLine();
+                int clsType = Array.IndexOf(actorTypes, entryType);
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Type", 20, 30) + style.ItemSpacing.X);
+                ImGui.Combo("##etype", ref clsType, actorTypes, actorTypes.Length);
+                if (clsType != Array.IndexOf(actorTypes, entryType))
+                {
+                    entry.Type = actorTypes[clsType] != "Obj" ? actorTypes[clsType] : null; // Since most classes are obj we don't add the property
+                    update = true;
+                }
             }
-            else if (entry.ArchiveName != null) // Disable archivename for non objs
+            else
             {
-                entry.ArchiveName = null;
+                ImGui.Text("Entry Name:");
+                ImGui.SameLine();
+                if (entry.Name is null) ImGui.TextDisabled($"Undocumented");
+                else ImGui.Text($"{entry.Name}");
+
+                string entryType = entry.Type ?? "Obj";
+                if (entryType == "Obj")
+                {
+                    ImGui.Text("Archive:");
+                    ImGui.SameLine();
+                    if (entry.ArchiveName is null) ImGui.TextDisabled($"Undocumented");
+                    else ImGui.Text($"{entry.ArchiveName}");
+                    ImGui.SetItemTooltip("Default model to use for this object if it cannot be found from class or object name");
+                }
+                string needsRail = entry.RailRequired ? "True" : "False";
+                ImGui.Text($"Needs Rail: {needsRail}");
+
+                ImGui.Text("Actor Type:");
+                ImGui.SameLine();
+                ImGui.Text($"{entryType}");
             }
 
-            ImGui.Text("Needs Rail:");
-            ImGui.SameLine();
-            bool needsRail = entry.RailRequired;
-            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Needs Rail", 20, 30) + style.ItemSpacing.X);
-            ImGui.Checkbox("##railr", ref needsRail);
-            if (needsRail != entry.RailRequired)
-            {
-                entry.RailRequired = needsRail;
-                update = true;
-            }
-
-            ImGui.Text("Type:");
-            ImGui.SameLine();
-            int clsType = Array.IndexOf(actorTypes, entryType);
-            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Type", 20, 30) + style.ItemSpacing.X);
-            ImGui.Combo("##etype", ref clsType, actorTypes, actorTypes.Length);
-            if (clsType != Array.IndexOf(actorTypes, entryType))
-            {
-                entry.Type = actorTypes[clsType] != "Obj" ? actorTypes[clsType] : null; // Since most classes are obj we don't add the property
-                update = true;
-            }
-
-            Vector2 descriptionSize = new(ImGui.GetContentRegionAvail().X - 2, -3);
+            Vector2 descriptionSize = new(ImGui.GetContentRegionAvail().X - 2, -2);
             if (ImGui.BeginTabBar("##tabs", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton))
             {
                 if (ImGui.BeginTabItem("Args"))
@@ -317,7 +369,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             "ArgTable",
                             3,
                             _tableFlags,
-                            new(descriptionSize.X, descriptionSize.Y - 23 - style.ItemSpacing.Y))
+                            new(descriptionSize.X, descriptionSize.Y + (_isEditor ? (-23 - style.ItemSpacing.Y) : -1)))
                     )
                     {
                         bool isObj = entry.Type == null;
@@ -333,10 +385,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                             string argName = "";
                             string argDescription = "";
                             string argType = "int";
-                            if (
-                                entry.Args is not null
-                                && entry.Args.TryGetValue(arg, out var argData)
-                            )
+                            if (entry.Args is not null
+                                && entry.Args.TryGetValue(arg, out var argData))
                             {
                                 if (argData.Name is not null)
                                     argName = argData.Name;
@@ -350,9 +400,9 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.TableNextRow();
 
                             ImGui.TableSetColumnIndex(0);
-                            if (ImGui.Selectable(arg, _argsel == i,
+                            if (ImGui.Selectable($"{i}", _argsel == i,
                                 ImGuiSelectableFlags.SpanAllColumns
-                                | ImGuiSelectableFlags.AllowDoubleClick, new(default, 30)))
+                                | ImGuiSelectableFlags.AllowDoubleClick, new(default, 30)) && _isEditor)
                             {
                                 _argsel = i;
                                 if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
@@ -367,27 +417,30 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                             ImGui.Text(argType);
                             ImGui.TableSetColumnIndex(2);
-                            ImGui.Text(argName);
+                            if (string.IsNullOrEmpty(argName)) ImGui.TextDisabled("Unknown");
+                            else ImGui.Text(argName);
                         }
 
                         ImGui.EndTable();
-
-                        if (_argsel < 0 || entry.Args == null)
-                            ImGui.BeginDisabled();
-                        if (ImGui.Button("Remove ARG", new(ImGui.GetContentRegionAvail().X / 2, default)))
+                        if (_isEditor)
                         {
-                            entry.Args.Remove($"Arg{_argsel}");
-                            _argsel = -1;
-                            update = true;
-                        }
-                        if (_argsel < 0 || entry.Args == null)
-                            ImGui.EndDisabled();
-                        ImGui.SameLine(default, style.ItemSpacing.X / 2);
-                        if (ImGui.Button("Add ARG", new(ImGui.GetContentRegionAvail().X, default)))
-                        {
-                            SetArgs();
-                            _argEdit = true;
-                            update = true;
+                            if (_argsel < 0 || entry.Args == null)
+                                ImGui.BeginDisabled();
+                            if (ImGui.Button("Remove ARG", new(ImGui.GetContentRegionAvail().X / 2, default)))
+                            {
+                                entry.Args.Remove($"Arg{_argsel}");
+                                _argsel = -1;
+                                update = true;
+                            }
+                            if (_argsel < 0 || entry.Args == null)
+                                ImGui.EndDisabled();
+                            ImGui.SameLine(default, style.ItemSpacing.X / 2);
+                            if (ImGui.Button("Add ARG", new(ImGui.GetContentRegionAvail().X, default)))
+                            {
+                                SetArgs();
+                                _argEdit = true;
+                                update = true;
+                            }
                         }
                     }
                     ImGui.EndTabItem();
@@ -399,7 +452,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             "SwitchTable",
                             3,
                             _tableFlags,
-                            new(descriptionSize.X, descriptionSize.Y - 23 - style.ItemSpacing.Y))
+                            new(descriptionSize.X, descriptionSize.Y - 1))
                     )
                     {
                         ImGui.TableSetupScrollFreeze(0, 1);
@@ -425,39 +478,59 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.Text(swn);
                             ImGui.TableSetColumnIndex(1);
                             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                            int swi = Array.IndexOf(switchTypes, swType == "" ? "None" : swType);
-                            ImGui.Combo($"##swcombo{swn}", ref swi, switchTypes, 3);
-                            if (swi != Array.IndexOf(switchTypes, swType == "" ? "None" : swType))
+                            int swi = Array.IndexOf(switchTypes, string.IsNullOrWhiteSpace(swType) ? "None" : swType);
+                            if (_isEditor)
                             {
-                                swType = swi == 0 ? "" : switchTypes[swi];
-                                swUpdate = true;
+                                ImGui.Combo($"##swcombo{swn}", ref swi, switchTypes, 3);
+                                if (swi != Array.IndexOf(switchTypes, string.IsNullOrWhiteSpace(swType) ? "None" : swType))
+                                {
+                                    swType = swi == 0 ? "" : switchTypes[swi];
+                                    swUpdate = true;
+                                }
                             }
+                            else ImGui.Text(string.IsNullOrWhiteSpace(swType) ? "None" : swType);
                             ImGui.TableSetColumnIndex(2);
-                            if (swi == 0)
-                                ImGui.BeginDisabled();
-                            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                            if (ImGui.InputText($"##swDesc{swn}", ref swDescription, 128))
+                            if (_isEditor)
                             {
-                                swUpdate = true;
+                                if (swi == 0)
+                                    ImGui.BeginDisabled();
+                                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                                if (ImGui.InputText($"##swDesc{swn}", ref swDescription, 128))
+                                {
+                                    swUpdate = true;
+                                }
+                                if (!string.IsNullOrWhiteSpace(swDescription))
+                                    ImGui.SetItemTooltip(swDescription);
+
+                                if (swi == 0)
+                                    ImGui.EndDisabled();
+
+                                if (swUpdate)
+                                {
+                                    if (entry.Switches == null) entry.Switches = new();
+                                    if (string.IsNullOrWhiteSpace(swType))
+                                        entry.Switches[swName] = null;
+                                    else
+                                        entry.Switches[swName] = new()
+                                        {
+                                            Description = swDescription,
+                                            Type = swType
+                                        };
+                                    update = true;
+                                    swUpdate = false;
+                                }
                             }
-                            if (!string.IsNullOrWhiteSpace(swDescription))
-                                ImGui.SetItemTooltip(swDescription);
-
-                            if (swi == 0)
-                                ImGui.EndDisabled();
-
-                            if (swUpdate)
+                            else
                             {
-                                if (entry.Switches == null) entry.Switches = new();
-                                if (swType == "")
-                                    entry.Switches[swName] = null;
+                                if (string.IsNullOrWhiteSpace(swDescription))
+                                {
+                                    ImGui.TextDisabled("No description.");
+                                }
                                 else
-                                    entry.Switches[swName] = new()
-                                    {
-                                        Description = swDescription,
-                                        Type = swType
-                                    };
-                                swUpdate = false;
+                                {
+                                    ImGui.Text(swDescription);
+                                    ImGui.SetItemTooltip(swDescription);
+                                }
                             }
                         }
                         ImGui.EndTable();
@@ -473,9 +546,9 @@ internal class DatabaseEditor(MainWindowContext _window)
                     );
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                     if (entry.Description == null)
-                        ImGui.TextDisabled("No Description");
+                        ImGui.TextDisabled("No description.");
                     else
-                        ImGui.TextWrapped(entryDesc);
+                        ImGui.TextWrapped(entry.Description);
                     ImGui.EndChild();
 
                     ImGui.EndTabItem();
@@ -498,30 +571,33 @@ internal class DatabaseEditor(MainWindowContext _window)
             return;
         }
 
-        ImGui.SameLine(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Save").X - style.ItemSpacing.X * 2);
-        if (ImGui.Button("Save"))
+        if (_isEditor)
         {
-            foreach (string s in _modifiedEntries)
+            ImGui.SameLine(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Save").X - style.ItemSpacing.X * 2);
+            if (ImGui.Button("Save"))
             {
-                string pth = Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml");
-                if (!_dbEntries.ContainsKey(s))
+                foreach (string s in _modifiedEntries)
                 {
-                    File.Delete(pth); // Erase the files that will no longer be there
+                    string pth = Path.Join("Resources", "RedPepper-ClassDataBase", "Data", s + ".yml");
+                    if (!_dbEntries.ContainsKey(s))
+                    {
+                        File.Delete(pth); // Erase the files that will no longer be there
+                    }
+                    else
+                    {
+                        PreSaveSwitchSetup(s);
+                        YAMLWrapper.Serialize(pth, _dbEntries[s]);
+                    }
                 }
-                else
-                {
-                    PreSaveSwitchSetup(s);
-                    YAMLWrapper.Serialize(pth, _dbEntries[s]);
-                }
+                ClassDatabaseWrapper.ReloadEntries = true;
+                Reset();
+                _isOpened = false;
+                if (_argEdit)
+                    ImGui.EndDisabled();
+                ImGui.CloseCurrentPopup();
+                ImGui.EndPopup();
+                return;
             }
-            ClassDatabaseWrapper.ReloadEntries = true;
-            Reset();
-            _isOpened = false;
-            if (_argEdit)
-                ImGui.EndDisabled();
-            ImGui.CloseCurrentPopup();
-            ImGui.EndPopup();
-            return;
         }
         if (_argEdit)
             ImGui.EndDisabled();

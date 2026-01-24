@@ -102,6 +102,8 @@ internal class ContextHandler
 
         SystemSettings.AddRecentlyOpenedPath(projectDir);
         SaveSettings();
+
+        UpdateProjectStages();
         ProjectChanged = true;
     }
 
@@ -154,6 +156,14 @@ internal class ContextHandler
 
         foreach (var (name, scenario) in FSHandler.ModFS.EnumerateStages())
             ProjectStages.Add((name, scenario));
+    }
+    
+    public void AddProjectStage(string name, byte scenario)
+    {
+        if (FSHandler.ModFS is null)
+            return;
+        
+        ProjectStages.Add(new (name, scenario));
     }
 
     public void SetGlobalSetting(string key, object? value)

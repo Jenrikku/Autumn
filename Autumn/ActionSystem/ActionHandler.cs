@@ -8,6 +8,7 @@ using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
 using Silk.NET.SDL;
 using TinyFileDialogsSharp;
+using ImGuiNET;
 
 namespace Autumn.ActionSystem;
 
@@ -165,6 +166,7 @@ internal class ActionHandler
                 if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                 {
                     ProjectChooserContext projectChooser = new(window.ContextHandler, window.WindowManager);
+                    projectChooser.Title = "Autumn: Open Project";
                     window.WindowManager.Add(projectChooser);
 
                     projectChooser.SuccessCallback += result =>
@@ -173,6 +175,7 @@ internal class ActionHandler
                         window.ContextHandler.OpenProject(result[0]);
                     };
 
+                    ImGui.SetWindowFocus("Stages");
                     return;
                 }
 
@@ -201,6 +204,7 @@ internal class ActionHandler
 
                 window!.ContextHandler.SystemSettings.LastProjectOpenPath = output;
                 window.ContextHandler.OpenProject(output);
+                ImGui.SetWindowFocus("Stages");
             },
             enabled: window => true
         );
@@ -328,6 +332,10 @@ internal class ActionHandler
                         window.ContextHandler.FSHandler.WriteStage(stage, window.ContextHandler.Settings.UseClassNames);
                         scene.IsSaved = true;
                         scene.SaveUndoCount = mainContext.CurrentScene.History.UndoSteps;
+                        if (!window.ContextHandler.ProjectStages.Contains(new(stage.Name, stage.Scenario)))
+                        {
+                            window.ContextHandler.AddProjectStage(stage.Name, stage.Scenario);
+                        }
                     }
                 );
             },

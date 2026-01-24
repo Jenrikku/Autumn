@@ -11,6 +11,7 @@ namespace Autumn.GUI;
 internal static class ImGuiWidgets
 {
     public const ImGuiDockNodeFlags NO_TAB_BAR = (ImGuiDockNodeFlags)0x1000;
+    public const ImGuiDockNodeFlags NO_WINDOW_MENU_BUTTON = (ImGuiDockNodeFlags)(1 << 14);
     public static void DirectoryPathSelector(
         ref string input,
         ref bool isValidPath,
@@ -99,6 +100,19 @@ internal static class ImGuiWidgets
         return ImGui.Button(str, size ?? default);
     }
 
+    /// <summary>
+    /// Adds a text "header" with a line below it
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="scale"></param>
+    /// <param name="original"></param>
+    public static void TextHeader(string str, float scale = 1.2f, float original = 1.0f)
+    {
+        ImGui.SetWindowFontScale(scale);
+        ImGui.Text(str);
+        ImGui.SetWindowFontScale(original);
+        ImGui.Separator();
+    }
     public static float SetPropertyWidth(string str)
     {
         float ret = 0;
@@ -114,19 +128,19 @@ internal static class ImGuiWidgets
         ImGui.SetNextItemWidth(ret);
         return ret;
     }
-    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3, bool colon = true)
+    public static float SetPropertyWidthGen(string str, int ratioA = 2, int ratioB = 3, bool colon = true, float padding = 12)
     {
         float ret = 0;
-        if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X / 2) > (ImGui.CalcTextSize(str + ":").X + 12))
+        if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X / 2) > (ImGui.CalcTextSize(str + ":").X + padding))
         {
             ImGui.SetCursorPosX(ImGui.GetWindowWidth() * (ratioB - ratioA) / ratioB);
             ret = float.Round(ImGui.GetWindowWidth() * ratioA / ratioB - ImGui.GetStyle().ItemSpacing.X);
         }
         else
         {
-            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 2);
+            ret = float.Round(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str + ":").X - ImGui.GetStyle().ItemSpacing.X * 4);
         }
-        ImGui.SetNextItemWidth(ret);
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         return ret;
     }
 
@@ -282,12 +296,19 @@ internal static class ImGuiWidgets
         return ImGui.DragInt("##" + str, ref rf, v_speed);
 
     }
-    public static bool InputInt(string str, ref int rf, int step = 1)
+    public static bool InputInt(string str, ref int rf, int step = 1, int ratioA = 2, int ratioB = 3)
     {
         ImGui.Text(str + ":");
         ImGui.SameLine();
-        SetPropertyWidthGen(str + ":");
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
         return ImGui.InputInt("##" + str, ref rf, step);
+    }
+    public static bool InputFloat(string str, ref float rf, float step = 1, int ratioA = 2, int ratioB = 3)
+    {
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
+        return ImGui.InputFloat("##" + str, ref rf, step);
     }
 
     internal static bool InputText(string str, ref string rf, uint max)

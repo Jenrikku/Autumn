@@ -25,7 +25,9 @@ internal class Scene
     public IEnumerable<ISceneObj> SelectedObjects => _selectedObjects;
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
+    public Camera PreviewCamera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
     public StageLight? PreviewLight { get; set; } = null;
+    public int SelectedCam { get; set; } = -1;
 
     /// <summary>
     /// Specifies whether the scene is ready to be rendered.
@@ -77,7 +79,16 @@ internal class Scene
         sceneObj.Selected = value;
 
         if (sceneObj.Selected)
+        {
+            if (sceneObj.StageObj.CameraId > -1) 
+            {
+                var camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
+                var sl = Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
+                if (sl == null) SelectedCam = -1;
+                else SelectedCam = Stage.CameraParams.Cameras.IndexOf(sl);
+            }
             _selectedObjects.Add(sceneObj);
+        }
         else
             _selectedObjects.Remove(sceneObj);
     }
@@ -273,15 +284,31 @@ internal class Scene
         GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
 
-    public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler, StageObj? parent = null)
+    public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
-        if (parent != null)
+        if (stageObj.Parent != null)
         {
-            if (parent.Children == null) parent.Children = new();
-            parent.Children.Add(stageObj);
+            StageObj parent = stageObj.Parent;
+            // Find the parent on the stage file
+            StageObj? newParent = Stage.GetStageFile(stageObj.FileType).GetObjInfos(stageObj.Parent.Type).FirstOrDefault(x => StageObj.Compare(x, stageObj.Parent));
+            if (newParent != null) Stage.GetStageFile(stageObj.FileType).SetChild(stageObj, newParent);
+            else stageObj.Parent = null;
+    
         }
         else
             Stage.AddStageObj(stageObj);
+        if (stageObj.Children != null)
+        {
+            var cnt = new List<StageObj>(stageObj.Children);
+            stageObj.Children.Clear();
+            foreach (var ch in cnt)
+            {
+                StageObjType chtype = ch.Type == StageObjType.Child ? StageObjType.Regular : StageObjType.Area;
+                // Find the children on the stage file
+                StageObj? nch = Stage.GetStageFile(stageObj.FileType).GetObjInfos(chtype).FirstOrDefault(x => StageObj.Compare(x, ch));
+                if (nch != null) Stage.GetStageFile(stageObj.FileType).SetChild(nch, stageObj);
+            }
+        }
         GenerateSceneObject(stageObj, fsHandler, scheduler);
     }
 
@@ -349,12 +376,11 @@ internal class Scene
             return;
         }
 
-        float rotX = (float)(mario.Rotation.X * (Math.PI / 180f));
-        float rotY = (float)(mario.Rotation.Y * (Math.PI / 180f));
-        float rotZ = (float)(mario.Rotation.Z * (Math.PI / 180f));
+        float rotX = 0;
+        float rotY = (float)(mario.Rotation.Y * (Math.PI / 180f)); // Horizontal rotation
+        float rotZ = (float)(25 * (Math.PI / 180f)); // Vertical rotation
 
         Quaternion rotation = Quaternion.CreateFromYawPitchRoll(rotY, rotZ, rotX);
-        rotation.X += 0.5f;
         rotation = Quaternion.Normalize(rotation);
 
         Vector3 cameraDistance = Vector3.Transform(Vector3.UnitZ, rotation) * 13;
@@ -440,6 +466,7 @@ internal class Scene
             CommonMaterialParameters matParams = new(color, new());
 
             BasicSceneObj areaSceneObj = new(stageObj, matParams, 20f, _lastPickingId);
+            AddSwitchFromStageObj(stageObj, areaSceneObj);
             _sceneObjects.Add(areaSceneObj);
             _pickableObjs.Add(_lastPickingId++, areaSceneObj);
             return;

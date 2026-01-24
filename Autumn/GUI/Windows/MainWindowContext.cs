@@ -8,6 +8,7 @@ using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
 using Autumn.Storage;
+using Autumn.Wrappers;
 using ImGuiNET;
 using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
@@ -22,6 +23,7 @@ internal class MainWindowContext : WindowContext
     public Scene? CurrentScene { get; set; }
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
+    public SceneGL.GLWrappers.Framebuffer CameraFramebuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
     public GLTaskScheduler GLTaskScheduler { get; } = new();
@@ -42,6 +44,7 @@ internal class MainWindowContext : WindowContext
 
     #region Editor Dialogs
     public readonly EditChildrenDialog _editChildrenDialog;
+    public readonly EditExtraPropsDialog _editExtraPropsDialog;
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
@@ -49,9 +52,16 @@ internal class MainWindowContext : WindowContext
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
-    private readonly ParametersWindow _paramsWindow;
     private readonly SceneWindow _sceneWindow;
     private readonly WelcomeDialog _welcomeDialog;
+    #endregion
+
+    #region Params Windows
+    private readonly MiscParamsWindow _miscParams;
+    private readonly CameraParamsWindow _camParams;
+    private readonly FogParamsWindow _fogParams;
+    private readonly LightParamsWindow _lightParams;
+    private readonly SwitchesWindow _switchParams;
     #endregion
 
 #if DEBUG
@@ -67,6 +77,7 @@ internal class MainWindowContext : WindowContext
         _newStageObjDialog = new(this);
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
+        _editExtraPropsDialog = new(this);
         _settingsDialog = new(this);
         _editCCNT = new(this);
         _shortcutsDialog = new(this);
@@ -76,8 +87,14 @@ internal class MainWindowContext : WindowContext
         _stageWindow = new(this);
         _objectWindow = new(this);
         _propertiesWindow = new(this);
-        _paramsWindow = new(this);
         _sceneWindow = new(this);
+
+        // Initialize param editors
+        _miscParams = new(this);
+        _camParams = new(this);
+        _fogParams = new(this);
+        _lightParams = new(this);
+        _switchParams = new(this);
 
         Window.Title = "Autumn: Stage Editor";
 
@@ -86,6 +103,11 @@ internal class MainWindowContext : WindowContext
             depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
             SceneGL.PixelFormat.R8_G8_B8_A8_UNorm, // Regular color.
             SceneGL.PixelFormat.R32_UInt // Used for object selection.
+        );
+        CameraFramebuffer = new(
+            initialSize: null,
+            depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm // Regular color.
         );
 
         Window.Load += () =>
@@ -128,6 +150,11 @@ internal class MainWindowContext : WindowContext
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
 
+                ModelRenderer.VisibleAreas = ContextHandler.SystemSettings.VisibleDefaults[0];
+                ModelRenderer.VisibleCameraAreas = ContextHandler.SystemSettings.VisibleDefaults[1];
+                ModelRenderer.VisibleRails = ContextHandler.SystemSettings.VisibleDefaults[2];
+                ModelRenderer.VisibleGrid = ContextHandler.SystemSettings.VisibleDefaults[3];
+
                 switch (ContextHandler.SystemSettings.Theme)
                 {
                     case 2:
@@ -142,7 +169,6 @@ internal class MainWindowContext : WindowContext
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
 
-                _isFirstFrame = false;
             }
 
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
@@ -181,7 +207,6 @@ internal class MainWindowContext : WindowContext
             {
                 _objectWindow.Render();
                 _propertiesWindow.Render();
-                _paramsWindow.Render();
                 _sceneWindow.Render(deltaSeconds);
                 _stageWindow.Render();
             }
@@ -190,16 +215,28 @@ internal class MainWindowContext : WindowContext
             if (_showDemoWindow)
                 ImGui.ShowDemoWindow(ref _showDemoWindow);
 #endif
-
             _addStageDialog.Render();
             _closingDialog.Render();
             _newStageObjDialog.Render();
             _editChildrenDialog.Render();
+            _editExtraPropsDialog.Render();
             _editCCNT.Render();
             _DBEditorDialog.Render();
             _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
+
+            _miscParams.Render();
+            _camParams.Render();
+            _fogParams.Render();
+            _lightParams.Render();
+            _switchParams.Render();
+
+            if (_isFirstFrame)
+            {
+                _isFirstFrame = false;
+                ImGui.SetWindowFocus("Stages");
+            }
 
             GLTaskScheduler.DoTasks(GL!, deltaSeconds);
 
@@ -234,7 +271,7 @@ internal class MainWindowContext : WindowContext
                                 GLTaskScheduler,
                                 ref manager.StatusMessageSecondary
                             );
-
+                        scene.ResetCamera();
                         Scenes.Add(scene);
                         ImGui.SetWindowFocus("Objects");
                     }
@@ -261,6 +298,7 @@ internal class MainWindowContext : WindowContext
     public void OpenAddObjectDialog() => _newStageObjDialog.Open();
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
+    public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
         _sceneWindow.AddMouseClickAction(action);
@@ -270,11 +308,23 @@ internal class MainWindowContext : WindowContext
 
     public void SetSwitchSelected(int i)
     {
-        _paramsWindow.SwitchEnabled = true;
-        _paramsWindow.SelectedSwitch = i;
-        _paramsWindow.CurrentTab = 0;
+        _switchParams.IsOpen = true;
+        _switchParams.SelectedSwitch = i;
+        ImGui.SetWindowFocus("Switches##SwitchWindow");
+    }
+    public void SetCameraSelected(int i)
+    {
+        _camParams.IsOpen = true;
+        CurrentScene!.SelectedCam = i;
+        ImGui.SetWindowFocus("cameras");
+    }
+    public void UpdateCameraList()
+    {
+        _propertiesWindow.updateCameras = true;
     }
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
+    internal void SetupExtraPropsDialog(StageObj stageObj, string propName) => _editExtraPropsDialog.Open(stageObj, propName);
+    internal void SetupExtraPropsDialogNew(StageObj stageObj) => _editExtraPropsDialog.New(stageObj);
     internal void CloseCurrentScene()
     {
         int i = Scenes.IndexOf(CurrentScene!) - 1;
@@ -369,20 +419,20 @@ internal class MainWindowContext : WindowContext
         if (ImGui.BeginMenu("Stage"))
         {
             if (ImGui.MenuItem("Edit General Params"))
-                _paramsWindow.MiscEnabled = true;
-            if (ImGui.MenuItem("Edit Switches"))
-                _paramsWindow.SwitchEnabled = true;
-            if (ImGui.MenuItem("Edit Fogs"))
-                _paramsWindow.FogEnabled = true;
-            if (ImGui.MenuItem("Edit Lights"))
-                _paramsWindow.LightEnabled = true;
-            ImGui.Separator();
-            ImGui.BeginDisabled();
-            // TODO
+            {
+                //_paramsWindow.MiscEnabled = true;
+                _miscParams.IsOpen = true;
+            }
             if (ImGui.MenuItem("Edit Cameras"))
-                _paramsWindow.CamerasEnabled = true;
-
-            ImGui.EndDisabled();
+                _camParams.IsOpen = true;
+            //ImGui.SetWindowFocus("cameras");
+            ImGui.Separator();
+            if (ImGui.MenuItem("Edit Fogs"))
+                _fogParams.IsOpen = true;
+            if (ImGui.MenuItem("Edit Lights"))
+                _lightParams.IsOpen = true;
+            if (ImGui.MenuItem("Edit Switches"))
+                _switchParams.IsOpen = true;
             ImGui.EndMenu();
         }
 
@@ -400,12 +450,10 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Effects"))
                 _editCCNT.Open();
             ImGui.EndDisabled();
-            if (ContextHandler.SystemSettings.EnableDBEditor)
-            {
-                ImGui.Separator();
-                if (ImGui.MenuItem("Edit Object Database"))
-                    _DBEditorDialog.Open();
-            }
+            ImGui.Separator();
+            if (ImGui.MenuItem("Object Database"))
+                _DBEditorDialog.Open();
+            
             ImGui.EndMenu();
         }
 
@@ -428,10 +476,11 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
             if (ImGui.MenuItem("Show all params"))
             {
-                _paramsWindow.MiscEnabled = true;
-                _paramsWindow.SwitchEnabled = true;
-                _paramsWindow.FogEnabled = true;
-                _paramsWindow.LightEnabled = true;
+                _fogParams.IsOpen = true;
+                _lightParams.IsOpen = true;
+                _miscParams.IsOpen = true;
+                _switchParams.IsOpen = true;
+                _camParams.IsOpen = true;
             }
             ImGui.Separator();
             ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);
@@ -485,6 +534,7 @@ internal class MainWindowContext : WindowContext
                     CurrentScene = scene;
 
                 ImGui.EndTabItem();
+                ImGui.SetItemTooltip(scene.Stage.UserPath);
 
                 ImGui.PopID();
 
@@ -530,9 +580,12 @@ internal class MainWindowContext : WindowContext
 
         ImGuiWindowFlags flags =
             ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs;
-
-        if (!ImGui.Begin("StatusBar", flags))
+        bool beginStatusBar = ImGui.Begin("StatusBar", flags);
+        if (!beginStatusBar)
+        {
+            ImGui.PopStyleVar();
             return;
+        }
 
         ImGui.SetCursorPosX(10);
 

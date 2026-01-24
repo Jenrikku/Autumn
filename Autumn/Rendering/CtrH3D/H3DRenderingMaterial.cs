@@ -307,6 +307,12 @@ internal class H3DRenderingMaterial
             };
 
         // Scales:
+
+        sceneData.IrScale.Row2.X = 1; // Default scale for TexCoord is 1 NOT 0, if a model doesn't have a TexCoord attribute we use 1. 
+        sceneData.IrScale.Row2.Y = 1;
+        sceneData.IrScale.Row2.Z = 1;
+        sceneData.IrScale.Row2.W = 1; // Same as TexCoord for BoneWeight
+        
         foreach (PICAAttribute attribute in mesh.Attributes)
             switch (attribute.Name)
             {
@@ -335,7 +341,7 @@ internal class H3DRenderingMaterial
                     sceneData.IrScale.Row2.W = attribute.Scale;
                     break;
             }
-
+        sceneData.IrScale.Row1.X = mesh.IsVisible ? sceneData.IrScale.Row1.X : 0; // Temporary fix for mesh IsVisible property
         // Texture transforms:
         for (byte i = 0; i < 3; i++)
         {

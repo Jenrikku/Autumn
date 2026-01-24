@@ -15,10 +15,9 @@ internal class AddStageDialog
     private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
-
+    public void Open() => _isOpened = true;
     private string _name = string.Empty;
-    private string _scenario = string.Empty;
-    private byte scenarioNo = 0;
+    private int _scenarioNo = 1;
     private int _useRomFSComboCurrent = 0;
 
     private bool _stageListNeedsRebuild = true;
@@ -27,24 +26,19 @@ internal class AddStageDialog
     /// <summary>
     /// Whether to reset the dialog to its defaults values once the "Ok" button has been pressed.
     /// </summary>
-    public bool ResetOnDone;
-    int currentItem = 0;
-    string[] comboStrings;
-    bool _skipOk = false;
+    private int _currentItem = 0;
+    private string[] _comboStrings;
+    private bool _skipOk = false;
 
-    public AddStageDialog(MainWindowContext window, bool resetOnDone = true)
+    public AddStageDialog(MainWindowContext window)
     {
         _window = window;
-        ResetOnDone = resetOnDone;
-
-        comboStrings = ["All stages", "World 1", "World 2", "World 3", "World 4", "World 5", "World 6", "World 7", "World 8 (Part 1)", "World 8 (Part 2)",
+        _comboStrings = ["All stages", "World 1", "World 2", "World 3", "World 4", "World 5", "World 6", "World 7", "World 8 (Part 1)", "World 8 (Part 2)",
                         "Special 1", "Special 2", "Special 3", "Special 4", "Special 5", "Special 6", "Special 7", "Special 8",
                         "Cutscenes", "Miscellaneous"];
 
         Reset();
     }
-
-    public void Open() => _isOpened = true;
 
     /// <summary>
     /// Resets all values from this dialog to their defaults.
@@ -52,16 +46,18 @@ internal class AddStageDialog
     public void Reset()
     {
         _name = string.Empty;
-        _scenario = "1";
+        _scenarioNo = 1;
         _foundStages = null;
         _stageListNeedsRebuild = true;
         _skipOk = false;
     }
 
+    bool _noReference = false;
+
     public void Render()
     {
         if (_window.ContextHandler.FSHandler.OriginalFS == null)
-            return;
+            _noReference = true;
 
         if (!_isOpened)
             return;
@@ -87,18 +83,22 @@ internal class AddStageDialog
             )
         )
             return;
+        if (_noReference) RenderNoRomfs();
+        else RenderWithRomfs();
+    }
 
+    void RenderWithRomfs()
+    {
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         ImGuiStylePtr style = ImGui.GetStyle();
-
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
-        if (ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length))
+        if (ImGui.Combo("##typeselect", ref _currentItem, _comboStrings, _comboStrings.Length))
             _stageListNeedsRebuild = true;
         _skipOk = false;
 
         #region Name and Scenario
 
-        float scenarioFieldWidth = 30 * _window.ScalingFactor;
+        float scenarioFieldWidth = 80 * _window.ScalingFactor;
 
         ImGui.SetNextItemWidth(contentAvail.X - scenarioFieldWidth - style.ItemSpacing.X);
         if (ImGui.InputTextWithHint("##name", "Name", ref _name, 100))
@@ -106,7 +106,8 @@ internal class AddStageDialog
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(scenarioFieldWidth);
-        ImGui.InputText("##scenario", ref _scenario, 2, ImGuiInputTextFlags.CharsDecimal);
+        ImGui.InputInt("##scenario", ref _scenarioNo, 1);
+        _scenarioNo = _scenarioNo > 0 ? _scenarioNo < 0x100 ? _scenarioNo : 255 : 0;
 
         ImGui.Spacing();
 
@@ -116,7 +117,7 @@ internal class AddStageDialog
 
         if (_stageListNeedsRebuild)
         {
-            if (currentItem == 0)
+            if (_currentItem == 0)
             {
                 _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains(_name, StringComparison.InvariantCultureIgnoreCase)).ToList();
 
@@ -127,9 +128,9 @@ internal class AddStageDialog
                 _foundStages.Sort();
                 _stageListNeedsRebuild = false;
             }
-            else if (currentItem == comboStrings.Length - 2)
+            else if (_currentItem == _comboStrings.Length - 2)
                 _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains("Demo")).ToList();
-            else if (currentItem == comboStrings.Length - 1)
+            else if (_currentItem == _comboStrings.Length - 1)
                 _foundStages = _window.ContextHandler.FSHandler.OriginalFS.EnumerateStages().Where(t => t.Name.Contains("Mystery") || t.Name.Contains("Kinopio") || t.Name.Contains("Title") || t.Name.Contains("CourseSelect")).ToList();
 
         }
@@ -138,7 +139,7 @@ internal class AddStageDialog
 
         #region Stage list box
 
-        if (currentItem == 0)
+        if (_currentItem == 0)
         {
 
             ImGui.SetNextItemWidth(contentAvail.X);
@@ -148,12 +149,12 @@ internal class AddStageDialog
                 foreach (var (name, scenario) in _foundStages)
                 {
                     string visibleString = name + scenario;
-                    bool selected = _name == name && scenarioNo == scenario;
+                    bool selected = _name == name && _scenarioNo == scenario;
 
                     if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
                     {
                         _name = name;
-                        _scenario = scenario.ToString();
+                        _scenarioNo = scenario;
                         _stageListNeedsRebuild = true;
                         _useRomFSComboCurrent = 0;
 
@@ -165,7 +166,7 @@ internal class AddStageDialog
                 ImGui.EndListBox();
             }
         }
-        else if (currentItem > 0 && currentItem < comboStrings.Length - 2)
+        else if (_currentItem > 0 && _currentItem < _comboStrings.Length - 2)
         {
             ImGui.SetNextItemWidth(contentAvail.X);
 
@@ -177,7 +178,7 @@ internal class AddStageDialog
                 foreach (
                     SystemDataTable.StageDefine _stage in _window
                         .ContextHandler.FSHandler.ReadGameSystemDataTable()!
-                        .WorldList[currentItem - 1]
+                        .WorldList[_currentItem - 1]
                         .StageList
                 )
                 {
@@ -188,12 +189,12 @@ internal class AddStageDialog
                         continue;
 
                     string visibleString = _stage.Stage + _stage.Scenario;
-                    bool selected = _name == _stage.Stage && scenarioNo == _stage.Scenario;
+                    bool selected = _name == _stage.Stage && _scenarioNo == _stage.Scenario;
 
                     if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
                     {
                         _name = _stage.Stage;
-                        _scenario = _stage.Scenario.ToString();
+                        _scenarioNo = _stage.Scenario;
                         _useRomFSComboCurrent = 0;
 
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
@@ -213,12 +214,12 @@ internal class AddStageDialog
                 foreach (var (name, scenario) in _foundStages)
                 {
                     string visibleString = name + scenario;
-                    bool selected = _name == name && scenarioNo == scenario;
+                    bool selected = _name == name && _scenarioNo == scenario;
 
                     if (ImGui.Selectable(visibleString, selected, ImGuiSelectableFlags.AllowDoubleClick))
                     {
                         _name = name;
-                        _scenario = scenario.ToString();
+                        _scenarioNo = scenario;
                         _stageListNeedsRebuild = true;
                         _useRomFSComboCurrent = 0;
                         if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
@@ -235,20 +236,18 @@ internal class AddStageDialog
 
         #region Bottom bar
 
-        if (!byte.TryParse(_scenario, out scenarioNo))
-            scenarioNo = 0;
 
         float okButtonWidth = 50 * _window.ScalingFactor;
 
         bool _disable = false;
 
-        if (currentItem == 0 && (!_foundStages?.Contains((_name, scenarioNo)) ?? true))
+        if (_currentItem == 0 && (!_foundStages?.Contains((_name, (byte)_scenarioNo)) ?? true))
         {
             _disable = true;
             _useRomFSComboCurrent = 1;
         }
 
-        if (_window.ContextHandler.ProjectStages.Contains((_name, scenarioNo)))
+        if (_window.ContextHandler.ProjectStages.Contains((_name, (byte)_scenarioNo)))
             _disable = true;
 
         if (_disable)
@@ -268,7 +267,7 @@ internal class AddStageDialog
 
         ImGui.SameLine();
 
-        bool stageExists = _window.ContextHandler.ProjectStages.Contains((_name, scenarioNo));
+        bool stageExists = _window.ContextHandler.ProjectStages.Contains((_name, (byte)_scenarioNo));
 
         _disable = false;
 
@@ -283,10 +282,10 @@ internal class AddStageDialog
             if (_useRomFSComboCurrent == 0 || _skipOk)
             {
                 _window.BackgroundManager.Add(
-                    $"Importing stage \"{_name + scenarioNo}\" from RomFS...",
+                    $"Importing stage \"{_name + _scenarioNo}\" from RomFS...",
                     manager =>
                     {
-                        Stage stage = _window.ContextHandler.FSHandler.ReadStage(_name, scenarioNo);
+                        Stage stage = _window.ContextHandler.FSHandler.ReadStage(_name, (byte)_scenarioNo);
                         Scene scene =
                             new(
                                 stage,
@@ -297,32 +296,15 @@ internal class AddStageDialog
 
                         _window.Scenes.Add(scene);
 
-                        if (ResetOnDone)
-                            Reset();
+                        Reset();
+                        scene.ResetCamera();
+                        ImGui.SetWindowFocus("Objects");
                     }
                 );
             }
             else
             {
-                _window.BackgroundManager.Add(
-                    $"Creating the stage \"{_name + scenarioNo}\"...",
-                    manager =>
-                    {
-                        Stage stage = new() { Name = _name, Scenario = scenarioNo };
-                        Scene scene =
-                            new(
-                                stage,
-                                _window.ContextHandler.FSHandler,
-                                _window.GLTaskScheduler,
-                                ref manager.StatusMessageSecondary
-                            );
-
-                        _window.Scenes.Add(scene);
-
-                        if (ResetOnDone)
-                            Reset();
-                    }
-                );
+                NewEmptyStage();
             }
 
             _isOpened = false;
@@ -339,5 +321,72 @@ internal class AddStageDialog
         #endregion
 
         ImGui.EndPopup();
+    }
+    void RenderNoRomfs()
+    {
+        Vector2 contentAvail = ImGui.GetContentRegionAvail();
+        ImGuiStylePtr style = ImGui.GetStyle();
+
+
+        float scenarioFieldWidth = 80 * _window.ScalingFactor;
+
+        ImGui.SetNextItemWidth(contentAvail.X - scenarioFieldWidth - style.ItemSpacing.X);
+        if (ImGui.InputTextWithHint("##name", "Name", ref _name, 100))
+            _stageListNeedsRebuild = true;
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(scenarioFieldWidth);
+        ImGui.InputInt("##scenario", ref _scenarioNo, 1);
+        _scenarioNo = _scenarioNo > 0 ? _scenarioNo < 0x100 ? _scenarioNo : 255 : 0;
+        bool stageExists = _window.ContextHandler.ProjectStages.Contains((_name, (byte)_scenarioNo));
+
+
+        ImGui.Text("Create a new empty stage"); ImGui.SameLine();
+
+        bool _disable = false;
+        if (string.IsNullOrEmpty(_name) || stageExists)
+            _disable = true;
+
+        if (_disable)
+            ImGui.BeginDisabled();
+
+        if (ImGui.Button("Ok", new(-1, 0)) || (_skipOk && !_disable))
+        {
+            NewEmptyStage();
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
+
+        if (_disable)
+            ImGui.EndDisabled();
+        // Warn the user if the stage already exists:
+        if (stageExists)
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "A stage with this name already exists.");
+
+        ImGui.EndPopup();
+    }
+
+    private void NewEmptyStage()
+    {
+        _window.BackgroundManager.Add(
+            $"Creating the stage \"{_name + _scenarioNo}\"...",
+            manager =>
+            {
+                Stage stage = new() { Name = _name, Scenario = (byte)_scenarioNo };
+                Scene scene =
+                    new(
+                        stage,
+                        _window.ContextHandler.FSHandler,
+                        _window.GLTaskScheduler,
+                        ref manager.StatusMessageSecondary
+                    );
+
+                _window.Scenes.Add(scene);
+
+                Reset();
+                scene.ResetCamera();
+                ImGui.SetWindowFocus("Objects");
+            }
+        );
     }
 }

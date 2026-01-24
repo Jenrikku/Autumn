@@ -1,6 +1,8 @@
+using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Storage;
+using Autumn.Utils;
 using ImGuiNET;
 
 namespace Autumn.GUI.Editors;
@@ -46,15 +48,35 @@ internal class StageWindow
             "Special 8"
         ];
     }
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
     {
+        unsafe
+        {
+            fixed (ImGuiWindowClass* tmp = &windowClass)
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+        }
         if (!ImGui.Begin("Stages"))
             return;
 
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
+        if (ImGui.Button(IconUtils.PLUS))
+        {
+            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.AddStage, window);
+        }
+        ImGui.SetItemTooltip("Add stage");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        if (window.ContextHandler.FSHandler.ReadGameSystemDataTable() == null)
+            ImGui.BeginDisabled();
         ImGui.Combo("##typeselect", ref currentItem, comboStrings, comboStrings.Length);
 
+        if (window.ContextHandler.FSHandler.ReadGameSystemDataTable() == null)
+        {
+            ImGui.EndDisabled();
+            ImGui.SetItemTooltip("Can't find GameSystemDataTable.szs, so world selection is disabled");
+        }
+        
         // Stage table:
 
         if (ImGui.BeginTable("stageTable", 2, _stageTableFlags))

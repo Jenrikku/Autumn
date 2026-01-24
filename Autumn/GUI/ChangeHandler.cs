@@ -282,7 +282,6 @@ internal static class ChangeHandler
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
         var oldSO = del.StageObj.Clone();
-	var oldParent = del.StageObj.Parent;
         var delete = del;
 
         Change change =
@@ -292,7 +291,7 @@ internal static class ChangeHandler
                     if (context.CurrentScene is null)
                         return;
 
-                    context.CurrentScene.ReAddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler, oldParent);
+                    context.CurrentScene.ReAddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler);
                     delete = context.CurrentScene.EnumerateSceneObjs().Last();
                 },
                 Redo: () =>

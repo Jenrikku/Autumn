@@ -30,21 +30,35 @@ internal class ObjectWindow(MainWindowContext window)
     }
 
     private int selectedIndex = -1;
+    private int nextIdx = -1;
+    private int prevIdx = -1;
     bool manualClick = false;
+    ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
     public void Render()
     {
+        unsafe
+        {
+            fixed (ImGuiWindowClass* tmp = &windowClass)
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+        }
         if (!ImGui.Begin("Objects"))
             return;
 
         if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");
+            ImGui.End();
             return;
         }
 
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2);
-
+        if (ImGui.Button(IconUtils.PLUS))
+        {
+            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.AddObject, window);
+        }
+        ImGui.SetItemTooltip("Add object");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.Combo(
             "",
             ref _objectFilterCurrent,
@@ -57,11 +71,13 @@ internal class ObjectWindow(MainWindowContext window)
                 "Start Events",
                 "Start Objects",
                 "Demo Scene Objects",
-                "Rail"
+                "Rails"
             ],
             9
         );
 
+        List<uint> ints = new();
+        bool doubleclick = false;
         if (ImGui.BeginTable("objectTable", 3, _objectTableFlags))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -74,12 +90,10 @@ internal class ObjectWindow(MainWindowContext window)
             foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
                 StageObj stageObj = obj.StageObj;
-                if (
-                    (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1)
-                    && (!IsChild(stageObj) && !IsChildArea(stageObj))
-                )
+                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1
+                    && !IsChild(stageObj) && !IsChildArea(stageObj))
                     continue;
-
+                ints.Add(obj.PickingId);
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
                 //ImGui.PushFont(window.FontPointers[1]);
@@ -116,52 +130,45 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableSetColumnIndex(1);
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
-                if (
-                    window.CurrentScene.SelectedObjects.Count() <= 1
-                    && !lastKeyPressed
-                    && selectedIndex != listId
-                    && obj.Selected
-                    && !manualClick
-                )
-                {
-                    selectedIndex = listId;
-                    ImGui.SetScrollHereY();
-                }
 
-                if (selectedIndex == listId && !obj.Selected && lastKeyPressed)
+                if (selectedIndex == (int)obj.PickingId && !obj.Selected && lastKeyPressed && !manualClick)
                 {
                     ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, obj.PickingId, true);
                     ImGui.SetScrollHereY();
+                    nextIdx = (int)obj.PickingId;
+                    prevIdx = (int)obj.PickingId;
                 }
 
-                if (selectedIndex != listId && obj.Selected && manualClick)
+                if (selectedIndex != (int)obj.PickingId && obj.Selected && manualClick && selectedIndex > (int)obj.PickingId)
                 {
                     manualClick = false;
-                    selectedIndex = listId;
+                    selectedIndex = (int)obj.PickingId;
                 }
 
                 if (ImGui.Selectable(stageObj.Name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
                 {
-                    ChangeHandler.ToggleObjectSelection(
-                        window,
-                        window.CurrentScene.History,
-                        obj.PickingId,
-                        !window.Keyboard?.IsShiftPressed() ?? true
-                    );
+                    // NEXT SELECTION = listId;
+                    nextIdx = (int)obj.PickingId;
                     manualClick = true;
-                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                    {
-                        AxisAlignedBoundingBox aabb =
-                            window.CurrentScene.SelectedObjects.First().AABB
-                            * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                        window.CurrentScene!.Camera.LookFrom(
-                            window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
-                            aabb.GetDiagonal() * 0.01f
-                        );
-                    }
+                    selectedIndex = (int)obj.PickingId;
+                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = _objectFilterCurrent == 8 ? false : true; // REMOVE WHEN RAILS ARE FUNCTIONAL AND SELECTABLE                    
                 }
 
                 ImGui.SetItemTooltip(stageObj.Name);
+
+                if (
+                    window.CurrentScene.SelectedObjects.Count() <= 1
+                    && !lastKeyPressed
+                    && selectedIndex != (int)obj.PickingId
+                    && obj.Selected
+                    && !manualClick
+                )
+                {
+                    selectedIndex = (int)obj.PickingId;
+                    ImGui.SetScrollHereY();
+                    nextIdx = (int)obj.PickingId;
+                    prevIdx = (int)obj.PickingId;
+                }
 
                 listId++;
                 ImGui.TableSetColumnIndex(2);
@@ -170,6 +177,66 @@ internal class ObjectWindow(MainWindowContext window)
             }
 
             ImGui.EndTable();
+        }
+        if (nextIdx != -1)
+        {
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift) && nextIdx != prevIdx)
+            {
+                int max;
+                int init;
+                if (prevIdx > nextIdx)
+                {
+                    max = ints.IndexOf((uint)prevIdx);
+                    init = ints.IndexOf((uint)nextIdx);
+                }
+                else
+                {
+                    init = ints.IndexOf((uint)prevIdx);
+                    max = ints.IndexOf((uint)nextIdx);
+                }
+                while (init <= max)
+                {
+                    if (!window.CurrentScene.IsObjectSelected(ints[init]))
+                        ChangeHandler.ToggleObjectSelection(
+                            window,
+                            window.CurrentScene.History,
+                            ints[init],
+                            false
+                        );
+                    init++;
+                }
+            }
+            else if (ImGui.IsKeyDown(ImGuiKey.ModCtrl) && nextIdx != prevIdx)
+            {
+
+                ChangeHandler.ToggleObjectSelection(
+                    window,
+                    window.CurrentScene.History,
+                    (uint)nextIdx,
+                    false
+                );
+            }
+            else
+            {
+                ChangeHandler.ToggleObjectSelection(
+                    window,
+                    window.CurrentScene.History,
+                    (uint)nextIdx,
+                    true
+                );
+            }
+            if (doubleclick)
+            {
+                AxisAlignedBoundingBox aabb =
+                    window.CurrentScene.SelectedObjects.First().AABB
+                    * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+                window.CurrentScene!.Camera.LookFrom(
+                    window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
+                    aabb.GetDiagonal() * 0.01f
+                );
+            }
+            prevIdx = nextIdx;
+            nextIdx = -1;
         }
 
         lastKeyPressed = false;

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
+using Autumn.Utils;
 using ImGuiNET;
 using TinyFileDialogsSharp;
 
@@ -91,12 +92,46 @@ internal class WelcomeDialog
 
                 ImGui.SetCursorPosY(pathInputY);
 
-                ImGuiWidgets.DirectoryPathSelector(
-                    ref _romfsInput,
-                    ref _romfsIsValidPath,
-                    width: ImGui.GetContentRegionAvail().X - 60,
-                    dialogTitle: "Select the folder containing the RomFS"
-                );
+                float x = ImGui.GetCursorPosX();
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 60 - 20);
+
+                if (ImGuiWidgets.InputTextRedWhenInvalid("##Inputred", ref _romfsInput, 512, !_romfsIsValidPath))
+                    _romfsIsValidPath = Directory.Exists(_romfsInput);
+
+                ImGui.SameLine();
+
+                if (ImGui.Button(IconUtils.FOLDER+ "##foldering", new(50, 0)))
+                {
+                    if (!_window.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                    {
+                        ProjectChooserContext projectChooser = new(_window.ContextHandler, _window.WindowManager);
+                        projectChooser.Title = "Autumn: Select Base ROMFS folder";
+                        _window.WindowManager.Add(projectChooser);
+                        projectChooser.SuccessCallback += result =>
+                        {
+                            _romfsInput = result[0];
+                            _romfsIsValidPath = Directory.Exists(_romfsInput);
+                        };
+                    }
+                    else
+                    {
+                        if (TinyFileDialogs.SelectFolderDialog(out string? dialogOutput, "Select the folder containing the RomFS"))
+                        {
+                            _romfsInput = dialogOutput;
+                            _romfsIsValidPath = Directory.Exists(_romfsInput);
+                        }
+                    }
+                }
+
+                if (!_romfsIsValidPath && !string.IsNullOrEmpty(_romfsInput))
+                {
+                    ImGui.SetCursorPosX(x);
+
+                    ImGui.TextColored(
+                        new Vector4(0.8549f, 0.7254f, 0.2078f, 1),
+                        "The path does not exist."
+                    );
+                }
 
                 ImGui.SetCursorPosY(buttonsRowY);
 

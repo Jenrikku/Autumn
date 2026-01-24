@@ -14,14 +14,16 @@ internal class SystemSettings
     public string LastProjectOpenPath = string.Empty; // File chooser
     public bool RestoreNativeFileDialogs = false;
     public bool SkipWelcomeDialog = false;
-    public bool OpenLastProject = false;
-    public string LastOpenedProject = string.Empty; // Open last project
+    public bool OpenLastProject = true;
+    public string LastOpenedProject = string.Empty;
     public bool EnableVSync = true;
     public int Theme = 0;
     public int MouseSpeed = 20;
     public bool UseWASD = false;
-    public bool UseMiddleMouse = false;
+    public bool UseMiddleMouse = true;
+    public bool RememberLayout = true;
     public bool EnableDBEditor = false;
+    public bool[] VisibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
     public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
 
     public void AddRecentlyOpenedPath(string path)

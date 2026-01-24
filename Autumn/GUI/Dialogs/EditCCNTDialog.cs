@@ -213,6 +213,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
             {
 
                 SingleFileChooserContext fileChooserContext = new(_window.ContextHandler, _window.WindowManager);
+                fileChooserContext.Title = "Autumn: Select CCNT to merge from";
                 _window.WindowManager.Add(fileChooserContext);
 
                 fileChooserContext.SuccessCallback += result =>
