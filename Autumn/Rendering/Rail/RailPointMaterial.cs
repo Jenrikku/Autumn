@@ -21,8 +21,11 @@ internal static class RailPointMaterial
                 mat4x4 uTransform;
             };
 
+            out vec3 vPos;
+
             void main() {
                 gl_Position = uViewProjection * uTransform * vec4(aPos, 1.0);
+                vPos = aPos;
             }
             """
         );
@@ -33,6 +36,12 @@ internal static class RailPointMaterial
             ShaderType.FragmentShader,
             """
             #version 330
+
+            float max3(float a, float b, float c) {
+                return max(max(a, b), c);
+            }
+
+            in vec3 vPos;
 
             layout(std140) uniform ubMaterial {
                 vec4 uColor;
@@ -46,9 +55,21 @@ internal static class RailPointMaterial
 
             void main() {
                 oPickingId = uPickingId;
+                
+                vec3 absolute = abs(vPos);
 
-                oColor = uColor;
+                float a = max3(
+                    min(absolute.x, absolute.y),
+                    min(absolute.x, absolute.z),
+                    min(absolute.y, absolute.z));
+
+                float wa = fwidth(a);
+
+                float outline = smoothstep(0.5 - wa * 2, 0.5 - wa, a);
+
+                oColor = mix(uColor * 0.18, uColor, outline);
                 oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+                oColor.a = 1;
             }
             """
         );

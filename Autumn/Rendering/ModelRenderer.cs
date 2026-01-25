@@ -60,7 +60,7 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
 
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
-        s_railGeometryParams = new(lineWidth: 0.15f, camera: new(1));
+        s_railGeometryParams = new(lineWidth: 0.05f, camera: new(1));
         s_railMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
         s_railPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
 
@@ -84,6 +84,7 @@ internal static class ModelRenderer
                 Debug.Write($"The cgfx could not be read", "Error");
                 return;
             }
+            
             foreach (H3DLUT lut in h3D.LUTs)
                 foreach (H3DLUTSampler sampler in lut.Samplers)
                 {
