@@ -308,7 +308,7 @@ internal class H3DRenderingMaterial
                 HslSCol = new(0.46275f, 0.76078f, 0.87059f, 0.00f),
                 HslSDir = new(0.0f, 0.95703f, 0.28998f, 0.40f),
                 BoolUniforms = (SceneData.Bools)subMesh.BoolUniforms,
-                BillboardMode = 0 // TEMP - NEEDS TO BE ADDED TO SPICA
+                BillboardMode = subMesh.BillboardMode
             };
 
         // Scales:
