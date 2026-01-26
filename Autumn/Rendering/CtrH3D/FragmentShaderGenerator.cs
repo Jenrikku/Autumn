@@ -503,17 +503,22 @@ internal class FragmentShaderGenerator
         SB.AppendLine($"\t\tvec3 Rounded = vec3(Roundedx, Roundedy, Roundedz);");
 
         // Same but for Lights[i].Position.
-        SB.AppendLine($"\t\tvec3 RPos = Lights[i].Position;");
-        SB.AppendLine("\t\tif (Lights[i].Directional != 0) {");
+        SB.AppendLine($"\t\tvec3 RPos = -Lights[i].Position;");
 
+        // Ignore Directional bool for now
+        
+        SB.AppendLine("\t\tif (Lights[i].Directional == 0) {");
         SB.AppendLine($"\t\t\tRPos.x = (abs(RPos.x) == 1 || RPos.x == 0) ? RPos.x+0.001 : RPos.x;");
         SB.AppendLine($"\t\t\tRPos.y = (abs(RPos.y) == 1 || RPos.y == 0) ? RPos.y+0.001 : RPos.y;");
         SB.AppendLine($"\t\t\tRPos.z = (abs(RPos.z) == 1 || RPos.z == 0) ? RPos.z+0.001 : RPos.z;");
         SB.AppendLine("\t\t}");
+        // SB.AppendLine(
+        //     "\t\tvec3 Light = (Lights[i].Directional == 0)"
+        //         + " ? normalize(RPos)"
+        //         + $" : normalize(RPos + Rounded);" // * Rounded);"
+        // );
         SB.AppendLine(
-            "\t\tvec3 Light = (Lights[i].Directional != 0)"
-                + " ? normalize(RPos)"
-                + $" : normalize(RPos + Rounded);"
+            "\t\tvec3 Light = normalize(RPos);"
         );
 
         SB.AppendLine($"\t\tvec3 Half = normalize(normalize(Rounded) + Light);");
@@ -617,14 +622,14 @@ internal class FragmentShaderGenerator
             Specular1Color += " * g";
 
         if ((Params.FragmentFlags & H3DFragmentFlags.IsLUTGeoFactorEnabled) != 0)
-            SB.AppendLine("\t\tfloat g = ln / abs(dot(Half, Half));");
+            SB.AppendLine("\t\tfloat g = 1;");// ln / abs(dot(Half, Half));");
 
         SB.AppendLine("\t\tvec4 Diffuse =");
         SB.AppendLine($"\t\t\t{AmbientUniform} * Lights[i].Ambient +");
         SB.AppendLine($"\t\t\t{DiffuseUniform} * Lights[i].Diffuse * clamp(ln, 0, 1);");
         SB.AppendLine(
             $"\t\tvec4 Specular = "
-                + $"{Specular0Color} * Lights[i].Specular0 + "
+                + $"{Specular0Color} * Lights[i].Specular0 * 1.6 + " // Make specular 0 stronger to be closer to original
                 + $"{Specular1Color} * Lights[i].Specular1;"
         );
         SB.AppendLine($"\t\tFragPriColor.rgb += Diffuse.rgb * SpotAtt * DistAtt;");

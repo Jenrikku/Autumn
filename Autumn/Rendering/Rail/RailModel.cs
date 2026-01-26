@@ -8,7 +8,7 @@ namespace Autumn.Rendering.Rail;
 
 internal class RailModel(RailObj rail)
 {
-    private const float _bezierPointStep = 0.2f;
+    private const float _bezierPointStep = 0.08f;
 
     private bool _initialized = false;
 
