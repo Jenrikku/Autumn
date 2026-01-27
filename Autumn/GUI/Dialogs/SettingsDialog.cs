@@ -20,6 +20,7 @@ internal class SettingsDialog
     private bool _rememberLayout = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
+    private bool _zoomToMouse = false;
     private bool _enableVSync = true;
     private bool _restoreNativeFileDialogs = false;
     private int _compLevel = 1;
@@ -55,6 +56,7 @@ internal class SettingsDialog
         _dbEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
         _middleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
+        _zoomToMouse = _window.ContextHandler.SystemSettings.ZoomToMouse;
         _oldStyle = _window.ContextHandler.SystemSettings.Theme;
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
         _restoreNativeFileDialogs = _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs;
@@ -149,6 +151,7 @@ internal class SettingsDialog
                 ImGuiWidgets.HelpTooltip("Please be aware that this WILL interfere with other editor commands for now.");
 
                 ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
+                ImGui.Checkbox("Zoom to mouse", ref _zoomToMouse);
                 ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1, default);
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
@@ -217,6 +220,7 @@ internal class SettingsDialog
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
+            _window.ContextHandler.SystemSettings.ZoomToMouse = false;
             _window.ContextHandler.SystemSettings.EnableVSync = true;
             _window.ContextHandler.SystemSettings.Theme = 0;
             _window.ContextHandler.SystemSettings.MouseSpeed = 20;
@@ -281,6 +285,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;
             _window.ContextHandler.SystemSettings.Theme = _selectedStyle;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
+            _window.ContextHandler.SystemSettings.ZoomToMouse = _zoomToMouse;
             _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
             _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = _restoreNativeFileDialogs;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Enum.GetValues<Yaz0Wrapper.CompressionLevel>()[_compLevel];
