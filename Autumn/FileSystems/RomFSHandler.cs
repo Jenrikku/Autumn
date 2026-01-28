@@ -740,9 +740,14 @@ internal partial class RomFSHandler
             }
 
             if (Directory.Exists(Path.Join(_soundPath, "stream")))
-                _bgmTable.BgmFiles = Directory.EnumerateFiles(Path.Join(_soundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x)).Order().ToList();
-            else
-                _bgmTable.BgmFiles.Sort();
+            {
+                var fls = Directory.EnumerateFiles(Path.Join(_soundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x));
+                foreach (string sng in fls)
+                {
+                    if (!_bgmTable.BgmFiles.Contains(sng)) _bgmTable.BgmFiles.Add(sng);
+                }
+            }
+            _bgmTable.BgmFiles.Sort();
         }
 
         //var query = (from s in _bgmTable.StageDefaultBgmList where s.Scenario == 1 select s).ToList();
