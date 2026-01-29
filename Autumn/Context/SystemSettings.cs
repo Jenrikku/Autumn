@@ -17,6 +17,7 @@ internal class SystemSettings
     public bool OpenLastProject = true;
     public string LastOpenedProject = string.Empty;
     public bool EnableVSync = true;
+    public bool AlwaysPreviewStageLights = true;
     public int Theme = 0;
     public int MouseSpeed = 20;
     public bool UseWASD = false;

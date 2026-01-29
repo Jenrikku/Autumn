@@ -97,7 +97,7 @@ internal static class ModelRenderer
         s_railGeometryParams.Camera = cameraEye;
     }
 
-    public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
+    public static void Draw(GL gl, ISceneObj sceneObj, Scene scn)
     {
         if (s_commonSceneParams is null || s_defaultCubeMaterialParams is null)
             throw new InvalidOperationException(
@@ -167,7 +167,8 @@ internal static class ModelRenderer
             {
                 material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
                 material.SetMatrices(s_projectionMatrix, actorSceneObj.Transform, s_viewMatrix);
-                material.SetLight0(previewLight?.GetAsLight() ?? _defaultLight);
+                if (scn.CanPreviewLights) material.SetLight0((scn.PreviewOneLight ? (scn.PreviewLight?.GetAsLight() ?? scn.GetPreviewLight(actor.InitLight.Type)?.GetAsLight()) : scn.GetPreviewLight(actor.InitLight.Type)?.GetAsLight()) ?? _defaultLight);
+                else material.SetLight0(_defaultLight); 
                 material.SetViewRotation(s_cameraRotation);
 
                 if (!material.TryUse(gl, out ProgramUniformScope scope))

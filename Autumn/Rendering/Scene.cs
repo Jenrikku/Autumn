@@ -26,7 +26,11 @@ internal class Scene
 
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
     public Camera PreviewCamera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
+    public bool CanPreviewLights {get; set;} = false;
+    public bool PreviewOneLight {get; set;} = false;
+    public bool UseLightArea {get; set;} = false;
     public StageLight? PreviewLight { get; set; } = null;
+    public LightArea? PreviewLightAreas { get; set; } = null;
     public int SelectedCam { get; set; } = -1;
 
     /// <summary>
@@ -60,7 +64,7 @@ internal class Scene
         ModelRenderer.UpdateSceneParams(view, projection, cameraRot, cameraEye);
 
         foreach (ISceneObj obj in _sceneObjects)
-            ModelRenderer.Draw(gl, obj, PreviewLight);
+            ModelRenderer.Draw(gl, obj, this);
     }
 
     #region Object selection
@@ -127,6 +131,31 @@ internal class Scene
 
     #region Params
 
+    public StageLight? GetPreviewLight(ActorLight.LightType t)
+    {
+        if (!UseLightArea)
+        {
+            if (Stage.LightParams == null) return null;
+            return t switch
+            {
+                ActorLight.LightType.Player => Stage.LightParams.PlayerLight,
+                ActorLight.LightType.Character => Stage.LightParams.ObjectLight,
+                ActorLight.LightType.Terrain_Object => Stage.LightParams.MapObjectLight,
+                _ => Stage.LightParams.StageMapLight,
+            };
+        }
+        else
+        {
+            if (PreviewLightAreas == null) return null;
+            return t switch
+            {
+                ActorLight.LightType.Player => PreviewLightAreas.PlayerLight,
+                ActorLight.LightType.Character => PreviewLightAreas.ObjectLight,
+                ActorLight.LightType.Terrain_Object => PreviewLightAreas.MapObjectLight,
+                _ => Stage.LightParams != null ? Stage.LightParams.StageMapLight : null,
+            };
+        }
+    }
 
     public void AddLight()
     {

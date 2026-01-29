@@ -18,6 +18,7 @@ internal class SettingsDialog
     private bool _useClassNames = false;
     private bool _dbEditor = false;
     private bool _rememberLayout = false;
+    private bool _prevlightonload = false;
     private bool _wasd = false;
     private bool _middleMovesCamera = false;
     private bool _zoomToMouse = false;
@@ -66,6 +67,7 @@ internal class SettingsDialog
         _rememberLayout = _window.ContextHandler.SystemSettings.RememberLayout;
         _romfspath = _window.ContextHandler.Settings.RomFSPath ?? "";
         _romfsIsValidPath = Directory.Exists(_romfspath);
+        _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
     }
 
     /// <summary>
@@ -156,6 +158,7 @@ internal class SettingsDialog
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
                 _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
+                ImGui.Checkbox("Preview stage lights without opening the ligths window", ref _prevlightonload); 
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Editor Functionality"))
@@ -293,6 +296,7 @@ internal class SettingsDialog
             _visibleDefaults.CopyTo(_window.ContextHandler.SystemSettings.VisibleDefaults, 0);
             _window.ContextHandler.SystemSettings.OpenLastProject = _loadLast;
             _window.ContextHandler.SystemSettings.RememberLayout = _rememberLayout;
+            _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
