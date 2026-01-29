@@ -32,7 +32,7 @@ internal static class ModelRenderer
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
     private static Vector3 s_cameraRotation;
-    private static H3DRenderingMaterial.Light _defaultLight = new StageLight().GetAsLight();
+    private static StageLight _defaultLight = new StageLight();
 
     public static Dictionary<string, TextureSampler> GeneralLUTs = new();
 
@@ -167,7 +167,7 @@ internal static class ModelRenderer
             {
                 material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
                 material.SetMatrices(s_projectionMatrix, actorSceneObj.Transform, s_viewMatrix);
-                if (scn.CanPreviewLights) material.SetLight0((scn.PreviewOneLight ? (scn.PreviewLight?.GetAsLight() ?? scn.GetPreviewLight(actor.InitLight.Type)?.GetAsLight()) : scn.GetPreviewLight(actor.InitLight.Type)?.GetAsLight()) ?? _defaultLight);
+                if (scn.CanPreviewLights) material.SetLight0((scn.PreviewOneLight ? (scn.PreviewLight ?? scn.GetPreviewLight(actor.InitLight.Type)) : scn.GetPreviewLight(actor.InitLight.Type)) ?? _defaultLight);
                 else material.SetLight0(_defaultLight); 
                 material.SetViewRotation(s_cameraRotation);
 

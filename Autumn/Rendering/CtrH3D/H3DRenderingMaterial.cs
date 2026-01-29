@@ -644,23 +644,22 @@ internal class H3DRenderingMaterial
 
     public void SetSelectionColor(Vector4 color) =>
         _materialBuffer.SetData(_materialBuffer.Data with { SelectionColor = color });
-    public void SetLight0(Light light) {
-        if (!IsEqualsLight(_materialBuffer.Data.Light0, light))
-        _materialBuffer.SetData(_materialBuffer.Data with { Light0 = light});}
+    public void SetLight0(StageLight light) {
+            if (!IsEqualStageLight(_materialBuffer.Data.Light0, light))
+                _materialBuffer.SetData(_materialBuffer.Data with { Light0 = light.GetAsLight()});}
     public void SetConst5(Vector4 color) =>
         _materialBuffer.SetData(_materialBuffer.Data with { Constant5Color = color});
-    
-    private bool IsEqualsLight(Light a, Light b)
+    private bool IsEqualStageLight(Light a, StageLight b)
     {
         return a.Ambient == b.Ambient 
         && a.Diffuse == b.Diffuse
         && a.Specular0 == b.Specular0
         && a.Specular1 == b.Specular1
-        && a.ConstantColor5 == b.ConstantColor5
-        && a.Direction == b.Direction
-        && a.Directional == b.Directional
-        && a.Position == b.Position
-        && a.DisableConst5 == b.DisableConst5
+        && a.DisableConst5 == 1 == (b.ConstantColors[5] == null)
+        //&& a.ConstantColor5 == b.ConstantColors[5]
+        //&& a.Direction == b.Direction
+        && a.Directional == 1 == b.IsCameraFollow
+        && a.Position == b.Direction
         && a.Diffuse == b.Diffuse;
     }
 
