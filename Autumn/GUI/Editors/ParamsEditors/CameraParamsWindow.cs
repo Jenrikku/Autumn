@@ -161,7 +161,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam < 0)
             ImGui.BeginDisabled();
-        if (ImGui.Button(IconUtils.MINUS + "## remcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
+        if (ImGui.Button(IconUtils.MINUS + "## remcam", new Vector2(ImGui.GetContentRegionAvail().X / 3, default)))
         {
             scn.Stage.CameraParams.Cameras.RemoveAt(selectedcam);
             selectedcam = -1;
@@ -170,7 +170,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
 
         ImGui.SameLine();
-        if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
+        if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetContentRegionAvail().X / 2, default)))
         {
             scn.Stage.CameraParams.AddCamera(new(scn.Stage.CameraParams.Cameras[selectedcam]));
             window.UpdateCameraList();
@@ -180,7 +180,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         if (selectedcam < 0)
             ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetWindowWidth() / 3 - 16, default)))
+        if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetContentRegionAvail().X, default)))
         {
             scn.Stage.CameraParams.AddCamera(new());
             window.UpdateCameraList();

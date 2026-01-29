@@ -195,13 +195,11 @@ internal class SceneWindow(MainWindowContext window)
 
         _previousMousePos = mousePos;
 
+        // Camera Movement
+        float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
+        camMoveSpeed *= window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
         if (_isSceneHovered || _isSceneWindowFocused)
         {
-            // Camera Movement
-            float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
-            camMoveSpeed *=
-                window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
-
             if (window.ContextHandler.SystemSettings.UseWASD)
             {
                 if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
@@ -221,14 +219,6 @@ internal class SceneWindow(MainWindowContext window)
                     if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
                         camera.Eye += Vector3.UnitY * camMoveSpeed;
                 }
-            }
-
-            if (window.Mouse!.ScrollWheels[0].Y != 0 && _isSceneHovered)
-            {
-                camera.Eye -= Vector3.Transform(
-                    Vector3.UnitZ * window.Mouse.ScrollWheels[0].Y * 6 * camMoveSpeed,
-                    camera.Rotation
-                );
             }
 
             // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
@@ -384,6 +374,22 @@ internal class SceneWindow(MainWindowContext window)
             //Debug.Assert(canInvert);
             Vector4 worldMousePos = Vector4.Transform(ndcMousePos3D, inverseViewProjection);
             worldMousePos /= worldMousePos.W;
+
+            // Calculate camera zoom in / out
+            if (window.Mouse!.ScrollWheels[0].Y != 0 && _isSceneHovered)
+            {
+                if (window.ContextHandler.SystemSettings.ZoomToMouse == ImGui.IsKeyDown(ImGuiKey.ModAlt))
+                {
+                    camera.Eye -= Vector3.Transform(
+                        Vector3.UnitZ * window.Mouse.ScrollWheels[0].Y * 6 * camMoveSpeed,
+                        camera.Rotation
+                    );
+                }
+                else
+                {
+                    camera.Eye = camera.Eye + -window.Mouse.ScrollWheels[0].Y * 2 * camMoveSpeed * (camera.Eye - Vector3.Lerp(camera.Eye, new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z), 0.1f));
+                }
+            }
 
             if (
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left)

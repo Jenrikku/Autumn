@@ -32,18 +32,7 @@ internal static class ModelRenderer
     private static Matrix4x4 s_viewMatrix = Matrix4x4.Identity;
     private static Matrix4x4 s_projectionMatrix = Matrix4x4.Identity;
     private static Vector3 s_cameraRotation;
-    private static H3DRenderingMaterial.Light _defaultLight = new()
-    {
-        Ambient = new(0.1f, 0.1f, 0.1f, 1),
-        Diffuse = new(0.4f, 0.4f, 0.4f, 1),
-        Specular0 = new(0.8f, 0.8f, 0.8f, 1),
-        Specular1 = new(0.4f, 0.4f, 0.4f, 1),
-        Position = new(1, 1, 0.7f),
-        Direction = new(0, 0, 0),
-        Directional = 1,
-        TwoSidedDiffuse = 0,
-        DisableConst5 = 1
-    };
+    private static StageLight _defaultLight = new StageLight();
 
     public static Dictionary<string, TextureSampler> GeneralLUTs = new();
 
@@ -108,7 +97,7 @@ internal static class ModelRenderer
         s_railGeometryParams.Camera = cameraEye;
     }
 
-    public static void Draw(GL gl, ISceneObj sceneObj, StageLight? previewLight = null)
+    public static void Draw(GL gl, ISceneObj sceneObj, Scene scn)
     {
         if (s_commonSceneParams is null || s_defaultCubeMaterialParams is null)
             throw new InvalidOperationException(
@@ -178,7 +167,8 @@ internal static class ModelRenderer
             {
                 material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
                 material.SetMatrices(s_projectionMatrix, actorSceneObj.Transform, s_viewMatrix);
-                material.SetLight0(previewLight?.GetAsLight() ?? _defaultLight);
+                if (scn.CanPreviewLights) material.SetLight0((scn.PreviewOneLight ? (scn.PreviewLight ?? scn.GetPreviewLight(actor.InitLight.Type)) : scn.GetPreviewLight(actor.InitLight.Type)) ?? _defaultLight);
+                else material.SetLight0(_defaultLight); 
                 material.SetViewRotation(s_cameraRotation);
 
                 if (!material.TryUse(gl, out ProgramUniformScope scope))
@@ -202,7 +192,7 @@ internal static class ModelRenderer
                             material.BlendingColor.W
                         );
 
-                        gl.BlendEquationSeparate(material.ColorBlendEquation, material.AlphaBlendEquation);
+                        gl.BlendEquationSeparate(material.ColorBlendEquation, BlendEquationModeEXT.Max);//material.AlphaBlendEquation);
 
                         gl.BlendFuncSeparate(
                             material.ColorSrcFact,
@@ -219,7 +209,7 @@ internal static class ModelRenderer
                     gl.StencilOp(material.StencilOps[0], material.StencilOps[1], material.StencilOps[2]);
 
                     gl.DepthFunc(material.DepthFunction);
-                    gl.DepthMask(material.DepthMaskEnabled);
+                    gl.DepthMask(material.DepthMaskEnabled); // /* Hacky fix to self overlapping alphas (within the same mesh),*/ if we wanted it && !material.Name.Contains("Edge"));
 
                     gl.ColorMask(
                         material.ColorMask[0],

@@ -21,6 +21,7 @@ internal class Actor
     public bool IsEmptyModel { get; private set; }
 
     public AxisAlignedBoundingBox AABB { get; set; } = new();
+    public ActorLight InitLight = new();
 
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.

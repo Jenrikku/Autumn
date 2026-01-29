@@ -36,7 +36,13 @@ internal class LightParamsWindow(MainWindowContext window)
     {
         if (!IsOpen)                
         {   
-            if (window.CurrentScene != null && window.CurrentScene.PreviewLight != null) window.CurrentScene.PreviewLight = null;
+            if (window.CurrentScene != null && window.CurrentScene.PreviewLight != null) 
+            {
+                window.CurrentScene.PreviewLight = null; 
+                window.CurrentScene.PreviewLightAreas = null;
+                window.CurrentScene.UseLightArea = false;
+            }
+            if (window.CurrentScene != null) window.CurrentScene.CanPreviewLights = window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
             return;
         }
         unsafe
@@ -57,11 +63,20 @@ internal class LightParamsWindow(MainWindowContext window)
         float prevW = ImGui.GetWindowWidth();
         Scene scn = window.CurrentScene;
 
+        window.CurrentScene.CanPreviewLights = true;
+        ImGui.Text("Preview lights individually:"); ImGui.SameLine();
+        if (ImGui.RadioButton("Yes##DoEdit", scn.PreviewOneLight)) { scn.PreviewOneLight = true;} 
+        ImGui.SameLine();
+        if (ImGui.RadioButton("No##DontEdit",!scn.PreviewOneLight)) { scn.PreviewOneLight = false;} 
+        ImGui.Separator();
+
         if (ImGui.BeginTabBar("Ltabs", ImGuiTabBarFlags.None))
         {
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
             if (ImGui.BeginTabItem("Light Params"))
             {
-                ImGuiWidgets.TextHeader("Light Params:");
+                scn.UseLightArea = false;
+                //ImGuiWidgets.TextHeader("Light Params:");
                 if (scn.Stage.LightParams is null && ImGui.Button("Enable Light Params for this stage", new(-1, default)))
                 {
                     scn.Stage.LightParams = new();
@@ -80,8 +95,10 @@ internal class LightParamsWindow(MainWindowContext window)
             }
             else
                 scn.PreviewLight = null;
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             if (ImGui.BeginTabItem("Light Areas"))
             {
+                scn.UseLightArea = true;
                 LightAreaTab(scn, prevW, style);
                 ImGui.EndTabItem();
             }
@@ -250,7 +267,7 @@ internal class LightParamsWindow(MainWindowContext window)
     }
     void LightAreaTab(Scene scn, float prevW, ImGuiStylePtr style)
     {
-        ImGuiWidgets.TextHeader("Light Areas:");
+        //ImGuiWidgets.TextHeader("Light Areas:");
         if (ImGui.BeginTable("LAreaSelect", 2, _stageTableFlags,
 
         new(default, ImGui.GetWindowHeight() / 3.2f / window.ScalingFactor)))
@@ -291,19 +308,22 @@ internal class LightParamsWindow(MainWindowContext window)
 
         if (_disabled)
             ImGui.BeginDisabled();
-        if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetWindowWidth() / 2 - 10, default)))
+        if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetContentRegionAvail().X / 2, default)))
         {
             scn.Stage.LightAreaNames.Remove(scn.Stage.LightAreaNames.Keys.ElementAt(_selectedlightarea));
         }
         ImGui.SameLine(default, style.ItemSpacing.X / 2);
         if (_disabled)
             ImGui.EndDisabled();
-        if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetWindowWidth() / 2 - 10, default)))
+        if (ImGui.Button(IconUtils.PLUS, new(-1, default)))
         {
             scn.AddLight();
         }
         if (_selectedlightarea > scn.Stage.LightAreaNames.Count - 1)
+        {
             _selectedlightarea = -1;
+            scn.PreviewLightAreas = null;
+        }
         if (_selectedlightarea > -1)
         {
 
@@ -340,8 +360,10 @@ internal class LightParamsWindow(MainWindowContext window)
                 if (keyArray.Contains(refStr))
                 {
 
-                    ImGui.PushItemWidth(prevW - PROP_WIDTH - 20);
+                    ImGui.PushItemWidth(prevW - PROP_WIDTH - 40);
                     LightArea area = ReadLightAreas![scn.Stage.LightAreaNames[scn.Stage.LightAreaNames.Keys.ElementAt(_selectedlightarea)]];
+
+                    if (scn.PreviewLightAreas != area) scn.PreviewLightAreas = area;
 
                     ImGui.BeginDisabled();
                     ImGui.DragInt("InterpolateFrame", ref area.InterpolateFrame, 1);
@@ -422,6 +444,7 @@ internal class LightParamsWindow(MainWindowContext window)
                 }
                 else
                 {
+                    scn.PreviewLightAreas = null;
                     ImGui.BeginDisabled();
                     ImGui.TextWrapped("LightArea with that name couldn't be found in LightDataArea.szs!");
                     ImGui.Text("Can't display Light info.");

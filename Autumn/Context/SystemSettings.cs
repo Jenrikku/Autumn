@@ -17,10 +17,12 @@ internal class SystemSettings
     public bool OpenLastProject = true;
     public string LastOpenedProject = string.Empty;
     public bool EnableVSync = true;
+    public bool AlwaysPreviewStageLights = true;
     public int Theme = 0;
     public int MouseSpeed = 20;
     public bool UseWASD = false;
     public bool UseMiddleMouse = true;
+    public bool ZoomToMouse = false;
     public bool RememberLayout = true;
     public bool EnableDBEditor = false;
     public bool[] VisibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid

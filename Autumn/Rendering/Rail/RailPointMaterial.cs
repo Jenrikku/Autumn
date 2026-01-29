@@ -60,14 +60,20 @@ internal static class RailPointMaterial
 
                 float a = max3(
                     min(absolute.x, absolute.y),
-                    min(absolute.x, absolute.z),
-                    min(absolute.y, absolute.z));
+                    min(absolute.y, absolute.z),
+                    min(absolute.x, -absolute.z));
 
                 float wa = fwidth(a);
 
-                float outline = smoothstep(0.5 - wa * 2, 0.5 - wa, a);
-
-                oColor = mix(uColor * 0.18, uColor, outline);
+                float outline = smoothstep(0.01 - wa, 0.17 - wa, a);
+                
+                //vec4 glint = vec4(1,0.88,0.2,1) + 0.06; // YELLOW
+                //vec4 col = vec4(0.93,0.8,0,1); 
+                //vec4 glint = vec4(1,0.4,0.4,1) + 0.06; // RED
+                //vec4 col = vec4(1,0,0.24,1);
+                vec4 glint = vec4(0.38,0.69,1,1) + 0.06; // BLUE
+                vec4 col = vec4(0.09,0.5,0.86,1);
+                oColor = mix(glint, col, outline);
                 oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
                 oColor.a = 1;
             }

@@ -11,6 +11,7 @@ using SceneGL.Materials.Common;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using SPICA.Formats.CtrGfx.Model.Material;
+using SPICA.Formats.CtrH3D.Model;
 using SPICA.Formats.CtrH3D.Model.Material;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.PICA.Commands;
@@ -19,6 +20,7 @@ namespace Autumn.Rendering.CtrH3D;
 
 internal class H3DRenderingMaterial
 {
+    public string Name = ""; 
     private struct SceneData
     {
         public Matrix3X4<float> WrldMtx;
@@ -40,7 +42,8 @@ internal class H3DRenderingMaterial
         public Vector4D<int> LightCt;
         public Bools BoolUniforms;
         public int DisableVertexColor; // bool
-        public Vector2 _Padding;
+        public H3DBillboardMode BillboardMode; // bool
+        public int _Padding;
 
         [Flags]
         public enum Bools : int
@@ -104,7 +107,7 @@ internal class H3DRenderingMaterial
         public int AngleLUTInput;
         public int SpotAttEnbled; // bool
         public int DistAttEnbled; // bool
-        public int TwoSidedDiffuse; // bool
+        public int TwoSidedDiffuse; // bool, unused in stage lights
         public int Directional; // bool
         public Vector4 ConstantColor5;
     }
@@ -171,6 +174,7 @@ internal class H3DRenderingMaterial
             material.Name,
             material.MaterialParams
         );
+        Name = material.Name;
 
         DepthFunction = (DepthFunction)FromPICATestFunc(matParams.DepthColorMask.DepthFunc);
 
@@ -303,7 +307,8 @@ internal class H3DRenderingMaterial
                 HslGCol = new(0.56471f, 0.34118f, 0.03529f, 0.00f),
                 HslSCol = new(0.46275f, 0.76078f, 0.87059f, 0.00f),
                 HslSDir = new(0.0f, 0.95703f, 0.28998f, 0.40f),
-                BoolUniforms = (SceneData.Bools)subMesh.BoolUniforms
+                BoolUniforms = (SceneData.Bools)subMesh.BoolUniforms,
+                BillboardMode = subMesh.BillboardMode
             };
 
         // Scales:
@@ -406,6 +411,7 @@ internal class H3DRenderingMaterial
                 Constant3Color = matParams.Constant3Color.ToVector4(),
                 Constant4Color = matParams.Constant4Color.ToVector4(),
                 Constant5Color = matParams.Constant5Color.ToVector4(),
+                CombBufferColor = matParams.TexEnvBufferColor.ToVector4(),
                 AlphaReference = matParams.AlphaTest.Reference / 225f,
                 Light0 = new()
                 {
@@ -638,23 +644,22 @@ internal class H3DRenderingMaterial
 
     public void SetSelectionColor(Vector4 color) =>
         _materialBuffer.SetData(_materialBuffer.Data with { SelectionColor = color });
-    public void SetLight0(Light light) {
-        if (!IsEqualsLight(_materialBuffer.Data.Light0, light))
-        _materialBuffer.SetData(_materialBuffer.Data with { Light0 = light});}
+    public void SetLight0(StageLight light) {
+            if (!IsEqualStageLight(_materialBuffer.Data.Light0, light))
+                _materialBuffer.SetData(_materialBuffer.Data with { Light0 = light.GetAsLight()});}
     public void SetConst5(Vector4 color) =>
         _materialBuffer.SetData(_materialBuffer.Data with { Constant5Color = color});
-    
-    private bool IsEqualsLight(Light a, Light b)
+    private bool IsEqualStageLight(Light a, StageLight b)
     {
         return a.Ambient == b.Ambient 
         && a.Diffuse == b.Diffuse
         && a.Specular0 == b.Specular0
         && a.Specular1 == b.Specular1
-        && a.ConstantColor5 == b.ConstantColor5
-        && a.Direction == b.Direction
-        && a.Directional == b.Directional
-        && a.Position == b.Position
-        && a.DisableConst5 == b.DisableConst5
+        && a.DisableConst5 == 1 == (b.ConstantColors[5] == null)
+        //&& a.ConstantColor5 == b.ConstantColors[5]
+        //&& a.Direction == b.Direction
+        && a.Directional == 1 == b.IsCameraFollow
+        && a.Position == b.Direction
         && a.Diffuse == b.Diffuse;
     }
 
