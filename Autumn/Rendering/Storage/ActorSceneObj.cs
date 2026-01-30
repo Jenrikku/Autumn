@@ -7,7 +7,7 @@ using Autumn.Wrappers;
 
 namespace Autumn.Rendering.Storage;
 
-internal class ActorSceneObj : ISceneObj
+internal class ActorSceneObj : IStageSceneObj
 {
     public StageObj StageObj { get; }
     public Actor Actor { get; set; }
@@ -17,6 +17,7 @@ internal class ActorSceneObj : ISceneObj
 
     public uint PickingId { get; set; }
     public bool Selected { get; set; }
+    public bool Hovering { get; set; }
     public bool IsVisible { get; set; } = true;
 
     public ActorSceneObj(StageObj stageObj, Actor actorObj, uint pickingId)

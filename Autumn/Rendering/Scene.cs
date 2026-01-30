@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Autumn.Background;
 using Autumn.Enums;
@@ -24,6 +26,8 @@ internal class Scene
     private readonly List<ISceneObj> _selectedObjects = new();
     public IEnumerable<ISceneObj> SelectedObjects => _selectedObjects;
 
+    public ISceneObj? HoveringObject { get; private set; }
+
     public Camera Camera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
     public Camera PreviewCamera { get; } = new(new Vector3(-10, 7, 10), Vector3.Zero);
     public bool CanPreviewLights {get; set;} = false;
@@ -38,12 +42,13 @@ internal class Scene
     /// </summary>
     public bool IsReady { get; set; } = false;
 
-    private readonly List<ISceneObj> _sceneObjects = new();
+    private readonly List<IStageSceneObj> _stageSceneObjs = new();
+    private readonly List<RailSceneObj> _railObjs = new();
 
     private uint _lastPickingId = 0;
     private readonly Dictionary<uint, ISceneObj> _pickableObjs = new();
 
-    private Dictionary<int, List<ISceneObj>> _stageSwitches = new();
+    private Dictionary<int, List<IStageSceneObj>> _stageSwitches = new();
     private bool _rebuildSwitchCount = true;
     private Dictionary<int, int> _stageSwitchCount = new();
 
@@ -63,7 +68,7 @@ internal class Scene
     {
         ModelRenderer.UpdateSceneParams(view, projection, cameraRot, cameraEye);
 
-        foreach (ISceneObj obj in _sceneObjects)
+        foreach (ISceneObj obj in EnumerateSceneObjs())
             ModelRenderer.Draw(gl, obj, this);
     }
 
@@ -71,23 +76,23 @@ internal class Scene
 
     public bool IsObjectSelected(uint id)
     {
-        _pickableObjs.TryGetValue(id, out ISceneObj? sceneObj);
+        TryGetPickableObj(id, out ISceneObj? sceneObj);
         return sceneObj?.Selected ?? false;
     }
 
     public void SetObjectSelected(uint id, bool value)
     {
-        if (!_pickableObjs.TryGetValue(id, out ISceneObj? sceneObj))
+        if (!TryGetPickableObj(id, out ISceneObj? sceneObj))
             return;
 
         sceneObj.Selected = value;
 
         if (sceneObj.Selected)
         {
-            if (sceneObj.StageObj.CameraId > -1) 
+            if (sceneObj is IStageSceneObj stageSceneObj && stageSceneObj.StageObj.CameraId > -1) 
             {
-                var camType = CameraParams.GetObjectCategory(sceneObj.StageObj);
-                var sl = Stage.CameraParams.GetCamera(sceneObj.StageObj.CameraId, camType);
+                var camType = CameraParams.GetObjectCategory(stageSceneObj.StageObj);
+                var sl = Stage.CameraParams.GetCamera(stageSceneObj.StageObj.CameraId, camType);
                 if (sl == null) SelectedCam = -1;
                 else SelectedCam = Stage.CameraParams.Cameras.IndexOf(sl);
             }
@@ -118,13 +123,44 @@ internal class Scene
 
     public IEnumerable<ISceneObj> EnumerateSceneObjs()
     {
-        foreach (ISceneObj sceneObj in _sceneObjects)
-            yield return sceneObj;
+        foreach (IStageSceneObj obj in _stageSceneObjs)
+            yield return obj;
+
+        foreach (RailSceneObj obj in _railObjs)
+            yield return obj;
+    }
+
+    public IEnumerable<IStageSceneObj> EnumerateStageSceneObjs()
+    {
+        foreach (IStageSceneObj obj in _stageSceneObjs)
+            yield return obj;
+    }
+
+    public IEnumerable<RailSceneObj> EnumerateRailSceneObjs()
+    {
+        foreach (RailSceneObj obj in _railObjs)
+            yield return obj;
     }
 
     public int CountSceneObjs()
     {
-        return _sceneObjects.Count;
+        return _stageSceneObjs.Count + _railObjs.Count;
+    }
+
+    #endregion
+
+    #region Object hovering
+
+    public void SetHoveringObject(uint id)
+    {
+        if (HoveringObject is not null && HoveringObject.PickingId == id) return;
+
+        if (TryGetPickableObj(id, out ISceneObj? sceneObj))
+            sceneObj.Hovering = true;
+
+        if (HoveringObject is not null) HoveringObject.Hovering = false;
+
+        HoveringObject = sceneObj;
     }
 
     #endregion
@@ -162,7 +198,7 @@ internal class Scene
         int _i = 0;
         for (int i = 0; i < 9999; i++)
         {
-            if (!Stage.LightAreaNames.Where(x => x.Key == i).Any())
+            if (!Stage.LightAreaNames.Any(x => x.Key == i))
             {
                 _i = i;
                 break;
@@ -174,7 +210,7 @@ internal class Scene
     {
         for (int i = 0; i < 9999; i++)
         {
-            if (!Stage.StageFogs.Where(x => x.AreaId == i).Any())
+            if (!Stage.StageFogs.Any(x => x.AreaId == i))
             {
                 fog.AreaId = i;
                 break;
@@ -220,16 +256,16 @@ internal class Scene
     }
     internal void UpdateFog(int selectedfog, int oldAreaId)
     {
-        if (_stageFogList.Keys.Where(x => x.AreaId == Stage.StageFogs[selectedfog].AreaId).Count() > 1)
+        if (_stageFogList.Keys.Count(x => x.AreaId == Stage.StageFogs[selectedfog].AreaId) > 1)
         {
             Stage.StageFogs[selectedfog].AreaId = oldAreaId;
             return;
         }
         _stageFogList.Remove(Stage.StageFogs[selectedfog]);
-        var fogAreas = EnumerateSceneObjs().Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
+        var fogAreas = EnumerateStageSceneObjs().Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
         if (!_stageFogList.ContainsKey(Stage.StageFogs[selectedfog]))
             _stageFogList.Add(Stage.StageFogs[selectedfog], new());
-        foreach (ISceneObj sobj in fogAreas)
+        foreach (IStageSceneObj sobj in fogAreas.Cast<IStageSceneObj>())
         {
             if (!sobj.StageObj.Properties.ContainsKey("Arg0") || sobj.StageObj.Properties["Arg0"]?.GetType() != typeof(int) || (int)sobj.StageObj.Properties["Arg0"]! != Stage.StageFogs[selectedfog].AreaId)
                 continue;
@@ -255,13 +291,13 @@ internal class Scene
         }
         return _stageSwitchCount;
     }
-    public List<ISceneObj>? GetObjectsFromSwitch(int i)
+    public List<IStageSceneObj>? GetObjectsFromSwitch(int i)
     {
         if (_stageSwitches.ContainsKey(i))
             return _stageSwitches[i];
         return null;
     }
-    public void AddSwitch(int i, ISceneObj sO)
+    public void AddSwitch(int i, IStageSceneObj sO)
     {
         if (_stageSwitches.ContainsKey(i))
             _stageSwitches[i].Add(sO);
@@ -269,7 +305,7 @@ internal class Scene
             _stageSwitches.Add(i, [sO]);
         _rebuildSwitchCount = true;
     }
-    public void AddSwitchFromStageObj(StageObj stO, ISceneObj scO)
+    public void AddSwitchFromStageObj(StageObj stO, IStageSceneObj scO)
     {
         if (stO.SwitchA > -1) AddSwitch(stO.SwitchA, scO);
         if (stO.SwitchAppear > -1) AddSwitch(stO.SwitchAppear, scO);
@@ -277,7 +313,7 @@ internal class Scene
         if (stO.SwitchKill > -1) AddSwitch(stO.SwitchKill, scO);
         if (stO.SwitchDeadOn > -1) AddSwitch(stO.SwitchDeadOn, scO);
     }
-    public void RemoveSwitchFromStageObj(StageObj stO, ISceneObj scO)
+    public void RemoveSwitchFromStageObj(StageObj stO, IStageSceneObj scO)
     {
         if (stO.SwitchA > -1) ChangeSwitch(-1, stO.SwitchA,  scO);
         if (stO.SwitchAppear > -1) ChangeSwitch(-1, stO.SwitchAppear, scO);
@@ -285,7 +321,7 @@ internal class Scene
         if (stO.SwitchKill > -1) ChangeSwitch(-1, stO.SwitchKill, scO);
         if (stO.SwitchDeadOn > -1) ChangeSwitch(-1, stO.SwitchDeadOn, scO);
     }
-    public void ChangeSwitch(int next, int prev, ISceneObj sO)
+    public void ChangeSwitch(int next, int prev, IStageSceneObj sO)
     {
         if (prev > -1 && _stageSwitches.ContainsKey(prev) && _stageSwitches[prev].Contains(sO))
         {
@@ -315,6 +351,8 @@ internal class Scene
 
     public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
+        Debug.Assert(stageObj is not null); // We need to handle object readding for rails and othet objects. See ChangeHandler.ChangeRemove
+
         if (stageObj.Parent != null)
         {
             StageObj parent = stageObj.Parent;
@@ -381,17 +419,21 @@ internal class Scene
 
     public void RemoveObject(ISceneObj sceneObj)
     {
-        RemoveSwitchFromStageObj(sceneObj.StageObj, sceneObj);
-        Stage.RemoveStageObj(sceneObj.StageObj);
+        if (sceneObj is IStageSceneObj stageSceneObj)
+        {
+            RemoveSwitchFromStageObj(stageSceneObj.StageObj, stageSceneObj);
+            Stage.RemoveStageObj(stageSceneObj.StageObj);
+        }
+
         DestroySceneObject(sceneObj);
     }
 
     public void ResetCamera()
     {
         // Find the first Mario and set the camera to its position.
-        StageObj? mario = _sceneObjects
+        StageObj? mario = _stageSceneObjs
             .Find(
-                (sceneObj) =>
+                sceneObj =>
                     sceneObj.StageObj.Type == StageObjType.Start
                     && sceneObj.StageObj.Properties.TryGetValue("MarioNo", out object? marioNoObj)
                     && marioNoObj is int marioNo
@@ -421,7 +463,7 @@ internal class Scene
 
     private void GenerateFog()
     {
-        var fogAreas = EnumerateSceneObjs().Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
+        var fogAreas = _stageSceneObjs.Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
 
         for (int i = 0; i < Stage.StageFogs.Count; i++)
         {
@@ -434,7 +476,7 @@ internal class Scene
 
             if (!_stageFogList.ContainsKey(Stage.StageFogs[i]))
                 _stageFogList.Add(Stage.StageFogs[i], new());
-            foreach (ISceneObj sobj in fogAreas)
+            foreach (IStageSceneObj sobj in fogAreas)
             {
                 if (!sobj.StageObj.Properties.ContainsKey("Arg0") || sobj.StageObj.Properties["Arg0"]?.GetType() != typeof(int) || (int)sobj.StageObj.Properties["Arg0"]! != Stage.StageFogs[i].AreaId)
                     continue;
@@ -450,14 +492,15 @@ internal class Scene
         ref string status
     )
     {
-        _sceneObjects.Clear();
+        _stageSceneObjs.Clear();
+        _railObjs.Clear();
         _selectedObjects.Clear();
 
         if (Stage is null)
             return;
 
         IEnumerable<StageObjType> types = Enum.GetValues<StageObjType>()
-            .Where(t => t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child);
+            .Where(t => t != StageObjType.Unknown && t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child);
 
         foreach (StageObjType objType in types)
             GenerateSceneObjects(Stage.EnumerateStageObjs(objType), fsHandler, scheduler, ref status);
@@ -496,7 +539,7 @@ internal class Scene
 
             BasicSceneObj areaSceneObj = new(stageObj, matParams, 20f, _lastPickingId);
             AddSwitchFromStageObj(stageObj, areaSceneObj);
-            _sceneObjects.Add(areaSceneObj);
+            _stageSceneObjs.Add(areaSceneObj);
             _pickableObjs.Add(_lastPickingId++, areaSceneObj);
             return;
         }
@@ -509,9 +552,8 @@ internal class Scene
 
             scheduler.EnqueueGLTask(model.Initialize);
 
-            // TO-DO: Pickable rail and rail points.
-
-            _sceneObjects.Add(railSceneObj);
+            _railObjs.Add(railSceneObj);
+            _pickableObjs.Add(railSceneObj.PickingId, railSceneObj);
             return;
         }
 
@@ -539,23 +581,47 @@ internal class Scene
 
         ActorSceneObj actorSceneObj = new(stageObj, actor, _lastPickingId);
         AddSwitchFromStageObj(stageObj, actorSceneObj);
-        _sceneObjects.Add(actorSceneObj);
+
+        _stageSceneObjs.Add(actorSceneObj);
         _pickableObjs.Add(_lastPickingId++, actorSceneObj);
     }
 
     private void DestroySceneObject(ISceneObj sceneObj)
     {
-        _sceneObjects.Remove(sceneObj);
+        switch (sceneObj)
+        {
+            case ISceneObj x when x is IStageSceneObj y:
+                _stageSceneObjs.Remove(y);
+                break;
+
+            case ISceneObj x when x is RailSceneObj y:
+                _railObjs.Remove(y);
+                break;
+        }
+
         _pickableObjs.Remove(sceneObj.PickingId);
     }
 
     internal ISceneObj GetSceneObjFromStageObj(StageObj obj)
     {
-        return _sceneObjects.First(x => x.StageObj == obj);
+        return _stageSceneObjs.First(x => x.StageObj == obj);
     }
-    internal ISceneObj? GetSceneObjFromPicking(uint id)
+
+    internal bool TryGetPickableObj(uint id, [MaybeNullWhen(false)] out ISceneObj obj)
     {
-        if (!_pickableObjs.ContainsKey(id)) return null;
-        return _pickableObjs[id];
+        if (_pickableObjs.TryGetValue(id, out obj))
+            return true;
+
+        foreach (RailSceneObj railObj in _railObjs)
+        {
+            ISceneObj? res = railObj.GetObjectByPickingId(id);
+            if (res is not null)
+            {
+                obj = res;
+                return true;
+            }
+        }
+
+        return false;
     }
 }

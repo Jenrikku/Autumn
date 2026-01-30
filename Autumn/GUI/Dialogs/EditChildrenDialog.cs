@@ -2,9 +2,6 @@ using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering.Storage;
-using Autumn.FileSystems;
-using Autumn.Rendering;
-using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
 using ImGuiNET;
 
@@ -22,7 +19,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
     private List<StageObj> _newChildren = new();
     private StageObj? _parent;
     private List<StageObj> _oldChildren = new();
-    private IEnumerable<ISceneObj> _sceneObjs;
+    private IEnumerable<IStageSceneObj>? _sceneObjs;
     private string _search = "";
 
     Vector2 dimensions = new(800, 450);
@@ -30,7 +27,6 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
     public void Open(StageObj stageObj)
     {
-
         Reset();
         _parent = stageObj;
 
@@ -40,7 +36,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
             _newChildren = new(_parent.Children);
         }
 
-        _sceneObjs = _window.CurrentScene!.EnumerateSceneObjs();
+        _sceneObjs = _window.CurrentScene!.EnumerateStageSceneObjs();
         _name = _parent.Name;
         _isOpened = true;
     }
@@ -117,7 +113,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                 ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.40f);
                 ImGui.TableHeadersRow();
 
-                foreach (ISceneObj obj in _sceneObjs)
+                foreach (IStageSceneObj obj in _sceneObjs)
                 {
                     StageObj stageObj = obj.StageObj;
 

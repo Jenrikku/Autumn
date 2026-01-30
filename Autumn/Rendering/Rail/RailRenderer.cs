@@ -1,7 +1,6 @@
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.Rendering.Storage;
-using Autumn.Storage;
 using SceneGL;
 using SceneGL.Materials;
 using Silk.NET.OpenGL;
@@ -180,37 +179,17 @@ internal static class RailRenderer
             railSceneObj.RailModel.Draw(gl);
         }
 
-        RailObj rail = railSceneObj.RailObj;
-
-        switch (rail.PointType)
+        foreach (RailPointSceneObj railPoint in railSceneObj.RailPoints)
         {
-            case RailPointType.Bezier:
+            DrawRailPoint(gl, scene, railPointMaterial, railPoint.PickingId, railPoint.Selected, false, railPoint.Transform);
 
-                for (int i = 0; i < rail.Points.Count; i++)
-                {
-                    var pickingId = railSceneObj.PointsPickingIds[i];
-                    var selected = railSceneObj.PointsSelected[i];
-                    var transforms = railSceneObj.PointTransforms[i];
+            if (railPoint.PointType == RailPointType.Bezier)
+            {
+                RailHandleSceneObj h1 = railPoint.Handle1!, h2 = railPoint.Handle2!;
 
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P0, selected.P0, false, transforms.P0);
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P1, selected.P1, true, transforms.P1);
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P2, selected.P2, true, transforms.P2);
-                }
-
-                break;
-
-            case RailPointType.Linear:
-
-                for (int i = 0; i < rail.Points.Count; i++)
-                {
-                    var pickingId = railSceneObj.PointsPickingIds[i];
-                    var selected = railSceneObj.PointsSelected[i];
-                    var transforms = railSceneObj.PointTransforms[i];
-
-                    DrawRailPoint(gl, scene, railPointMaterial, pickingId.P0, selected.P0, false, transforms.P0);
-                }
-
-                break;
+                DrawRailPoint(gl, scene, railPointMaterial, h1.PickingId, h1.Selected, true, h1.Transform);
+                DrawRailPoint(gl, scene, railPointMaterial, h2.PickingId, h2.Selected, true, h2.Transform);
+            }
         }
     }
 

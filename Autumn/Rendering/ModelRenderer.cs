@@ -104,17 +104,19 @@ internal static class ModelRenderer
                 $@"{nameof(ModelRenderer)} must be initialized before any calls to {nameof(Draw)}"
             );
 
-        StageObj stageObj = sceneObj.StageObj;
+        StageObj? stageObj = null;
+
+        if (sceneObj is IStageSceneObj stageSceneObj) stageObj = stageSceneObj.StageObj;
 
         if (!sceneObj.IsVisible)
             return;
 
-        if (sceneObj is BasicSceneObj basicSceneObj && stageObj.IsArea())
+        if (sceneObj is BasicSceneObj basicSceneObj && stageObj!.IsArea())
         {
             if (!VisibleAreas && !sceneObj.Selected && stageObj.Type != StageObjType.CameraArea)
                 return;
 
-            if (!VisibleCameraAreas && !sceneObj.Selected && sceneObj.StageObj.Type == StageObjType.CameraArea)
+            if (!VisibleCameraAreas && !sceneObj.Selected && stageObj.Type == StageObjType.CameraArea)
                 return;
 
             s_commonSceneParams.Transform = sceneObj.Transform;

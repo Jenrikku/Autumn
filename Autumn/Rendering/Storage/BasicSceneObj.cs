@@ -4,7 +4,7 @@ using Autumn.Utils;
 
 namespace Autumn.Rendering.Storage;
 
-internal class BasicSceneObj : ISceneObj
+internal class BasicSceneObj : IStageSceneObj
 {
     public StageObj StageObj { get; }
     public CommonMaterialParameters MaterialParams { get; }
@@ -14,6 +14,7 @@ internal class BasicSceneObj : ISceneObj
 
     public uint PickingId { get; set; }
     public bool Selected { get; set; }
+    public bool Hovering { get; set; }
     public bool IsVisible { get; set; } = true;
 
     public BasicSceneObj(StageObj stageObj, CommonMaterialParameters matParams, float aabbMult, uint pickingId)

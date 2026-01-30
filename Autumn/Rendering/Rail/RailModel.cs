@@ -12,6 +12,8 @@ internal class RailModel(RailObj rail)
 
     private bool _initialized = false;
 
+    private GL? _gl;
+
     private uint _vertexBufferHandle;
     private uint _vertexArrayHandle;
 
@@ -22,14 +24,15 @@ internal class RailModel(RailObj rail)
         if (_initialized)
             return;
 
+        _gl = gl;
         _vertexBufferHandle = gl.GenBuffer();
         _vertexArrayHandle = gl.GenVertexArray();
         _initialized = true;
 
-        UpdateModel(gl);
+        UpdateModel();
     }
 
-    public void UpdateModel(GL gl)
+    public void UpdateModel()
     {
         if (!_initialized)
             throw new InvalidOperationException(
@@ -72,15 +75,15 @@ internal class RailModel(RailObj rail)
 
         _vertices = vertices.ToArray();
 
-        gl.BindVertexArray(_vertexArrayHandle);
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
+        _gl!.BindVertexArray(_vertexArrayHandle);
+        _gl!.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferHandle);
 
-        gl.BufferData<Vector3>(BufferTargetARB.ArrayBuffer, _vertices, BufferUsageARB.StaticDraw);
-        gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+        _gl!.BufferData<Vector3>(BufferTargetARB.ArrayBuffer, _vertices, BufferUsageARB.StaticDraw);
+        _gl!.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
 
-        gl.EnableVertexAttribArray(0);
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-        gl.BindVertexArray(0);
+        _gl!.EnableVertexAttribArray(0);
+        _gl!.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+        _gl!.BindVertexArray(0);
     }
 
     public void Draw(GL gl)

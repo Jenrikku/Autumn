@@ -1,5 +1,4 @@
 using System.Numerics;
-using Autumn.Enums;
 using Autumn.Rendering.Rail;
 using Autumn.Storage;
 
@@ -7,25 +6,20 @@ namespace Autumn.Rendering.Storage;
 
 internal class RailSceneObj : ISceneObj
 {
-    internal record struct PointPickingId(uint P0, uint P1, uint P2);
-    internal record struct PointSelected(bool P0, bool P1, bool P2);
-    internal record struct PointTransform(Matrix4x4 P0, Matrix4x4 P1, Matrix4x4 P2);
+    private readonly HashSet<uint> _assignedIds = new(); // Optimization, reduces CPU overhead when checking ids
 
     public RailObj RailObj { get; }
     public RailModel RailModel { get; }
 
-    public Matrix4x4 Transform { get; set; }
+    public List<RailPointSceneObj> RailPoints { get; } = new();
+
+    public Matrix4x4 Transform { get; set; } = Matrix4x4.Identity;
     public AxisAlignedBoundingBox AABB { get; set; }
 
     public uint PickingId { get; set; }
     public bool Selected { get; set; }
+    public bool Hovering { get; set; }
     public bool IsVisible { get; set; } = true;
-
-    public List<PointPickingId> PointsPickingIds { get; init; }
-    public List<PointSelected> PointsSelected { get; init; }
-    public List<PointTransform> PointTransforms { get; init; }
-
-    StageObj ISceneObj.StageObj => RailObj;
 
     public RailSceneObj(RailObj rail, RailModel railModel, ref uint pickingId)
     {
@@ -33,67 +27,37 @@ internal class RailSceneObj : ISceneObj
         RailModel = railModel;
         PickingId = pickingId++;
 
-        AABB = new(20f); // TO-DO
+        AABB = new(1); // TO-DO
 
-        int pointCount = rail.Points.Count;
-
-        PointsPickingIds = new(pointCount);
-        PointsSelected = [.. new PointSelected[pointCount]]; // All set to false
-
-        switch (rail.PointType)
+        foreach (RailPoint railPoint in rail.Points)
         {
-            case RailPointType.Bezier:
+            uint oldId = pickingId;
 
-                for (int i = 0; i < pointCount; i++)
-                    PointsPickingIds.Add(new(pickingId++, pickingId++, pickingId++));
+            RailPointSceneObj sceneObj = new(railPoint, railModel.UpdateModel, ref pickingId);
+            RailPoints.Add(sceneObj);
 
-                break;
-
-            case RailPointType.Linear:
-
-                for (int i = 0; i < pointCount; i++)
-                    PointsPickingIds.Add(new(uint.MaxValue, pickingId++, uint.MaxValue));
-
-                break;
+            for (uint i = oldId; i < pickingId; i++)
+                _assignedIds.Add(i);
         }
-
-        PointTransforms = new(pointCount);
-
-        UpdateTransform();
     }
 
-    public void UpdateTransform()
+    /// <summary>
+    /// Searches the rail for a point or handle with the given picking ID and returns it.
+    /// </summary>
+    public ISceneObj? GetObjectByPickingId(uint id)
     {
-        Transform = Matrix4x4.Identity;
+        if (PickingId == id) return this;
 
-        PointTransforms.Clear();
+        if (!_assignedIds.Contains(id)) return null;
 
-        switch (RailObj.PointType)
+        foreach (RailPointSceneObj railPoint in RailPoints)
         {
-            case RailPointType.Bezier:
-
-                foreach (var point in RailObj.Points.Cast<RailPointBezier>())
-                {
-                    Matrix4x4 t0 = Matrix4x4.CreateTranslation(point.Point0Trans * 0.01f);
-                    Matrix4x4 t1 = Matrix4x4.CreateTranslation(point.Point1Trans * 0.01f);
-                    Matrix4x4 t2 = Matrix4x4.CreateTranslation(point.Point2Trans * 0.01f);
-
-                    PointTransforms.Add(new(t0, t1, t2));
-                }
-
-                break;
-
-            case RailPointType.Linear:
-
-                foreach (var point in RailObj.Points.Cast<RailPointLinear>())
-                {
-                    Matrix4x4 translate = Matrix4x4.CreateTranslation(point.Translation * 0.01f);
-                    Matrix4x4 identity = Matrix4x4.Identity;
-
-                    PointTransforms.Add(new(translate, identity, identity));
-                }
-
-                break;
+            ISceneObj? sceneObj = railPoint.GetObjectByPickingId(id);
+            if (sceneObj is not null) return sceneObj;
         }
+
+        return null;
     }
+
+    public void UpdateTransform() { }
 }

@@ -89,10 +89,10 @@ internal class ObjectWindow(MainWindowContext window)
 
             foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
-                StageObj stageObj = obj.StageObj;
-                if (_objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageObj.Type + 1
-                    && !IsChild(stageObj) && !IsChildArea(stageObj))
+                if (obj is IStageSceneObj stageSceneObj && _objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageSceneObj.StageObj.Type + 1
+                    && !IsChild(stageSceneObj.StageObj) && !IsChildArea(stageSceneObj.StageObj))
                     continue;
+
                 ints.Add(obj.PickingId);
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
@@ -145,7 +145,21 @@ internal class ObjectWindow(MainWindowContext window)
                     selectedIndex = (int)obj.PickingId;
                 }
 
-                if (ImGui.Selectable(stageObj.Name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
+                string name = obj switch
+                {
+                    ISceneObj x when x is IStageSceneObj y => y.StageObj.Name,
+                    ISceneObj x when x is RailSceneObj y => y.RailObj.Name,
+                    _ => string.Empty
+                };
+
+                string type = obj switch
+                {
+                    ISceneObj x when x is IStageSceneObj y => y.StageObj.Type.ToString(),
+                    ISceneObj x when x is RailSceneObj y => "Rail",
+                    _ => string.Empty
+                };
+
+                if (ImGui.Selectable(name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
                 {
                     // NEXT SELECTION = listId;
                     nextIdx = (int)obj.PickingId;
@@ -154,7 +168,7 @@ internal class ObjectWindow(MainWindowContext window)
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = _objectFilterCurrent == 8 ? false : true; // REMOVE WHEN RAILS ARE FUNCTIONAL AND SELECTABLE                    
                 }
 
-                ImGui.SetItemTooltip(stageObj.Name);
+                ImGui.SetItemTooltip(name);
 
                 if (
                     window.CurrentScene.SelectedObjects.Count() <= 1
@@ -173,7 +187,7 @@ internal class ObjectWindow(MainWindowContext window)
                 listId++;
                 ImGui.TableSetColumnIndex(2);
 
-                ImGui.Text(stageObj.Type.ToString());
+                ImGui.Text(type);
             }
 
             ImGui.EndTable();
@@ -225,16 +239,27 @@ internal class ObjectWindow(MainWindowContext window)
                     true
                 );
             }
+
             if (doubleclick)
             {
-                AxisAlignedBoundingBox aabb =
-                    window.CurrentScene.SelectedObjects.First().AABB
-                    * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                window.CurrentScene!.Camera.LookFrom(
-                    window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f,
-                    aabb.GetDiagonal() * 0.01f
-                );
+                AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().AABB;
+
+                switch (window.CurrentScene.SelectedObjects.First())
+                {
+                    case ISceneObj x when x is IStageSceneObj y:
+                        aabb *= y.StageObj.Scale;
+
+                        window.CurrentScene!.Camera.LookFrom(
+                            y.StageObj.Translation * 0.01f,
+                            aabb.GetDiagonal() * 0.01f
+                        );
+                        break;
+
+                    case ISceneObj x when x is RailSceneObj y:
+                        break; // TO-DO
+                }
             }
+
             prevIdx = nextIdx;
             nextIdx = -1;
         }

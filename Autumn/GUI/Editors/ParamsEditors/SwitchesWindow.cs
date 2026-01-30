@@ -84,7 +84,7 @@ internal class SwitchesWindow(MainWindowContext window)
                     ImGui.TableSetupColumn("Switch type", ImGuiTableColumnFlags.WidthFixed);
                     ImGui.TableHeadersRow();
                     int ii = 0;
-                    foreach (ISceneObj sobj in swObj)
+                    foreach (IStageSceneObj sobj in swObj)
                     {
                         if (swObj.Count > ii && ii > 0 && swObj[ii - 1] == sobj)
                         {

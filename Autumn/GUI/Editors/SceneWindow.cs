@@ -23,8 +23,8 @@ internal class SceneWindow(MainWindowContext window)
 
     internal static class ActTransform
     {
-        public static Dictionary<ISceneObj, Vector3> Relative = new();
-        public static Dictionary<ISceneObj, Vector3> Originals = new();
+        public static Dictionary<IStageSceneObj, Vector3> Relative = new();
+        public static Dictionary<IStageSceneObj, Vector3> Originals = new();
         public static string FullTransformString = "";
     }
 
@@ -264,9 +264,35 @@ internal class SceneWindow(MainWindowContext window)
                 }
                 if (camToObj)
                 {
-                    AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().AABB * window.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                    camera.LookFrom(window.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                    ISceneObj sceneObj = window.CurrentScene.SelectedObjects.First();
+
+                    AxisAlignedBoundingBox aabb = sceneObj.AABB;
+
+                    switch (sceneObj)
+                    {
+                        case ISceneObj x when x is IStageSceneObj y:
+                            aabb *= y.StageObj.Scale;
+                            camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                            break;
+
+                        case ISceneObj x when x is RailSceneObj y:
+                            break; // TODO
+                    }
                 }
+            }
+        }
+
+        if (_isSceneHovered)
+        {
+            // Tooltip
+            ISceneObj? hoveringObj = window.CurrentScene.HoveringObject;
+
+            if(hoveringObj is not null)
+            {
+#if DEBUG
+                ImGui.SetTooltip(hoveringObj.PickingId.ToString());
+#else
+#endif
             }
         }
 
@@ -390,6 +416,9 @@ internal class SceneWindow(MainWindowContext window)
                     camera.Eye = camera.Eye + -window.Mouse.ScrollWheels[0].Y * 2 * camMoveSpeed * (camera.Eye - Vector3.Lerp(camera.Eye, new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z), 0.1f));
                 }
             }
+            
+            if (_isSceneHovered)
+                window.CurrentScene.SetHoveringObject(pixel);
 
             if (
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left)
@@ -399,6 +428,7 @@ internal class SceneWindow(MainWindowContext window)
             {
                 if (!_isSceneWindowFocused)
                     ImGui.SetWindowFocus();
+
                 if (orientationCubeHovered)
                 {
                     camera.LookAt(camera.Eye, camera.Eye - facingDirection);
@@ -421,8 +451,7 @@ internal class SceneWindow(MainWindowContext window)
                 && _isSceneHovered
                 && !_isTranslationActive && !_isRotationActive && !_isScaleActive)
             {
-                _pickObject = window.CurrentScene.GetSceneObjFromPicking(pixel);
-                if (_pickObject != null)
+                if (window.CurrentScene.TryGetPickableObj(pixel, out _pickObject))
                 {
                     _objectOptionsPos = windowMousePos;
                     bool select1 = window.CurrentScene.SelectedObjects.Count() == 1;
@@ -431,17 +460,26 @@ internal class SceneWindow(MainWindowContext window)
 
                     _selNotSame = selectover1 ? !window.CurrentScene.SelectedObjects.Contains(_pickObject) : true;
 
-                    var sType = _pickObject.StageObj.Type;
-                    bool isSelectionChildable = (sType == StageObjType.Area
+                    StageObjType sType = _pickObject switch
+                    {
+                        ISceneObj x when x is IStageSceneObj y => y.StageObj.Type,
+                        ISceneObj x when x is RailSceneObj y => StageObjType.Rail,
+                        _ => StageObjType.Unknown
+                    };
+
+                    bool isSelectionChildable = sType == StageObjType.Area
                                     || sType == StageObjType.AreaChild
                                     || sType == StageObjType.Child
-                                    || sType == StageObjType.Regular)
-                                    && _pickObject.StageObj.FileType == StageFileType.Map;
-                    bool cantChild = window.CurrentScene.SelectedObjects.Any(x => (x.StageObj.Type != StageObjType.Area
-                                    && x.StageObj.Type != StageObjType.AreaChild
-                                    && x.StageObj.Type != StageObjType.Child
-                                    && x.StageObj.Type != StageObjType.Regular)
-                                    || x.StageObj.FileType != StageFileType.Map
+                                    || sType == StageObjType.Regular;
+
+                    isSelectionChildable &= _pickObject is IStageSceneObj stageSceneObj && stageSceneObj.StageObj.FileType == StageFileType.Map;
+
+                    bool cantChild = window.CurrentScene.SelectedObjects.Any(x => x is not IStageSceneObj y ||
+                                    (y.StageObj.Type != StageObjType.Area
+                                    && y.StageObj.Type != StageObjType.AreaChild
+                                    && y.StageObj.Type != StageObjType.Child
+                                    && y.StageObj.Type != StageObjType.Regular)
+                                    || y.StageObj.FileType != StageFileType.Map
                                     );
 
                     _selCantParent = !selectover1 || !_selNotSame || !isSelectionChildable || cantChild;
@@ -459,18 +497,25 @@ internal class SceneWindow(MainWindowContext window)
                         ndcMousePos.Y * sceneImageSize.Y / 2,
                         (normPickingDepth * 10 - 1) / 10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);
+
                 if (!ImGui.GetIO().WantTextInput)
                 {
                     if (ImGui.IsKeyPressed(ImGuiKey.G, false) && window.Keyboard!.IsShiftPressed())
                     {
                         var sobj = window.CurrentScene.SelectedObjects.First();
-                        ChangeHandler.ChangeTransform(
-                            window.CurrentScene.History,
-                            sobj,
-                            "Translation",
-                            sobj.StageObj.Translation,
-                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
-                        );
+
+                        switch (sobj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                ChangeHandler.ChangeTransform(
+                                    window.CurrentScene.History,
+                                    y,
+                                    "Translation",
+                                    y.StageObj.Translation,
+                                    100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                                );
+                                break;
+                        }
 
                         if (!_isSceneWindowFocused)
                             ImGui.SetWindowFocus();
@@ -497,25 +542,33 @@ internal class SceneWindow(MainWindowContext window)
 
         if (_isObjectOptionsEnabled)
         {
+            string name = _pickObject switch
+            {
+                ISceneObj x when x is IStageSceneObj y => y.StageObj.Name,
+                ISceneObj x when x is RailSceneObj y => y.RailObj.Name,
+                _ => string.Empty
+            };
+
             ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.WindowBg));
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
             var mpos = _objectOptionsPos - new Vector2(2.5f, 25);
             ImGui.SetCursorPos(mpos);
-            float w = ImGui.CalcTextSize(_pickObject.StageObj.Name).X * 1.3f + 10;
+            float w = ImGui.CalcTextSize(name).X * 1.3f + 10;
             if (ImGui.BeginListBox("##SelectableListbox", new(w > 140 ? w : 140, 150)))
             {
-                ImGuiWidgets.TextHeader(_pickObject.StageObj.Name, 1.3f, 0.95f);
+                ImGuiWidgets.TextHeader(name, 1.3f, 0.95f);
 
                 if (_selCantParent)
                     ImGui.BeginDisabled();
-                if (ImGui.Selectable("Set parent of selection"))
+
+                if (_pickObject is IStageSceneObj pickStSceneObj && ImGui.Selectable("Set parent of selection"))
                 {
                     _isObjectOptionsEnabled = false;
-                    foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
+                    foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
                     {
-                        if (sobj == _pickObject) continue;
-                        if (_pickObject.StageObj.Parent != null && _pickObject.StageObj.Parent == sobj.StageObj) continue;
-                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(sobj.StageObj, _pickObject.StageObj);
+                        if (sobj == _pickObject || sobj is not IStageSceneObj stageSceneObj) continue;
+                        if (pickStSceneObj.StageObj.Parent != null && pickStSceneObj.StageObj.Parent == stageSceneObj.StageObj) continue;
+                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(stageSceneObj.StageObj, pickStSceneObj.StageObj);
                     }
                 }
                 if (_selCantParent)
@@ -524,13 +577,13 @@ internal class SceneWindow(MainWindowContext window)
 
                 if (_selCantChild)
                     ImGui.BeginDisabled();
-                if (ImGui.Selectable("Add as child of selection"))
+                if (_pickObject is IStageSceneObj pickStSceneObj1 && ImGui.Selectable("Add as child of selection"))
                 {
                     _isObjectOptionsEnabled = false;
-                    var sobj = window.CurrentScene.SelectedObjects.First();
-                    if (sobj.StageObj.Parent != _pickObject.StageObj)
+                    var sobj = (IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj);
+                    if (sobj.StageObj.Parent != pickStSceneObj1.StageObj)
                     {
-                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(_pickObject.StageObj, sobj.StageObj);
+                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(pickStSceneObj1.StageObj, sobj.StageObj);
                     }
                 }
                 if (_selCantChild)
@@ -605,7 +658,7 @@ internal class SceneWindow(MainWindowContext window)
             if (window.CurrentScene!.SelectedObjects.Count() > 1)
                 s += "multiple objects";
             else
-                s += window.CurrentScene.SelectedObjects.First().StageObj.Name;
+                s += ((IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Name;
 
             if (_axisLock != Vector3.One)
             {
@@ -694,13 +747,13 @@ internal class SceneWindow(MainWindowContext window)
                 _transformChangeString = "";
 
             dist = Vector3.Distance(
-                ActTransform.Originals[window.CurrentScene!.SelectedObjects.First()] / 100,
+                ActTransform.Originals[(IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj)] / 100,
                 window.CurrentScene.Camera.Eye
             );
 
             _ndcMousePos3D *= dist / 11;
 
-            foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
+            foreach (IStageSceneObj scobj in window.CurrentScene.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 Vector3 defPos = ActTransform.Originals[scobj] - (ActTransform.Relative[scobj] + _ndcMousePos3D); // default position
 
@@ -710,17 +763,30 @@ internal class SceneWindow(MainWindowContext window)
                 }
 
                 Vector3 nTr = ActTransform.Originals[scobj] - defPos * _axisLock;
-                scobj.StageObj.Translation = nTr;
+
+                switch (scobj)
+                {
+                    case ISceneObj x when x is IStageSceneObj y:
+                        y.StageObj.Translation = nTr;
+                        break;
+
+                    // TODO: Other kinds of scene objects
+                }
 
                 if (ImGui.IsKeyDown(ImGuiKey.ModCtrl) || ImGui.IsKeyDown(ImGuiKey.ModSuper))
                 {
-                    scobj.StageObj.Translation = MathUtils.Round(scobj.StageObj.Translation / 50) * 50;
+                    switch (scobj)
+                    {
+                        case ISceneObj x when x is IStageSceneObj y:
+                            y.StageObj.Translation = MathUtils.Round(y.StageObj.Translation / 50) * 50;
+                            break;
+                    }
                 }
 
                 scobj.UpdateTransform();
             }
 
-            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Translation;
+            var STR = ((IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Translation;
 
             if (_axisLock == Vector3.One)
             {
@@ -739,6 +805,7 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
+        // TODO: Movement for rails still needs to be implemented
         if ((ImGui.IsKeyPressed(ImGuiKey.G, false) && !_isTranslationActive) || IsTranslationFromDuplicate)
         { // Start action
             IsTranslationFromDuplicate = false;
@@ -746,13 +813,13 @@ internal class SceneWindow(MainWindowContext window)
 
             // Only get distance to first object to prevent misalignments
             dist = Vector3.Distance(
-                window.CurrentScene!.SelectedObjects.First().StageObj.Translation / 100,
+                ((IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Translation / 100,
                 window.CurrentScene.Camera.Eye
             );
 
             _ndcMousePos3D *= dist / 11;
 
-            foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
+            foreach (IStageSceneObj scobj in window.CurrentScene.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 ActTransform.Originals.Add(scobj, scobj.StageObj.Translation);
                 ActTransform.Relative[scobj] = scobj.StageObj.Translation - _ndcMousePos3D;
@@ -772,7 +839,7 @@ internal class SceneWindow(MainWindowContext window)
             // Add to Undo stack
             if (window.CurrentScene!.SelectedObjects.Count() == 1)
             {
-                var sobj = window.CurrentScene.SelectedObjects.First();
+                var sobj = (IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj);
                 ChangeHandler.ChangeTransform(
                     window.CurrentScene.History,
                     sobj,
@@ -798,7 +865,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             _isTranslationActive = false;
 
-            foreach (ISceneObj scobj in window.CurrentScene!.SelectedObjects)
+            foreach (IStageSceneObj scobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 scobj.StageObj.Translation = ActTransform.Originals[scobj]; // Reset to what it was
                 scobj.UpdateTransform();
@@ -851,7 +918,7 @@ internal class SceneWindow(MainWindowContext window)
             if (_axisLock == Vector3.One)
                 _axisLock = Vector3.UnitY;
 
-            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 if (_transformChangeString != string.Empty && _transformChangeString != "-")
                 {
@@ -872,7 +939,7 @@ internal class SceneWindow(MainWindowContext window)
                 sobj.UpdateTransform();
             }
 
-            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Rotation;
+            var STR = ((IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Rotation;
 
             if (_axisLock == Vector3.One)
             {
@@ -895,7 +962,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Start action
             _isRotationActive = true;
 
-            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 ActTransform.Originals.Add(sobj, sobj.StageObj.Rotation);
                 ActTransform.Relative.Add(sobj, Vector3.UnitX * (float)rot);
@@ -914,7 +981,7 @@ internal class SceneWindow(MainWindowContext window)
 
             if (window.CurrentScene!.SelectedObjects.Count() == 1)
             {
-                var sobj = window.CurrentScene.SelectedObjects.First();
+                var sobj = (IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj);
                 ChangeHandler.ChangeTransform(
                     window.CurrentScene.History,
                     sobj,
@@ -941,7 +1008,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             _isRotationActive = false;
 
-            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 sobj.StageObj.Rotation = ActTransform.Originals[sobj];
                 sobj.UpdateTransform();
@@ -975,13 +1042,13 @@ internal class SceneWindow(MainWindowContext window)
                 _transformChangeString = "";
 
             dist = Vector3.Distance(
-                window.CurrentScene!.SelectedObjects.First().StageObj.Translation / 100,
+                ((IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Translation / 100,
                 window.CurrentScene.Camera.Eye
             );
 
             _ndcMousePos3D *= dist / 2;
 
-            foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 sobj.StageObj.Scale = ActTransform.Originals[sobj];
                 float distA = Vector3.Distance(window.CurrentScene.Camera.Eye, ActTransform.Relative[sobj]);
@@ -1006,7 +1073,7 @@ internal class SceneWindow(MainWindowContext window)
                 sobj.UpdateTransform();
             }
 
-            var STR = window.CurrentScene.SelectedObjects.First().StageObj.Scale;
+            var STR = ((IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Scale;
             if (_axisLock == Vector3.One)
             {
                 ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
@@ -1026,13 +1093,13 @@ internal class SceneWindow(MainWindowContext window)
         { // Start action
             _isScaleActive = true;
             dist = Vector3.Distance(
-                window.CurrentScene!.SelectedObjects.First().StageObj.Translation / 100,
+                ((IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Translation / 100,
                 window.CurrentScene.Camera.Eye
             );
 
             _ndcMousePos3D *= dist / 2;
 
-            foreach (ISceneObj sobj in window.CurrentScene.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 ActTransform.Originals.Add(sobj, sobj.StageObj.Scale);
                 ActTransform.Relative.Add(sobj, _ndcMousePos3D);
@@ -1051,7 +1118,7 @@ internal class SceneWindow(MainWindowContext window)
 
             if (window.CurrentScene!.SelectedObjects.Count() == 1)
             {
-                var sobj = window.CurrentScene.SelectedObjects.First();
+                var sobj = (IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj);
                 ChangeHandler.ChangeTransform(
                     window.CurrentScene.History,
                     sobj,
@@ -1078,7 +1145,7 @@ internal class SceneWindow(MainWindowContext window)
         { // Cancel action
             _isScaleActive = false;
 
-            foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
+            foreach (IStageSceneObj sobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
                 sobj.StageObj.Scale = ActTransform.Originals[sobj];
                 sobj.UpdateTransform();

@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Reflection;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using ImGuiNET;
@@ -645,7 +646,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             switch (previewReference)
             {
                 case 1:
-                    var selobj = scn.SelectedObjects.FirstOrDefault();
+                    var selobj = (IStageSceneObj?)scn.SelectedObjects.FirstOrDefault(x => x is IStageSceneObj);
                     if (selobj != null) pos = selobj.StageObj.Translation * mul;
                     break;
                 case 2:

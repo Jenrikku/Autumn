@@ -206,7 +206,7 @@ internal static class ChangeHandler
     // See method above.
     public static bool ChangeTransform(
         ChangeHistory history,
-        ISceneObj obj,
+        IStageSceneObj obj,
         string transform,
         Vector3 prior,
         Vector3 final
@@ -238,7 +238,7 @@ internal static class ChangeHandler
 
     public static bool ChangeMultiTransform(
         ChangeHistory history,
-        Dictionary<ISceneObj, Vector3> sobjL,
+        Dictionary<IStageSceneObj, Vector3> sobjL,
         string transform
     )
     {
@@ -248,7 +248,7 @@ internal static class ChangeHandler
             return false;
 
         List<Vector3> current = new();
-        foreach (ISceneObj obj in sobjL.Keys)
+        foreach (IStageSceneObj obj in sobjL.Keys)
         {
             current.Add((Vector3)field.GetValue(obj.StageObj)!);
         }
@@ -257,7 +257,7 @@ internal static class ChangeHandler
             new(
                 Undo: () =>
                 {
-                    foreach (ISceneObj obj in sobjL.Keys)
+                    foreach (IStageSceneObj obj in sobjL.Keys)
                     {
                         field.SetValue(obj.StageObj, sobjL[obj]);
                         obj.UpdateTransform();
@@ -266,7 +266,7 @@ internal static class ChangeHandler
                 Redo: () =>
                 {
                     int i = 0;
-                    foreach (ISceneObj obj in sobjL.Keys)
+                    foreach (IStageSceneObj obj in sobjL.Keys)
                     {
                         field.SetValue(obj.StageObj, current[i]);
                         obj.UpdateTransform();
@@ -281,7 +281,7 @@ internal static class ChangeHandler
 
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
-        var oldSO = del.StageObj.Clone();
+        var oldSO = del is IStageSceneObj delSt ? delSt.StageObj.Clone() : null; // FIXME: should not be null, rails need handling
         var delete = del;
 
         Change change =
@@ -352,8 +352,11 @@ internal static class ChangeHandler
                     if (context.CurrentScene is null)
                         return;
 
+                    StageObj? clone = duplicate is IStageSceneObj stageDup ? stageDup.StageObj.Clone() : null;
+                    // FIXME: clone should never have to be null, handle rails properly
+
                     return_pick = context.CurrentScene.DuplicateObj(
-                        duplicate.StageObj.Clone(),
+                        clone,
                         context.ContextHandler.FSHandler,
                         context.GLTaskScheduler
                     );

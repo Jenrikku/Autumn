@@ -390,12 +390,13 @@ internal class ActionHandler
 
                 foreach (ISceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
-                    if (mainContext.CurrentScene.SelectedObjects.Any(x => x.StageObj.Children != null && x.StageObj.Children.Contains(copy.StageObj)))
+                    if (copy is IStageSceneObj stageCopy && mainContext.CurrentScene.SelectedObjects.Any(x => x is IStageSceneObj y && y.StageObj.Children != null && y.StageObj.Children.Contains(stageCopy.StageObj)))
                         continue;
 
                     uint newestPickId = ChangeHandler.ChangeDuplicate(mainContext, mainContext.CurrentScene.History, copy);
                     newPickIds.Add(newestPickId);
-                    CheckPickChildren(copy.StageObj, ref newPickIds, ref newestPickId);
+                    
+                    if(copy is IStageSceneObj stageCopy1) CheckPickChildren(stageCopy1.StageObj, ref newPickIds, ref newestPickId);
                 }
 
                 mainContext.CurrentScene.UnselectAllObjects();
@@ -449,16 +450,27 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-                if (mainContext.CurrentScene!.SelectedObjects.First().StageObj.Parent != null)
-                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateSceneObjs().First(x => x.StageObj == mainContext.CurrentScene.SelectedObjects.First().StageObj.Parent).PickingId, true);
-                else
-                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateSceneObjs().First(x => x.StageObj.Parent == mainContext.CurrentScene.SelectedObjects.First().StageObj).PickingId, true);
 
-                AxisAlignedBoundingBox aabb = mainContext.CurrentScene.SelectedObjects.First().AABB * mainContext.CurrentScene.SelectedObjects.First().StageObj.Scale;
-                mainContext.CurrentScene!.Camera.LookFrom(mainContext.CurrentScene.SelectedObjects.First().StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                if (mainContext.CurrentScene!.SelectedObjects.First() is not IStageSceneObj stageSceneObj)
+                    return;
+
+                StageObj parent = stageSceneObj.StageObj.Parent ?? stageSceneObj.StageObj;
+
+                if (stageSceneObj.StageObj.Parent != null)
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj == parent).PickingId, true);
+                else
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj.Parent == parent).PickingId, true);
+
+                AxisAlignedBoundingBox aabb = mainContext.CurrentScene.SelectedObjects.First().AABB * stageSceneObj.StageObj.Scale;
+                mainContext.CurrentScene!.Camera.LookFrom(stageSceneObj.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Count() == 1 && (mainContext.CurrentScene.SelectedObjects.First().StageObj.Parent != null || (mainContext.CurrentScene.SelectedObjects.First().StageObj.Children != null && mainContext.CurrentScene.SelectedObjects.First().StageObj.Children.Any()))
+            {
+                if (window is not MainWindowContext mainContext || mainContext.CurrentScene is null || mainContext.CurrentScene.SelectedObjects.First() is not IStageSceneObj stageSceneObj)
+                    return false;
+
+                return mainContext.CurrentScene.SelectedObjects.Count() == 1 && (stageSceneObj.StageObj.Parent != null || (stageSceneObj.StageObj.Children != null && stageSceneObj.StageObj.Children.Any()));
+            }
         );
 
     private static Command Undo() =>
