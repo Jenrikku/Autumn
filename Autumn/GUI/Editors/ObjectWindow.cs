@@ -89,9 +89,15 @@ internal class ObjectWindow(MainWindowContext window)
 
             foreach (ISceneObj obj in window.CurrentScene!.EnumerateSceneObjs())
             {
-                if (obj is IStageSceneObj stageSceneObj && _objectFilterCurrent != 0 && _objectFilterCurrent != (byte)stageSceneObj.StageObj.Type + 1
-                    && !IsChild(stageSceneObj.StageObj) && !IsChildArea(stageSceneObj.StageObj))
-                    continue;
+                if (_objectFilterCurrent != 0) // Object filtering
+                {
+                    if (obj is IStageSceneObj stageSceneObj && _objectFilterCurrent != (byte)stageSceneObj.StageObj.Type
+                        && !IsChild(stageSceneObj.StageObj) && !IsChildArea(stageSceneObj.StageObj))
+                        continue;
+
+                    if (obj is RailSceneObj && _objectFilterCurrent != (byte)StageObjType.Rail)
+                        continue;
+                }
 
                 ints.Add(obj.PickingId);
                 ImGui.TableNextRow();
@@ -192,6 +198,7 @@ internal class ObjectWindow(MainWindowContext window)
 
             ImGui.EndTable();
         }
+
         if (nextIdx != -1)
         {
             if (ImGui.IsKeyDown(ImGuiKey.ModShift) && nextIdx != prevIdx)
