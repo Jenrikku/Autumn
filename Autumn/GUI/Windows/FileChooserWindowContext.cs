@@ -47,7 +47,20 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// When set to true, the top bar will display an input text for manual path change.
     /// </summary>
     private bool _inputtingPath = false;
+    private bool _inputPathInvalid = false;
     private string _inputPathBuffer = "";
+
+    private bool _isPathValid = true;
+
+    /// <summary>
+    /// Error that shows when the path is invalid.
+    /// </summary>
+    protected string PathError = string.Empty;
+
+    /// <summary>
+    /// Variable that is used to tell that the SelectedFile was changed externally.
+    /// </summary>
+    protected bool SelectedFileChanged = false;
 
     protected static readonly string Root = OperatingSystem.IsWindows() ? "C:\\" : "/";
     protected static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -110,6 +123,8 @@ internal abstract class FileChooserWindowContext : WindowContext
 
             if (!ImGui.Begin("##FileChooser", _mainWindowFlags))
                 return;
+
+            bool inputtedPathThisFrame = false; // Minor tweak to prevent enter being catched in the same frame
 
             if (
                 ImGui.BeginChild(
@@ -178,25 +193,39 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SetNextItemWidth(width);
 
-                    bool enterPressed = ImGui.InputText(
+                    bool modified = ImGuiWidgets.InputTextRedWhenInvalid(
                         "",
                         ref _inputPathBuffer,
-                        1024,
-                        ImGuiInputTextFlags.EnterReturnsTrue
+                        4096,
+                        _inputPathInvalid
                     );
+
+                    if (modified) _inputPathInvalid = false;
 
                     ImGui.SameLine();
 
-                    if (ImGui.Button("Ok", new(buttonWidth, 0)) || enterPressed)
+                    if (ImGui.Button("Ok", new(buttonWidth, 0)) || ImGui.IsKeyPressed(ImGuiKey.Enter))
                     {
-                        _inputtingPath = false;
-                        ChangeDirectory(_inputPathBuffer, updateHistory: CurrentDirectory != _inputPathBuffer);
+                        if (Directory.Exists(_inputPathBuffer))
+                        {
+                            inputtedPathThisFrame = true;
+                            _inputtingPath = false;
+                            _inputPathInvalid = false;
+                            ChangeDirectory(_inputPathBuffer, updateHistory: CurrentDirectory != _inputPathBuffer);
+                        }
+                        else
+                        {
+                            _inputPathInvalid = true;
+                        }
                     }
 
                     ImGui.SameLine();
 
                     if (ImGui.Button("X", new(buttonWidth, 0)))
+                    {
                         _inputtingPath = false;
+                        _inputPathInvalid = false;
+                    }
                 }
 
                 Vector2 initCur = ImGui.GetCursorPos();
@@ -313,15 +342,34 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SetNextItemWidth(width);
 
-                    bool enterPressed = ImGui.InputText(
+                    bool modified = ImGui.InputText(
                         "",
                         ref SelectedFile,
-                        4096,
-                        ImGuiInputTextFlags.EnterReturnsTrue
+                        4096
                     );
+
+                    bool enterPressed = !_inputtingPath && !inputtedPathThisFrame && ImGui.IsKeyPressed(ImGuiKey.Enter);
+                    inputtedPathThisFrame = false;
+
+                    if ((SelectedFileChanged || modified) && !enterPressed)
+                    {
+                        PathError = string.Empty;
+                        SelectedFileChanged = false;
+                        _isPathValid = IsTargetValid();
+                    }
 
                     float buttonWidth = 60 * ScalingFactor;
                     Vector2 buttonSize = new(buttonWidth, 0);
+
+                    if (!string.IsNullOrEmpty(PathError))
+                    {
+                        ImGui.TextColored(
+                            new Vector4(0.8549f, 0.7254f, 0.2078f, 1),
+                            PathError
+                        );
+
+                        ImGui.SameLine();
+                    }
 
                     ImGui.SetCursorPosX(width - 2 * buttonWidth - ImGui.GetStyle().CellPadding.X);
 
@@ -330,23 +378,12 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SameLine();
 
+                    if (!_isPathValid) ImGui.BeginDisabled();
+
                     if ((ImGui.Button("Ok", buttonSize) || enterPressed) && IsTargetValid())
-                    {
-                        if (IsMultiFileSelect)
-                        {
-                            string[] result = SelectedFile.SplitExcept(';');
+                        OkButtonAction();
 
-                            for (int i = 0; i < result.Length; i++)
-                                result[i] = Path.Join(CurrentDirectory, result[i]);
-
-                            SuccessCallback.Invoke(result);
-                        }
-                        else
-                        {
-                            string[] result = [Path.Join(CurrentDirectory, SelectedFile)];
-                            SuccessCallback.Invoke(result);
-                        }
-                    }
+                    if (!_isPathValid) ImGui.EndDisabled();
                 }
 
                 ImGui.EndChild();
@@ -363,6 +400,25 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// Checks if the target is valid and the user has the proper permissions.
     /// </summary>
     protected virtual bool IsTargetValid() { return !string.IsNullOrEmpty(SelectedFile); }
+
+    protected virtual void OkButtonAction()
+    {
+        string[] result;
+
+        if (IsMultiFileSelect)
+        {
+            result = SelectedFile.SplitExcept(';');
+
+            for (int i = 0; i < result.Length; i++)
+                result[i] = Path.Join(CurrentDirectory, result[i]);
+
+            SuccessCallback(result);
+            return;
+        }
+        
+        result = [Path.Join(CurrentDirectory, SelectedFile)];
+        SuccessCallback(result);
+    }
 
     protected void ChangeDirectory(string directory, bool updateHistory = true)
     {
@@ -381,6 +437,8 @@ internal abstract class FileChooserWindowContext : WindowContext
 
             SelectedFile = string.Empty;
         }
+
+        SelectedFileChanged = true; // Trigger refreshes, even if it may have not been changed
 
         DirectoryEntries.Clear();
 

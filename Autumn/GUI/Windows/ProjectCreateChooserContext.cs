@@ -34,10 +34,16 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
             if (IsDirRomFS[dir.Name])
                 flags |= ImGuiSelectableFlags.Disabled;
 
-            if (ImGui.Selectable(dir.Name, false, flags) && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+            if (ImGui.Selectable(dir.Name, false, flags))
             {
-                ChangeDirectory(dir.FullName);
-                break;
+                SelectedFile = dir.Name;
+                SelectedFileChanged = true;
+
+                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+                {
+                    ChangeDirectory(dir.FullName);
+                    break;
+                }
             }
 
             ImGui.TableNextColumn();
@@ -50,16 +56,57 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
 
     protected override bool IsTargetValid()
     {
-        if (!base.IsTargetValid()) return false;
+        string path = Path.Join(CurrentDirectory, SelectedFile);
+        DirectoryInfo dirInfo = new(CurrentDirectory);
 
-        try
+        if (!string.IsNullOrEmpty(SelectedFile))
         {
-            Directory.CreateDirectory(Path.Join(CurrentDirectory, SelectedFile));
-            return true;
+            if (File.Exists(path))
+            {
+                PathError = "The path is a file that exists.";
+                return false;
+            }
+
+            if (Directory.Exists(path))
+            {
+                if (IsDirRomFS[SelectedFile])
+                {
+                    PathError = "The path already contains a project in it.";
+                    return false;
+                }
+
+                if (Directory.EnumerateFileSystemEntries(path).Any()) // Directory is not empty
+                {
+                    PathError = "The path must be empty.";
+                    return false;
+                }
+
+                return true;
+            }
         }
-        catch
+        else if (dirInfo.EnumerateFileSystemInfos().Any()) // Directory is not empty
         {
+            PathError = "The path must be empty.";
             return false;
         }
+
+        if (dirInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
+        {
+            PathError = "The path is read only.";
+            return false;
+        }
+
+        return true;
+    }
+
+    protected override void OkButtonAction()
+    {
+        if (string.IsNullOrEmpty(SelectedFile) || !Directory.Exists(Path.Join(CurrentDirectory, SelectedFile)))
+        {
+            base.OkButtonAction();
+            return;
+        }
+
+        ChangeDirectory(Path.Join(CurrentDirectory, SelectedFile));
     }
 }
