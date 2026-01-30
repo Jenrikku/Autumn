@@ -330,7 +330,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SameLine();
 
-                    if ((ImGui.Button("Ok", buttonSize) || enterPressed) && !string.IsNullOrEmpty(SelectedFile))
+                    if ((ImGui.Button("Ok", buttonSize) || enterPressed) && IsTargetValid())
                     {
                         if (IsMultiFileSelect)
                         {
@@ -358,6 +358,11 @@ internal abstract class FileChooserWindowContext : WindowContext
     }
 
     protected abstract void RenderFileChoosePanel();
+
+    /// <summary>
+    /// Checks if the target is valid and the user has the proper permissions.
+    /// </summary>
+    protected virtual bool IsTargetValid() { return !string.IsNullOrEmpty(SelectedFile); }
 
     protected void ChangeDirectory(string directory, bool updateHistory = true)
     {

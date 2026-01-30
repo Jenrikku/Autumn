@@ -47,4 +47,19 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
 
         ImGui.EndTable();
     }
+
+    protected override bool IsTargetValid()
+    {
+        if (!base.IsTargetValid()) return false;
+
+        try
+        {
+            Directory.CreateDirectory(Path.Join(CurrentDirectory, SelectedFile));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
