@@ -500,7 +500,7 @@ internal class Scene
             return;
 
         IEnumerable<StageObjType> types = Enum.GetValues<StageObjType>()
-            .Where(t => t != StageObjType.Unknown && t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child);
+            .Where(t => t != StageObjType.Rail && t != StageObjType.AreaChild && t != StageObjType.Child);
 
         foreach (StageObjType objType in types)
             GenerateSceneObjects(Stage.EnumerateStageObjs(objType), fsHandler, scheduler, ref status);

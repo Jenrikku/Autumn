@@ -464,7 +464,7 @@ internal class SceneWindow(MainWindowContext window)
                     {
                         ISceneObj x when x is IStageSceneObj y => y.StageObj.Type,
                         ISceneObj x when x is RailSceneObj y => StageObjType.Rail,
-                        _ => StageObjType.Unknown
+                        //_ => StageObjType.Unknown
                     };
 
                     bool isSelectionChildable = sType == StageObjType.Area

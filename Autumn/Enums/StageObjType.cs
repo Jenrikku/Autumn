@@ -2,10 +2,9 @@ namespace Autumn.Enums;
 
 internal enum StageObjType : byte
 {
-    Unknown = 0,
+    Regular = 0, // ObjInfo
     Area, // AreaObjInfo
     CameraArea, //CameraAreaInfo
-    Regular, // ObjInfo
     Goal, //GoalObjInfo
     StartEvent, //StartEventObjInfo
     Start, //StartInfo

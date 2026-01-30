@@ -64,9 +64,9 @@ internal class ObjectWindow(MainWindowContext window)
             ref _objectFilterCurrent,
             [
                 "All Objects",
+                "Regular Objects",
                 "Areas",
                 "Camera Areas",
-                "Regular Objects",
                 "Goals",
                 "Start Events",
                 "Start Objects",
@@ -91,11 +91,11 @@ internal class ObjectWindow(MainWindowContext window)
             {
                 if (_objectFilterCurrent != 0) // Object filtering
                 {
-                    if (obj is IStageSceneObj stageSceneObj && _objectFilterCurrent != (byte)stageSceneObj.StageObj.Type
+                    if (obj is IStageSceneObj stageSceneObj && _objectFilterCurrent != (byte)stageSceneObj.StageObj.Type + 1
                         && !IsChild(stageSceneObj.StageObj) && !IsChildArea(stageSceneObj.StageObj))
                         continue;
 
-                    if (obj is RailSceneObj && _objectFilterCurrent != (byte)StageObjType.Rail)
+                    if (obj is RailSceneObj && _objectFilterCurrent != (byte)StageObjType.Rail + 1)
                         continue;
                 }
 
