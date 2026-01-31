@@ -8,52 +8,6 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
     public ProjectCreateChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager) { }
 
-    protected override void RenderFileChoosePanel()
-    {
-        if (!ImGui.BeginTable("FileChoose", 2, FileChooseFlags))
-            return;
-
-        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
-
-        ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-        ImGui.TableSetupColumn(" Name");
-        ImGui.TableSetupColumn(" Modified Date");
-        ImGui.TableHeadersRow();
-
-        foreach (FileSystemInfo info in DirectoryEntries)
-        {
-            if (info is not DirectoryInfo dir || !dir.Name.Contains(SearchString))
-                continue;
-
-            ImGui.TableNextRow();
-
-            ImGui.TableSetColumnIndex(0);
-
-            var flags = FileSelectableFlags;
-
-            if (IsDirRomFS[dir.Name])
-                flags |= ImGuiSelectableFlags.Disabled;
-
-            if (ImGui.Selectable(dir.Name, false, flags))
-            {
-                SelectedFile = dir.Name;
-                SelectedFileChanged = true;
-
-                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                {
-                    ChangeDirectory(dir.FullName);
-                    break;
-                }
-            }
-
-            ImGui.TableNextColumn();
-
-            ImGui.Text(dir.LastWriteTime.ToString());
-        }
-
-        ImGui.EndTable();
-    }
-
     protected override bool IsTargetValid()
     {
         string path = Path.Join(CurrentDirectory, SelectedFile);
@@ -63,7 +17,7 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
         {
             if (File.Exists(path))
             {
-                PathError = "The path is a file that exists.";
+                PathError = "The path already exists and is a file.";
                 return false;
             }
 
@@ -72,12 +26,6 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
                 if (IsDirRomFS[SelectedFile])
                 {
                     PathError = "The path already contains a project in it.";
-                    return false;
-                }
-
-                if (Directory.EnumerateFileSystemEntries(path).Any()) // Directory is not empty
-                {
-                    PathError = "The path must be empty.";
                     return false;
                 }
 
@@ -101,12 +49,17 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
 
     protected override void OkButtonAction()
     {
-        if (string.IsNullOrEmpty(SelectedFile) || !Directory.Exists(Path.Join(CurrentDirectory, SelectedFile)))
+        string path = Path.Join(CurrentDirectory, SelectedFile);
+
+        if (string.IsNullOrEmpty(SelectedFile) || !Directory.Exists(path))
         {
-            base.OkButtonAction();
+            Directory.CreateDirectory(path);
+            InvokeSuccessCallback([path]);
             return;
         }
 
-        ChangeDirectory(Path.Join(CurrentDirectory, SelectedFile));
+        ChangeDirectory(path);
     }
+
+    protected override bool IsDisabled(string name) => IsDirRomFS[name];
 }

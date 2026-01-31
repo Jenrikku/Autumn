@@ -54,9 +54,13 @@ internal class SingleFileChooserContext : FileChooserWindowContext
                 if (info is FileInfo file)
                 {
                     SelectedFile = file.Name.Replace(";", "\\;").Replace("\\", "\\\\");
+                    SelectedFileChanged = true;
 
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                        InvokeSuccessCallback(file.FullName);
+                    {
+                        OkButtonAction();
+                        break;
+                    }
                 }
             }
 
@@ -73,5 +77,15 @@ internal class SingleFileChooserContext : FileChooserWindowContext
         }
 
         ImGui.EndTable();
+    }
+
+    protected override void OkButtonAction()
+    {
+        string path = Path.Join(CurrentDirectory, SelectedFile);
+
+        if (Directory.Exists(path))
+            ChangeDirectory(path);
+        else
+            base.OkButtonAction();
     }
 }

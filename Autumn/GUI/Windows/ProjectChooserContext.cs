@@ -60,20 +60,19 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
             ImGui.TableSetColumnIndex(0);
 
-            if (ImGui.Selectable(dir.Name, false, FileSelectableFlags))
-            {
-                if (IsDirRomFS[dir.Name])
-                {
-                    SelectedFile = dir.Name;
+            var flags = FileSelectableFlags;
 
-                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-                    {
-                        InvokeSuccessCallback(dir.FullName);
-                    }
-                }
-                else if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+            if (IsDisabled(dir.Name))
+                flags |= ImGuiSelectableFlags.Disabled;
+
+            if (ImGui.Selectable(dir.Name, false, flags))
+            {
+                SelectedFile = dir.Name;
+                SelectedFileChanged = true;
+
+                if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                 {
-                    ChangeDirectory(dir.FullName);
+                    OkButtonAction();
                     break;
                 }
             }
@@ -85,6 +84,42 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
         ImGui.EndTable();
     }
+
+    protected override bool IsTargetValid()
+    {
+        if (string.IsNullOrEmpty(SelectedFile)) return false;
+
+        string path = Path.Join(CurrentDirectory, SelectedFile);
+
+        if (File.Exists(path))
+        {
+            PathError = "The path exists but is not a valid project.";
+            return false;
+        }
+
+        if (!Directory.Exists(path))
+        {
+            PathError = "The path does not exist.";
+            return false;
+        }
+
+        return true;
+    }
+
+    protected override void OkButtonAction()
+    {
+        string path = Path.Join(CurrentDirectory, SelectedFile);
+
+        if (IsDirRomFS[SelectedFile])
+        {
+            base.OkButtonAction();
+            return;
+        }
+
+        ChangeDirectory(path);
+    }
+
+    protected virtual bool IsDisabled(string name) => false;
 
     /// <summary>
     /// Checks if the directory is a valid RomFS (also returns true on projects)

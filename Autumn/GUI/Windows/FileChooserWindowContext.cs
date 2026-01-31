@@ -399,7 +399,10 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// <summary>
     /// Checks if the target is valid and the user has the proper permissions.
     /// </summary>
-    protected virtual bool IsTargetValid() { return !string.IsNullOrEmpty(SelectedFile); }
+    protected virtual bool IsTargetValid()
+    {
+        return !string.IsNullOrEmpty(SelectedFile) && Path.Exists(Path.Join(CurrentDirectory, SelectedFile));
+    }
 
     protected virtual void OkButtonAction()
     {
