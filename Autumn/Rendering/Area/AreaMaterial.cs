@@ -57,23 +57,27 @@ internal static class AreaMaterial
             void main() {                
                 vec3 absolute = abs(vPos);
 
-                float a = max3(
-                    min(absolute.x, absolute.y),
-                    min(absolute.x, absolute.z),
-                    min(absolute.y, absolute.z));
+            float a = max3(
+                min(absolute.x, absolute.y),
+                min(absolute.x, absolute.z),
+                min(absolute.y, absolute.z));
 
-                float wa = fwidth(a);
+            float wa = fwidth(a);
 
-                float outline = smoothstep(10 - wa * 2, 10 - wa, a);
+            float outline = smoothstep(9 - wa , 10 + wa, a);
+            float outline2 = smoothstep(9 - wa , 10 + wa, a * 0.95);
 
-                if(outline == 0)
-                    discard;
+            if (outline < 0.6) discard;
+            oColor.rgb = mix(uColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+            oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.85;
+            oColor.rgb += vec3(clamp(outline2 * 0.5- 0.2,0,1));
+            
+            oColor.a = 1.0;
+            oPickingId = uPickingId;
 
-                oPickingId = uPickingId;
+            // oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
 
-                oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
-
-                oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+            // oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
             }
             """
         );
