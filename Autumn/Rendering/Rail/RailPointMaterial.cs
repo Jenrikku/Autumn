@@ -49,6 +49,7 @@ internal static class RailPointMaterial
             };
 
             uniform uint uPickingId;
+            uniform float uIsHandle;
 
             out vec4 oColor;
             out uint oPickingId;
@@ -67,13 +68,14 @@ internal static class RailPointMaterial
 
                 float outline = smoothstep(0.01 - wa, 0.17 - wa, a);
                 
-                //vec4 glint = vec4(1,0.88,0.2,1) + 0.06; // YELLOW
-                //vec4 col = vec4(0.93,0.8,0,1); 
-                //vec4 glint = vec4(1,0.4,0.4,1) + 0.06; // RED
-                //vec4 col = vec4(1,0,0.24,1);
-                vec4 glint = vec4(0.38,0.69,1,1) + 0.06; // BLUE
-                vec4 col = vec4(0.09,0.5,0.86,1);
-                oColor = mix(glint, col, outline);
+                
+                // vec4 glintY = vec4(1,0.88,0.2,1) + 0.06; // YELLOW
+                // vec4 colY = vec4(0.93,0.8,0,1); 
+                vec4 glintR = vec4(1,0.4,0.4,1) + 0.06; // RED
+                vec4 colR = vec4(1,0,0.24,1);
+                vec4 glintB = vec4(0.38,0.69,1,1) + 0.06; // BLUE
+                vec4 colB = vec4(0.09,0.5,0.86,1);
+                oColor = mix((uIsHandle > 0) ? glintB : glintR, (uIsHandle > 0) ? colB : colR, outline);
                 oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
                 oColor.a = 1;
             }

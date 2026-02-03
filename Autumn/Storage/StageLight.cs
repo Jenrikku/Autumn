@@ -62,7 +62,7 @@ internal class StageLight
     public Vector4?[] ConstantColors = new Vector4?[6];
     public Vector4 Ambient = new(0.23f, 0.22f, 0.21f, 1);
     public Vector4 Diffuse = new(0.23f, 0.22f, 0.21f, 1);
-    public Vector4 Specular0 = new(0.5f, 0.5f, 0.5f, 1);
+    public Vector4 Specular0 = new(0.205f, 0.205f, 0.205f, 1);
     public Vector4 Specular1 = new(0.5f, 0.5f, 0.5f, 1);
     public bool IsCameraFollow = false;
     public Vector3 Direction = new(-1,-1,-0.7f);

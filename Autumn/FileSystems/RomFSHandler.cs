@@ -415,6 +415,14 @@ internal partial class RomFSHandler
                         break;
                 }
             }
+            if (fileType == StageFileType.Map && stage.CameraParams.Cameras.Count > 0)
+            {
+                foreach (StageCamera cam in stage.CameraParams.Cameras)
+                {
+                    if (!cam.Class.ToString().Contains("Rail")) continue;
+                    cam.CamProperties.Rail = stage.EnumerateRails().FirstOrDefault(x => x.RailNo == cam.CamProperties.Rail!.RailNo);
+                }
+            }
         }
         return stage;
     }
@@ -1025,9 +1033,9 @@ internal partial class RomFSHandler
             {
                 case RailPointType.Bezier:
                     railObj.Points.Add(
-                        new RailPointBezier()
+                        new RailPoint()
                         {
-                            ID = pointID?.GetValueAs<int>() ?? i,
+                            //ID = pointID?.GetValueAs<int>() ?? i,
                             Point0Trans = new(
                                 pnt0X?.GetValueAs<float>() ?? 0,
                                 pnt0Y?.GetValueAs<float>() ?? 0,
@@ -1063,21 +1071,31 @@ internal partial class RomFSHandler
 
                 case RailPointType.Linear:
                     railObj.Points.Add(
-                        new RailPointLinear()
+                        new RailPoint()
                         {
-                            ID = pointID?.GetValueAs<int>() ?? i,
-                            Translation = new(
+                            //ID = pointID?.GetValueAs<int>() ?? i,
+                            Point0Trans = new(
                                 pnt0X?.GetValueAs<float>() ?? 0,
                                 pnt0Y?.GetValueAs<float>() ?? 0,
                                 pnt0Z?.GetValueAs<float>() ?? 0
                             ),
                             Properties = railPointDict
                                 .Where(i =>
-                                    i.Key != "pnt0_x" && i.Key != "pnt0_y" && i.Key != "pnt0_z" && i.Key != "id"
+                                    i.Key != "pnt0_x"
+                                    && i.Key != "pnt0_y"
+                                    && i.Key != "pnt0_z"
+                                    && i.Key != "pnt1_x"
+                                    && i.Key != "pnt1_y"
+                                    && i.Key != "pnt1_z"
+                                    && i.Key != "pnt2_x"
+                                    && i.Key != "pnt2_y"
+                                    && i.Key != "pnt2_z"
+                                    && i.Key != "id"
                                 )
                                 .ToDictionary(i => i.Key, i => i.Value.Value)
                         }
                     );
+                    railObj.Points.Last().SetPointLinear();
                     break;
 
                 default:
@@ -1650,26 +1668,24 @@ internal partial class RomFSHandler
             // try to get point positions
             if (rail.PointType == RailPointType.Linear)
             {
-                var lpt = (RailPointLinear)pt;
                 for (int p = 0; p < 3; p++)
                 {
-                    ptd.Add("pnt" + p + "_x", new(BYAMLNodeType.Float, lpt.Translation.X));
-                    ptd.Add("pnt" + p + "_y", new(BYAMLNodeType.Float, lpt.Translation.Y));
-                    ptd.Add("pnt" + p + "_z", new(BYAMLNodeType.Float, lpt.Translation.Z));
+                    ptd.Add($"pnt{p}_x", new(BYAMLNodeType.Float, pt.Point0Trans.X));
+                    ptd.Add($"pnt{p}_y", new(BYAMLNodeType.Float, pt.Point0Trans.Y));
+                    ptd.Add($"pnt{p}_z", new(BYAMLNodeType.Float, pt.Point0Trans.Z));
                 }
             }
             else
             {
-                var bpt = (RailPointBezier)pt;
-                ptd.Add("pnt0_x", new(BYAMLNodeType.Float, bpt.Point0Trans.X));
-                ptd.Add("pnt0_y", new(BYAMLNodeType.Float, bpt.Point0Trans.Y));
-                ptd.Add("pnt0_z", new(BYAMLNodeType.Float, bpt.Point0Trans.Z));
-                ptd.Add("pnt1_x", new(BYAMLNodeType.Float, bpt.Point1Trans.X));
-                ptd.Add("pnt1_y", new(BYAMLNodeType.Float, bpt.Point1Trans.Y));
-                ptd.Add("pnt1_z", new(BYAMLNodeType.Float, bpt.Point1Trans.Z));
-                ptd.Add("pnt2_x", new(BYAMLNodeType.Float, bpt.Point2Trans.X));
-                ptd.Add("pnt2_y", new(BYAMLNodeType.Float, bpt.Point2Trans.Y));
-                ptd.Add("pnt2_z", new(BYAMLNodeType.Float, bpt.Point2Trans.Z));
+                ptd.Add("pnt0_x", new(BYAMLNodeType.Float, pt.Point0Trans.X));
+                ptd.Add("pnt0_y", new(BYAMLNodeType.Float, pt.Point0Trans.Y));
+                ptd.Add("pnt0_z", new(BYAMLNodeType.Float, pt.Point0Trans.Z));
+                ptd.Add("pnt1_x", new(BYAMLNodeType.Float, pt.Point1Trans.X));
+                ptd.Add("pnt1_y", new(BYAMLNodeType.Float, pt.Point1Trans.Y));
+                ptd.Add("pnt1_z", new(BYAMLNodeType.Float, pt.Point1Trans.Z));
+                ptd.Add("pnt2_x", new(BYAMLNodeType.Float, pt.Point2Trans.X));
+                ptd.Add("pnt2_y", new(BYAMLNodeType.Float, pt.Point2Trans.Y));
+                ptd.Add("pnt2_z", new(BYAMLNodeType.Float, pt.Point2Trans.Z));
             }
             points.Add(new(ptd));
             ptid += 1;
@@ -1680,12 +1696,12 @@ internal partial class RomFSHandler
         currentRailNodes.Add("closed", new(BYAMLNodeType.String, rail.Closed ? "CLOSE" : "OPEN", false));
         // try to get l_id
         rail.RailNo = currentId;
-        currentRailNodes.Add("l_id", new(BYAMLNodeType.Int, currentId));
+        currentRailNodes.Add("l_id", new(BYAMLNodeType.Int, rail.RailNo));
         // try to get name
         currentRailNodes.Add("name", new(BYAMLNodeType.String, rail.Name));
-        currentRailNodes.Add("no", new(BYAMLNodeType.Int, currentId));
+        currentRailNodes.Add("no", new(BYAMLNodeType.Int, rail.RailNo));
         // try to get num_pnt
-        currentRailNodes.Add("num_pnt", new(BYAMLNodeType.Int, rail.Points.Count()));
+        currentRailNodes.Add("num_pnt", new(BYAMLNodeType.Int, rail.Points.Count));
         // try to get type
         currentRailNodes.Add("type", new(BYAMLNodeType.String, rail.PointType.ToString()));
         return new BYAMLNode(currentRailNodes);

@@ -2,21 +2,21 @@ using System.Numerics;
 
 namespace Autumn.Storage;
 
-internal abstract class RailPoint
+internal class RailPoint
 {
-    public int ID = -1;
-
     public Dictionary<string, object?> Properties { get; set; } = new();
-}
-
-internal class RailPointBezier : RailPoint
-{
+    
+    ///<summary> Reference point </summary>
     public Vector3 Point0Trans = new();
+    
+    ///<summary> Previous Handle (Handle1) </summary>
     public Vector3 Point1Trans = new();
-    public Vector3 Point2Trans = new();
-}
 
-internal class RailPointLinear : RailPoint
-{
-    public Vector3 Translation = new();
+    ///<summary> Next Handle (Handle2) </summary>
+    public Vector3 Point2Trans = new();
+    public void SetPointLinear()
+    {
+        Point1Trans = Point0Trans + Vector3.UnitX * 100;
+        Point2Trans = Point0Trans - Vector3.UnitX * 100;
+    }
 }

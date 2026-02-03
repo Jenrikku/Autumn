@@ -142,6 +142,8 @@ internal static class ModelRenderer
         {
             if (!VisibleRails && !railSceneObj.Selected)
                 return;
+            if(!railSceneObj.RailModel.Initialized)
+                return;
             s_railMaterialParams!.Selected = railSceneObj.Selected;
 
             gl.Disable(EnableCap.CullFace);

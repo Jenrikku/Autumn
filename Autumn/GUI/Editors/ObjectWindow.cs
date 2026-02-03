@@ -263,7 +263,8 @@ internal class ObjectWindow(MainWindowContext window)
                         break;
 
                     case ISceneObj x when x is RailSceneObj y:
-                        break; // TO-DO
+                        window.CurrentScene!.Camera.LookFrom(y.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
+                        break;
                 }
             }
 
@@ -276,15 +277,26 @@ internal class ObjectWindow(MainWindowContext window)
         {
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow))
             {
-                selectedIndex += 1;
-                selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
+                if (window.CurrentScene.SelectedObjects.First() is IStageSceneObj)
+                {
+                    selectedIndex += 1;
+                    selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
+                }
+                else
+                    selectedIndex = (int)window.CurrentScene.GetNextRailId();
                 lastKeyPressed = true;
                 manualClick = false;
             }
             else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
             {
                 selectedIndex -= 1;
-                selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
+                if (window.CurrentScene.SelectedObjects.First() is IStageSceneObj)
+                {
+                    selectedIndex -= 1;
+                    selectedIndex = Math.Clamp(selectedIndex, 0, window.CurrentScene.CountSceneObjs() - 1);
+                }
+                else
+                    selectedIndex = (int)window.CurrentScene.GetPreviousRailId();
                 lastKeyPressed = true;
                 manualClick = false;
             }

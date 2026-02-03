@@ -365,7 +365,9 @@ internal class ActionHandler
 
                 foreach (ISceneObj del in mainContext.CurrentScene!.SelectedObjects)
                 {
-                    ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
+                    
+                    if (del is IStageSceneObj || del is RailSceneObj) ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
+                    else if (del is RailPointSceneObj) ChangeHandler.ChangeRemovePoint(mainContext, mainContext.CurrentScene.History, (del as RailPointSceneObj)!);
                 }
 
                 mainContext.CurrentScene.UnselectAllObjects();
@@ -390,6 +392,7 @@ internal class ActionHandler
 
                 foreach (ISceneObj copy in mainContext.CurrentScene.SelectedObjects)
                 {
+                    if (copy is RailPointSceneObj) continue;
                     if (copy is IStageSceneObj stageCopy && mainContext.CurrentScene.SelectedObjects.Any(x => x is IStageSceneObj y && y.StageObj.Children != null && y.StageObj.Children.Contains(stageCopy.StageObj)))
                         continue;
 
@@ -398,7 +401,7 @@ internal class ActionHandler
                     
                     if(copy is IStageSceneObj stageCopy1) CheckPickChildren(stageCopy1.StageObj, ref newPickIds, ref newestPickId);
                 }
-
+                if (newPickIds.Count < 1) return;
                 mainContext.CurrentScene.UnselectAllObjects();
 
                 for (int i = 0; i < newPickIds.Count; i++)
@@ -462,7 +465,7 @@ internal class ActionHandler
                     ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj.Parent == parent).PickingId, true);
 
                 AxisAlignedBoundingBox aabb = mainContext.CurrentScene.SelectedObjects.First().AABB * stageSceneObj.StageObj.Scale;
-                mainContext.CurrentScene!.Camera.LookFrom(stageSceneObj.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                mainContext.CurrentScene!.Camera.LookFrom(mainContext.CurrentScene.SelectedObjects.First().Transform.Translation, aabb.GetDiagonal() * 0.01f);
             },
             enabled: window =>
             {

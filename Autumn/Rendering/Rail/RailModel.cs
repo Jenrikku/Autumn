@@ -8,9 +8,10 @@ namespace Autumn.Rendering.Rail;
 
 internal class RailModel(RailObj rail)
 {
+    public Vector3 Offset = Vector3.Zero;
     private const float _bezierPointStep = 0.08f;
 
-    private bool _initialized = false;
+    public bool Initialized { get; private set; }
 
     private GL? _gl;
 
@@ -18,23 +19,22 @@ internal class RailModel(RailObj rail)
     private uint _vertexArrayHandle;
 
     private Vector3[] _vertices = [];
-
     public void Initialize(GL gl)
     {
-        if (_initialized)
+        if (Initialized)
             return;
 
         _gl = gl;
         _vertexBufferHandle = gl.GenBuffer();
         _vertexArrayHandle = gl.GenVertexArray();
-        _initialized = true;
+        Initialized = true;
 
         UpdateModel();
     }
 
     public void UpdateModel()
     {
-        if (!_initialized)
+        if (!Initialized)
             throw new InvalidOperationException(
                 $@"{nameof(RailModel)} must be initialized before any calls to {nameof(UpdateModel)}"
             );
@@ -47,8 +47,8 @@ internal class RailModel(RailObj rail)
 
                 for (int i = 0; i < rail.Points.Count - 1; i++)
                 {
-                    var point0 = (RailPointBezier)rail.Points[i];
-                    var point1 = (RailPointBezier)rail.Points[i + 1];
+                    var point0 = rail.Points[i];
+                    var point1 = rail.Points[i + 1];
 
                     var curve = CalcBezierCurveFrom(point0, point1, _bezierPointStep);
                     vertices.AddRange(curve);
@@ -56,8 +56,8 @@ internal class RailModel(RailObj rail)
 
                 if (rail.Closed)
                 {
-                    var point0 = (RailPointBezier)rail.Points[^1];
-                    var point1 = (RailPointBezier)rail.Points[0];
+                    var point0 = rail.Points[^1];
+                    var point1 = rail.Points[0];
 
                     var curve = CalcBezierCurveFrom(point0, point1, _bezierPointStep);
                     vertices.AddRange(curve);
@@ -67,8 +67,8 @@ internal class RailModel(RailObj rail)
 
             case RailPointType.Linear:
 
-                foreach (var point in rail.Points.Cast<RailPointLinear>())
-                    vertices.Add(point.Translation * 0.01f);
+                foreach (var point in rail.Points)
+                    vertices.Add((Offset + point.Point0Trans) * 0.01f);
 
                 break;
         }
@@ -88,7 +88,7 @@ internal class RailModel(RailObj rail)
 
     public void Draw(GL gl)
     {
-        if (!_initialized)
+        if (!Initialized)
             throw new InvalidOperationException(
                 $@"{nameof(RailModel)} must be initialized before any calls to {nameof(Draw)}"
             );
@@ -98,12 +98,12 @@ internal class RailModel(RailObj rail)
         gl.BindVertexArray(0);
     }
 
-    private static IEnumerable<Vector3> CalcBezierCurveFrom(RailPointBezier point0, RailPointBezier point1, float step)
+    private IEnumerable<Vector3> CalcBezierCurveFrom(RailPoint point0, RailPoint point1, float step)
     {
-        Vector3 p0 = point0.Point0Trans * 0.01f;
-        Vector3 p1 = point0.Point2Trans * 0.01f;
-        Vector3 p2 = point1.Point1Trans * 0.01f;
-        Vector3 p3 = point1.Point0Trans * 0.01f;
+        Vector3 p0 = (Offset + point0.Point0Trans) * 0.01f;
+        Vector3 p1 = (Offset + point0.Point2Trans) * 0.01f;
+        Vector3 p2 = (Offset + point1.Point1Trans) * 0.01f;
+        Vector3 p3 = (Offset + point1.Point0Trans) * 0.01f;
 
         for (float t = 0; t <= 1; t += step)
         {

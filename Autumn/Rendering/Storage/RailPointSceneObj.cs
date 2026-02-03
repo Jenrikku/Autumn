@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.Storage;
@@ -6,15 +7,14 @@ namespace Autumn.Rendering.Storage;
 
 internal class RailPointSceneObj : ISceneObj
 {
-    private readonly Action? _railUpdate;
-
+    public RailSceneObj ParentRail { private set; get; }
     public RailPoint RailPoint { get; }
 
-    public RailPointType PointType { get; }
-
+    public RailPointType PointType => ParentRail.RailObj.PointType;
     public RailHandleSceneObj? Handle1 { get; init; }
     public RailHandleSceneObj? Handle2 { get; init; }
 
+    public Vector3 FakeRot = Vector3.Zero;
     public Matrix4x4 Transform { get; set; }
     public AxisAlignedBoundingBox AABB { get; set; }
 
@@ -23,35 +23,76 @@ internal class RailPointSceneObj : ISceneObj
     public bool Hovering { get; set; }
     public bool IsVisible { get; set; } = true;
 
-    public RailPointSceneObj(RailPoint railPoint, Action railUpdate, ref uint pickingId)
+    public RailPointSceneObj(RailPoint railPoint, RailSceneObj parent, ref uint pickingId)
     {
-        PointType = railPoint is RailPointLinear ? RailPointType.Linear : RailPointType.Bezier;
+        ParentRail = parent;
         RailPoint = railPoint;
         PickingId = pickingId++;
 
-        if (railPoint is RailPointBezier bezier)
-        {
-            Handle1 = new(bezier.Point0Trans, railUpdate, ref pickingId);
-            Handle2 = new(bezier.Point2Trans, railUpdate, ref pickingId);
-        }
+        Handle1 = new(railPoint.Point1Trans-railPoint.Point0Trans, this, ref pickingId);
+        Handle2 = new(railPoint.Point2Trans-railPoint.Point0Trans, this, ref pickingId);
 
-        AABB = new(1f); // TO-DO
+        AABB = new(5f);
 
         UpdateTransform();
-
-        _railUpdate = railUpdate; // Important: Putting it at the end prevents it from being called when constructing
     }
 
     public void UpdateTransform()
     {
-        if (RailPoint is RailPointLinear linear)
-            Transform = Matrix4x4.CreateTranslation(linear.Translation * 0.01f);
-        else if (RailPoint is RailPointBezier bezier)
-            Transform = Matrix4x4.CreateTranslation(bezier.Point0Trans * 0.01f);
+        // if (RailPoint is RailPointLinear linear)
+        //     Transform = Matrix4x4.CreateTranslation(linear.Translation * 0.01f);
+        // else if (RailPoint is RailPointBezier bezier)
+        Transform = Matrix4x4.CreateTranslation(RailPoint.Point0Trans * 0.01f);
+        if (FakeRot != Vector3.Zero)
+        {
+            // Apply rotation to points
+            RailPoint.Point1Trans = Vector3.Transform(Handle1.Offset, 
+            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+            RailPoint.Point2Trans = Vector3.Transform(Handle2.Offset, 
+            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
 
-        _railUpdate?.Invoke();
+            FakeRot = Vector3.Zero;
+        }
+        UpdateSceneHandles();
+        Handle1!.UpdateTransform();
+        Handle2!.UpdateTransform();
+        if (ParentRail.RailModel.Initialized)
+            ParentRail.UpdateModel();
+    }
+    public void UpdateModel()
+    {
+        Transform = Matrix4x4.CreateTranslation(RailPoint.Point0Trans * 0.01f);
+        Handle1!.UpdateTransform();
+        Handle2!.UpdateTransform();
+    }
+    public void UpdateModelMoving()
+    {
+        Transform = Matrix4x4.CreateTranslation((RailPoint.Point0Trans)* 0.01f);
+        UpdateObjHandles();
+        Handle1!.UpdateModelMoving();
+        Handle2!.UpdateModelMoving();
+    }
+    public void UpdateModelRotating()
+    {
+        Transform = Matrix4x4.CreateTranslation((RailPoint.Point0Trans)* 0.01f);
+        RailPoint.Point1Trans = Vector3.Transform(Handle1!.Offset, 
+            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+        RailPoint.Point2Trans = Vector3.Transform(Handle2!.Offset, 
+            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+
+        Handle1.UpdateModelRotating();
+        Handle2.UpdateModelRotating();
     }
 
+    //public void UpdateModelTmp() => ParentRail.UpdateModelTmp();
     /// <returns>A handle or this point with the given picking ID and returns it.</returns>
     public ISceneObj? GetObjectByPickingId(uint id)
     {
@@ -62,5 +103,31 @@ internal class RailPointSceneObj : ISceneObj
         if (Handle2 is not null && Handle2.PickingId == id) return Handle2;
 
         return null;
+    }
+
+    internal void UpdateObjHandle(RailHandleSceneObj handle)
+    {
+        if (handle == Handle1) RailPoint.Point1Trans = RailPoint.Point0Trans + handle.Offset;
+        else if (handle == Handle2) RailPoint.Point2Trans = RailPoint.Point0Trans + handle.Offset;
+    }
+    internal void UpdateObjHandles()
+    {
+        RailPoint.Point1Trans = RailPoint.Point0Trans + Handle1!.Offset;
+        RailPoint.Point2Trans = RailPoint.Point0Trans + Handle2!.Offset;
+    }
+    internal void UpdateSceneHandle(int i)
+    { 
+        if (i == 0) Handle1!.Offset = RailPoint.Point1Trans-RailPoint.Point0Trans;
+        else if (i == 1) Handle2!.Offset = RailPoint.Point2Trans-RailPoint.Point0Trans;
+    }
+    internal void UpdateSceneHandles()
+    { 
+        Handle1!.Offset = RailPoint.Point1Trans-RailPoint.Point0Trans;
+        Handle2!.Offset = RailPoint.Point2Trans-RailPoint.Point0Trans;
+    }
+
+    internal uint Clone()
+    {
+        throw new NotImplementedException();
     }
 }

@@ -181,14 +181,14 @@ internal static class RailRenderer
 
         foreach (RailPointSceneObj railPoint in railSceneObj.RailPoints)
         {
-            DrawRailPoint(gl, scene, railPointMaterial, railPoint.PickingId, railPoint.Selected, false, railPoint.Transform);
+            DrawRailPoint(gl, scene, railPointMaterial, railPoint.PickingId, railPoint.Selected || railPoint.ParentRail.Selected, false, railPoint.Transform);
 
             if (railPoint.PointType == RailPointType.Bezier)
             {
                 RailHandleSceneObj h1 = railPoint.Handle1!, h2 = railPoint.Handle2!;
 
-                DrawRailPoint(gl, scene, railPointMaterial, h1.PickingId, h1.Selected, true, h1.Transform);
-                DrawRailPoint(gl, scene, railPointMaterial, h2.PickingId, h2.Selected, true, h2.Transform);
+                DrawRailPoint(gl, scene, railPointMaterial, h1.PickingId, h1.Selected || railPoint.ParentRail.Selected, true, h1.Transform);
+                DrawRailPoint(gl, scene, railPointMaterial, h2.PickingId, h2.Selected || railPoint.ParentRail.Selected, true, h2.Transform);
             }
         }
     }
@@ -220,6 +220,9 @@ internal static class RailRenderer
         {
             if (RailPointMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
                 gl.Uniform1(location, pickingId);
+
+            if (RailPointMaterial.Program.TryGetUniformLoc("uIsHandle", out int location2))
+                gl.Uniform1(location2, (float)(isHandle ? 1 : 0));
 
             model.Draw(gl);
         }

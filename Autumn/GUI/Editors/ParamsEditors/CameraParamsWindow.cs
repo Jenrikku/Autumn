@@ -234,7 +234,39 @@ internal class CameraParamsWindow(MainWindowContext window)
                 foreach (var Camfield in renderAfter)
                 {
                     bool skip = false;
-                    CheckField(Camfield, scn, skip);
+                    if (Camfield.Name == "Rail") 
+                    {
+                        ImGui.Text("Rail:"); ImGui.SameLine();
+                        RailObj? rl = (RailObj?)Camfield.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
+                        var rails = window.CurrentScene!.EnumerateRailSceneObjs();
+                        string[] railStrings = new string[rails.Count() + 1];
+                        int bbbb = 1;
+                        railStrings[0] = "No Rail selected";
+                        foreach (RailSceneObj rail in rails)
+                        {
+                            railStrings[bbbb] = rail.RailObj.Name;
+                            bbbb += 1;
+                        }
+                        int rfrail = 0;
+                        if (rl is not null)
+                        {
+                            var rals = rails.FirstOrDefault(x => x.RailObj.Name == rl.Name); // In case the rail gets deleted
+                            if (rals != null)
+                                rfrail = rails.ToList().IndexOf(rals) + 1;
+                        }
+                        int rfr2 = rfrail;
+                        ImGuiWidgets.SetPropertyWidthGen("Rail", ratioA, ratioB);
+                        ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
+                        if (rfr2 != rfrail)
+                        {
+                            if (rfr2 > 0)
+                            {
+                                scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = rails.ElementAt(rfr2 - 1).RailObj;
+                            }
+                            else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
+                        }
+                    }
+                    else CheckField(Camfield, scn, skip);
                 }
             }
 
