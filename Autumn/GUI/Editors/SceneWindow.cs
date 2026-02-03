@@ -564,7 +564,8 @@ internal class SceneWindow(MainWindowContext window)
                                     window.CurrentScene.History,
                                     y,
                                     y.Offset,
-                                    -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                                    -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                                    false
                                 );
                                 break;
                             case ISceneObj x when x is RailSceneObj y:
@@ -861,7 +862,7 @@ internal class SceneWindow(MainWindowContext window)
                         y.RailPoint.Point0Trans = nTr;
                         break;
                     case ISceneObj x when x is RailSceneObj y:
-                        y.RailModel.Offset = nTr;
+                        y.RailModel.Offset = nTr - y.Center * (Vector3.One - _axisLock);
                         break;
                 }
 
@@ -954,7 +955,7 @@ internal class SceneWindow(MainWindowContext window)
                 break;
                 case ISceneObj x when x is RailSceneObj y:
                     dist = Vector3.Distance(
-                    (y.RailModel.Offset) / 100,
+                    (y.RailModel.Offset + y.Center) / 100,
                     window.CurrentScene.Camera.Eye
                     );
                 break;
@@ -980,7 +981,7 @@ internal class SceneWindow(MainWindowContext window)
                         ActTransform.Relative[y] = y.RailPoint.Point0Trans - _ndcMousePos3D;
                         break;
                     case ISceneObj x when x is RailSceneObj y:
-                        ActTransform.Originals.Add(y, y.RailModel.Offset);
+                        ActTransform.Originals.Add(y, y.RailModel.Offset + y.Center);
                         ActTransform.Relative[y] = y.RailModel.Offset - _ndcMousePos3D;
                         break;
                 }
@@ -1056,7 +1057,7 @@ internal class SceneWindow(MainWindowContext window)
                             ActTransform.Finals.Add(y, y.RailPoint.Point0Trans);
                             break;
                         case ISceneObj x when x is RailSceneObj y:
-                            ActTransform.Finals.Add(y, y.RailModel.Offset);
+                            ActTransform.Finals.Add(y, y.RailModel.Offset + y.Center);
                             break;
                     }
                 }
@@ -1093,7 +1094,7 @@ internal class SceneWindow(MainWindowContext window)
                         y.UpdateModel();
                         break;
                     case ISceneObj x when x is RailSceneObj y:
-                        y.RailModel.Offset = ActTransform.Originals[scobj];
+                        y.RailModel.Offset = ActTransform.Originals[scobj] - y.Center;
                         y.UpdateModel();
                         break;
                 }
