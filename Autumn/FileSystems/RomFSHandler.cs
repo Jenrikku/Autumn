@@ -1843,7 +1843,8 @@ internal partial class RomFSHandler
 
         if (currentObj.Rail is not null)
         {
-            currentObjectNodes.Add("Rail", railObjNodes[currentObj.Rail]);
+            if (!railObjNodes.Keys.Contains(currentObj.Rail)) currentObj.Rail = null; // Fully remove the rail from the object if it's removed and we saved
+            else currentObjectNodes.Add("Rail", railObjNodes[currentObj.Rail]);
         }
 
         if (currentObj.Type == StageObjType.Area || currentObj.Type == StageObjType.AreaChild)

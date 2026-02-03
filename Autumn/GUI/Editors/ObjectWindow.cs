@@ -289,7 +289,6 @@ internal class ObjectWindow(MainWindowContext window)
             }
             else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow))
             {
-                selectedIndex -= 1;
                 if (window.CurrentScene.SelectedObjects.First() is IStageSceneObj)
                 {
                     selectedIndex -= 1;

@@ -88,6 +88,14 @@ internal class PropertiesWindow(MainWindowContext window)
                     RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation);
                     ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale);
                 }
+                else if (prevObj is RailPointSceneObj rps)
+                {
+                    PosDrag.Finish(ref rps.RailPoint.Point0Trans);
+                }
+                else if (prevObj is RailHandleSceneObj rph)
+                {
+                    PosDrag.Finish(ref rph.Offset);
+                }
 
                 prevObj.UpdateTransform();
             }
@@ -227,7 +235,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
                         int orff = rff;
                         //ImGuiWidgets.PrePropertyWidthName("Camera Id", 30, 20);
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 2);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor);
                         ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
                         if (rff != orff)
                         {
@@ -294,7 +302,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                     }
                     ImGui.PopItemWidth();
-                    //ImGui.PopStyleVar();
+                    //// ImGui.PopStyleVar();
                     ImGui.EndChild();
                 }
 
@@ -316,7 +324,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                        ImGui.PopStyleVar();
+                        // ImGui.PopStyleVar();
                         //ImGui.GetWindowWidth() - style.WindowPadding.X - 
                         // prevW - PROP_WIDTH
                         ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
@@ -484,7 +492,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 string pName = stageObj.Parent is not null ? stageObj.Parent.Name : "No parent";
                                 if (stageObj.Parent == null)
                                     ImGui.BeginDisabled();
-                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.UNLINK).X * 1.65f * window.ScalingFactor - 2, default)))
+                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.UNLINK).X * 1.65f * window.ScalingFactor, default)))
                                 {
                                     var p = window.CurrentScene!.GetSceneObjFromStageObj(stageObj.Parent!);
                                     ChangeHandler.ToggleObjectSelection(
@@ -531,7 +539,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? default : 150 * window.ScalingFactor) - 2)))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 150 * window.ScalingFactor))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -785,7 +793,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("rprop", default, ImGuiChildFlags.AutoResizeY);
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                        ImGui.PopStyleVar();
+                        // ImGui.PopStyleVar();
                         //ImGui.GetWindowWidth() - style.WindowPadding.X - 
                         // prevW - PROP_WIDTH
                         ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
@@ -821,16 +829,16 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("pointss", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            ImGui.PopStyleVar();
+                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
 
-                                    bool autoResize = railObj.Points.Count < 3;
+                                    bool autoResize = railObj.Points.Count < 8;
                                     if (ImGui.BeginTable("pointTable", 2,
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? default : 250 * window.ScalingFactor) - 2)))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -889,7 +897,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("trls", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            ImGui.PopStyleVar();
+                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
                             if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
@@ -906,7 +914,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("handless", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            ImGui.PopStyleVar();
+                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                             
                                     bool autoResize = railObj.Points.Count < 8;
@@ -914,7 +922,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (default))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -965,7 +973,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            ImGui.PopStyleVar();
+                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                             foreach (var (name, property) in (sceneObj is RailSceneObj) ? railObj.Properties : (sceneObj as RailPointSceneObj)!.RailPoint.Properties)
                             {
