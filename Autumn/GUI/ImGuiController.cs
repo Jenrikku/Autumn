@@ -5,6 +5,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.Input.Extensions;
@@ -47,6 +48,13 @@ internal class ImGuiController : IDisposable
 
     public Func<Key, Key>? KeyRemapper;
 
+    private delegate nint ClipboardGet(nint context);
+    private delegate void ClipboardSet(nint context, nint text);
+
+    // Try to prevent garbage collector from removing these functions by keeping them alive
+    private readonly ClipboardGet clipboardGet;
+    private readonly ClipboardSet clipboardSet;
+
     /// <summary>
     /// Constructs a new ImGuiController.
     /// </summary>
@@ -73,6 +81,24 @@ internal class ImGuiController : IDisposable
 
             if (glfw is not null)
             {
+                // Setup clipboard
+                var handle = GlfwWindowing.GetHandle(window);
+
+                clipboardGet = context =>
+                {
+                    string str = glfw.GetClipboardString(handle);
+                    return Marshal.StringToCoTaskMemUTF8(str);
+                };
+
+                clipboardSet = (context, text) =>
+                {
+                    string str = Marshal.PtrToStringUTF8(text) ?? string.Empty;
+                    glfw.SetClipboardString(handle, str);
+                };
+
+                io.GetClipboardTextFn = Marshal.GetFunctionPointerForDelegate(clipboardGet);
+                io.SetClipboardTextFn = Marshal.GetFunctionPointerForDelegate(clipboardSet);
+
                 LocalizeKeyFunc = (key) =>
                 {
                     if (Key.A <= key && key <= Key.Z)
