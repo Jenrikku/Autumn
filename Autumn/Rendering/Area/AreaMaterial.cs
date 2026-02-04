@@ -23,10 +23,12 @@ internal static class AreaMaterial
             };
 
             out vec3 vPos;
+            out mat4x4 vTrans;
 
             void main() {
                 gl_Position = uViewProjection * uTransform * vec4(aPos.x, aPos.y + 10.0, aPos.z, 2.0);
                 vPos = aPos;
+                vTrans = uTransform;
             }
             """
         );
@@ -43,6 +45,7 @@ internal static class AreaMaterial
             }
 
             in vec3 vPos;
+            in mat4x4 vTrans;
 
             layout(std140) uniform ubMaterial {
                 vec4 uColor;
@@ -56,7 +59,9 @@ internal static class AreaMaterial
 
             void main() {                
                 vec3 absolute = abs(vPos);
-
+                vec3 scale = vec3(  length(vec3(vTrans[0][0], vTrans[1][0], vTrans[2][0])),
+                                    length(vec3(vTrans[0][1], vTrans[1][1], vTrans[2][1])), 
+                                    length(vec3(vTrans[0][2], vTrans[1][2], vTrans[2][2])));
             float a = max3(
                 min(absolute.x, absolute.y),
                 min(absolute.x, absolute.z),
