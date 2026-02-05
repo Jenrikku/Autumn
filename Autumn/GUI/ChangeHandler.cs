@@ -619,14 +619,16 @@ internal static class ChangeHandler
     /// </summary>
     /// <param name="context"></param>
     /// <param name="history"></param>
-    /// <param name="del"></param>
+    /// <param name="Point"></param>
     /// <returns></returns>
-    public static bool ChangeRemovePoint(MainWindowContext context, ChangeHistory history, RailPointSceneObj del)
+    public static bool ChangeRemovePoint(MainWindowContext context, ChangeHistory history, RailPointSceneObj Point)
     {
         //var oldSO = del.Clone(); // FIXME: rail points need handling! we assume they don't get here for now
-        var delete = del;
-        uint pick = delete.PickingId;
-        int pos = delete.ParentRail.RailPoints.IndexOf(del);
+        var PointClone = Point; //.Clone();
+        var parent = Point.ParentRail;
+        uint pick = PointClone.PickingId;
+        int pos = parent.RailPoints.IndexOf(Point);
+        bool deleted = false;
 
         Change change =
             new(
@@ -634,24 +636,33 @@ internal static class ChangeHandler
                 {
                     if (context.CurrentScene is null)
                         return;
-                    if (delete.ParentRail.RailPoints.Count < 2)
-                    {
-                        context.CurrentScene.ReAddObject(del.ParentRail.RailObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
-                    }
 
-                    pick = context.CurrentScene.InsertPointRail(delete.ParentRail, pos, delete.RailPoint.Point0Trans, delete.RailPoint.Point1Trans, delete.RailPoint.Point2Trans);
+                    if (deleted)
+                    {
+                        context.CurrentScene.ReAddObject(Point.ParentRail.RailObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                        parent = context.CurrentScene.EnumerateRailSceneObjs().Last();
+                        pick = parent.RailPoints[0].PickingId;
+                        deleted = false;
+                    }
+                    else
+                        pick = context.CurrentScene.InsertPointRail(context.CurrentScene.EnumerateRailSceneObjs().First(x => x.RailObj == parent.RailObj), pos, PointClone.RailPoint.Point0Trans, PointClone.RailPoint.Point1Trans, PointClone.RailPoint.Point2Trans);
+                    
                     Console.WriteLine(pick);
+                    Console.WriteLine(history.RedoSteps);
                     Console.WriteLine(history.UndoSteps);
                 },
                 Redo: () =>
                 {
-                    Console.WriteLine(pick);
-                    if (delete.ParentRail.RailPoints.Count < 2)
-                        context.CurrentScene?.RemoveObject(delete.ParentRail);
+                    if (parent.RailPoints.Count < 2)
+                    {
+                        context.CurrentScene?.RemoveObject(parent);
+                        deleted = true;
+                    }
                     else
-                        context.CurrentScene?.RemovePointRail(delete.ParentRail, pick);
+                        context.CurrentScene?.RemovePointRail(parent, pick);
                     Console.WriteLine(pick);
                     Console.WriteLine(history.RedoSteps);
+                    Console.WriteLine(history.UndoSteps);
                 }
             );
 

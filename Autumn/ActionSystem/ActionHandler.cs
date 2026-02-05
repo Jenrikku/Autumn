@@ -362,15 +362,20 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-
+                bool unselect = true;
                 foreach (ISceneObj del in mainContext.CurrentScene!.SelectedObjects)
                 {
                     
                     if (del is IStageSceneObj || del is RailSceneObj) ChangeHandler.ChangeRemove(mainContext, mainContext.CurrentScene.History, del);
                     else if (del is RailPointSceneObj) ChangeHandler.ChangeRemovePoint(mainContext, mainContext.CurrentScene.History, (del as RailPointSceneObj)!);
+                    else if (del is RailHandleSceneObj && !mainContext.CurrentScene!.SelectedObjects.Contains((del as RailHandleSceneObj)!.ParentPoint)) 
+                    {
+                        ChangeHandler.ChangeHandleTransform(mainContext.CurrentScene.History, (del as RailHandleSceneObj)!, (del as RailHandleSceneObj)!.Offset, System.Numerics.Vector3.Zero, false);
+                        unselect = !(mainContext.CurrentScene!.SelectedObjects.Count() < 2);
+                    }
                 }
-
-                mainContext.CurrentScene.UnselectAllObjects();
+                if (unselect)
+                    mainContext.CurrentScene.UnselectAllObjects();
             },
             enabled: window =>
                 window is MainWindowContext mainContext

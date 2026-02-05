@@ -838,7 +838,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -922,7 +922,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, -1)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
