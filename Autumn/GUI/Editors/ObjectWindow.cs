@@ -171,7 +171,7 @@ internal class ObjectWindow(MainWindowContext window)
                     nextIdx = (int)obj.PickingId;
                     manualClick = true;
                     selectedIndex = (int)obj.PickingId;
-                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = _objectFilterCurrent == 8 ? false : true; // REMOVE WHEN RAILS ARE FUNCTIONAL AND SELECTABLE                    
+                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = true;
                 }
 
                 ImGui.SetItemTooltip(name);

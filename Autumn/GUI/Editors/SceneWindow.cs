@@ -753,7 +753,7 @@ internal class SceneWindow(MainWindowContext window)
         //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*4 + 4*10;
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*5 + 5*11;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
         if (ImGui.Button(IconUtils.GRID))
         {
@@ -862,7 +862,7 @@ internal class SceneWindow(MainWindowContext window)
                         y.RailPoint.Point0Trans = nTr;
                         break;
                     case ISceneObj x when x is RailSceneObj y:
-                        y.RailModel.Offset = nTr - y.Center * (Vector3.One - _axisLock);
+                        y.RailModel.Offset = nTr * ( _axisLock);// - y.Center ;
                         break;
                 }
 
@@ -1286,6 +1286,7 @@ internal class SceneWindow(MainWindowContext window)
 
             ActTransform.Relative = new();
             ActTransform.Originals = new();
+            ActTransform.Finals = new();
             _transformChangeString = "";
             window.CurrentScene.IsSaved = false;
             // Add to Undo stack
@@ -1306,6 +1307,7 @@ internal class SceneWindow(MainWindowContext window)
 
             ActTransform.Relative = new();
             ActTransform.Originals = new();
+            ActTransform.Finals = new();
             _axisLock = Vector3.One;
         }
     }
