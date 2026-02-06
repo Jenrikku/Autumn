@@ -52,6 +52,10 @@ internal class ShortcutsDialog(MainWindowContext window)
         ShortcutText(CommandID.DuplicateObj);
         ShortcutText(CommandID.RemoveObj);
         ImGui.SeparatorText("Viewport Shortcuts");
+        ShortcutText(CommandID.TranslateObj);
+        ShortcutText(CommandID.MoveToPoint);
+        ShortcutText(CommandID.RotateObj);
+        ShortcutText(CommandID.ScaleObj);
         ImGui.Spacing();
 
 
