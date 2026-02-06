@@ -962,7 +962,7 @@ internal partial class RomFSHandler
         dict.TryGetValue("l_id", out BYAMLNode? id);
         dict.TryGetValue("name", out BYAMLNode? name);
         dict.TryGetValue("LayerName", out BYAMLNode? layerName);
-        dict.TryGetValue("no", out BYAMLNode? railNo);
+        dict.TryGetValue("no", out BYAMLNode? railNo); // Unused property
         dict.TryGetValue("closed", out BYAMLNode? railClosed);
         dict.TryGetValue("type", out BYAMLNode? railType);
 
@@ -985,7 +985,7 @@ internal partial class RomFSHandler
                 FileType = fileType,
                 Name = name?.GetValueAs<string>() ?? "RailStageObj",
                 Layer = layerName?.GetValueAs<string>() ?? "共通",
-                RailNo = railNo?.GetValueAs<int>() ?? 0,
+                RailNo = id?.GetValueAs<int>() ?? 0,
                 Closed = railClosed?.GetValueAs<string>() == "CLOSE",
                 Properties = dict.Where(i =>
                         i.Key != "no"
