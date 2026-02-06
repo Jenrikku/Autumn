@@ -41,6 +41,11 @@ internal class ActionHandler
                 CommandID.Redo => Redo(),
                 CommandID.GotoParent => GotoParent(),
                 CommandID.UnselectAll => UnselectAll(),
+                CommandID.TranslateObj => TranslateObj(),
+                CommandID.RotateObj => RotateObj(),
+                CommandID.ScaleObj => ScaleObj(),
+                CommandID.CancelTransform => CancelTransform(),
+                CommandID.MoveToPoint => MoveToPoint(),
                 #if DEBUG
                 CommandID.AddALL => AddAllStages(),
                 CommandID.SaveALL => SaveAllStages(),
@@ -465,6 +470,84 @@ internal class ActionHandler
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
         );
 
+#region Scene Transform Actions
+    private static Command TranslateObj() =>
+        new(
+            displayName: "Move selected object",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (!mainContext.SceneTranslating)
+                    mainContext.SceneTranslating = true;
+                else mainContext.FinishTransform();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                && mainContext.IsSceneFocused && (mainContext.SceneTranslating != mainContext.IsSceneHovered)
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating
+        );
+    private static Command MoveToPoint() =>
+        new(
+            displayName: "Move selected object to mouse position",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                mainContext.MoveToPoint();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneHovered
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating && !mainContext.SceneTranslating
+        );
+    private static Command RotateObj() =>
+        new(
+            displayName: "Rotate selected object",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (!mainContext.SceneRotating)
+                    mainContext.SceneRotating = true;
+                else mainContext.FinishTransform();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                && mainContext.IsSceneFocused && (mainContext.SceneRotating != mainContext.IsSceneHovered)
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneTranslating
+        );
+    private static Command ScaleObj() =>
+        new(
+            displayName: "Scale selected object",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (!mainContext.SceneScaling)
+                    mainContext.SceneScaling = true;
+                else mainContext.FinishTransform();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                && mainContext.IsSceneFocused && (mainContext.SceneScaling != mainContext.IsSceneHovered)
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneTranslating && !mainContext.SceneRotating
+        );
+
+    private static Command CancelTransform() =>
+            new(
+            displayName: "Stop transform",
+            action: window =>
+            {
+                // if (window is not MainWindowContext mainContext)
+                //     return;
+                // mainContext.CancelTransform();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+                && !ImGui.GetIO().WantTextInput && (mainContext.SceneScaling || mainContext.SceneTranslating || mainContext.SceneRotating)
+        );
+
+#endregion
     private Command GotoParent() =>
         new(
             displayName: "Select Parent // First Child",

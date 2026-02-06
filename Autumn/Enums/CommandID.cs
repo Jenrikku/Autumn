@@ -17,6 +17,10 @@ internal enum CommandID
     HideObj,
     GotoParent,
     UnselectAll,
+    TranslateObj,
+    MoveToPoint,
+    RotateObj,
+    ScaleObj,
     AddALL,
     SaveALL,
 }

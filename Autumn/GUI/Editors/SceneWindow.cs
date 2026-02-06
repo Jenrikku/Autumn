@@ -15,11 +15,22 @@ namespace Autumn.GUI.Editors;
 internal class SceneWindow(MainWindowContext window)
 {
     public bool IsWindowFocused => _isSceneWindowFocused;
-    public bool IsTransformActive => _isTranslationActive || _isRotationActive || _isScaleActive;
+    public bool IsSceneHovered => _isSceneHovered;
+    public bool IsTransformActive => IsTranslationActive || IsRotationActive || IsScaleActive;
+
+    public bool IsTranslationActive = false;
     public bool IsTranslationFromDuplicate = false;
-    private bool _isTranslationActive = false;
-    private bool _isRotationActive = false;
-    private bool _isScaleActive = false;
+    public bool TranslationStarted = false;
+    public bool TranslateToPoint = false;
+
+    public bool IsRotationActive = false;
+    public bool RotationStarted = false;
+
+    public bool IsScaleActive = false;
+    public bool ScaleStarted = false;
+
+    public bool FinishTransform = false;
+
     private string _transformChangeString = "";
 
     internal static class ActTransform
@@ -459,7 +470,7 @@ internal class SceneWindow(MainWindowContext window)
             if (
                 ImGui.IsMouseClicked(ImGuiMouseButton.Left)
                 && _isSceneHovered
-                && !_isTranslationActive && !_isRotationActive && !_isScaleActive
+                && !IsTranslationActive && !IsRotationActive && !IsScaleActive
                 && (_mouseMoveKey == ImGuiMouseButton.Right ? !ImGui.IsKeyDown(ImGuiKey.ModAlt) : true))
             {
                 if (!_isSceneWindowFocused)
@@ -485,7 +496,7 @@ internal class SceneWindow(MainWindowContext window)
             }
             else if ((_mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
                 && _isSceneHovered
-                && !_isTranslationActive && !_isRotationActive && !_isScaleActive)
+                && !IsTranslationActive && !IsRotationActive && !IsScaleActive)
             {
                 if (window.CurrentScene.TryGetPickableObj(pixel, out _pickObject) && _pickObject != null && (_pickObject is IStageSceneObj || _pickObject is RailSceneObj))
                 {
@@ -525,7 +536,7 @@ internal class SceneWindow(MainWindowContext window)
                 else
                     _isObjectOptionsEnabled = false;
             }
-            else if ((_isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || _isTranslationActive || _isScaleActive || _isRotationActive)
+            else if ((_isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || IsTranslationActive || IsScaleActive || IsRotationActive)
             {
                 Vector3 _ndcMousePos3D =
                     new(ndcMousePos.X * sceneImageSize.X / 2,
@@ -533,56 +544,51 @@ internal class SceneWindow(MainWindowContext window)
                         (normPickingDepth * 10 - 1) / 10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);
 
-                if (!ImGui.GetIO().WantTextInput)
+            if (TranslateToPoint)
+            {
+                TranslateToPoint = false;
+                var sobj = window.CurrentScene.SelectedObjects.First();
+
+                switch (sobj)
                 {
-                    if (ImGui.IsKeyPressed(ImGuiKey.G, false) && window.Keyboard!.IsShiftPressed())
-                    {
-                        var sobj = window.CurrentScene.SelectedObjects.First();
-
-                        switch (sobj)
-                        {
-                            case ISceneObj x when x is IStageSceneObj y:
-                                ChangeHandler.ChangeStageObjTransform(
-                                    window.CurrentScene.History,
-                                    y,
-                                    "Translation",
-                                    y.StageObj.Translation,
-                                    100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
-                                );
-                                break;
-                            case ISceneObj x when x is RailPointSceneObj y:
-                            ChangeHandler.ChangePointPosition(
-                                    window.CurrentScene.History,
-                                    y,
-                                    y.RailPoint.Point0Trans,
-                                    100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                                    !ImGui.IsKeyDown(ImGuiKey.ModShift)
-                                );
-                                break;
-                            case ISceneObj x when x is RailHandleSceneObj y:
-                                ChangeHandler.ChangeHandleTransform(
-                                    window.CurrentScene.History,
-                                    y,
-                                    y.Offset,
-                                    -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                                    false
-                                );
-                                break;
-                            case ISceneObj x when x is RailSceneObj y:
-                            break;
-                        }
-
-                        if (!_isSceneWindowFocused)
-                            ImGui.SetWindowFocus();
-                    }
-                    else
-                    {
-                        TranslateAction(_ndcMousePos3D);
-                    }
-
-                    RotateAction(ndcMousePos);
-                    ScaleAction(_ndcMousePos3D);
+                    case ISceneObj x when x is IStageSceneObj y:
+                        ChangeHandler.ChangeStageObjTransform(
+                            window.CurrentScene.History,
+                            y,
+                            "Translation",
+                            y.StageObj.Translation,
+                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                        );
+                        break;
+                    case ISceneObj x when x is RailPointSceneObj y:
+                    ChangeHandler.ChangePointPosition(
+                            window.CurrentScene.History,
+                            y,
+                            y.RailPoint.Point0Trans,
+                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                            !ImGui.IsKeyDown(ImGuiKey.ModShift)
+                        );
+                        break;
+                    case ISceneObj x when x is RailHandleSceneObj y:
+                        ChangeHandler.ChangeHandleTransform(
+                            window.CurrentScene.History,
+                            y,
+                            y.Offset,
+                            -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                            false
+                        );
+                        break;
+                    case ISceneObj x when x is RailSceneObj y:
+                    break;
                 }
+
+                if (!_isSceneWindowFocused)
+                    ImGui.SetWindowFocus();
+            }
+            TranslateAction(_ndcMousePos3D);
+            RotateAction(ndcMousePos);
+            ScaleAction(_ndcMousePos3D);
+                
             }
         }
         ActionPanel(contentAvail);
@@ -698,16 +704,16 @@ internal class SceneWindow(MainWindowContext window)
     private void ActionPanel(Vector2 contentAvail)
     {
         var opos = ImGui.GetCursorPos();
-        if (_isTranslationActive || _isScaleActive || _isRotationActive)
+        if (IsTranslationActive || IsScaleActive || IsRotationActive)
         {
             ImGui.SetWindowFontScale(1.0f);
             string s = "";
 
-            if (_isTranslationActive)
+            if (IsTranslationActive)
                 s = "Moving ";
-            else if (_isScaleActive)
+            else if (IsScaleActive)
                 s = "Scaling ";
-            else if (_isRotationActive)
+            else if (IsRotationActive)
                 s = "Rotating ";
 
             if (window.CurrentScene!.SelectedObjects.Count() > 1)
@@ -788,11 +794,11 @@ internal class SceneWindow(MainWindowContext window)
 
     public void TranslateAction(Vector3 _ndcMousePos3D)
     {
-        if (_isRotationActive || _isScaleActive)
-            return;
+        // if (_isRotationActive || _isScaleActive)
+        //     return;
 
         float dist = 0;
-        if (_isTranslationActive)
+        if (IsTranslationActive)
         {
             if (!_isSceneWindowFocused)
                 ImGui.SetWindowFocus();
@@ -925,11 +931,11 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
-        // TODO: Movement for rails still needs to be implemented
-        if ((ImGui.IsKeyPressed(ImGuiKey.G, false) && !_isTranslationActive) || IsTranslationFromDuplicate)
+        if ((IsTranslationFromDuplicate || TranslationStarted) && !IsTranslationActive)
         { // Start action
             IsTranslationFromDuplicate = false;
-            _isTranslationActive = true;
+            TranslationStarted = false;
+            IsTranslationActive = true;
 
             // Only get distance to first object to prevent misalignments
             var fst = window.CurrentScene!.SelectedObjects.First();
@@ -989,13 +995,14 @@ internal class SceneWindow(MainWindowContext window)
         }
         else if (
             (
-                ImGui.IsKeyPressed(ImGuiKey.G, false)
+                FinishTransform
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
-            ) && _isTranslationActive
+            ) && IsTranslationActive
         )
         { // Apply action
-            _isTranslationActive = false;
+            IsTranslationActive = false;
+            FinishTransform = false;
             _axisLock = Vector3.One;
 
             // Add to Undo stack
@@ -1071,11 +1078,12 @@ internal class SceneWindow(MainWindowContext window)
             window.CurrentScene.IsSaved = false;
         }
         else if (
-            (ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsKeyPressed(ImGuiKey.Escape, false))
-            && _isTranslationActive
+            (ImGui.IsMouseClicked(ImGuiMouseButton.Right) 
+            || ImGui.IsKeyPressed(ImGuiKey.Escape, false))
+            && IsTranslationActive
         )
         { // Cancel action
-            _isTranslationActive = false;
+            IsTranslationActive = false;
 
             foreach (ISceneObj scobj in window.CurrentScene!.SelectedObjects)
             {
@@ -1111,8 +1119,8 @@ internal class SceneWindow(MainWindowContext window)
 
     public void RotateAction(Vector2 ndcMousePos)
     {
-        if (_isScaleActive || _isTranslationActive)
-            return;
+        //if (_isScaleActive || _isTranslationActive)
+        //    return;
 
         //Console.WriteLine(ndcMousePos);
         double rot;
@@ -1135,7 +1143,7 @@ internal class SceneWindow(MainWindowContext window)
         //Console.WriteLine("---------");
 
         // We rotate around the center of the screen using a given axis, defaults to Y
-        if (_isRotationActive)
+        if (IsRotationActive)
         {
             if (!_isSceneWindowFocused)
                 ImGui.SetWindowFocus();
@@ -1211,29 +1219,31 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
-        if (ImGui.IsKeyPressed(ImGuiKey.R, false) && !_isRotationActive)
+        if (RotationStarted && !IsRotationActive)
         { // Start action
-            _isRotationActive = true;
+            IsRotationActive = true;
+            RotationStarted = false;
 
             foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
                 if (sobj is IStageSceneObj) ActTransform.Originals.Add(sobj, (sobj as IStageSceneObj)!.StageObj.Rotation);
                 else if (sobj is RailPointSceneObj) ActTransform.Originals.Add(sobj, Vector3.Zero);
-                else { _isRotationActive = false; return;}
+                else { IsRotationActive = false; return;}
                 ActTransform.Relative.Add(sobj, Vector3.UnitX * (float)rot);
             }
             if (ActTransform.Originals.Count < 1) 
-                _isRotationActive = false;
+                IsRotationActive = false;
         }
         else if (
             (
-                ImGui.IsKeyPressed(ImGuiKey.R, false)
+                FinishTransform
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
-            ) && _isRotationActive
+            ) && IsRotationActive
         )
         { // Apply action
-            _isRotationActive = false;
+            IsRotationActive = false;
+            FinishTransform = false;
             _axisLock = Vector3.One;
 
             if (window.CurrentScene!.SelectedObjects.Count() == 1)
@@ -1293,11 +1303,10 @@ internal class SceneWindow(MainWindowContext window)
         }
         else if (
             (ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsKeyPressed(ImGuiKey.Escape, false))
-            && _isRotationActive
+            && IsRotationActive
         )
         { // Cancel action
-            _isRotationActive = false;
-
+            IsRotationActive = false;
 
             foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
             {
@@ -1314,11 +1323,11 @@ internal class SceneWindow(MainWindowContext window)
 
     public void ScaleAction(Vector3 _ndcMousePos3D)
     { // Get distance to object and if it decreases we scale down, otherwise we increase, by default it scales in all axis, can scale on individual axis
-        if (_isRotationActive || _isTranslationActive)
-            return;
+        // if (_isRotationActive || _isTranslationActive)
+        //     return;
 
         float dist = 0;
-        if (_isScaleActive)
+        if (IsScaleActive)
         {
             if (!_isSceneWindowFocused)
                 ImGui.SetWindowFocus();
@@ -1381,12 +1390,13 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
-        if (ImGui.IsKeyPressed(_scaleKey, false) && !_isScaleActive && !ImGui.IsKeyDown(ImGuiKey.ModCtrl))
+        if (ScaleStarted && !IsScaleActive)// && !ImGui.IsKeyDown(ImGuiKey.ModCtrl))
         { // Start action
-            _isScaleActive = true;
+            IsScaleActive = true;
+            ScaleStarted = false;
 
             var fobj = window.CurrentScene!.SelectedObjects.First();
-            if (fobj is not IStageSceneObj) { _isScaleActive = false; return;}
+            if (fobj is not IStageSceneObj) { IsScaleActive = false; return;}
             dist = Vector3.Distance(
                 (fobj as IStageSceneObj)!.StageObj.Translation / 100,
                 window.CurrentScene.Camera.Eye
@@ -1402,13 +1412,14 @@ internal class SceneWindow(MainWindowContext window)
         }
         else if (
             (
-                ImGui.IsKeyPressed(_scaleKey, false)
+                FinishTransform
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
-            ) && _isScaleActive
+            ) && IsScaleActive
         )
         { // Apply action
-            _isScaleActive = false;
+            IsScaleActive = false;
+            FinishTransform = false;
             _axisLock = Vector3.One;
 
             if (window.CurrentScene!.SelectedObjects.Count() == 1)
@@ -1435,10 +1446,10 @@ internal class SceneWindow(MainWindowContext window)
         }
         else if (
             (ImGui.IsMouseClicked(ImGuiMouseButton.Right) || ImGui.IsKeyPressed(ImGuiKey.Escape, false))
-            && _isScaleActive
+            && IsScaleActive
         )
         { // Cancel action
-            _isScaleActive = false;
+            IsScaleActive = false;
 
             foreach (IStageSceneObj sobj in window.CurrentScene!.SelectedObjects.Where(x => x is IStageSceneObj).Cast<IStageSceneObj>())
             {
