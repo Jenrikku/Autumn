@@ -144,11 +144,11 @@ internal static class ImGuiWidgets
         return ret;
     }
 
-    public static void PrePropertyWidthName(string str, int ratioA = 2, int ratioB = 3, bool colon = true)
+    public static float PrePropertyWidthName(string str, int ratioA = 2, int ratioB = 3, bool colon = true, float padding = 12)
     {
         ImGui.Text(str + (colon ? ":" : ""));
         ImGui.SameLine();
-        SetPropertyWidthGen(str, ratioA, ratioB, colon);
+        return SetPropertyWidthGen(str, ratioA, ratioB, colon, padding);
     }
 
 

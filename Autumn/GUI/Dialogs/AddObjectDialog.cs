@@ -583,36 +583,50 @@ internal class AddObjectDialog(MainWindowContext window)
         
         if (ImGui.BeginChild("RIGHT", new(pvw / 2, pvh - 130)))
         {
-            ImGui.InputText("Name", ref _name, 128);
+            int A = 10;
+            int B = 20;
+            ImGuiWidgets.PrePropertyWidthName("Rail Name", A, B);
+            ImGui.InputText("##Name", ref _name, 128);
             if (_railShape == 0)
                 _railClosed = false;
             else
-                ImGui.Checkbox("Loop", ref _railClosed);
+            {
+                ImGuiWidgets.PrePropertyWidthName("Loop", A, B);
+                ImGui.Checkbox("##Loop", ref _railClosed);
+            }
+            
+            ImGuiWidgets.PrePropertyWidthName("Distance to center", A, B);
+            if (ImGui.InputFloat("##DistCent", ref _railCenterDistance, 0.1f))
+                _railCenterDistance = float.Clamp(_railCenterDistance, 0.05f, 10);
+            
             if (_railShape != 0)
-                ImGui.Checkbox("Automatic Handle distance (Circle)", ref _railAuto);
+            {
+                ImGuiWidgets.PrePropertyWidthName("Automatic Handle distance", A, B);
+                ImGui.Checkbox("##AutoDist", ref _railAuto);
+            }
             else
                 _railAuto = false;
-            
-            if (ImGui.DragFloat("Distance to center", ref _railCenterDistance, 0.1f))
-                _railCenterDistance = float.Clamp(_railCenterDistance, 0.1f, 10);
-            
 
             if (_railAuto)
                 ImGui.BeginDisabled();
-            if (ImGui.DragFloat("Handle distance to point", ref _railPointDistance, 0.1f))
+            ImGuiWidgets.PrePropertyWidthName("Handle distance to point", A, B);
+            if (ImGui.InputFloat("##Handle", ref _railPointDistance, 0.1f))
                 _railPointDistance = float.Clamp(_railPointDistance, 0.0f, 2.0f);
             if (_railAuto)
                 ImGui.EndDisabled();
             if (_railShape == 2)
             {
-                ImGui.InputInt("Points", ref _railPointCount, 1);
+                ImGuiWidgets.PrePropertyWidthName("Number of points", A, B);
+                ImGui.InputInt("##Points", ref _railPointCount, 1);
+                _railPointCount = int.Clamp(_railPointCount, 3, 25);
             }
 
             ImGui.Text("TEST");
             ImGui.EndChild();
         }
         //ImGui.PopStyleColor();
-        if (ImGui.Button("OK"))
+        if (String.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
+        if (ImGui.Button("OK", new(-1)))
         {
             RailPoint[] sent = _railShape switch
             {
@@ -626,6 +640,7 @@ internal class AddObjectDialog(MainWindowContext window)
             _isOpened = false;
             ImGui.CloseCurrentPopup();
         }
+        if (String.IsNullOrWhiteSpace(_name)) ImGui.EndDisabled();
     }
 
     private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)
