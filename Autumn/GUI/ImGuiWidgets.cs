@@ -325,4 +325,17 @@ internal static class ImGuiWidgets
         r = r && v_max.Y > ImGui.GetMousePos().Y && ImGui.GetMousePos().Y > v_min.Y;
         return r;
     }
+
+    public static bool BeginChild(string name, Vector2 size, ImGuiChildFlags flags, Vector4 col)
+    {
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, col);
+        return ImGui.BeginChild(name, size, flags);
+    }
+    public static void EndChild()
+    {
+        ImGui.PopStyleColor();
+        ImGui.Spacing();
+        ImGui.EndChild();
+    }
+
 }
