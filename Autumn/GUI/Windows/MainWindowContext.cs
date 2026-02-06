@@ -30,6 +30,7 @@ internal class MainWindowContext : WindowContext
 
     public bool IsTransformActive => _sceneWindow.IsTransformActive;
     public bool IsSceneFocused => _sceneWindow.IsWindowFocused || IsFocused;
+    public bool IsSceneHovered => _sceneWindow.IsSceneHovered;
 
     private bool _isFirstFrame = true;
 
@@ -305,6 +306,43 @@ internal class MainWindowContext : WindowContext
 
     public void SetSceneDuplicateTranslation() =>
         _sceneWindow.IsTranslationFromDuplicate = true;
+    public bool SceneTranslating
+    {
+        get
+        {
+            return _sceneWindow.TranslationStarted || _sceneWindow.IsTranslationActive;
+        }
+        set
+        {
+            _sceneWindow.TranslationStarted = value;
+        } 
+    }
+    public bool SceneRotating
+    {
+        get
+        {
+            return _sceneWindow.RotationStarted || _sceneWindow.IsRotationActive;
+        }
+        set
+        {
+            _sceneWindow.RotationStarted = value;
+        } 
+    }
+    public bool SceneScaling
+    {
+        get
+        {
+            return _sceneWindow.ScaleStarted || _sceneWindow.IsScaleActive;
+        }
+        set
+        {
+            _sceneWindow.ScaleStarted = value;
+        } 
+    }
+
+    // public void CancelTransform() => _sceneWindow.CancelTransform = true;
+    public void FinishTransform() => _sceneWindow.FinishTransform = true;
+    public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
 
     public void SetSwitchSelected(int i)
     {

@@ -10,8 +10,20 @@ internal class ShortcutsDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
 
-    public void Open() => _isOpened = true;
-
+    public void Open()
+    {
+        _isOpened = true;
+        foreach (CommandID cid in  window.ContextHandler.ActionHandler.Actions.Keys)
+        {
+            var c = window.ContextHandler.ActionHandler.Actions[cid].Command.Category;
+            if (!categories.ContainsKey(c))
+            {
+                categories.Add(c, new());
+            }
+            categories[c].Add(cid);
+        }
+    }
+    Dictionary<Command.CommandCategory, List<CommandID>> categories = new(); 
     public void Render()
     {
         if (!_isOpened)
@@ -38,12 +50,22 @@ internal class ShortcutsDialog(MainWindowContext window)
             )
         )
             return;
+        foreach(Command.CommandCategory cat in categories.Keys)
+        {
+            ImGui.SeparatorText($"{cat} Shortcuts");
+            foreach(CommandID id in categories[cat])
+            {
+                ShortcutText(id);
+            }
+        }
+        /*
         ImGui.SeparatorText("General Shortcuts");
         ShortcutText(CommandID.NewProject);
         ShortcutText(CommandID.OpenProject);
         ShortcutText(CommandID.AddStage);
         ShortcutText(CommandID.CloseScene);
         ShortcutText(CommandID.OpenSettings);
+        ShortcutText(CommandID.AddObject);
         ShortcutText(CommandID.AddObject);
         ShortcutText(CommandID.Undo);
         ShortcutText(CommandID.Redo);
@@ -56,6 +78,7 @@ internal class ShortcutsDialog(MainWindowContext window)
         ShortcutText(CommandID.MoveToPoint);
         ShortcutText(CommandID.RotateObj);
         ShortcutText(CommandID.ScaleObj);
+        */
         ImGui.Spacing();
 
 
@@ -76,6 +99,21 @@ internal class ShortcutsDialog(MainWindowContext window)
         }
         else
             ImGui.Text("- No shortcut assigned.");
-
+    }    
+    void Category(CommandID command)
+    {
+        var act = window.ContextHandler.ActionHandler.GetAction(command);
+        
+        if (act.Command != null)
+        {
+            ImGui.BulletText(act.Command.DisplayName);
+            ImGui.SameLine();
+        }
+        if (act.Shortcut != null)
+        {
+            ImGui.Text("- " + act.Shortcut.DisplayString);
+        }
+        else
+            ImGui.Text("- No shortcut assigned.");
     }
 }

@@ -48,3 +48,23 @@ CloseScene:
   Ctrl: true
   Key: W
   Shift: false
+TranslateObj:
+  Alt: false
+  Ctrl: false
+  Key: G
+  Shift: false
+MoveToPoint:
+  Alt: false
+  Ctrl: false
+  Key: G
+  Shift: true
+RotateObj:
+  Alt: false
+  Ctrl: false
+  Key: R
+  Shift: false
+ScaleObj:
+  Alt: false
+  Ctrl: false
+  Key: S
+  Shift: false

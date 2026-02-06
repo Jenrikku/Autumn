@@ -10,6 +10,17 @@ internal class Command
     public string DisplayName { get; set; }
 
     /// <summary>
+    /// What this command will affect / the general category
+    /// </summary>
+    public CommandCategory Category { get; set; }
+    public enum CommandCategory
+    {
+        General,
+        Transform,
+        Selection
+    }
+
+    /// <summary>
     /// The action to perform when the command is triggered.
     /// The window context represents the focused window.
     /// </summary>
@@ -24,11 +35,13 @@ internal class Command
     public Command(
         string displayName,
         Action<WindowContext?> action,
-        Predicate<WindowContext?> enabled
+        Predicate<WindowContext?> enabled,
+        CommandCategory cat = CommandCategory.General
     )
     {
         DisplayName = displayName;
         Action = action;
         Enabled = enabled;
+        Category = cat;
     }
 }

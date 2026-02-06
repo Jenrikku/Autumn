@@ -14,6 +14,7 @@ namespace Autumn.ActionSystem;
 
 internal class ActionHandler
 {
+    public Dictionary<CommandID, (Command Command, Shortcut? Shortcut)> Actions => _actions;
     private readonly Dictionary<CommandID, (Command Command, Shortcut? Shortcut)> _actions = new();
 
     /// <summary>
@@ -39,12 +40,11 @@ internal class ActionHandler
                 CommandID.HideObj => HideObj(),
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
-                CommandID.GotoParent => GotoParent(),
+                CommandID.GotoRelative => GotoRelative(),
                 CommandID.UnselectAll => UnselectAll(),
                 CommandID.TranslateObj => TranslateObj(),
                 CommandID.RotateObj => RotateObj(),
                 CommandID.ScaleObj => ScaleObj(),
-                CommandID.CancelTransform => CancelTransform(),
                 CommandID.MoveToPoint => MoveToPoint(),
                 #if DEBUG
                 CommandID.AddALL => AddAllStages(),
@@ -387,7 +387,8 @@ internal class ActionHandler
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
                 && mainContext.CurrentScene.SelectedObjects.Any()
-                && !mainContext.IsTransformActive
+                && !mainContext.IsTransformActive,
+            Command.CommandCategory.Selection
         );
 
     private static Command DuplicateObj() =>
@@ -426,7 +427,8 @@ internal class ActionHandler
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
                 && mainContext.CurrentScene.SelectedObjects.Any()
-                && !mainContext.IsTransformActive
+                && !mainContext.IsTransformActive,
+            Command.CommandCategory.Selection
         );
 
     private static void CheckPickChildren(StageObj StageObj, ref List<uint> newPickIds, ref uint newestPickId)
@@ -455,6 +457,8 @@ internal class ActionHandler
             },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+            ,
+            Command.CommandCategory.Selection
         );
     private static Command UnselectAll() =>
         new(
@@ -467,7 +471,8 @@ internal class ActionHandler
                 mainContext.CurrentScene!.UnselectAllObjects();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
+            Command.CommandCategory.Selection
         );
 
 #region Scene Transform Actions
@@ -485,7 +490,8 @@ internal class ActionHandler
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
                 && mainContext.IsSceneFocused && (mainContext.SceneTranslating != mainContext.IsSceneHovered)
-                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating,
+            Command.CommandCategory.Transform
         );
     private static Command MoveToPoint() =>
         new(
@@ -498,7 +504,8 @@ internal class ActionHandler
             },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneHovered
-                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating && !mainContext.SceneTranslating
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating && !mainContext.SceneTranslating,
+            Command.CommandCategory.Transform
         );
     private static Command RotateObj() =>
         new(
@@ -514,7 +521,8 @@ internal class ActionHandler
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
                 && mainContext.IsSceneFocused && (mainContext.SceneRotating != mainContext.IsSceneHovered)
-                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneTranslating
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneTranslating,
+            Command.CommandCategory.Transform
         );
     private static Command ScaleObj() =>
         new(
@@ -530,25 +538,12 @@ internal class ActionHandler
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
                 && mainContext.IsSceneFocused && (mainContext.SceneScaling != mainContext.IsSceneHovered)
-                && !ImGui.GetIO().WantTextInput && !mainContext.SceneTranslating && !mainContext.SceneRotating
-        );
-
-    private static Command CancelTransform() =>
-            new(
-            displayName: "Stop transform",
-            action: window =>
-            {
-                // if (window is not MainWindowContext mainContext)
-                //     return;
-                // mainContext.CancelTransform();
-            },
-            enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
-                && !ImGui.GetIO().WantTextInput && (mainContext.SceneScaling || mainContext.SceneTranslating || mainContext.SceneRotating)
+                && !ImGui.GetIO().WantTextInput && !mainContext.SceneTranslating && !mainContext.SceneRotating,
+            Command.CommandCategory.Transform
         );
 
 #endregion
-    private Command GotoParent() =>
+    private Command GotoRelative() =>
         new(
             displayName: "Select Parent // First Child",
             action: window =>
@@ -575,7 +570,8 @@ internal class ActionHandler
                     return false;
 
                 return mainContext.CurrentScene.SelectedObjects.Count() == 1 && (stageSceneObj.StageObj.Parent != null || (stageSceneObj.StageObj.Children != null && stageSceneObj.StageObj.Children.Any()));
-            }
+            },
+            Command.CommandCategory.Selection
         );
 
     private static Command Undo() =>

@@ -141,7 +141,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X-20);
                 if (ImGui.Button("P", new(20, default)))
                 {
-                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoParent, window);
+                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                 }
             }
             else if (stageObj.Children != null && stageObj.Children.Count > 0)
@@ -152,7 +152,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 {
                     if (stageObj.Children.Count == 1)
                     {
-                        window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoParent, window);
+                        window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                     }
                     else
                         scrollToChild = true;
