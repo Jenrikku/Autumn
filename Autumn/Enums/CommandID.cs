@@ -16,6 +16,7 @@ internal enum CommandID
     RemoveObj,
     HideObj,
     GotoParent,
+    UnselectAll,
     AddALL,
     SaveALL,
 }

@@ -40,6 +40,7 @@ internal class ActionHandler
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
                 CommandID.GotoParent => GotoParent(),
+                CommandID.UnselectAll => UnselectAll(),
                 #if DEBUG
                 CommandID.AddALL => AddAllStages(),
                 CommandID.SaveALL => SaveAllStages(),
@@ -446,6 +447,19 @@ internal class ActionHandler
                     return;
 
                 ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects);
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+        );
+    private static Command UnselectAll() =>
+        new(
+            displayName: "Unselect all objects",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+
+                mainContext.CurrentScene!.UnselectAllObjects();
             },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
