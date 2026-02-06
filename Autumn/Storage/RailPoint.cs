@@ -19,4 +19,12 @@ internal class RailPoint
         Point1Trans = Point0Trans + Vector3.UnitX * 100;
         Point2Trans = Point0Trans - Vector3.UnitX * 100;
     }
+
+    public static RailPoint operator *(RailPoint p, float f)
+    {
+        p.Point0Trans *= f;
+        p.Point1Trans *= f;
+        p.Point2Trans *= f;
+        return p;
+    }
 }

@@ -9,7 +9,11 @@ using ImGuiNET;
 
 namespace Autumn.GUI.Dialogs;
 
-internal class NewStageObjDialog(MainWindowContext window)
+/// <summary>
+/// Dialog window that displays all possible actors, areas and rails to add to a level
+/// </summary>
+/// <param name="window"></param>
+internal class AddObjectDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
 
@@ -26,6 +30,15 @@ internal class NewStageObjDialog(MainWindowContext window)
     readonly string[] _switchTypes = ["None", "Read", "Write"];
     int _priority = 0;
     int _shape = 0;
+
+    int _railShape = 0; 
+    readonly string[] _railShapeDesc = ["Line", "Circle (4)", "Circle (Any)", "Rectangle"];
+    bool _railClosed = false;
+    float _railCenterDistance = 1.0f;
+    float _railPointDistance = 0.5f;
+    int _railPointCount = 4;
+    bool _railAuto = false;
+
 
     private const ImGuiTableFlags _newObjectClassTableFlags =
         ImGuiTableFlags.ScrollY
@@ -100,6 +113,7 @@ internal class NewStageObjDialog(MainWindowContext window)
             {
                 //ObjectAreaTab(obj, pvw, pvh, style, ImGui.IsKeyDown(ImGuiKey.RightArrow));
                 ImGui.Text("Currently unsupported");
+                RailTab(pvw, pvh, style);
                 ImGui.EndTabItem();
             }
 
@@ -551,6 +565,69 @@ internal class NewStageObjDialog(MainWindowContext window)
         }
     }
 
+    private void RailTab(float pvw, float pvh, ImGuiStylePtr style)
+    {
+        //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
+        if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 130)))
+        {
+            float rg = ImGui.GetContentRegionAvail().X / 2;
+            for (int i = 0; i < _railShapeDesc.Length; i += 2)
+            {
+                if (ImGui.Button(_railShapeDesc[i], new(rg))) _railShape = i;
+                ImGui.SameLine(0, style.ItemInnerSpacing.X);
+                if (ImGui.Button(_railShapeDesc[i+1], new(rg)))  _railShape = i +1;
+            }
+            ImGui.EndChild();
+        }
+        ImGui.SameLine();
+        
+        if (ImGui.BeginChild("RIGHT", new(pvw / 2, pvh - 130)))
+        {
+            ImGui.InputText("Name", ref _name, 128);
+            if (_railShape == 0)
+                _railClosed = false;
+            else
+                ImGui.Checkbox("Loop", ref _railClosed);
+            if (_railShape != 0)
+                ImGui.Checkbox("Automatic Handle distance (Circle)", ref _railAuto);
+            else
+                _railAuto = false;
+            
+            if (ImGui.DragFloat("Distance to center", ref _railCenterDistance, 0.1f))
+                _railCenterDistance = float.Clamp(_railCenterDistance, 0.1f, 10);
+            
+
+            if (_railAuto)
+                ImGui.BeginDisabled();
+            if (ImGui.DragFloat("Handle distance to point", ref _railPointDistance, 0.1f))
+                _railPointDistance = float.Clamp(_railPointDistance, 0.0f, 2.0f);
+            if (_railAuto)
+                ImGui.EndDisabled();
+            if (_railShape == 2)
+            {
+                ImGui.InputInt("Points", ref _railPointCount, 1);
+            }
+
+            ImGui.Text("TEST");
+            ImGui.EndChild();
+        }
+        //ImGui.PopStyleColor();
+        if (ImGui.Button("OK"))
+        {
+            RailPoint[] sent = _railShape switch
+            {
+                0 => RailDefaults.Line(),
+                1 => RailDefaults.Circle(4, _railCenterDistance, _railAuto ? 1.0f / _railPointCount * 2 : _railPointDistance),
+                2 => RailDefaults.Circle(_railPointCount, _railCenterDistance, _railAuto ? 1.0f / _railPointCount * 2: _railPointDistance),
+            };
+            window.AddSceneMouseClickAction(new AddRailAction(_name, _args, sent, 
+            _railShape == 0 ? RailPointType.Linear : RailPointType.Bezier, 
+             _railClosed).AddQueuedRail);
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
+    }
+
     private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)
     {
         for (int i = 0; i < 10; i++)
@@ -559,8 +636,8 @@ internal class NewStageObjDialog(MainWindowContext window)
 
     public class AddObjectAction(string _name, string _class, int[] _args, int[] _sw, StageObjType _type, int _priority = -1, int _shape = 0)
     {
-        string[] _designList = ["LightArea", "FogAreaCameraPos", "FogArea"];
-        string[] _soundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
+        static string[] _designList = ["LightArea", "FogAreaCameraPos", "FogArea"];
+        static string[] _soundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
         public void AddQueuedObject(MainWindowContext window, Vector4 trans)
         {
             if (window.CurrentScene is null || window.GL is null)
@@ -615,6 +692,44 @@ internal class NewStageObjDialog(MainWindowContext window)
 
             if (window.Keyboard?.IsShiftPressed() ?? false)
                 window.AddSceneMouseClickAction(AddQueuedObject);
+        }
+    }
+
+    public class AddRailAction(string _name, int[] _args, RailPoint[] _points, RailPointType _type, bool _closed)
+    {
+        public void AddQueuedRail(MainWindowContext window, Vector4 trans)
+        {
+            if (window.CurrentScene is null || window.GL is null)
+                return;
+
+            RailObj newRail = new()
+            {
+                PointType = _type,
+                Name = _name,
+                Closed = _closed,
+                Type = StageObjType.Rail
+            };
+            newRail.FileType = StageFileType.Map;
+
+            for (int i = 0; i < 8; i++)
+                newRail.Properties.Add($"Arg{i}", _args[i]);
+
+            newRail.Properties.Add("MultiFileName", "Autumn");
+
+            Vector3 off = new(trans.X * 100, trans.Y * 100, trans.Z * 100);
+            for (int i = 0; i < _points.Length; i++)
+            {
+                _points[i] *= 200;
+                _points[i].Point0Trans += off;
+                _points[i].Point1Trans += off;
+                _points[i].Point2Trans += off;
+                newRail.Points.Add(_points[i]);
+            }
+
+            ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);
+
+            if (window.Keyboard?.IsShiftPressed() ?? false)
+                window.AddSceneMouseClickAction(AddQueuedRail);
         }
     }
 }

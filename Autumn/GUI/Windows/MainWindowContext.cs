@@ -35,8 +35,8 @@ internal class MainWindowContext : WindowContext
 
     #region Dialogs
     private readonly AddStageDialog _addStageDialog;
+    private readonly AddObjectDialog _addObjectDialog;
     private readonly ClosingDialog _closingDialog;
-    private readonly NewStageObjDialog _newStageObjDialog;
     private readonly SettingsDialog _settingsDialog;
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
@@ -74,7 +74,7 @@ internal class MainWindowContext : WindowContext
         // Initialize dialogs:
         _addStageDialog = new(this);
         _closingDialog = new(this);
-        _newStageObjDialog = new(this);
+        _addObjectDialog = new(this);
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
         _editExtraPropsDialog = new(this);
@@ -217,7 +217,7 @@ internal class MainWindowContext : WindowContext
 #endif
             _addStageDialog.Render();
             _closingDialog.Render();
-            _newStageObjDialog.Render();
+            _addObjectDialog.Render();
             _editChildrenDialog.Render();
             _editExtraPropsDialog.Render();
             _editCCNT.Render();
@@ -295,7 +295,7 @@ internal class MainWindowContext : WindowContext
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
 
-    public void OpenAddObjectDialog() => _newStageObjDialog.Open();
+    public void OpenAddObjectDialog() => _addObjectDialog.Open();
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
     public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
