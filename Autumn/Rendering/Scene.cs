@@ -158,6 +158,10 @@ internal class Scene
         if (r == null) return 0;
         return _railObjs[(_railObjs.IndexOf(r as RailSceneObj) - 1) > -1 ? _railObjs.IndexOf(r as RailSceneObj) - 1 : 0].PickingId;
     }
+    public RailSceneObj? GetRailSceneObj(RailObj rail)
+    {
+        return _railObjs.FirstOrDefault(x => x.RailObj == rail);
+    }
 
     #endregion
 

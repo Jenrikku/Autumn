@@ -33,6 +33,11 @@ internal class PropertiesWindow(MainWindowContext window)
     private string[] cameraStrings = [];
 
     public bool updateCameras = false;
+    public bool updateRailOwners = false;
+
+    public List<IStageSceneObj> railSceneOwners = new();
+    public List<StageCamera> railCameraOwners = new();
+
     public void Render()
     {
         ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
@@ -101,6 +106,7 @@ internal class PropertiesWindow(MainWindowContext window)
             }
 
             updateCameras = true;
+            updateRailOwners = true;
             prevObj = sceneObj;
         }
 
@@ -648,7 +654,8 @@ internal class PropertiesWindow(MainWindowContext window)
                                 rfrail = rails.ToList().IndexOf(rals) + 1;
                         }
                         int rfr2 = rfrail;
-                        ImGuiWidgets.SetPropertyWidth("Rail");
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor + 7);
+
                         ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
                         if (rfr2 != rfrail)
                         {
@@ -658,6 +665,28 @@ internal class PropertiesWindow(MainWindowContext window)
                             }
                             else stageObj.Rail = null;
                         }
+                        ImGui.SameLine(0, style.ItemInnerSpacing.X);
+                        if (rfr2 == 0) ImGui.BeginDisabled();
+                        if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
+                        {
+                            if (rfr2 == 0)
+                            {
+                                window.OpenAddRailDialog();
+                            }
+                            else
+                            {
+                                var child = window.CurrentScene.GetRailSceneObj(stageObj.Rail!);
+                                ChangeHandler.ToggleObjectSelection(
+                                    window,
+                                    window.CurrentScene.History,
+                                    child.PickingId,
+                                    !window.Keyboard?.IsCtrlPressed() ?? true
+                                );
+                                AxisAlignedBoundingBox aabb = child.AABB;
+                                window.CurrentScene!.Camera.LookFrom(child.Center * 0.01f, aabb.GetDiagonal() * 0.01f);
+                            }
+                        }
+                        if (rfr2 == 0) ImGui.EndDisabled();
 
                         ImGui.EndChild();
                     }
@@ -770,6 +799,12 @@ internal class PropertiesWindow(MainWindowContext window)
                 {
                     railSceneObj = (sceneObj as RailSceneObj)!;
                     t = $"Rail: {railSceneObj.RailObj.Name}";
+                    if (updateRailOwners)
+                    {
+                        railSceneOwners = window.CurrentScene.EnumerateStageSceneObjs().Where(x => x.StageObj.Rail is not null && x.StageObj.Rail == railSceneObj.RailObj).ToList();
+                        railCameraOwners = window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.CamProperties.Rail is not null && x.CamProperties.Rail == railSceneObj.RailObj).ToList();
+                        updateRailOwners = false;
+                    }
                 }
                 else if (sceneObj is RailPointSceneObj)
                 {
@@ -819,6 +854,52 @@ internal class PropertiesWindow(MainWindowContext window)
                         // ImGui.Text($"Center X: {railSceneObj.Center.X}");
                         // ImGui.Text($"Center Y: {railSceneObj.Center.Y}");
                         // ImGui.Text($"Center Z: {railSceneObj.Center.Z}");
+                        if (ImGui.BeginTable("AAA", 2,ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersH,
+                        new(ImGui.GetWindowWidth()-2, 100)))
+                        {
+                            ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                            ImGui.TableSetupColumn("User", ImGuiTableColumnFlags.WidthStretch);
+                            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                            ImGui.TableHeadersRow();
+
+                            for (int b = 0; b < railSceneOwners.Count; b++)
+                            {
+                                ImGui.TableNextRow();
+
+                                ImGui.TableSetColumnIndex(0);
+
+                                ImGui.PushID("sceneslecteparentObject" + b);
+                                if (ImGui.Selectable(railSceneOwners[b].StageObj.Name, false, ImGuiSelectableFlags.SpanAllColumns))
+                                {
+                                    ChangeHandler.ToggleObjectSelection(
+                                    window,
+                                    window.CurrentScene!.History,
+                                    railSceneOwners[b].PickingId,
+                                    true
+                                    );
+                                    window.CurrentScene!.Camera.LookFrom(railSceneOwners[b].StageObj.Translation * 0.01f - new Vector3(0,0.5f,0), railSceneOwners[b].AABB.GetDiagonal() * 0.01f);
+                                }
+                                ImGui.TableSetColumnIndex(1);
+                                ImGui.Text(railSceneOwners[b].StageObj.Type.ToString());
+                            }
+                            for (int b = 0; b < railCameraOwners.Count; b++)
+                            {
+                                ImGui.TableNextRow();
+
+                                ImGui.TableSetColumnIndex(0);
+
+                                ImGui.PushID("sceneslecteparentObject" + b);
+                                if (ImGui.Selectable(railCameraOwners[b].CameraName(), false, ImGuiSelectableFlags.SpanAllColumns))
+                                {
+                                    window.SetCameraSelected(window.CurrentScene!.Stage.CameraParams.Cameras.IndexOf(railCameraOwners[b]!));
+                                }
+                                ImGui.TableSetColumnIndex(1);
+                                ImGui.Text("Camera");
+                            }
+
+                            ImGui.EndTable();
+                            ImGui.Spacing();
+                        }
                         ImGui.PopItemWidth();
                         ImGui.EndChild();
                     }
@@ -881,6 +962,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                         ImGui.EndTable();
                                     }
+                                    if (!autoResize) ImGui.Spacing();
 
                             if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
                             else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);

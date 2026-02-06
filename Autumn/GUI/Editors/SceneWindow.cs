@@ -287,7 +287,6 @@ internal class SceneWindow(MainWindowContext window)
                             aabb *= y.StageObj.Scale;
                             camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
                             break;
-
                         case ISceneObj x when x is RailSceneObj y:
                             camera.LookFrom(y.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
                             break;

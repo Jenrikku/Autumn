@@ -53,10 +53,10 @@ internal class AddObjectDialog(MainWindowContext window)
 
     private int _selectedTab = -1;
     private bool _useClassName = false;
-    public void Open()
+    public void Open(int tab = -1)
     {
         _isOpened = true;
-        _selectedTab = -1;
+        _selectedTab = tab;
         ResetArgs(null);
         _switch = [-1, -1, -1, -1, -1];
     }
@@ -100,17 +100,20 @@ internal class AddObjectDialog(MainWindowContext window)
         var style = ImGui.GetStyle();
         if (ImGui.BeginTabBar("ObjectType"))
         {
-            //ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f0000ff);
-            if (ImGui.BeginTabItem("Object"))
+            if (_selectedTab != 2)
             {
-                ObjectAreaTab(obj, pvw, pvh, style);
-                ImGui.EndTabItem();
-            }
+                //ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f0000ff);
+                if (ImGui.BeginTabItem("Object"))
+                {
+                    ObjectAreaTab(obj, pvw, pvh, style);
+                    ImGui.EndTabItem();
+                }
 
-            if (ImGui.BeginTabItem("Area"))
-            {
-                ObjectAreaTab(obj, pvw, pvh, style, true);
-                ImGui.EndTabItem();
+                if (ImGui.BeginTabItem("Area"))
+                {
+                    ObjectAreaTab(obj, pvw, pvh, style, true);
+                    ImGui.EndTabItem();
+                }
             }
 
             if (ImGui.BeginTabItem("Rail"))
@@ -575,7 +578,7 @@ internal class AddObjectDialog(MainWindowContext window)
         //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
         if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 130)))
         {
-            Vector2 rg = new (ImGui.GetContentRegionAvail().X / 2,ImGui.GetContentRegionAvail().Y / 2 - 10);
+            Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2 - 10);
 
             if (ImGui.Button(_railShapeDesc[0], rg))
             {
@@ -610,7 +613,7 @@ internal class AddObjectDialog(MainWindowContext window)
         ImGui.SetWindowFontScale(1.0f);
         ImGui.SetCursorPosX(v.X);
         ImGui.SetCursorPosY(v.Y + 35);
-        if (ImGui.BeginChild("RIGHT", new(pvw / 2- 25, pvh - 180), ImGuiChildFlags.Border))
+        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 180), ImGuiChildFlags.Border))
         {
             int A = 10;
             int B = 20;

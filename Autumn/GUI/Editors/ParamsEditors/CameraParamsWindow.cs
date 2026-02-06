@@ -255,7 +255,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 rfrail = rails.ToList().IndexOf(rals) + 1;
                         }
                         int rfr2 = rfrail;
-                        ImGuiWidgets.SetPropertyWidthGen("Rail", ratioA, ratioB);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 15);
                         ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
                         if (rfr2 != rfrail)
                         {
@@ -265,6 +265,29 @@ internal class CameraParamsWindow(MainWindowContext window)
                             }
                             else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
                         }
+                        ImGui.SameLine(0, style.ItemInnerSpacing.X);
+                        if (rfr2 == 0) ImGui.BeginDisabled();
+                        if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
+                        {
+                            if (rfr2 == 0)
+                            {
+                                window.OpenAddRailDialog();
+                            }
+                            else
+                            {
+                                var child = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
+                                
+                                ChangeHandler.ToggleObjectSelection(
+                                    window,
+                                    window.CurrentScene.History,
+                                    child.PickingId,
+                                    !window.Keyboard?.IsCtrlPressed() ?? true
+                                );
+                                AxisAlignedBoundingBox aabb = child.AABB;
+                                window.CurrentScene!.Camera.LookFrom(child.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
+                            }
+                        }
+                        if (rfr2 == 0) ImGui.EndDisabled();
                     }
                     else CheckField(Camfield, scn, skip);
                 }

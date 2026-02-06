@@ -297,6 +297,7 @@ internal class MainWindowContext : WindowContext
     public void OpenAddStageDialog() => _addStageDialog.Open();
 
     public void OpenAddObjectDialog() => _addObjectDialog.Open();
+    public void OpenAddRailDialog() => _addObjectDialog.Open(2);
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
     public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
