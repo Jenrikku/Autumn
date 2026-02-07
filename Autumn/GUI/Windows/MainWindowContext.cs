@@ -156,6 +156,7 @@ internal class MainWindowContext : WindowContext
                 ModelRenderer.VisibleCameraAreas = ContextHandler.SystemSettings.VisibleDefaults[1];
                 ModelRenderer.VisibleRails = ContextHandler.SystemSettings.VisibleDefaults[2];
                 ModelRenderer.VisibleGrid = ContextHandler.SystemSettings.VisibleDefaults[3];
+                ModelRenderer.VisibleTransparentWall = ContextHandler.SystemSettings.VisibleDefaults[4];
 
                 switch (ContextHandler.SystemSettings.Theme)
                 {

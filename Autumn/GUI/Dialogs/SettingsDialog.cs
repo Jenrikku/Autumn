@@ -26,7 +26,7 @@ internal class SettingsDialog
     private bool _restoreNativeFileDialogs = false;
     private int _compLevel = 1;
     private bool _loadLast = true;
-    private bool[] _visibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
+    private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
@@ -210,6 +210,7 @@ internal class SettingsDialog
                 ImGui.Checkbox("Show CameraAreas", ref _visibleDefaults[1]);
                 ImGui.Checkbox("Show Rails", ref _visibleDefaults[2]);
                 ImGui.Checkbox("Show Grid", ref _visibleDefaults[3]);
+                ImGui.Checkbox("Show Transparentwalls", ref _visibleDefaults[4]);
                 ImGui.TextDisabled("These settings require a restart!");
                 ImGui.EndTabItem();
             }
