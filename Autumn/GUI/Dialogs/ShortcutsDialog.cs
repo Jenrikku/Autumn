@@ -13,21 +13,19 @@ internal class ShortcutsDialog(MainWindowContext window)
     public void Open()
     {
         _isOpened = true;
-        if (categories is null) // only do it once for now
+        categories = new();
+        foreach (CommandID cid in window.ContextHandler.ActionHandler.Actions.Keys)
         {
-            categories = new();
-            foreach (CommandID cid in window.ContextHandler.ActionHandler.Actions.Keys)
+            var c = window.ContextHandler.ActionHandler.Actions[cid].Command.Category;
+            if (!categories.ContainsKey(c))
             {
-                var c = window.ContextHandler.ActionHandler.Actions[cid].Command.Category;
-                if (!categories.ContainsKey(c))
-                {
-                    categories.Add(c, new());
-                }
-                categories[c].Add(cid);
+                categories.Add(c, new());
             }
+            categories[c].Add(cid);
         }
+        
     }
-    Dictionary<Command.CommandCategory, List<CommandID>> categories;
+    Dictionary<Command.CommandCategory, List<CommandID>> categories = new();
     public void Render()
     {
         if (!_isOpened)
