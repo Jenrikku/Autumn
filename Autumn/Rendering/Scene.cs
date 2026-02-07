@@ -628,6 +628,8 @@ internal class Scene
         {
             point = new() { Point0Trans = position ?? Vector3.Zero, Point1Trans = position ?? Vector3.Zero, Point2Trans = position ?? Vector3.Zero};
         }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
         rl.RailPoints.Add(new RailPointSceneObj(point, rl, ref _lastPickingId));
         rl.RailObj.Points.Add(point);
         rl.UpdateModel();
@@ -668,6 +670,8 @@ internal class Scene
         {
             point = new() { Point0Trans = position, Point1Trans = position, Point2Trans = position};
         }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
         rl.RailPoints.Insert(pos, new RailPointSceneObj(point, rl, ref _lastPickingId));
         rl.RailObj.Points.Insert(pos, point);
         rl.UpdateModel();
@@ -689,6 +693,8 @@ internal class Scene
         {
             point = new() { Point0Trans = pos0, Point1Trans = pos1, Point2Trans = pos2};
         }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
         rl.RailPoints.Insert(pos, new RailPointSceneObj(point, rl, ref _lastPickingId));
         rl.RailObj.Points.Insert(pos, point);
         rl.UpdateModel();

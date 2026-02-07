@@ -784,8 +784,9 @@ internal class AddObjectDialog(MainWindowContext window)
                 _points[i].Point0Trans += off;
                 _points[i].Point1Trans += off;
                 _points[i].Point2Trans += off;
+                for (int b = 0; b < 8; b++)
+                    _points[i].Properties.Add($"Arg{b}", -1);
                 newRail.Points.Add(_points[i]);
-                _points[i].Properties.Add($"Arg{i}", new int[] {-1,-1,-1,-1,-1,-1,-1} );
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);
