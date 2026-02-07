@@ -110,5 +110,6 @@ internal class RailModel(RailObj rail)
             Vector3 r = MathUtils.BezierPoint(p0, p1, p2, p3, t);
             yield return r;
         }
+        yield return p3;
     }
 }
