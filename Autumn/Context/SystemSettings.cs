@@ -26,6 +26,7 @@ internal class SystemSettings
     public bool RememberLayout = true;
     public bool EnableDBEditor = false;
     public bool[] VisibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
+    public bool ShowRelationLines = true;
     public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
 
     public void AddRecentlyOpenedPath(string path)

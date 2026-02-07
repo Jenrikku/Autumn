@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
+using Autumn.Rendering;
 using Autumn.Utils;
 using Autumn.Wrappers;
 using ImGuiNET;
@@ -27,6 +28,7 @@ internal class SettingsDialog
     private int _compLevel = 1;
     private bool _loadLast = true;
     private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
+    private bool _viewrelationLine = true;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
@@ -68,6 +70,7 @@ internal class SettingsDialog
         _romfspath = _window.ContextHandler.Settings.RomFSPath ?? "";
         _romfsIsValidPath = Directory.Exists(_romfspath);
         _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
+        _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
     }
 
     /// <summary>
@@ -211,7 +214,9 @@ internal class SettingsDialog
                 ImGui.Checkbox("Show Rails", ref _visibleDefaults[2]);
                 ImGui.Checkbox("Show Grid", ref _visibleDefaults[3]);
                 ImGui.Checkbox("Show Transparentwalls", ref _visibleDefaults[4]);
-                ImGui.TextDisabled("These settings require a restart!");
+                ImGui.Checkbox("Show Relationship Lines", ref _viewrelationLine);
+                ImGui.SameLine();
+                ImGuiWidgets.HelpTooltip("Shows a line between child objects and their parents");
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();
@@ -232,6 +237,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = false;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
+            _window.ContextHandler.SystemSettings.ShowRelationLines = false;
 
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
@@ -310,6 +316,14 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.OpenLastProject = _loadLast;
             _window.ContextHandler.SystemSettings.RememberLayout = _rememberLayout;
             _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
+            _window.ContextHandler.SystemSettings.ShowRelationLines = _viewrelationLine;
+            
+            ModelRenderer.VisibleAreas = _visibleDefaults[0];
+            ModelRenderer.VisibleCameraAreas = _visibleDefaults[1];
+            ModelRenderer.VisibleRails = _visibleDefaults[2];
+            ModelRenderer.VisibleGrid = _visibleDefaults[3];
+            ModelRenderer.VisibleTransparentWall = _visibleDefaults[4];
+            ModelRenderer.VisibleRelationLines = _viewrelationLine;
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();

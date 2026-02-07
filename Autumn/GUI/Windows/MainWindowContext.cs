@@ -50,6 +50,8 @@ internal class MainWindowContext : WindowContext
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
+    public bool IsDialogOpen = false;
+
     #region Editor Windows 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
@@ -116,6 +118,7 @@ internal class MainWindowContext : WindowContext
         {
             InfiniteGrid.Initialize(GL!);
             RailRenderer.Initialize(GL!);
+            RelationLine.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
@@ -157,6 +160,7 @@ internal class MainWindowContext : WindowContext
                 ModelRenderer.VisibleRails = ContextHandler.SystemSettings.VisibleDefaults[2];
                 ModelRenderer.VisibleGrid = ContextHandler.SystemSettings.VisibleDefaults[3];
                 ModelRenderer.VisibleTransparentWall = ContextHandler.SystemSettings.VisibleDefaults[4];
+                ModelRenderer.VisibleRelationLines = ContextHandler.SystemSettings.ShowRelationLines;
 
                 switch (ContextHandler.SystemSettings.Theme)
                 {
