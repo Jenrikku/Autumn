@@ -7,6 +7,7 @@ using Autumn.GUI.Editors;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Wrappers;
 using ImGuiNET;
@@ -344,6 +345,10 @@ internal class MainWindowContext : WindowContext
     // public void CancelTransform() => _sceneWindow.CancelTransform = true;
     public void FinishTransform() => _sceneWindow.FinishTransform = true;
     public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
+    public void CameraToObject() => _sceneWindow.CamToObj = true;
+    public void CameraToObject(ISceneObj obj) { _sceneWindow.CamToObj = true; _sceneWindow.CamSceneObj = obj; }
+    public void AddRailPoint() => _sceneWindow.AddRailPoint = 1;
+    public void InsertRailPoint() => _sceneWindow.AddRailPoint = 2;
 
     public void SetSwitchSelected(int i)
     {

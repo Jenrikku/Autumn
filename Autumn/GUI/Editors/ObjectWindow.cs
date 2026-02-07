@@ -249,23 +249,7 @@ internal class ObjectWindow(MainWindowContext window)
 
             if (doubleclick)
             {
-                AxisAlignedBoundingBox aabb = window.CurrentScene.SelectedObjects.First().AABB;
-
-                switch (window.CurrentScene.SelectedObjects.First())
-                {
-                    case ISceneObj x when x is IStageSceneObj y:
-                        aabb *= y.StageObj.Scale;
-
-                        window.CurrentScene!.Camera.LookFrom(
-                            y.StageObj.Translation * 0.01f,
-                            aabb.GetDiagonal() * 0.01f
-                        );
-                        break;
-
-                    case ISceneObj x when x is RailSceneObj y:
-                        window.CurrentScene!.Camera.LookFrom(y.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
-                        break;
-                }
+                window.CameraToObject(window.CurrentScene.SelectedObjects.First());
             }
 
             prevIdx = nextIdx;

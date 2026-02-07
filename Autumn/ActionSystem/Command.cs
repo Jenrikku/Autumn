@@ -16,8 +16,9 @@ internal class Command
     public enum CommandCategory
     {
         General,
+        Rail,
+        Selection,
         Transform,
-        Selection
     }
 
     /// <summary>

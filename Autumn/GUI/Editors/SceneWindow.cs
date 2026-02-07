@@ -9,6 +9,7 @@ using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Autumn.History;
+using Autumn.ActionSystem;
 
 namespace Autumn.GUI.Editors;
 
@@ -40,6 +41,10 @@ internal class SceneWindow(MainWindowContext window)
         public static Dictionary<ISceneObj, Vector3> Finals = new();
         public static string FullTransformString = "";
     }
+
+    public bool CamToObj = false;
+    public ISceneObj? CamSceneObj;
+    public int AddRailPoint = 0; // 0 false, 1 to rail, 2 to point
 
     private Vector3 _axisLock = Vector3.One;
     private bool _persistentMouseDrag = false;
@@ -211,7 +216,7 @@ internal class SceneWindow(MainWindowContext window)
         // Camera Movement
         float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
         camMoveSpeed *= window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
-        if (_isSceneHovered || _isSceneWindowFocused)
+        if ((_isSceneHovered || _isSceneWindowFocused) && !ImGui.GetIO().WantTextInput)
         {
             if (window.ContextHandler.SystemSettings.UseWASD)
             {
@@ -233,73 +238,79 @@ internal class SceneWindow(MainWindowContext window)
                         camera.Eye += Vector3.UnitY * camMoveSpeed;
                 }
             }
+        }
 
             // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
             //     camera.LookAt(camera.Eye, window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
             // }
-            if (window.CurrentScene.SelectedObjects.Any())
+        if (window.CurrentScene.SelectedObjects.Any() || CamToObj)
+        {
+            CamToObj = CamToObj ? CamToObj : (window.Keyboard?.IsKeyPressed(Key.Space) ?? false);
+            if (!ImGui.GetIO().WantTextInput)
             {
-                bool camToObj = window.Keyboard?.IsKeyPressed(Key.Space) ?? false;
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad1) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(1, 0, 0));
-                    camToObj = true;
+                    CamToObj = true;
                 }
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad2) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 1, 0));
-                    camToObj = true;
+                    CamToObj = true;
 
                 }
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad3) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, 1));
-                    camToObj = true;
+                    CamToObj = true;
 
                 }
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad4) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(-1, 0, 0));
-                    camToObj = true;
+                    CamToObj = true;
 
                 }
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad5) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, -1, 0));
-                    camToObj = true;
+                    CamToObj = true;
 
                 }
                 if (window.Keyboard?.IsKeyPressed(Key.Keypad6) ?? false)
                 {
                     camera.LookAt(camera.Eye, camera.Eye + new Vector3(0, 0, -1));
-                    camToObj = true;
+                    CamToObj = true;
 
-                }
-                if (camToObj)
-                {
-                    ISceneObj sceneObj = window.CurrentScene.SelectedObjects.First();
-
-                    AxisAlignedBoundingBox aabb = sceneObj.AABB;
-
-                    switch (sceneObj)
-                    {
-                        case ISceneObj x when x is IStageSceneObj y:
-                            aabb *= y.StageObj.Scale;
-                            camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
-                            break;
-                        case ISceneObj x when x is RailSceneObj y:
-                            camera.LookFrom(y.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
-                            break;
-                        case ISceneObj x when x is RailPointSceneObj y:
-                            camera.LookFrom(y.RailPoint.Point0Trans * 0.01f - new Vector3(0,0.5f,0), aabb.GetDiagonal() * 0.01f);
-                            break;
-                        case ISceneObj x when x is RailHandleSceneObj y:
-                            camera.LookFrom((y.ParentPoint.RailPoint.Point0Trans + y.Offset) * 0.01f - new Vector3(0,0.5f,0), aabb.GetDiagonal() * 0.01f);
-                            break;
-                    }
                 }
             }
+            if (CamToObj)
+            {
+                CamSceneObj = CamSceneObj ?? window.CurrentScene.SelectedObjects.First();
+
+                AxisAlignedBoundingBox aabb = CamSceneObj.AABB;
+
+                switch (CamSceneObj)
+                {
+                    case ISceneObj x when x is IStageSceneObj y:
+                        aabb *= y.StageObj.Scale;
+                        camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                        break;
+                    case ISceneObj x when x is RailSceneObj y:
+                        camera.LookFrom(y.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
+                        break;
+                    case ISceneObj x when x is RailPointSceneObj y:
+                        camera.LookFrom(y.RailPoint.Point0Trans * 0.01f - new Vector3(0,0.5f,0), aabb.GetDiagonal() * 0.01f);
+                        break;
+                    case ISceneObj x when x is RailHandleSceneObj y:
+                        camera.LookFrom((y.ParentPoint.RailPoint.Point0Trans + y.Offset) * 0.01f - new Vector3(0,0.5f,0), aabb.GetDiagonal() * 0.01f);
+                        break;
+                }
+                CamToObj = false;
+                CamSceneObj = null;
+            }
         }
+        
 
         if (_isSceneHovered)
         {
@@ -425,27 +436,20 @@ internal class SceneWindow(MainWindowContext window)
             Vector4 worldMousePos = Vector4.Transform(ndcMousePos3D, inverseViewProjection);
             worldMousePos /= worldMousePos.W;
 
-            if (ImGui.IsKeyPressed(ImGuiKey.J, false))
+            if (AddRailPoint != 0)
             {
-                if (window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailSceneObj) != null)
-                {RailSceneObj rl = (RailSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailSceneObj)!;
-                ChangeHandler.ChangeAddPoint(window, window.CurrentScene.History, rl, 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));
+                if (AddRailPoint == 1)
+                {
+                    RailSceneObj rl = (RailSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailSceneObj)!;
+                    ChangeHandler.ChangeAddPoint(window, window.CurrentScene.History, rl, 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));
                 }
-                else if (window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj) != null)
+                else if (AddRailPoint == 2)
                 {
                     RailPointSceneObj rp = (RailPointSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj)!;
                     ChangeHandler.ChangeInsertPoint(window, window.CurrentScene.History, rp.ParentRail, rp.ParentRail.RailPoints.IndexOf(rp), 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));
                 }
+                AddRailPoint = 0;
             }
-            // if (ImGui.IsKeyPressed(ImGuiKey.K, true) && window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj) != null)
-            // {
-            //     RailPointSceneObj rp = (RailPointSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj)!;
-            //     rp.FakeRot.X += 3;
-            //     //rp.RailPoint.Point2Trans = rp.RailPoint.Point2Trans * Matrix4x4.CreateTranslation(rp.RailPoint.Point0Trans * 0.01f) + Matrix4x4.CreateRotationX(20 * (float)Math.PI / 180);
-            //     //rp.UpdateSceneHandles();
-            //     rp.UpdateModelMoving();
-            // }
-
 
             // Calculate camera zoom in / out
             if (window.Mouse!.ScrollWheels[0].Y != 0 && _isSceneHovered)

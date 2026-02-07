@@ -46,6 +46,9 @@ internal class ActionHandler
                 CommandID.RotateObj => RotateObj(),
                 CommandID.ScaleObj => ScaleObj(),
                 CommandID.MoveToPoint => MoveToPoint(),
+                CommandID.AddRailPoint => AddRailPoint(),
+                CommandID.ShowHandles => ShowHandles(),
+                CommandID.CamToObj => CamToObj(),
                 #if DEBUG
                 CommandID.AddALL => AddAllStages(),
                 CommandID.SaveALL => SaveAllStages(),
@@ -543,6 +546,55 @@ internal class ActionHandler
         );
 
 #endregion
+    
+    private Command AddRailPoint() =>
+        new(
+            displayName: "Add point to the selected rail",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (mainContext.CurrentScene!.SelectedObjects.First() is RailSceneObj railsc)
+                {
+                    mainContext.AddRailPoint();
+                }
+                else if (mainContext.CurrentScene!.SelectedObjects.First() is RailPointSceneObj pointsc)
+                {
+                    mainContext.InsertRailPoint();
+                }
+
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+                && (mainContext.CurrentScene.SelectedObjects.First() is RailSceneObj || mainContext.CurrentScene.SelectedObjects.First() is RailPointSceneObj),
+            Command.CommandCategory.Rail
+        );    
+    private Command CamToObj() =>
+        new(
+            displayName: "Move camera to object",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                mainContext.CameraToObject();
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
+            Command.CommandCategory.Selection
+        );
+    private Command ShowHandles() =>
+        new(
+            displayName: "Moves the handles from their origin",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+
+            },
+            enabled: window => false,
+            Command.CommandCategory.Rail
+        );
+
     private Command GotoRelative() =>
         new(
             displayName: "Select Parent // First Child",
@@ -561,8 +613,7 @@ internal class ActionHandler
                 else
                     ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj.Parent == parent).PickingId, true);
 
-                AxisAlignedBoundingBox aabb = mainContext.CurrentScene.SelectedObjects.First().AABB * stageSceneObj.StageObj.Scale;
-                mainContext.CurrentScene!.Camera.LookFrom(mainContext.CurrentScene.SelectedObjects.First().Transform.Translation, aabb.GetDiagonal() * 0.01f);
+                mainContext.CameraToObject();
             },
             enabled: window =>
             {

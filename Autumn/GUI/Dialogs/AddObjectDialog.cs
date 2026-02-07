@@ -671,7 +671,7 @@ internal class AddObjectDialog(MainWindowContext window)
         }
         //ImGui.PopStyleColor();
         if (String.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
-        if (ImGui.Button("OK", new(-1)))
+        if (ImGui.Button("Add", new(-1)))
         {
             RailPoint[] sent = _railShape switch
             {
@@ -686,7 +686,7 @@ internal class AddObjectDialog(MainWindowContext window)
             _isOpened = false;
             ImGui.CloseCurrentPopup();
         }
-        if (String.IsNullOrWhiteSpace(_name)) ImGui.EndDisabled();
+        if (String.IsNullOrWhiteSpace(_name)) { ImGui.SetItemTooltip("Please set a name for the rail"); ImGui.EndDisabled(); }
     }
 
     private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)
@@ -785,6 +785,7 @@ internal class AddObjectDialog(MainWindowContext window)
                 _points[i].Point1Trans += off;
                 _points[i].Point2Trans += off;
                 newRail.Points.Add(_points[i]);
+                _points[i].Properties.Add($"Arg{i}", new int[] {-1,-1,-1,-1,-1,-1,-1} );
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);

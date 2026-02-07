@@ -21,6 +21,9 @@ internal enum CommandID
     MoveToPoint,
     RotateObj,
     ScaleObj,
+    AddRailPoint,
+    ShowHandles,
+    CamToObj,
     AddALL,
     SaveALL,
 }

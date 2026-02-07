@@ -217,7 +217,7 @@ internal class SettingsDialog
         }
         ImGui.SeparatorText("Reset");
 
-        float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X * 1.65f;
+        float resetWidth = (ImGui.GetContentRegionAvail().X- 10) / 3;
         if (ImGui.Button("Values", new(resetWidth, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
@@ -240,7 +240,19 @@ internal class SettingsDialog
             return;
         }
         ImGui.SetItemTooltip("This will set all values to their default.");
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+
+        if (ImGui.Button("Shortcuts", new(resetWidth, 0)))
+        {
+            File.Copy(Path.Join("Resources", "DefaultActions.yml"), Path.Join(_window.ContextHandler.SettingsPath, "actions.yml"), true);
+            _window.ContextHandler.LoadActions(null);
+            ImGui.CloseCurrentPopup();
+            ImGui.EndPopup();
+            _isOpened = false;
+            Reset();
+            return;
+        }
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
 
         if (ImGui.Button("Layout", new(resetWidth, 0)))
         {

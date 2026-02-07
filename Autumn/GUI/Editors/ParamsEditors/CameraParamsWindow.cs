@@ -275,16 +275,11 @@ internal class CameraParamsWindow(MainWindowContext window)
                             }
                             else
                             {
-                                var child = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
+                                var rail = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
                                 
-                                ChangeHandler.ToggleObjectSelection(
-                                    window,
-                                    window.CurrentScene.History,
-                                    child.PickingId,
-                                    !window.Keyboard?.IsCtrlPressed() ?? true
-                                );
-                                AxisAlignedBoundingBox aabb = child.AABB;
-                                window.CurrentScene!.Camera.LookFrom(child.Center * 0.01f, aabb.GetDiagonal() * 0.02f);
+                                ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, rail!.PickingId,
+                                    !window.Keyboard?.IsCtrlPressed() ?? true);
+                                window.CameraToObject(rail!);
                             }
                         }
                         if (rfr2 == 0) ImGui.EndDisabled();
@@ -701,8 +696,15 @@ internal class CameraParamsWindow(MainWindowContext window)
             switch (previewReference)
             {
                 case 1:
-                    var selobj = (IStageSceneObj?)scn.SelectedObjects.FirstOrDefault(x => x is IStageSceneObj);
-                    if (selobj != null) pos = selobj.StageObj.Translation * mul;
+
+                    var selobj = scn.SelectedObjects.FirstOrDefault();
+                    if (selobj != null) 
+                        switch (selobj)
+                        {
+                            case ISceneObj x when selobj is IStageSceneObj a:
+                            pos = a.StageObj.Translation * mul;
+                            break; 
+                        }
                     break;
                 case 2:
                     var mario = scn.Stage.GetStageFile(Enums.StageFileType.Map).GetObjInfos(Enums.StageObjType.Start).FirstOrDefault();
