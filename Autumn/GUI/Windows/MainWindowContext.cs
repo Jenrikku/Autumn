@@ -352,8 +352,8 @@ internal class MainWindowContext : WindowContext
     public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
     public void CameraToObject() => _sceneWindow.CamToObj = true;
     public void CameraToObject(ISceneObj obj) { _sceneWindow.CamToObj = true; _sceneWindow.CamSceneObj = obj; }
-    public void AddRailPoint() => _sceneWindow.AddRailPoint = 1;
-    public void InsertRailPoint() => _sceneWindow.AddRailPoint = 2;
+    public void AddRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Add;
+    public void InsertRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Insert;
 
     public void SetSwitchSelected(int i)
     {

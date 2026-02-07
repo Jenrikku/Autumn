@@ -29,6 +29,7 @@ internal class SettingsDialog
     private bool _loadLast = true;
     private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
     private bool _viewrelationLine = true;
+    private int _hoverInfo = 0;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
@@ -71,6 +72,7 @@ internal class SettingsDialog
         _romfsIsValidPath = Directory.Exists(_romfspath);
         _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
         _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
+        _hoverInfo = (int)_window.ContextHandler.SystemSettings.ShowHoverInfo;
     }
 
     /// <summary>
@@ -161,6 +163,7 @@ internal class SettingsDialog
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
                 _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
+                ImGui.Combo("Hover info", ref _hoverInfo, ["Disabled", "Tooltip", "Highlight", "Status"], 4);
                 ImGui.Checkbox("Preview stage lights without opening the ligths window", ref _prevlightonload); 
                 ImGui.EndTabItem();
             }
@@ -238,6 +241,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             _window.ContextHandler.SystemSettings.ShowRelationLines = false;
+            _window.ContextHandler.SystemSettings.ShowHoverInfo = 0;
 
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
@@ -317,6 +321,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.RememberLayout = _rememberLayout;
             _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
             _window.ContextHandler.SystemSettings.ShowRelationLines = _viewrelationLine;
+            _window.ContextHandler.SystemSettings.ShowHoverInfo = (Enums.HoverInfoMode)_hoverInfo;
             
             ModelRenderer.VisibleAreas = _visibleDefaults[0];
             ModelRenderer.VisibleCameraAreas = _visibleDefaults[1];

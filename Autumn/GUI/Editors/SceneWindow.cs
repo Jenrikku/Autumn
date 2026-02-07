@@ -42,7 +42,7 @@ internal class SceneWindow(MainWindowContext window)
 
     public bool CamToObj = false;
     public ISceneObj? CamSceneObj;
-    public int AddRailPoint = 0; // 0 false, 1 to rail, 2 to point
+    public AddRailPointState AddRailPoint = AddRailPointState.None; // 0 false, 1 to rail, 2 to point
 
     private Vector3 _axisLock = Vector3.One;
     private bool _persistentMouseDrag = false;
@@ -310,23 +310,20 @@ internal class SceneWindow(MainWindowContext window)
         }
         
 
-        if (_isSceneHovered)
+        if (_isSceneHovered && window.ContextHandler.SystemSettings.ShowHoverInfo == HoverInfoMode.Tooltip)
         {
             // Tooltip
             ISceneObj? hoveringObj = window.CurrentScene.HoveringObject;
 
-            if(hoveringObj is not null)
-            {
-#if DEBUG       
-                // if (hoveringObj is ActorSceneObj)
-                // ImGui.SetTooltip(((ActorSceneObj)hoveringObj).StageObj.Name);
-                // else if (hoveringObj is RailSceneObj)
-                // ImGui.SetTooltip(((RailSceneObj)hoveringObj).RailObj.Name);
+            if (hoveringObj is not null)
+            {     
+                if (hoveringObj is ActorSceneObj)
+                    ImGui.SetTooltip(((ActorSceneObj)hoveringObj).StageObj.Name);
+                else if (hoveringObj is RailSceneObj)
+                    ImGui.SetTooltip(((RailSceneObj)hoveringObj).RailObj.Name);
                 // else
-                ImGui.SetTooltip(hoveringObj.GetType().ToString()+" "+ hoveringObj.PickingId.ToString());
-#else
-#endif
-            }
+                // ImGui.SetTooltip(hoveringObj.GetType().ToString()+" "+ hoveringObj.PickingId.ToString());
+            } 
         }
 
         #endregion
@@ -436,12 +433,12 @@ internal class SceneWindow(MainWindowContext window)
 
             if (AddRailPoint != 0)
             {
-                if (AddRailPoint == 1)
+                if (AddRailPoint == AddRailPointState.Add)
                 {
                     RailSceneObj rl = (RailSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailSceneObj)!;
                     ChangeHandler.ChangeAddPoint(window, window.CurrentScene.History, rl, 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));
                 }
-                else if (AddRailPoint == 2)
+                else if (AddRailPoint == AddRailPointState.Insert)
                 {
                     RailPointSceneObj rp = (RailPointSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj)!;
                     ChangeHandler.ChangeInsertPoint(window, window.CurrentScene.History, rp.ParentRail, rp.ParentRail.RailPoints.IndexOf(rp), 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));

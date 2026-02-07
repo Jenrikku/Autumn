@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Autumn.Enums;
 using Autumn.Wrappers;
 
 namespace Autumn.Context;
@@ -27,6 +28,7 @@ internal class SystemSettings
     public bool EnableDBEditor = false;
     public bool[] VisibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
     public bool ShowRelationLines = true;
+    public HoverInfoMode ShowHoverInfo = HoverInfoMode.Disabled;
     public Yaz0Wrapper.CompressionLevel Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
 
     public void AddRecentlyOpenedPath(string path)
