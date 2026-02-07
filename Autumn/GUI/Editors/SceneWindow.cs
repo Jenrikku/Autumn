@@ -8,8 +8,6 @@ using Autumn.Utils;
 using ImGuiNET;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
-using Autumn.History;
-using Autumn.ActionSystem;
 
 namespace Autumn.GUI.Editors;
 
@@ -770,6 +768,13 @@ internal class SceneWindow(MainWindowContext window)
         }
         ImGui.SetItemTooltip("Toggle Grid");
         ImGui.SameLine();
+
+        if (ImGui.Button(IconUtils.TRANSPARENT))
+        {
+            ModelRenderer.VisibleTransparentWall = !ModelRenderer.VisibleTransparentWall;
+        }
+        ImGui.SetItemTooltip("Toggle Transparent Walls");
+        ImGui.SameLine();
         
         if (ImGui.Button(IconUtils.PATH))
         {
@@ -815,31 +820,6 @@ internal class SceneWindow(MainWindowContext window)
             }
             else
                 _transformChangeString = "";
-
-            // var fst = window.CurrentScene!.SelectedObjects.First();
-            // switch (fst)
-            // {
-            //     case ISceneObj x when x is IStageSceneObj y:
-            //         dist = Vector3.Distance(
-            //         ActTransform.Originals[y]  / 100,
-            //         window.CurrentScene.Camera.Eye
-            //         );
-            //         break;
-            //     case ISceneObj x when x is RailPointSceneObj y:
-            //         dist = Vector3.Distance(
-            //         y.RailPoint.Point0Trans / 100,
-            //         window.CurrentScene.Camera.Eye
-            //         );
-            //         break;
-            //     case ISceneObj x when x is RailHandleSceneObj y:
-            //         dist = Vector3.Distance(
-            //         y.Translation / 100,
-            //         window.CurrentScene.Camera.Eye
-            //         );
-            //     break;
-            //     case ISceneObj x when x is RailSceneObj y:
-            //     break;
-            // }
 
             dist = Vector3.Distance(
                 ActTransform.Originals[window.CurrentScene!.SelectedObjects.First()] / 100,
@@ -973,6 +953,9 @@ internal class SceneWindow(MainWindowContext window)
 
             _ndcMousePos3D *= dist / 11;
 
+            bool hasRails = window.CurrentScene.SelectedObjects.Any(x => x is RailSceneObj);
+            bool hasPoints = window.CurrentScene.SelectedObjects.Any(x => x is RailPointSceneObj);
+            List<ISceneObj> remove = new();
             foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
             {   
                 switch (scobj)
@@ -982,12 +965,20 @@ internal class SceneWindow(MainWindowContext window)
                         ActTransform.Relative[y] = y.StageObj.Translation - _ndcMousePos3D;
                         break;
                     case ISceneObj x when x is RailHandleSceneObj y:
-                        ActTransform.Originals.Add(y, y.Offset +y.ParentPoint.RailPoint.Point0Trans);
-                        ActTransform.Relative[y] = y.Offset - _ndcMousePos3D;
+                        if (hasRails || hasPoints) remove.Add(x);
+                        else
+                        {
+                            ActTransform.Originals.Add(y, y.Offset +y.ParentPoint.RailPoint.Point0Trans);
+                            ActTransform.Relative[y] = y.Offset - _ndcMousePos3D;
+                        }
                         break;
                     case ISceneObj x when x is RailPointSceneObj y:
-                        ActTransform.Originals.Add(y, y.RailPoint.Point0Trans);
-                        ActTransform.Relative[y] = y.RailPoint.Point0Trans - _ndcMousePos3D;
+                        if (hasRails) remove.Add(x);
+                        else
+                        {
+                            ActTransform.Originals.Add(y, y.RailPoint.Point0Trans);
+                            ActTransform.Relative[y] = y.RailPoint.Point0Trans - _ndcMousePos3D;
+                        }
                         break;
                     case ISceneObj x when x is RailSceneObj y:
                         ActTransform.Originals.Add(y, y.RailModel.Offset + y.Center);
@@ -995,6 +986,7 @@ internal class SceneWindow(MainWindowContext window)
                         break;
                 }
             }
+            window.CurrentScene.UnselectMultiple(remove);
         }
         else if (
             (
@@ -1053,6 +1045,8 @@ internal class SceneWindow(MainWindowContext window)
             }
             else
             {
+                bool hasRails = window.CurrentScene.SelectedObjects.Any(x => x is RailSceneObj);
+
                 foreach (ISceneObj scobj in window.CurrentScene.SelectedObjects)
                 {   
                     switch (scobj)
@@ -1061,13 +1055,29 @@ internal class SceneWindow(MainWindowContext window)
                             ActTransform.Finals.Add(y, y.StageObj.Translation);
                             break;
                         case ISceneObj x when x is RailHandleSceneObj y:
-                            ActTransform.Finals.Add(y, y.Offset +y.ParentPoint.RailPoint.Point0Trans);
+                            if (hasRails) 
+                            {
+                                y.Offset = ActTransform.Originals[scobj] - y.ParentPoint.RailPoint.Point0Trans;
+                                y.UpdateTransform();
+                            }
+                            else 
+                            {
+                                ActTransform.Finals.Add(y, y.Offset +y.ParentPoint.RailPoint.Point0Trans);
+                            }
                             break;
                         case ISceneObj x when x is RailPointSceneObj y:
-                            ActTransform.Finals.Add(y, y.RailPoint.Point0Trans);
+                            if (hasRails) 
+                            {
+                                y.RailPoint.Point0Trans = ActTransform.Originals[scobj];
+                                y.UpdateModel();
+                            }
+                            else 
+                            {
+                                ActTransform.Finals.Add(y, y.RailPoint.Point0Trans);
+                            }
                             break;
                         case ISceneObj x when x is RailSceneObj y:
-                            ActTransform.Finals.Add(y, y.RailModel.Offset + y.Center);
+                            ActTransform.Finals.Add(y, y.RailModel.Offset);
                             break;
                     }
                 }

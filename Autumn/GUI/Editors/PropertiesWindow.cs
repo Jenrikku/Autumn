@@ -1042,7 +1042,12 @@ internal class PropertiesWindow(MainWindowContext window)
                                 {
                                     case int:
                                         int intBuf = (int)(property ?? -1);
-                                        InputIntProperties(name, ref intBuf, 1, ref railObj);
+                                        if (sceneObj is RailSceneObj) InputIntProperties(name, ref intBuf, 1, ref railObj);
+                                        else 
+                                        {
+                                            RailPoint rpoint = (sceneObj as RailPointSceneObj)!.RailPoint;
+                                            InputIntProperties(name, ref intBuf, 1, ref rpoint);
+                                        }
                                         break;
                                 }
                             
@@ -1564,7 +1569,7 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGuiWidgets.SetPropertyWidth(str);
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, sto.Properties, str, rf, i);
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
         }
         return false;
     }
@@ -1577,7 +1582,20 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGuiWidgets.SetPropertyWidth(str);
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, sto.Properties, str, rf, i);
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+        }
+        return false;
+    }
+    private bool InputIntProperties(string str, ref int rf, int step, ref RailPoint sto)
+    {
+        int i = rf;
+
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
+        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
         }
         return false;
     }

@@ -109,6 +109,14 @@ internal class Scene
 
         _selectedObjects.Clear();
     }
+    public void UnselectMultiple(List<ISceneObj> objs)
+    {
+        foreach (ISceneObj sceneObj in objs)
+        {    
+            sceneObj.Selected = false;
+            _selectedObjects.Remove(sceneObj);
+        }
+    }
 
     public void SetSelectedObjects(IEnumerable<ISceneObj> objs)
     {

@@ -1,7 +1,9 @@
 using System.Drawing;
 using System.Numerics;
 using Autumn.Enums;
+using Autumn.Rendering.Rail;
 using Autumn.Storage;
+using Silk.NET.OpenGL;
 
 namespace Autumn.Rendering.Storage;
 
@@ -13,6 +15,8 @@ internal class RailPointSceneObj : ISceneObj
     public RailPointType PointType => ParentRail.RailObj.PointType;
     public RailHandleSceneObj? Handle1 { get; init; }
     public RailHandleSceneObj? Handle2 { get; init; }
+
+    public RailHandlesModel HandlesModel { get; init; }
 
     public Vector3 FakeRot = Vector3.Zero;
     public Matrix4x4 Transform { get; set; }
@@ -29,6 +33,7 @@ internal class RailPointSceneObj : ISceneObj
         RailPoint = railPoint;
         PickingId = pickingId++;
 
+        HandlesModel = new(railPoint);
         Handle1 = new(railPoint.Point1Trans-railPoint.Point0Trans, this, ref pickingId);
         Handle2 = new(railPoint.Point2Trans-railPoint.Point0Trans, this, ref pickingId);
 
@@ -46,11 +51,11 @@ internal class RailPointSceneObj : ISceneObj
         if (FakeRot != Vector3.Zero)
         {
             // Apply rotation to points
-            RailPoint.Point1Trans = Vector3.Transform(Handle1.Offset, 
+            RailPoint.Point1Trans = Vector3.Transform(Handle1!.Offset, 
             Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
             *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
             *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
-            RailPoint.Point2Trans = Vector3.Transform(Handle2.Offset, 
+            RailPoint.Point2Trans = Vector3.Transform(Handle2!.Offset, 
             Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
             *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
             *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
@@ -62,12 +67,16 @@ internal class RailPointSceneObj : ISceneObj
         Handle2!.UpdateTransform();
         if (ParentRail.RailModel.Initialized)
             ParentRail.UpdateModel();
+        if (HandlesModel.Initialized)
+            HandlesModel.UpdateModel();
     }
     public void UpdateModel()
     {
         Transform = Matrix4x4.CreateTranslation(RailPoint.Point0Trans * 0.01f);
         Handle1!.UpdateTransform();
         Handle2!.UpdateTransform();
+        if (HandlesModel.Initialized)
+            HandlesModel.UpdateModel();
     }
     public void UpdateModelMoving()
     {
@@ -75,6 +84,8 @@ internal class RailPointSceneObj : ISceneObj
         UpdateObjHandles();
         Handle1!.UpdateModelMoving();
         Handle2!.UpdateModelMoving();
+        if (HandlesModel.Initialized)
+            HandlesModel.UpdateModel();
     }
     public void UpdateModelRotating()
     {
@@ -90,6 +101,8 @@ internal class RailPointSceneObj : ISceneObj
 
         Handle1.UpdateModelRotating();
         Handle2.UpdateModelRotating();
+        if (HandlesModel.Initialized)
+            HandlesModel.UpdateModel();
     }
 
     //public void UpdateModelTmp() => ParentRail.UpdateModelTmp();
@@ -130,4 +143,11 @@ internal class RailPointSceneObj : ISceneObj
     {
         throw new NotImplementedException();
     }
+
+    public void DrawRailHandles(GL gl)
+    {
+        if (!HandlesModel.Initialized) HandlesModel.Initialize(gl);
+        HandlesModel.Draw(gl);
+    }
+
 }

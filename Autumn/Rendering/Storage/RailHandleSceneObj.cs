@@ -30,12 +30,14 @@ internal class RailHandleSceneObj : ISceneObj
         UpdateHandle();
         Transform = Matrix4x4.CreateTranslation((ParentPoint.RailPoint.Point0Trans + Offset) * 0.01f);
         ParentPoint.ParentRail.UpdateModelTmp();
+        if (ParentPoint.HandlesModel.Initialized) ParentPoint.HandlesModel.UpdateModel();
     }
 
     public void UpdateModelMoving()
     {
         Transform = Matrix4x4.CreateTranslation((ParentPoint.RailPoint.Point0Trans + Offset) * 0.01f);
         ParentPoint.ParentRail.UpdateModelTmp();
+        if (ParentPoint.HandlesModel.Initialized) ParentPoint.HandlesModel.UpdateModel();
     }
     public void UpdateModelRotating()
     {
@@ -45,6 +47,7 @@ internal class RailHandleSceneObj : ISceneObj
         *Matrix4x4.CreateRotationZ( ParentPoint.FakeRot.Z * (float)Math.PI / 180))
         ) * 0.01f);
         ParentPoint.ParentRail.UpdateModelTmp();
+        if (ParentPoint.HandlesModel.Initialized) ParentPoint.HandlesModel.UpdateModel();
     }
 
     public void UpdateHandle() => ParentPoint.UpdateObjHandle(this);

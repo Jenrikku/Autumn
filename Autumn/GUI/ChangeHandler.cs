@@ -483,7 +483,7 @@ internal static class ChangeHandler
     {
         //List<Vector3> old = new();
         List<Vector3> current = new();
-        foreach (ISceneObj obj in originals.Keys)
+        foreach (ISceneObj obj in news.Keys)
         {
             current.Add(news[obj]);
             //old.Add(originals[obj]);
@@ -493,7 +493,7 @@ internal static class ChangeHandler
             new(
                 Undo: () =>
                 {
-                    foreach (ISceneObj obj in originals.Keys)
+                    foreach (ISceneObj obj in news.Keys)
                     {
                         switch (obj)
                         {
@@ -509,7 +509,7 @@ internal static class ChangeHandler
                                 y.RailPoint.Point0Trans  = originals[obj];
                                 y.RailPoint.Point1Trans -= (news[obj] - originals[obj]);
                                 y.RailPoint.Point2Trans -= (news[obj] - originals[obj]);
-                        obj.UpdateTransform();
+                                obj.UpdateTransform();
                             break;
                             case ISceneObj x when x is RailHandleSceneObj y:
                                 y.Offset = originals[obj] + (/*resetTransform*/true ? - y.ParentPoint.RailPoint.Point0Trans : Vector3.Zero);
@@ -522,7 +522,7 @@ internal static class ChangeHandler
                 Redo: () =>
                 {
                     int i = 0;
-                    foreach (ISceneObj obj in originals.Keys)
+                    foreach (ISceneObj obj in news.Keys)
                     {
                         switch (obj)
                         {

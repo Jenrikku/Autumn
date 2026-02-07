@@ -160,35 +160,60 @@ internal static class RailRenderer
     public static void Render(
         GL gl,
         RailSceneObj railSceneObj,
+        bool railSelected,
         CommonSceneParameters scene,
         RailGeometryParameters railGeometry,
+        RailGeometryParameters handleGeometry,
         CommonMaterialParameters railMaterial,
         CommonMaterialParameters railPointMaterial
     )
     {
         scene.Transform = s_railTranslate;
-
-        if (!RailMaterial.TryUse(gl, scene, railGeometry, railMaterial, out ProgramUniformScope scope))
-            return;
-
-        using (scope)
-        {
-            if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
-                gl.Uniform1(location, railSceneObj.PickingId);
-
-            railSceneObj.RailModel.Draw(gl);
-        }
-
+        var tf = scene.Transform;
+        bool anyselected = false;
         foreach (RailPointSceneObj railPoint in railSceneObj.RailPoints)
         {
+            if (!ModelRenderer.VisibleRails && !railSelected &&  !railPoint.Selected) 
+            {
+                if (!railPoint.Handle1!.Selected && !railPoint.Handle2!.Selected)
+                    continue;
+            }
             DrawRailPoint(gl, scene, railPointMaterial, railPoint.PickingId, railPoint.Selected || railPoint.ParentRail.Selected, false, railPoint.Transform);
-
+            anyselected |= railPoint.Selected;
             if (railPoint.PointType == RailPointType.Bezier)
             {
                 RailHandleSceneObj h1 = railPoint.Handle1!, h2 = railPoint.Handle2!;
-
+                anyselected |= h1.Selected | h2.Selected;
                 DrawRailPoint(gl, scene, railPointMaterial, h1.PickingId, h1.Selected || railPoint.ParentRail.Selected, true, h1.Transform);
                 DrawRailPoint(gl, scene, railPointMaterial, h2.PickingId, h2.Selected || railPoint.ParentRail.Selected, true, h2.Transform);
+            }
+        }
+        scene.Transform = tf;
+        if (ModelRenderer.VisibleRails || railSelected || anyselected)
+        {
+        if (railSceneObj.RailObj.PointType == RailPointType.Bezier)
+            foreach (RailPointSceneObj railPoint in railSceneObj.RailPoints)
+            {
+                if (!ModelRenderer.VisibleRails && !railSelected &&  !railPoint.Selected) 
+                {
+                    if (!railPoint.Handle1!.Selected && !railPoint.Handle2!.Selected)
+                        continue;
+                }
+                if (RailMaterial.TryUse(gl, scene, handleGeometry, railMaterial, out ProgramUniformScope scope2))
+                {
+                    if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+                        gl.Uniform1(location, railSceneObj.PickingId);
+                    using (scope2) railPoint.DrawRailHandles(gl);
+                }
+            }
+            if (!RailMaterial.TryUse(gl, scene, railGeometry, railMaterial, out ProgramUniformScope scope))
+                return;
+
+            using (scope)
+            {
+                if (RailMaterial.Program.TryGetUniformLoc("uPickingId", out int location))
+                    gl.Uniform1(location, railSceneObj.PickingId);
+                railSceneObj.RailModel.Draw(gl);
             }
         }
     }
