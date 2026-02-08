@@ -11,6 +11,7 @@ internal class WelcomeDialog
     private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
+    public bool IsOpened => _isOpened;
 
     private byte _currentPage = 0;
 
