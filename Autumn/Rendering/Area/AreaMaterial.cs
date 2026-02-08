@@ -66,7 +66,7 @@ internal static class AreaMaterial
 
                 float outline = smoothstep(10 - wa * 2, 10 - wa, a);
 
-                if(outline == 0)
+                if (outline < 1)
                     discard;
 
                 oPickingId = uPickingId;
