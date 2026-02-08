@@ -358,6 +358,7 @@ internal class MainWindowContext : WindowContext
         {
             ImGuiWidgets.CommandMenuItem(CommandID.NewProject, ContextHandler.ActionHandler, this);
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.CloseProject, ContextHandler.ActionHandler, this);
 
             // Menu that displays the recently opened projects' list.
             if (ImGui.BeginMenu("Recent"))

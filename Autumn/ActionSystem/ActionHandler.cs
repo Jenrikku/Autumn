@@ -28,6 +28,7 @@ internal class ActionHandler
             {
                 CommandID.NewProject => NewProject(),
                 CommandID.OpenProject => OpenProject(),
+                CommandID.CloseProject => CloseProject(),
                 CommandID.OpenSettings => OpenSettings(),
                 CommandID.CloseScene => CloseScene(),
                 CommandID.Exit => Exit(),
@@ -207,6 +208,16 @@ internal class ActionHandler
                 ImGui.SetWindowFocus("Stages");
             },
             enabled: window => true
+        );
+
+    private static Command CloseProject() =>
+        new(
+            displayName: "Close Project",
+            action: window =>
+            {
+                window!.ContextHandler.CloseProject();
+            },
+            enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
         );
 
     private static Command Exit() =>
