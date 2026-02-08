@@ -18,7 +18,7 @@ internal class RailPointSceneObj : ISceneObj
 
     public RailHandlesModel HandlesModel { get; init; }
 
-    public Vector3 FakeRot = Vector3.Zero;
+    public Vector3 FakeRotation = Vector3.Zero;
     public Matrix4x4 Transform { get; set; }
     public AxisAlignedBoundingBox AABB { get; set; }
 
@@ -48,19 +48,19 @@ internal class RailPointSceneObj : ISceneObj
         //     Transform = Matrix4x4.CreateTranslation(linear.Translation * 0.01f);
         // else if (RailPoint is RailPointBezier bezier)
         Transform = Matrix4x4.CreateTranslation(RailPoint.Point0Trans * 0.01f);
-        if (FakeRot != Vector3.Zero)
+        if (FakeRotation != Vector3.Zero)
         {
             // Apply rotation to points
             RailPoint.Point1Trans = Vector3.Transform(Handle1!.Offset, 
-            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+            Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
             RailPoint.Point2Trans = Vector3.Transform(Handle2!.Offset, 
-            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+            Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
 
-            FakeRot = Vector3.Zero;
+            FakeRotation = Vector3.Zero;
         }
         UpdateSceneHandles();
         Handle1!.UpdateTransform();
@@ -91,13 +91,13 @@ internal class RailPointSceneObj : ISceneObj
     {
         Transform = Matrix4x4.CreateTranslation((RailPoint.Point0Trans)* 0.01f);
         RailPoint.Point1Trans = Vector3.Transform(Handle1!.Offset, 
-            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+            Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
         RailPoint.Point2Trans = Vector3.Transform(Handle2!.Offset, 
-            Matrix4x4.CreateRotationX(  FakeRot.X * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationY( FakeRot.Y * (float)Math.PI / 180)
-            *Matrix4x4.CreateRotationZ( FakeRot.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
+            Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
+            *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + RailPoint.Point0Trans;
 
         Handle1.UpdateModelRotating();
         Handle2.UpdateModelRotating();

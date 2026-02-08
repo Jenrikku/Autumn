@@ -258,13 +258,37 @@ internal static class ChangeHandler
             new(
                 Undo: () =>
                 {
-                    obj.FakeRot = Vector3.Zero - final;
+                    obj.FakeRotation = Vector3.Zero - final;
                     obj.UpdateTransform();
                 },
                 Redo: () =>
                 {
-                    obj.FakeRot = final;
+                    obj.FakeRotation = final;
                     obj.UpdateTransform();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeRailRot(
+        ChangeHistory history,
+        RailSceneObj obj,
+        Vector3 final
+    )
+    {
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeRotation = Vector3.Zero - final;
+                    obj.UpdateAfterRotate();
+                },
+                Redo: () =>
+                {
+                    obj.FakeRotation = final;
+                    obj.UpdateAfterRotate();
                 }
             );
 
@@ -310,12 +334,12 @@ internal static class ChangeHandler
             new(
                 Undo: () =>
                 {
-                    obj.RailModel.Offset = -final;
+                    obj.FakeOffset = -final;
                     obj.UpdateAfterMove();
                 },
                 Redo: () =>
                 {
-                    obj.RailModel.Offset = final;
+                    obj.FakeOffset = final;
                     obj.UpdateAfterMove();
                 }
             );
@@ -404,7 +428,7 @@ internal static class ChangeHandler
        {
         //List<Vector3> old = new();
         List<Vector3> current = new();
-        foreach (ISceneObj obj in originals.Keys)
+        foreach (ISceneObj obj in news.Keys)
         {
             current.Add(news[obj]);
             //old.Add(originals[obj]);
@@ -414,7 +438,7 @@ internal static class ChangeHandler
             new(
                 Undo: () =>
                 {
-                    foreach (ISceneObj obj in originals.Keys)
+                    foreach (ISceneObj obj in news.Keys)
                     {
                         switch (obj)
                         {
@@ -425,11 +449,11 @@ internal static class ChangeHandler
 
                             break;
                             case ISceneObj x when x is RailSceneObj y:
-                                // y.RailModel.Offset = -news[obj];
-                                // y.UpdateAfterMove();
+                                y.FakeRotation = Vector3.Zero - news[obj];
+                                y.UpdateAfterRotate();
                             break;
                             case ISceneObj x when x is RailPointSceneObj y:
-                                y.FakeRot = Vector3.Zero - news[obj];
+                                y.FakeRotation = Vector3.Zero - news[obj];
                                 obj.UpdateTransform();
                             break;
                             case ISceneObj x when x is RailHandleSceneObj y:
@@ -443,7 +467,7 @@ internal static class ChangeHandler
                 Redo: () =>
                 {
                     int i = 0;
-                    foreach (ISceneObj obj in originals.Keys)
+                    foreach (ISceneObj obj in news.Keys)
                     {
                         switch (obj)
                         {
@@ -453,11 +477,11 @@ internal static class ChangeHandler
 
                             break;
                             case ISceneObj x when x is RailSceneObj y:
-                                // y.RailModel.Offset = news[obj];
-                                // y.UpdateAfterMove();
+                                y.FakeRotation = news[obj];
+                                y.UpdateAfterRotate();
                             break;
                             case ISceneObj x when x is RailPointSceneObj y:
-                                y.FakeRot = news[obj];
+                                y.FakeRotation = news[obj];
                                 obj.UpdateTransform();
                             break;
                             case ISceneObj x when x is RailHandleSceneObj y:
@@ -502,7 +526,7 @@ internal static class ChangeHandler
                                 obj.UpdateTransform();
                             break;
                             case ISceneObj x when x is RailSceneObj y:
-                                y.RailModel.Offset = -news[obj];
+                                y.FakeOffset = -news[obj];
                                 y.UpdateAfterMove();
                             break;
                             case ISceneObj x when x is RailPointSceneObj y:
@@ -531,7 +555,7 @@ internal static class ChangeHandler
                                 obj.UpdateTransform();
                             break;
                             case ISceneObj x when x is RailSceneObj y:
-                                y.RailModel.Offset = news[obj];
+                                y.FakeOffset = news[obj];
                                 y.UpdateAfterMove();
                             break;
                             case ISceneObj x when x is RailPointSceneObj y:

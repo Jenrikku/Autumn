@@ -8,7 +8,6 @@ namespace Autumn.Rendering.Rail;
 
 internal class RailModel(RailObj rail)
 {
-    public Vector3 Offset = Vector3.Zero;
     private const float _bezierPointStep = 0.08f;
 
     public bool Initialized { get; private set; }
@@ -68,7 +67,7 @@ internal class RailModel(RailObj rail)
             case RailPointType.Linear:
 
                 foreach (var point in rail.Points)
-                    vertices.Add((Offset + point.Point0Trans) * 0.01f);
+                    vertices.Add(point.Point0Trans * 0.01f);
 
                 break;
         }
@@ -100,10 +99,10 @@ internal class RailModel(RailObj rail)
 
     private IEnumerable<Vector3> CalcBezierCurveFrom(RailPoint point0, RailPoint point1, float step)
     {
-        Vector3 p0 = (Offset + point0.Point0Trans) * 0.01f;
-        Vector3 p1 = (Offset + point0.Point2Trans) * 0.01f;
-        Vector3 p2 = (Offset + point1.Point1Trans) * 0.01f;
-        Vector3 p3 = (Offset + point1.Point0Trans) * 0.01f;
+        Vector3 p0 = point0.Point0Trans * 0.01f;
+        Vector3 p1 = point0.Point2Trans * 0.01f;
+        Vector3 p2 = point1.Point1Trans * 0.01f;
+        Vector3 p3 = point1.Point0Trans * 0.01f;
 
         for (float t = 0; t <= 1; t += step)
         {
