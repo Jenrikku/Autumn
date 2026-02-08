@@ -69,20 +69,26 @@ internal static class AreaMaterial
 
             float wa = fwidth(a);
 
-            float outline = smoothstep(9 - wa , 10 + wa, a);
-            float outline2 = smoothstep(9 - wa , 10 + wa, a * 0.95);
+            float outline = smoothstep(9 - wa , 10 + wa, a * 0.95);
 
-            if (outline < 0.6) discard;
+            vec3 col = vec3(0.05 * vPos.x + 0.5, 0.05 * vPos.y + 0.5, 0.05 * vPos.z + 0.5);
+            oColor.r = abs(vPos.x * scale.x) < (0.9 / scale.x) ? (0) : (1);
+            oColor.g = abs(vPos.y * scale.y) < (0.9 / scale.y) ? (0) : (1);
+            oColor.b = abs(vPos.z * scale.z) < (0.9) ? (0) : (1);
+
+            oColor.rgb = vec3(0);
+            vec3 limit = (0.05 / scale);
+            col.r = col.r < (1.0 - limit.x) && col.r > (limit.x) ? 0 : 1;
+            col.g = col.g < (1.0 - limit.y) && col.g > (limit.y) ? 0 : 1;
+            col.b = col.b < (1.0 - limit.z) && col.b > (limit.z) ? 0 : 1;
+            float final = (col.r * col.b + col.g * col.b + col.g * col.r);
+            if (final < 0.5) discard;
+
             oColor.rgb = mix(uColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
-            oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.85;
-            oColor.rgb += vec3(clamp(outline2 * 0.5- 0.2,0,1));
-            
+            oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
+            oColor.rgb += vec3(clamp(outline * 0.5 - 0.12,0,1));
             oColor.a = 1.0;
             oPickingId = uPickingId;
-
-            // oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
-
-            // oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
             }
             """
         );
