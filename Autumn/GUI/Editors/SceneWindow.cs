@@ -317,11 +317,14 @@ internal class SceneWindow(MainWindowContext window)
 
             if (hoveringObj is not null)
             {     
-                if (hoveringObj is ActorSceneObj)
-                    ImGui.SetTooltip(((ActorSceneObj)hoveringObj).StageObj.Name);
+                if (hoveringObj is IStageSceneObj)
+                    ImGui.SetTooltip(((IStageSceneObj)hoveringObj).StageObj.Name);
                 else if (hoveringObj is RailSceneObj)
                     ImGui.SetTooltip(((RailSceneObj)hoveringObj).RailObj.Name);
-                // else
+                else if (hoveringObj is RailPointSceneObj)
+                    ImGui.SetTooltip($"{((RailPointSceneObj)hoveringObj).ParentRail.RailObj.Name} Point {((RailPointSceneObj)hoveringObj).ParentRail.RailPoints.IndexOf((RailPointSceneObj)hoveringObj)}");
+                else if (hoveringObj is RailHandleSceneObj)
+                    ImGui.SetTooltip($"{((RailHandleSceneObj)hoveringObj).ParentPoint.ParentRail.RailObj.Name} Point {((RailHandleSceneObj)hoveringObj).ParentPoint.ParentRail.RailPoints.IndexOf(((RailHandleSceneObj)hoveringObj).ParentPoint)} Handle");
                 // ImGui.SetTooltip(hoveringObj.GetType().ToString()+" "+ hoveringObj.PickingId.ToString());
             } 
         }
@@ -1617,7 +1620,8 @@ internal class SceneWindow(MainWindowContext window)
                 }
             }
             window.CurrentScene.UnselectMultiple(remove);
-
+            if (ActTransform.Originals.Count < 1) 
+                IsScaleActive = false;
         }
         else if (
             (

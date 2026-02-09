@@ -163,7 +163,7 @@ internal class SettingsDialog
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
                 _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
-                ImGui.Combo("Hover info", ref _hoverInfo, ["Disabled", "Tooltip", "Highlight", "Status"], 4);
+                ImGui.Combo("Hover info", ref _hoverInfo, ["Disabled", "Tooltip", "Highlight (not implemented)", "Status (not implemented)"], 4);
                 ImGui.Checkbox("Preview stage lights without opening the ligths window", ref _prevlightonload); 
                 ImGui.EndTabItem();
             }
