@@ -248,6 +248,34 @@ internal static class ChangeHandler
         return true;
     }
 
+    public static bool ChangeRailScale(
+        ChangeHistory history,
+        RailSceneObj obj,
+        Vector3 prior,
+        Vector3 final
+    )
+    {
+        final.X = final.X == 0 ? 0.01f : final.X;
+        final.Y = final.Y == 0 ? 0.01f : final.Y;
+        final.Z = final.Z == 0 ? 0.01f : final.Z;
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeScale = Vector3.One / final;
+                    obj.UpdateAfterScale();
+                },
+                Redo: () =>
+                {
+                    obj.FakeScale = final;
+                    obj.UpdateAfterScale();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
     public static bool ChangePointRot(
         ChangeHistory history,
         RailPointSceneObj obj,
@@ -323,7 +351,7 @@ internal static class ChangeHandler
         history.Add(change);
         return true;
     }
-    public static bool ChangeRailTransform(
+    public static bool ChangeRailPosition(
         ChangeHistory history,
         RailSceneObj obj,
         Vector3 prior,
@@ -416,6 +444,79 @@ internal static class ChangeHandler
                 }
             );
 
+        history.Add(change);
+        return true;
+    }
+
+    public static bool ChangeMultiScale(
+        ChangeHistory history,
+        Dictionary<ISceneObj, Vector3> originals,
+        Dictionary<ISceneObj, Vector3> news
+    )
+    {
+        List<Vector3> current = new();
+        foreach (ISceneObj obj in news.Keys)
+        {
+            if (obj is RailSceneObj)
+            {
+                Vector3 aa = news[obj];   
+                aa.X = news[obj].X == 0 ? 0.01f : news[obj].X;
+                aa.Y = news[obj].Y == 0 ? 0.01f : news[obj].Y;
+                aa.Z = news[obj].Z == 0 ? 0.01f : news[obj].Z;
+                news[obj] = aa;
+            }
+            current.Add(news[obj]);
+        }
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Scale = originals[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeScale = Vector3.One / news[obj];
+                                y.UpdateAfterScale();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                            break;
+
+                        }
+                    }
+                },
+                Redo: () =>
+                {
+                    int i = 0;
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Scale = news[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeScale = news[obj];
+                                y.UpdateAfterScale();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            );
+        change.Redo();
         history.Add(change);
         return true;
     }

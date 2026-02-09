@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Autumn.Rendering.Rail;
 using Autumn.Storage;
@@ -9,8 +10,8 @@ internal class RailSceneObj : ISceneObj
 {
     private readonly HashSet<uint> _assignedIds = new(); // Optimization, reduces CPU overhead when checking ids
 
-    public void AddToHash(uint b) => _assignedIds.Add(b);  
-    public void RemoveFromHash(uint b) => _assignedIds.Remove(b);  
+    public void AddToHash(uint b) => _assignedIds.Add(b);
+    public void RemoveFromHash(uint b) => _assignedIds.Remove(b);
 
     public RailObj RailObj { get; }
     public RailModel RailModel { get; }
@@ -19,6 +20,7 @@ internal class RailSceneObj : ISceneObj
     public Vector3 Center { get; set; }
     public Vector3 FakeOffset = Vector3.Zero;
     public Vector3 FakeRotation = Vector3.Zero;
+    public Vector3 FakeScale = Vector3.One;
 
     public Matrix4x4 Transform { get; set; } = Matrix4x4.Identity;
     public AxisAlignedBoundingBox AABB { get; set; }
@@ -65,7 +67,7 @@ internal class RailSceneObj : ISceneObj
 
         return null;
     }
-    
+
     public void UpdateModel()
     {
         if (RailModel.Initialized)
@@ -80,8 +82,8 @@ internal class RailSceneObj : ISceneObj
 
     public void UpdateBounds()
     {
-        Center= Vector3.Zero;
-        foreach(RailPoint p in RailObj.Points)
+        Center = Vector3.Zero;
+        foreach (RailPoint p in RailObj.Points)
         {
             Center += p.Point0Trans;
         }
@@ -89,7 +91,7 @@ internal class RailSceneObj : ISceneObj
         AABB = new();
         AABB.Max += Center;
         AABB.Min += Center;
-        foreach(RailPoint p in RailObj.Points)
+        foreach (RailPoint p in RailObj.Points)
         {
             if (true)//RailObj.PointType == Enums.RailPointType.Linear)
             {
@@ -103,11 +105,11 @@ internal class RailSceneObj : ISceneObj
         }
     }
 
-    public void UpdateTransform() 
+    public void UpdateTransform()
     {
 
     }
-    public void UpdateAfterMove() 
+    public void UpdateAfterMove()
     {
         foreach (RailPointSceneObj r in RailPoints)
         {
@@ -119,10 +121,10 @@ internal class RailSceneObj : ISceneObj
         }
         FakeOffset = Vector3.Zero;
         UpdateModel();
-        
+
         // Modify the points directly after move
     }
-    public void UpdateDuringMove() 
+    public void UpdateDuringMove()
     {
         foreach (RailPointSceneObj r in RailPoints)
         {
@@ -133,7 +135,7 @@ internal class RailSceneObj : ISceneObj
             r.UpdateModel();
         }
         UpdateModelTmp();
-        
+
         foreach (RailPointSceneObj r in RailPoints)
         {
             r.RailPoint.Point0Trans -= FakeOffset;
@@ -142,47 +144,47 @@ internal class RailSceneObj : ISceneObj
             r.UpdateSceneHandles();
         }
     }
-    public void UpdateAfterRotate() 
+    public void UpdateAfterRotate()
     {
         foreach (RailPointSceneObj r in RailPoints)
         {
-            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
-            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
-            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans- Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
             r.UpdateSceneHandles();
             r.UpdateModel();
             r.Handle1!.UpdateModelRotating();
             r.Handle2!.UpdateModelRotating();
         }
         FakeRotation = Vector3.Zero;
-        UpdateModelTmp();
+        UpdateModel();
         // Modify the points directly after rotate
     }
-    public void UpdateDuringRotate() 
+    public void UpdateDuringRotate()
     {
         foreach (RailPointSceneObj r in RailPoints)
         {
-            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
-            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
-            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans- Center, 
-                Matrix4x4.CreateRotationX(  FakeRotation.X * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationY( FakeRotation.Y * (float)Math.PI / 180)
-                *Matrix4x4.CreateRotationZ( FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center,
+                Matrix4x4.CreateRotationX(FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(FakeRotation.Z * (float)Math.PI / 180)) + Center;
             r.UpdateSceneHandles();
             r.UpdateModel();
             r.Handle1!.UpdateModelRotating();
@@ -190,20 +192,74 @@ internal class RailSceneObj : ISceneObj
         }
         UpdateModelTmp();
         foreach (RailPointSceneObj r in RailPoints)
-         {
-             r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, 
-                 Matrix4x4.CreateRotationX(  -FakeRotation.X * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationY( -FakeRotation.Y * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationZ( -FakeRotation.Z * (float)Math.PI / 180)) + Center;
-             r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, 
-                 Matrix4x4.CreateRotationX(  -FakeRotation.X * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationY( -FakeRotation.Y * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationZ( -FakeRotation.Z * (float)Math.PI / 180)) + Center;
-             r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans- Center, 
-                 Matrix4x4.CreateRotationX(  -FakeRotation.X * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationY( -FakeRotation.Y * (float)Math.PI / 180)
-                 *Matrix4x4.CreateRotationZ( -FakeRotation.Z * (float)Math.PI / 180)) + Center;
-         }
+        {
+            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center,
+                Matrix4x4.CreateRotationX(-FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(-FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(-FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center,
+                Matrix4x4.CreateRotationX(-FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(-FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(-FakeRotation.Z * (float)Math.PI / 180)) + Center;
+            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center,
+                Matrix4x4.CreateRotationX(-FakeRotation.X * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationY(-FakeRotation.Y * (float)Math.PI / 180)
+                * Matrix4x4.CreateRotationZ(-FakeRotation.Z * (float)Math.PI / 180)) + Center;
+        }
         // Modify the points directly during rotate
+    }
+    public void UpdateAfterScale()
+    {
+        foreach (RailPointSceneObj r in RailPoints)
+        {
+            r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+            r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+            r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+            r.UpdateSceneHandles();
+            r.UpdateModel();
+            r.Handle1!.UpdateModelRotating();
+            r.Handle2!.UpdateModelRotating();
+        }
+        FakeScale = Vector3.One;
+        UpdateModel();
+        // Modify the points directly after scale
+    }
+    public void UpdateDuringScale()
+    {
+        foreach (RailPointSceneObj r in RailPoints)
+        {
+
+            if (FakeScale.X != 0 && FakeScale.Y != 0 && FakeScale.Z != 0)
+            {
+                r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+                r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+                r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center, Matrix4x4.CreateScale(FakeScale)) + Center;
+            }
+            else
+            {
+                r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, Matrix4x4.CreateScale(0.01f)) + Center;
+                r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, Matrix4x4.CreateScale(0.01f)) + Center;
+                r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center, Matrix4x4.CreateScale(0.01f)) + Center;
+            }
+            r.UpdateSceneHandles();
+            r.UpdateModel();
+        }
+        UpdateModelTmp();
+        foreach (RailPointSceneObj r in RailPoints)
+        {
+            if (FakeScale.X != 0 && FakeScale.Y != 0 && FakeScale.Z != 0)
+            {
+                r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, Matrix4x4.CreateScale(Vector3.One / FakeScale)) + Center;
+                r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, Matrix4x4.CreateScale(Vector3.One / FakeScale)) + Center;
+                r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center, Matrix4x4.CreateScale(Vector3.One / FakeScale)) + Center;
+            }
+            else
+            {
+                r.RailPoint.Point0Trans = Vector3.Transform(r.RailPoint.Point0Trans - Center, Matrix4x4.CreateScale(Vector3.One / 0.01f)) + Center;
+                r.RailPoint.Point1Trans = Vector3.Transform(r.RailPoint.Point1Trans - Center, Matrix4x4.CreateScale(Vector3.One / 0.01f)) + Center;
+                r.RailPoint.Point2Trans = Vector3.Transform(r.RailPoint.Point2Trans - Center, Matrix4x4.CreateScale(Vector3.One / 0.01f)) + Center;
+            }
+        }
+        // Modify the points directly during scale
     }
 }
