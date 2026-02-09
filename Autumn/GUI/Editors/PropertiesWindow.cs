@@ -548,7 +548,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.TableSetColumnIndex(2);
 
                                             ImGui.PushID("SceneChildSelectable" + cidx);
-                                            if (ImGui.Selectable(ch.Name, false))
+                                            if (ImGui.Selectable(ch.Name, false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 var child = scn.GetSceneObjFromStageObj(ch);
                                                 ChangeHandler.ToggleObjectSelection(window, scn.History,
@@ -565,7 +565,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
-                                            if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 var child = scn.GetSceneObjFromStageObj(ch);
                                                 window.CameraToObject(child);
@@ -573,7 +573,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.TableSetColumnIndex(1);
                                             ImGui.PushID("SceneChildUnlink" + cidx);
-                                            if (ImGui.Button(IconUtils.UNLINK, new(-1, 25)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.UNLINK, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 remch = ch;
                                             }
@@ -584,6 +584,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         if (remch != null) scn.Stage.GetStageFile(StageFileType.Map).UnlinkChild(remch);
 
                                         ImGui.EndTable();
+                                        ImGui.Spacing();
                                     }
                                 }
                                 else
@@ -914,7 +915,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.TableSetColumnIndex(1);
 
                                             ImGui.PushID("ScenePointSelectable" + cidx);
-                                            if (ImGui.Selectable(cidx.ToString(), false))
+                                            if (ImGui.Selectable(cidx.ToString(), false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 var point = railSceneObj.RailPoints[cidx];
                                                 ChangeHandler.ToggleObjectSelection(window, scn!.History, point.PickingId,
@@ -926,7 +927,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("ScenePointView" + cidx);
-                                            if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 window.CameraToObject(railSceneObj.RailPoints[cidx]);
                                             }

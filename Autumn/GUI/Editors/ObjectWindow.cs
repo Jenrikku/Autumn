@@ -102,24 +102,8 @@ internal class ObjectWindow(MainWindowContext window)
                 ints.Add(obj.PickingId);
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
-                //ImGui.PushFont(window.FontPointers[1]);
-                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
 
-                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
-                Vector2[] clickRect =
-                [
-                    ImGui.GetCursorPos() + new Vector2(0, 84 - ImGui.GetScrollY()),
-                    ImGui.GetCursorPos() + new Vector2(ImGui.GetColumnWidth() + 10, 114 - ImGui.GetScrollY())
-                ];
-                //ImGui.GetWindowDrawList().AddRectFilled(clickRect[0],clickRect[1], 0xff0000ff);
-                //ImGui.GetWindowDrawList().AddCircle(ImGui.GetMousePos(), 20, 0xff00ff00);
-                if (ImGui.IsMouseHoveringRect(clickRect[0], clickRect[1]))
-                    ImGui.PushStyleColor(ImGuiCol.Text, 0x7fffffff & ImGui.GetColorU32(ImGuiCol.Text));
-                else
-                    ImGui.PushStyleColor(ImGuiCol.Text, 0xffffffff & ImGui.GetColorU32(ImGuiCol.Text));
-
-                if (ImGui.Button(obj.IsVisible ? IconUtils.EYE_OPEN : IconUtils.EYE_CLOSED, new(ImGui.GetColumnWidth(), default))) // Hide / Show
+                if (ImGuiWidgets.HoverButton(obj.IsVisible ? IconUtils.EYE_OPEN : IconUtils.EYE_CLOSED, new(ImGui.GetColumnWidth(), 30))) // Hide / Show
                 {
                     ChangeHandler.ChangePropertyValue(
                         window.CurrentScene.History,
@@ -165,7 +149,7 @@ internal class ObjectWindow(MainWindowContext window)
                     _ => string.Empty
                 };
 
-                if (ImGui.Selectable(name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(1000, 25)))
+                if (ImGui.Selectable(name, obj.Selected, ImGuiSelectableFlags.AllowDoubleClick, new(ImGui.GetColumnWidth(), 25)))
                 {
                     // NEXT SELECTION = listId;
                     nextIdx = (int)obj.PickingId;
