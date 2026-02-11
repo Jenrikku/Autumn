@@ -742,8 +742,7 @@ internal static class ChangeHandler
     /// <returns></returns>
     public static bool ChangeRemovePoint(MainWindowContext context, ChangeHistory history, RailPointSceneObj Point)
     {
-        //var oldSO = del.Clone(); // FIXME: rail points need handling! we assume they don't get here for now
-        var PointClone = Point; //.Clone();
+        var PointClone = Point;
         var parent = Point.ParentRail;
         uint pick = PointClone.PickingId;
         int pos = parent.RailPoints.IndexOf(Point);
@@ -793,7 +792,7 @@ internal static class ChangeHandler
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
 
-        var oldSO = del is IStageSceneObj delSt ? delSt.StageObj.Clone() : (del as RailSceneObj)!.RailObj.Clone(); // FIXME: rail points need handling! we assume they don't get here for now
+        var oldSO = del is IStageSceneObj delSt ? delSt.StageObj.Clone() : (del as RailSceneObj)!.RailObj.Clone();
         var delete = del;
 
         Change change =

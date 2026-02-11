@@ -18,7 +18,7 @@ internal class RailHandleSceneObj : ISceneObj
     public RailHandleSceneObj(Vector3 translation, RailPointSceneObj parent, ref uint pickingId)
     {
         Offset = translation;
-        AABB = new(5f); // TODO
+        AABB = new(5f);
         PickingId = pickingId++;
         ParentPoint = parent;
         UpdateTransform();

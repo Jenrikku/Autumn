@@ -57,7 +57,7 @@ internal static class ModelRenderer
         s_railGeometryParams = new(lineWidth: 0.08f, camera: new(1));
         s_railHandleGeoParams = new(0.04f, new(1));
         s_railMaterialParams = new(new(0.25f, 0.25f, 0.31f, 1), s_highlightColor);
-        s_railPointMaterialParams = new(new(0.84f, 0.84f, 0.90f, 1), s_highlightColor);
+        s_railPointMaterialParams = new(new(1,0,0.3f, 1), s_highlightColor);
         s_relationMaterialParams = new(new(0.2f, 0.5f, 0.91f, 1), s_highlightColor);
         s_relationParams = new( 0.1f, new(1) );
 

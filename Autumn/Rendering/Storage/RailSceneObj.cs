@@ -35,7 +35,7 @@ internal class RailSceneObj : ISceneObj
         RailModel = railModel;
         PickingId = pickingId++;
 
-        AABB = new(1); // TODO
+        AABB = new(1);
 
         foreach (RailPoint railPoint in rail.Points)
         {
