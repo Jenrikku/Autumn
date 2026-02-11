@@ -185,49 +185,48 @@ internal class PropertiesWindow(MainWindowContext window)
 
                     ImGui.Text("Name:");
                     ImGui.SameLine();
-                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Name") - ((stageObj is not RailObj) ? 28 : 0));
+                    var wdth = ImGuiWidgets.SetPropertyWidth("Name") - ((stageObj is not RailObj) ? 28 : 0);
+                    ImGui.SetNextItemWidth(wdth);
                     if (ImGui.InputTextWithHint("##namest", "Object Name", ref name, 128, ImGuiInputTextFlags.EnterReturnsTrue))
                     {
-                        ChangeHandler.ChangeFieldValue(scn.History!, stageObj, "Name", stageObj.Name, name);
+                        ChangeHandler.ChangeActorName(window, scn.History!, stageSceneObj, stageObj.Name, name);
                     }
-                    if (stageObj is not RailObj)
+
+                    string newClassCCNT = GetClassFromCCNT(stageObj.Name);
+
+                    ImGui.SameLine(default, style.ItemInnerSpacing.X);
+
+                    bool hascl = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(newClassCCNT);
+
+                    if (!hascl) ImGui.BeginDisabled();
+
+                    if (ImGui.Button(IconUtils.BOOK))
                     {
-                        string newClassCCNT = GetClassFromCCNT(stageObj.Name);
-
-                        ImGui.SameLine(default, style.ItemInnerSpacing.X);
-
-                        bool hascl = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(newClassCCNT);
-
-                        if (!hascl) ImGui.BeginDisabled();
-
-                        if (ImGui.Button(IconUtils.BOOK))
-                        {
-                            window.OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntries[newClassCCNT]);
-                        }
-                        if (!hascl) ImGui.EndDisabled();
-                        if (window.ContextHandler.Settings.UseClassNames)
-                        {
-                            string hint = string.Empty;
-
-                            if (string.IsNullOrEmpty(stageObj.ClassName))
-                                hint = newClassCCNT;
-
-                            stageObj.ClassName ??= ""; // So that input text works well.
-
-                            InputText("ClassName", ref stageObj.ClassName, 128, ref stageObj, hint);
-                        }
-                        else
-                        {
-                            ImGui.SetItemTooltip(newClassCCNT);
-                            ImGui.BeginDisabled();
-                            var s = "";
-                            InputText("ClassName", ref s, 128, ref stageObj, newClassCCNT);
-                            ImGui.EndDisabled();
-                        }
-                        //ImGui.Text("File type: " + stageObj.FileType);
-                        //ImGui.Text("Object type: "+ stageObj.Type);
-
+                        window.OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntries[newClassCCNT]);
                     }
+                    if (!hascl) ImGui.EndDisabled();
+                    if (window.ContextHandler.Settings.UseClassNames)
+                    {
+                        string hint = string.Empty;
+
+                        if (string.IsNullOrEmpty(stageObj.ClassName))
+                            hint = newClassCCNT;
+
+                        stageObj.ClassName ??= ""; // So that input text works well.
+
+                        InputText("ClassName", ref stageObj.ClassName, 128, ref stageObj, hint);
+                    }
+                    else
+                    {
+                        ImGui.SetItemTooltip(newClassCCNT);
+                        ImGui.BeginDisabled();
+                        var s = "";
+                        InputText("ClassName", ref s, 128, ref stageObj, newClassCCNT);
+                        ImGui.EndDisabled();
+                    }
+                    //ImGui.Text("File type: " + stageObj.FileType);
+                    //ImGui.Text("Object type: "+ stageObj.Type);
+                    
                     InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
                     if (stageObj.Type != StageObjType.Start)
                     {
@@ -310,7 +309,6 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                     }
                     ImGui.PopItemWidth();
-                    //// ImGui.PopStyleVar();
                     ImGui.EndChild();
                 }
 
@@ -332,9 +330,6 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                        // ImGui.PopStyleVar();
-                        //ImGui.GetWindowWidth() - style.WindowPadding.X - 
-                        // prevW - PROP_WIDTH
                         ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                         foreach (var (name, property) in stageObj.Properties)
                         {
@@ -748,19 +743,6 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.EndChild();
                 }
 
-                if (oldName != stageObj.Name)
-                {
-                    if (sceneObj is ActorSceneObj actorSceneObj)
-                    {
-                        actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
-                    }
-
-                    if (sceneObj is BasicSceneObj basicSceneObj && stageObj.IsArea())
-                    {
-                        basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(stageObj.Name);
-                    }
-                }
-
                 ImGui.PopStyleColor();
             }
             ImGui.EndChild();
@@ -805,9 +787,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("rprop", default, ImGuiChildFlags.AutoResizeY);
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                        // ImGui.PopStyleVar();
-                        //ImGui.GetWindowWidth() - style.WindowPadding.X - 
-                        // prevW - PROP_WIDTH
+
                         ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                         string s = railObj.Name;
                         ImGuiWidgets.PrePropertyWidthName("Name");
@@ -850,12 +830,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 ImGui.PushID("sceneslecteparentObject" + b);
                                 if (ImGui.Selectable(railSceneOwners[b].StageObj.Name, false, ImGuiSelectableFlags.SpanAllColumns))
                                 {
-                                    ChangeHandler.ToggleObjectSelection(
-                                    window,
-                                    scn!.History,
-                                    railSceneOwners[b].PickingId,
-                                    true
-                                    );
+                                    ChangeHandler.ToggleObjectSelection(window, scn!.History, railSceneOwners[b].PickingId, true);
 
                                     window.CameraToObject(railSceneOwners[b]);
                                 }
@@ -891,7 +866,6 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("pointss", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
 
@@ -908,7 +882,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGui.TableHeadersRow();
                                         if (autoResize) ImGui.SetScrollY(0);
                                         int cidx = 0;
-                                        foreach (RailPoint ch in railObj.Points) // This keeps child order!
+                                        foreach (RailPoint ch in railObj.Points)
                                         {
                                             ImGui.TableNextRow();
 
@@ -954,7 +928,6 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("trls", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
                             if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
@@ -971,7 +944,6 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("handless", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                             
                             bool autoResize = railObj.Points.Count < 8;
@@ -1028,7 +1000,6 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                             ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                            // ImGui.PopStyleVar();
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                             foreach (var (name, property) in (sceneObj is RailSceneObj) ? railObj.Properties : (sceneObj as RailPointSceneObj)!.RailPoint.Properties)
                             {

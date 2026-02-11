@@ -3,6 +3,7 @@ using System.Reflection;
 using Autumn.Context;
 using Autumn.GUI.Windows;
 using Autumn.History;
+using Autumn.Rendering.Area;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 
@@ -102,6 +103,41 @@ internal static class ChangeHandler
 
         Change change = new(Undo: () => field.SetValue(obj, prior), Redo: () => field.SetValue(obj, final));
 
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeActorName(MainWindowContext window, ChangeHistory history, IStageSceneObj sceneObj, string prior, string final)
+    {
+        if (prior == final) return false;
+        Change change = new(
+            Undo: () => 
+            {
+                if (sceneObj is ActorSceneObj actorSceneObj)
+                {
+                    actorSceneObj.StageObj.Name = prior;
+                    actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                }
+                if (sceneObj is BasicSceneObj basicSceneObj && basicSceneObj.StageObj.IsArea())
+                {
+                    basicSceneObj.StageObj.Name = prior;
+                    basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(basicSceneObj.StageObj.Name);
+                }
+            }, 
+            Redo: () => 
+            {
+                if (sceneObj is ActorSceneObj actorSceneObj)
+                {
+                    actorSceneObj.StageObj.Name = final;
+                    actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                }
+                if (sceneObj is BasicSceneObj basicSceneObj && basicSceneObj.StageObj.IsArea())
+                {
+                    basicSceneObj.StageObj.Name = final;
+                    basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(basicSceneObj.StageObj.Name);
+                }
+            }
+            );
         change.Redo();
         history.Add(change);
         return true;

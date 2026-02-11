@@ -289,7 +289,7 @@ internal class Scene
         var fogAreas = EnumerateStageSceneObjs().Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
         if (!_stageFogList.ContainsKey(Stage.StageFogs[selectedfog]))
             _stageFogList.Add(Stage.StageFogs[selectedfog], new());
-        foreach (IStageSceneObj sobj in fogAreas.Cast<IStageSceneObj>())
+        foreach (IStageSceneObj sobj in fogAreas)
         {
             if (!sobj.StageObj.Properties.ContainsKey("Arg0") || sobj.StageObj.Properties["Arg0"]?.GetType() != typeof(int) || (int)sobj.StageObj.Properties["Arg0"]! != Stage.StageFogs[selectedfog].AreaId)
                 continue;

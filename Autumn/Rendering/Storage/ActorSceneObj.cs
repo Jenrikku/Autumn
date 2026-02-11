@@ -59,6 +59,6 @@ internal class ActorSceneObj : IStageSceneObj
         else
             Actor = fsHandler.ReadActor(actorName, fallback, scheduler);
 
-	UpdateTransform();
+        UpdateTransform();
     }
 }
