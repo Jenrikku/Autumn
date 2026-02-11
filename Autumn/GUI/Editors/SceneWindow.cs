@@ -631,7 +631,7 @@ internal class SceneWindow(MainWindowContext window)
                     {
                         if (sobj == _pickObject || sobj is not IStageSceneObj stageSceneObj) continue;
                         if (pickStSceneObj.StageObj.Parent != null && pickStSceneObj.StageObj.Parent == stageSceneObj.StageObj) continue;
-                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(stageSceneObj.StageObj, pickStSceneObj.StageObj);
+                        ChangeHandler.ChangeSetChild(window, window.CurrentScene.History, stageSceneObj.StageObj, pickStSceneObj.StageObj);
                     }
                 }
                 if (_selCantParent)
@@ -646,7 +646,7 @@ internal class SceneWindow(MainWindowContext window)
                     var sobj = (IStageSceneObj)window.CurrentScene!.SelectedObjects.First(x => x is IStageSceneObj);
                     if (sobj.StageObj.Parent != pickStSceneObj1.StageObj)
                     {
-                        window.CurrentScene.Stage.GetStageFile(StageFileType.Map).SetChild(pickStSceneObj1.StageObj, sobj.StageObj);
+                        ChangeHandler.ChangeSetChild(window, window.CurrentScene.History, pickStSceneObj1.StageObj, sobj.StageObj);
                     }
                 }
                 if (_selCantChild)

@@ -506,7 +506,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 ImGui.SameLine(default, style.ItemSpacing.X / 2);
                                 if (ImGui.Button(IconUtils.UNLINK + "##" + pName))
                                 {
-                                    scn!.Stage.GetStageFile(StageFileType.Map).UnlinkChild(stageObj);
+                                    ChangeHandler.ChangeUnlinkChild(window, window.CurrentScene.History, stageObj);
                                 }
 
                                 ImGui.SetItemTooltip("Unlink Parent");
@@ -576,7 +576,8 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             cidx++;
                                         }
-                                        if (remch != null) scn.Stage.GetStageFile(StageFileType.Map).UnlinkChild(remch);
+                                        if (remch != null) 
+                                            ChangeHandler.ChangeUnlinkChild(window, window.CurrentScene.History, remch);
 
                                         ImGui.EndTable();
                                         ImGui.Spacing();

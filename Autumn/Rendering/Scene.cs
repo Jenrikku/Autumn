@@ -375,8 +375,6 @@ internal class Scene
 
     public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
-        // There is no need to check for rails as we already use stageObj Debug.Assert(stageObj is not null); // We need to handle object readding for rails and othet objects. See ChangeHandler.ChangeRemove
-
         if (stageObj.Parent != null)
         {
             StageObj parent = stageObj.Parent;

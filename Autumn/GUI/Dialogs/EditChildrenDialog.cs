@@ -173,12 +173,12 @@ internal class EditChildrenDialog(MainWindowContext _window)
         ImGui.SetCursorPosY(tablestart);
         if (ImGui.BeginChild("MIDDLE", new(24, tableDimensions.Y - 24)))
         {
-            if (ImGuiWidgets.ArrowButton("r", ImGuiDir.Right, new(default, ImGui.GetWindowHeight()/2 - ImGui.GetStyle().ItemSpacing.Y)))
+            if (ImGuiWidgets.ArrowButton("r", ImGuiDir.Right, new(default, ImGui.GetWindowHeight() / 2 - ImGui.GetStyle().ItemSpacing.Y)))
             {
                 MoveToChildren();
             }
 
-            if (ImGuiWidgets.ArrowButton("l", ImGuiDir.Left,  new(default, ImGui.GetWindowHeight()/2 - ImGui.GetStyle().ItemSpacing.Y)))
+            if (ImGuiWidgets.ArrowButton("l", ImGuiDir.Left, new(default, ImGui.GetWindowHeight() / 2 - ImGui.GetStyle().ItemSpacing.Y)))
             {
                 MoveToGeneral();
             }
@@ -330,7 +330,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                 {
                     if (!_newChildren.Contains(oldChild))
                     {
-                        _window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(oldChild);
+                        ChangeHandler.ChangeUnlinkChild(_window, _window.CurrentScene!.History, oldChild); // TODO - Replace with list method instead of one per child
                     }
                 }
 
@@ -339,8 +339,8 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
             for (int i = 0; i < _newChildren.Count(); i++)
             {
-                _window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(_newChildren[i], _parent);
-	    }
+                ChangeHandler.ChangeSetChild(_window, _window.CurrentScene!.History, _newChildren[i], _parent); // TODO - Replace with list method instead of one per child
+            }
 
             Reset();
 

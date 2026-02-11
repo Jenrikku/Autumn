@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Reflection;
 using Autumn.Context;
+using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.History;
 using Autumn.Rendering.Area;
@@ -433,6 +434,56 @@ internal static class ChangeHandler
                 {
                     obj.RailPoint.Point0Trans = final;
                     obj.UpdateModelMoving();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeUnlinkChild(
+        MainWindowContext window,
+        ChangeHistory history,
+        StageObj child
+    )
+    {
+        StageObj parent = child.Parent!;
+        Change change =
+            new(
+                Undo: () =>
+                {   
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, parent);
+                },
+                Redo: () =>
+                {
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(child);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeSetChild(
+        MainWindowContext window,
+        ChangeHistory history,
+        StageObj child,
+        StageObj parent
+    )
+    {
+        var oldParent = child.Parent;
+        Change change =
+            new(
+                Undo: () =>
+                {   
+                    if (oldParent != null)
+                        window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, oldParent);
+                    else
+                        window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(child);
+                },
+                Redo: () =>
+                {
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, parent);
                 }
             );
 
