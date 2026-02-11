@@ -41,7 +41,7 @@ internal class AddObjectDialog(MainWindowContext window)
     float _railRectW = 3f;
     float _railRectL = 2f;
     int _railPointCount = 4;
-    bool _railAuto = false;
+    bool _railAuto = true;
 
 
     private const ImGuiTableFlags _newObjectClassTableFlags =
@@ -100,26 +100,21 @@ internal class AddObjectDialog(MainWindowContext window)
         var style = ImGui.GetStyle();
         if (ImGui.BeginTabBar("ObjectType"))
         {
-            if (_selectedTab != 2)
+            //ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f0000ff);
+            if (ImGui.BeginTabItem("Object"))
             {
-                //ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f0000ff);
-                if (ImGui.BeginTabItem("Object"))
-                {
-                    ObjectAreaTab(obj, pvw, pvh, style);
-                    ImGui.EndTabItem();
-                }
+                ObjectAreaTab(obj, pvw, pvh, style);
+                ImGui.EndTabItem();
+            }
 
-                if (ImGui.BeginTabItem("Area"))
-                {
-                    ObjectAreaTab(obj, pvw, pvh, style, true);
-                    ImGui.EndTabItem();
-                }
+            if (ImGui.BeginTabItem("Area"))
+            {
+                ObjectAreaTab(obj, pvw, pvh, style, true);
+                ImGui.EndTabItem();
             }
 
             if (ImGui.BeginTabItem("Rail"))
             {
-                //ObjectAreaTab(obj, pvw, pvh, style, ImGui.IsKeyDown(ImGuiKey.RightArrow));
-                //ImGui.Text("Currently unsupported");
                 RailTab(pvw, pvh, style);
                 ImGui.EndTabItem();
             }
@@ -575,33 +570,51 @@ internal class AddObjectDialog(MainWindowContext window)
 
     private void RailTab(float pvw, float pvh, ImGuiStylePtr style)
     {
+        if (_selectedTab != 2)
+        {
+            _name = "";
+            _selectedTab = 2;
+        }
         //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
         if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 130)))
         {
             Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2 - 10);
 
+            Vector2 lpos = ImGui.GetCursorScreenPos() + rg / 2;
             if (ImGui.Button(_railShapeDesc[0], rg))
             {
                 _railShape = 0;
                 _railType = 0;
+                _railClosed = false;
             }
+            ImGui.GetWindowDrawList().AddLine(lpos - new Vector2(rg.X / 3, -20), lpos + new Vector2(rg.X / 3, 20), ImGui.GetColorU32(ImGuiCol.Text), 3);
             ImGui.SameLine(0, style.ItemInnerSpacing.X);
+            lpos = ImGui.GetCursorScreenPos() + rg / 2;
             if (ImGui.Button(_railShapeDesc[1], rg))
             {
                 _railShape = 1;
                 _railType = 1;
+                _railClosed = true;
             }
+            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
+            lpos = ImGui.GetCursorScreenPos() + rg / 2;
             if (ImGui.Button(_railShapeDesc[2], rg))
             {
                 _railShape = 2;
                 _railType = 1;
+                _railClosed = true;
             }
+            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
             ImGui.SameLine(0, style.ItemInnerSpacing.X);
+            lpos = ImGui.GetCursorScreenPos() + rg / 4;
+            Vector2 lpos2 = ImGui.GetCursorScreenPos() + rg - rg / 4;
             if (ImGui.Button(_railShapeDesc[3], rg))
             {
                 _railShape = 3;
                 _railType = 0;
+                _railClosed = true;
             }
+            ImGui.GetWindowDrawList().AddRect(lpos, lpos2, ImGui.GetColorU32(ImGuiCol.Text), 0, ImDrawFlags.None, 3);
 
             ImGui.EndChild();
         }
@@ -666,7 +679,38 @@ internal class AddObjectDialog(MainWindowContext window)
             }
             ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Rail type", A, B));
             ImGui.Combo("##railtype", ref _railType, ["Linear", "Bezier"], 2);
-            ImGui.Text("TEST");
+            ImGui.Text("Preview:");
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f3f3f3f);
+            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Border | ImGuiChildFlags.AlwaysAutoResize))
+            {
+                Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2);
+                Vector2 lpos = ImGui.GetCursorScreenPos() + rg;
+                switch (_railShape)
+                {
+                    case 0:
+                        ImGui.GetWindowDrawList().AddLine(lpos - new Vector2(rg.X / 3 + 20 * _railCenterDistance, 0), lpos + new Vector2(rg.X / 3 + 20 * _railCenterDistance, 0), ImGui.GetColorU32(ImGuiCol.Text), 3);
+                        break;
+
+                    case 1:
+                    case 2:
+                        if (_railType == 1)
+                            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
+                        ImGui.GetWindowDrawList().AddNgon(lpos, rg.X / 3.5f,(_railType == 1 ? 0x4fffffff : 0xffffffff) & ImGui.GetColorU32(ImGuiCol.Text), _railShape == 1 ? 4 : _railPointCount, 3);
+                        //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
+                        break;
+
+                    case 3:
+                        lpos = ImGui.GetCursorScreenPos() + rg - new Vector2(_railRectW * 15, _railRectL * 15);
+                        Vector2 lpos2 = ImGui.GetCursorScreenPos() + rg + new Vector2(_railRectW * 15, _railRectL * 15);
+                        ImGui.GetWindowDrawList().AddRect(lpos, lpos2, ImGui.GetColorU32(ImGuiCol.Text), 0, ImDrawFlags.None, 3);
+                        //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
+                        break;
+                }
+                
+                ImGui.EndChild();
+            }
+            ImGui.PopStyleColor();
+
             ImGui.EndChild();
         }
         //ImGui.PopStyleColor();
@@ -774,8 +818,6 @@ internal class AddObjectDialog(MainWindowContext window)
 
             for (int i = 0; i < 8; i++)
                 newRail.Properties.Add($"Arg{i}", _args[i]);
-
-            newRail.Properties.Add("MultiFileName", "Autumn");
 
             Vector3 off = new(trans.X * 100, trans.Y * 100, trans.Z * 100);
             for (int i = 0; i < _points.Length; i++)

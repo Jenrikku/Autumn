@@ -243,7 +243,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
                         int orff = rff;
                         //ImGuiWidgets.PrePropertyWidthName("Camera Id", 30, 20);
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL).X - 12);
                         ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
                         if (rff != orff)
                         {
@@ -530,7 +530,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 150 * window.ScalingFactor))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? 150 : 150 * window.ScalingFactor))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
