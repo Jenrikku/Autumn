@@ -344,8 +344,8 @@ internal static class ImGuiWidgets
     /// <param name="text"></param>
     /// <param name="size"></param>
     /// <returns></returns>
-    public static bool HoverButton(string text, Vector2? size = null)
-    {                
+    public static bool HoverButton(string text, Vector2? size = null, bool disabled = false)
+    {
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
         ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(new Vector4(1, 1, 1, 0)));
@@ -353,7 +353,7 @@ internal static class ImGuiWidgets
         //ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetCursorScreenPos(), ImGui.GetCursorScreenPos()+ new Vector2( 30, 40), 0xff0000ff);
         //ImGui.GetWindowDrawList().AddCircle(ImGui.GetMousePos(), 20, 0xff00ff00);
         //ImGui.GetWindowDrawList().AddBezierCubic(Vector2.Zero, Vector2.UnitX * 20, Vector2.UnitY * 20, Vector2.One * 20, 0xff00ff00, 4);
-        if (hovering) 
+        if (hovering && !disabled) 
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
         bool r = ImGui.Button(text, size ?? new Vector2( 30, 40));
         if (hovering) 

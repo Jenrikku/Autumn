@@ -820,6 +820,25 @@ internal static class ChangeHandler
         history.Add(change);
         return true;
     }
+    public static bool ChangeMovePoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, RailPointSceneObj pt, int pos)
+    {
+        int oldpos = rl.RailPoints.IndexOf(pt);
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene!.MovePointRail(rl, pt.PickingId,oldpos);
+                },
+                Redo: () =>
+                {
+                    context.CurrentScene!.MovePointRail(rl, pt.PickingId, pos);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
     /// <summary>
     /// This tries to add the point back to its original position
     /// </summary>

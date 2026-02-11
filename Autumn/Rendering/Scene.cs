@@ -718,9 +718,24 @@ internal class Scene
             rl.RailPoints.Remove((RailPointSceneObj)p);
             rl.RailObj.Points.Remove(((RailPointSceneObj)p).RailPoint);
             rl.RemoveFromHash(p.PickingId);
-            if (((RailPointSceneObj)p).PointType == RailPointType.Bezier) { rl.RemoveFromHash(p.PickingId+1); rl.RemoveFromHash(p.PickingId+2);}  
+            rl.RemoveFromHash(p.PickingId+1);
+            rl.RemoveFromHash(p.PickingId+2);
         }
         rl.UpdateModel();
+    }
+    public void MovePointRail(RailSceneObj rl, uint id, int index)
+    {
+        if (rl == null) return;
+        var p = rl.GetObjectByPickingId(id);
+        if (p is RailPointSceneObj)
+        {
+            rl.RailPoints.Remove((RailPointSceneObj)p);
+            rl.RailObj.Points.Remove(((RailPointSceneObj)p).RailPoint);
+
+            rl.RailPoints.Insert(index, (RailPointSceneObj)p);
+            rl.RailObj.Points.Insert(index, ((RailPointSceneObj)p).RailPoint);
+            rl.UpdateModel();  
+        }
     }
 
     #endregion

@@ -869,50 +869,75 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
+                            RailPointSceneObj? delay = null;
+                            bool n = false;
 
-                                    bool autoResize = railObj.Points.Count < 8;
-                                    if (ImGui.BeginTable("pointTable", 2,
-                                        ImGuiTableFlags.RowBg
-                                        | ImGuiTableFlags.BordersOuter
-                                        | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
+                            bool autoResize = railObj.Points.Count < 8;
+                            if (ImGui.BeginTable("pointTable", 4,
+                                ImGuiTableFlags.RowBg
+                                | ImGuiTableFlags.BordersOuter
+                                | ImGuiTableFlags.BordersV
+                                | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
+                            {
+                                ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                                ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.WidthStretch, 0.15f);
+                                ImGui.TableSetupColumn("Index", ImGuiTableColumnFlags.WidthStretch, 0.8f);
+                                ImGui.TableSetupColumn("##UPs", ImGuiTableColumnFlags.WidthStretch, 0.1f);
+                                ImGui.TableSetupColumn("##DOWNs", ImGuiTableColumnFlags.WidthStretch, 0.1f);
+                                ImGui.TableHeadersRow();
+                                if (autoResize) ImGui.SetScrollY(0);
+                                int cidx = 0;
+                                foreach (RailPoint ch in railObj.Points)
+                                {
+                                    ImGui.TableNextRow();
+
+                                    ImGui.TableSetColumnIndex(1);
+
+                                    ImGui.PushID("ScenePointSelectable" + cidx);
+                                    if (ImGui.Selectable(cidx.ToString(), false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
                                     {
-                                        ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                                        ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
-                                        ImGui.TableSetupColumn("Index", ImGuiTableColumnFlags.WidthStretch, 0.4f);
-                                        ImGui.TableHeadersRow();
-                                        if (autoResize) ImGui.SetScrollY(0);
-                                        int cidx = 0;
-                                        foreach (RailPoint ch in railObj.Points)
-                                        {
-                                            ImGui.TableNextRow();
-
-                                            ImGui.TableSetColumnIndex(1);
-
-                                            ImGui.PushID("ScenePointSelectable" + cidx);
-                                            if (ImGui.Selectable(cidx.ToString(), false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
-                                            {
-                                                var point = railSceneObj.RailPoints[cidx];
-                                                ChangeHandler.ToggleObjectSelection(window, scn!.History, point.PickingId,
-                                                    !window.Keyboard?.IsCtrlPressed() ?? true);
-                                                window.CameraToObject(point);
-                                            }
-                                            ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
-                                            ImGui.TableSetColumnIndex(0);
-                                            ImGui.PushID("ScenePointView" + cidx);
-                                            if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
-                                            {
-                                                window.CameraToObject(railSceneObj.RailPoints[cidx]);
-                                            }
-                                            ImGui.PopStyleColor(3);
-
-                                            cidx++;
-                                        }
-                                        ImGui.EndTable();
+                                        var point = railSceneObj.RailPoints[cidx];
+                                        ChangeHandler.ToggleObjectSelection(window, scn!.History, point.PickingId,
+                                            !window.Keyboard?.IsCtrlPressed() ?? true);
+                                        window.CameraToObject(point);
                                     }
-                                    if (!autoResize) ImGui.Spacing();
+                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
+                                    ImGui.TableSetColumnIndex(0);
+                                    ImGui.PushID("ScenePointView" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                                    {
+                                        window.CameraToObject(railSceneObj.RailPoints[cidx]);
+                                    }
+                                    ImGui.PopStyleColor(3);
+
+                                    ImGui.TableSetColumnIndex(2);
+                                    if (cidx == 0) ImGui.BeginDisabled();
+                                    ImGui.PushID("ScenePointUP" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.ARROW_UP, new(ImGui.GetColumnWidth(), 30), cidx == 0))
+                                    {
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) > 0) 
+                                            delay = railSceneObj.RailPoints[cidx];
+                                        n = true;
+                                    }
+                                    if (cidx == 0) ImGui.EndDisabled();
+                                    ImGui.TableSetColumnIndex(3);
+                                    if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.BeginDisabled();
+                                    ImGui.PushID("ScenePointDOWN" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.ARROW_DOWN, new(ImGui.GetColumnWidth(), 30), cidx == railSceneObj.RailPoints.Count - 1))
+                                    {
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) < railSceneObj.RailPoints.Count - 1) 
+                                            delay = railSceneObj.RailPoints[cidx];
+                                    }
+                                    if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.EndDisabled();
+
+                                    cidx++;
+                                }
+                                ImGui.EndTable();
+                            }
+                            if (!autoResize) ImGui.Spacing();
+                            if (delay != null) ChangeHandler.ChangeMovePoint(window, window.CurrentScene.History, railSceneObj, delay, railSceneObj.RailPoints.IndexOf(delay) + (n ? -1 : 1));
 
                             if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
                             else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
