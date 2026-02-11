@@ -445,6 +445,7 @@ internal class SceneWindow(MainWindowContext window)
                 {
                     RailPointSceneObj rp = (RailPointSceneObj)window.CurrentScene.SelectedObjects.FirstOrDefault(x => x is RailPointSceneObj)!;
                     ChangeHandler.ChangeInsertPoint(window, window.CurrentScene.History, rp.ParentRail, rp.ParentRail.RailPoints.IndexOf(rp), 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z));
+                    ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, rp.ParentRail.RailPoints[rp.ParentRail.RailPoints.IndexOf(rp) + 1].PickingId, true);
                 }
                 AddRailPoint = 0;
             }

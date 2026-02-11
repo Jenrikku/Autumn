@@ -798,6 +798,7 @@ internal class AddObjectDialog(MainWindowContext window)
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newObj);
+            ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, window.CurrentScene.EnumerateStageSceneObjs().Last().PickingId, true);
 
             if (window.Keyboard?.IsShiftPressed() ?? false)
                 window.AddSceneMouseClickAction(AddQueuedObject);
@@ -836,6 +837,7 @@ internal class AddObjectDialog(MainWindowContext window)
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);
+            ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, window.CurrentScene.EnumerateRailSceneObjs().Last().PickingId, true);
 
             if (window.Keyboard?.IsShiftPressed() ?? false)
                 window.AddSceneMouseClickAction(AddQueuedRail);

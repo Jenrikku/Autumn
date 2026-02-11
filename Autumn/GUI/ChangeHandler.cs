@@ -688,8 +688,6 @@ internal static class ChangeHandler
     /// <returns></returns>
     public static bool ChangeAddPoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, Vector3 initialPos)
     {
-        //var oldSO = del.Clone(); // FIXME: rail points need handling! we assume they don't get here for now
-
         uint pick = 0;
 
         Change change =
@@ -697,7 +695,6 @@ internal static class ChangeHandler
                 Undo: () =>
                 {
                     context.CurrentScene?.RemovePointRail(rl, pick);
-                    // delete = context.CurrentScene.EnumerateSceneObjs().Last();
                 },
                 Redo: () =>
                 {
@@ -715,8 +712,6 @@ internal static class ChangeHandler
     }
     public static bool ChangeInsertPoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, int pos, Vector3 initialPos)
     {
-        //var oldSO = del.Clone(); // FIXME: rail points need handling! we assume they don't get here for now
-
         uint pick = 0;
 
         Change change =
@@ -724,7 +719,6 @@ internal static class ChangeHandler
                 Undo: () =>
                 {
                     context.CurrentScene?.RemovePointRail(rl, pick);
-                    // delete = context.CurrentScene.EnumerateSceneObjs().Last();
                 },
                 Redo: () =>
                 {
@@ -827,6 +821,7 @@ internal static class ChangeHandler
     public static bool ChangeCreate(MainWindowContext context, ChangeHistory history, StageObj newObj)
     {
         ISceneObj? delete = null;
+        bool isRail = newObj is RailObj;
 
         Change change =
             new(
@@ -840,7 +835,8 @@ internal static class ChangeHandler
                         return;
 
                     context.CurrentScene.AddObject(newObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
-                    delete = context.CurrentScene.EnumerateSceneObjs().Last();
+                    if (isRail) delete = context.CurrentScene.EnumerateRailSceneObjs().Last();
+                    else delete = context.CurrentScene.EnumerateStageSceneObjs().Last();
                 }
             );
 
