@@ -154,7 +154,7 @@ internal static class GizmoDrawer
     public static uint GetAxisColor(int axis) => s_axisColors[axis];
 
     /// <summary>
-    /// Set's the texture used for the OrientationCube gizmo
+    /// Sets the texture used for the OrientationCube gizmo
     /// </summary>
     /// <param name="user_texture_id">The new texture for the OrientationCube</param>
     public static void SetOrientationCubeTexture(IntPtr user_texture_id)

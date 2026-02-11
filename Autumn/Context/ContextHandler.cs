@@ -148,6 +148,14 @@ internal class ContextHandler
         return true;
     }
 
+    public void CloseProject()
+    {
+        SaveSettings();
+
+        _project = null;
+        ProjectChanged = true;
+    }
+
     /// <summary>
     /// Checks the disk for changes on the project stages.
     /// </summary>

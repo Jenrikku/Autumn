@@ -9,6 +9,7 @@ using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
+using Autumn.Utils;
 using Autumn.Wrappers;
 using ImGuiNET;
 using SceneGL.GLHelpers;
@@ -34,6 +35,8 @@ internal class MainWindowContext : WindowContext
     public bool IsSceneHovered => _sceneWindow.IsSceneHovered;
 
     private bool _isFirstFrame = true;
+
+    private static uint s_welcomeImage;
 
     #region Dialogs
     private readonly AddStageDialog _addStageDialog;
@@ -136,6 +139,34 @@ internal class MainWindowContext : WindowContext
             );
 
             GizmoDrawer.SetOrientationCubeTexture((nint)cubeTexName);
+
+            if (s_welcomeImage != 0)
+                return;
+
+            // Welcome screen image
+            var welcomeImage = Image.Load<Rgba32>(Path.Join("Resources", "Icons", "autumn256.png"));
+            var welcomeTexPixels = new Rgba32[welcomeImage.Width * welcomeImage.Height];
+
+            welcomeImage.CopyPixelDataTo(welcomeTexPixels);
+
+            uint welcomeTex = GL!.GenTexture();
+            GL!.BindTexture(TextureTarget.Texture2D, welcomeTex);
+
+            GL!.TexImage2D<Rgba32>(TextureTarget.Texture2D, 0, 
+                InternalFormat.Rgba8, 
+                (uint)welcomeImage.Width, (uint)welcomeImage.Height, 0, 
+                PixelFormat.Rgba, 
+                PixelType.UnsignedByte, 
+                welcomeTexPixels);
+
+            GL!.GenerateMipmap(TextureTarget.Texture2D);
+
+            GL!.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, [(uint)TextureMagFilter.Linear]);
+            GL!.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, [(uint)TextureMinFilter.Linear]);
+
+            GL!.BindTexture(TextureTarget.Texture2D, 0);
+
+            s_welcomeImage = welcomeTex;
         };
 
         Window.Render += (deltaSeconds) =>
@@ -209,7 +240,9 @@ internal class MainWindowContext : WindowContext
             #endregion
 
             if (!ContextHandler.IsProjectLoaded)
-                RenderNoProjectScreen();
+            {
+                if (!_welcomeDialog.IsOpened) RenderWelcomeScreen(barHeight);
+            }
             else
             {
                 _objectWindow.Render();
@@ -407,6 +440,7 @@ internal class MainWindowContext : WindowContext
         {
             ImGuiWidgets.CommandMenuItem(CommandID.NewProject, ContextHandler.ActionHandler, this);
             ImGuiWidgets.CommandMenuItem(CommandID.OpenProject, ContextHandler.ActionHandler, this);
+            ImGuiWidgets.CommandMenuItem(CommandID.CloseProject, ContextHandler.ActionHandler, this);
 
             // Menu that displays the recently opened projects' list.
             if (ImGui.BeginMenu("Recent"))
@@ -667,21 +701,122 @@ internal class MainWindowContext : WindowContext
     /// <summary>
     /// Renders the screen that appears when no project has been loaded.
     /// </summary>
-    private static void RenderNoProjectScreen()
+    private void RenderWelcomeScreen(float barHeight)
     {
-        ImGuiWindowFlags flags =
-            ImGuiWindowFlags.AlwaysAutoResize
-            | ImGuiWindowFlags.NoBackground
+        ImGuiWindowFlags windowFlags =
+            ImGuiWindowFlags.NoBackground
             | ImGuiWindowFlags.NoDecoration
-            | ImGuiWindowFlags.NoInputs
+            | ImGuiWindowFlags.NoMove
             | ImGuiWindowFlags.NoSavedSettings;
 
         ImGui.SetNextWindowPos(ImGui.GetWindowViewport().GetCenter(), ImGuiCond.Always, new(0.5f, 0.5f));
 
-        if (!ImGui.Begin("##", flags))
+        float footerSizeY = barHeight + ImGui.GetStyle().WindowPadding.Y + 20 * ScalingFactor;
+
+        Vector2 windowSize = ImGui.GetWindowViewport().Size - new Vector2(0, barHeight * 2f + footerSizeY + 10 * ScalingFactor);
+        windowSize.X = Math.Min(700 * ScalingFactor, windowSize.X);
+        windowSize.Y = Math.Min(512 * ScalingFactor, windowSize.Y);
+
+        ImGui.SetNextWindowSize(windowSize);
+
+        if (!ImGui.Begin("##Welcome", windowFlags))
             return;
 
-        ImGui.TextDisabled("Please open a project from the menu or drop a project directory here.");
+        Vector2 headerSize = windowSize with { Y = Math.Min(128 * ScalingFactor, windowSize.Y) };
+
+        if (ImGui.BeginChild("##Header", headerSize))
+        {
+            ImGui.Image((nint)s_welcomeImage, new(128 * ScalingFactor));
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20);
+
+            if (ImGui.BeginChild("##Title"))
+            {
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 25);
+                ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 2.5f);
+                ImGui.Text("\t\tA 3DL stage editor");
+                ImGui.EndChild();
+            }
+
+            ImGui.EndChild();
+        }
+
+        Vector2 recentSize = ImGui.GetContentRegionAvail();
+        recentSize.Y -= Math.Max(recentSize.Y / 8, 35);
+        if (recentSize.Y < 0) recentSize.Y = 0;
+
+        if (ImGui.BeginChild("##Recent", recentSize))
+        {
+            ImGui.Text("Recent projects");
+            ImGui.Separator();
+            ImGui.Spacing();
+
+            const ImGuiTableFlags tableFlags =
+                ImGuiTableFlags.ScrollY
+                | ImGuiTableFlags.RowBg
+                | ImGuiTableFlags.BordersOuter
+                | ImGuiTableFlags.BordersV
+                | ImGuiTableFlags.NoSavedSettings;
+
+            Vector2 tableSize = ImGui.GetContentRegionAvail() - new Vector2(ImGui.GetStyle().ChildBorderSize);
+
+            if (ImGui.BeginTable("##RecentsTable", 1, tableFlags, tableSize))
+            {
+                if (ContextHandler.SystemSettings.RecentlyOpenedPaths.Count <= 0)
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableSetColumnIndex(0);
+                    ImGui.TextDisabled("There are no recent entries.");
+                }
+                else
+                {
+                    foreach (string path in ContextHandler.SystemSettings.RecentlyOpenedPaths)
+                    {
+                        ImGui.TableNextRow();
+                        ImGui.TableSetColumnIndex(0);
+
+                        if (ImGui.Selectable(path))
+                        {
+                            ContextHandler.OpenProject(path);
+                            break;
+                        }
+                    }
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndChild();
+        }
+
+        if (ImGui.BeginChild("##Buttons", ImGui.GetContentRegionAvail()))
+        {
+            ImGui.Separator();
+            ImGui.Spacing();
+
+            Vector2 buttonSize = ImGui.GetContentRegionAvail() - ImGui.GetStyle().ItemSpacing;
+            buttonSize.X /= 2;
+
+            if (ImGui.Button(IconUtils.FOLDER + "    Open Project", buttonSize))
+                ContextHandler.ActionHandler.ExecuteAction(CommandID.OpenProject, this);
+
+            ImGui.SameLine();
+
+            if (ImGui.Button(IconUtils.PLUS + "    New Project", buttonSize))
+                ContextHandler.ActionHandler.ExecuteAction(CommandID.NewProject, this);
+
+            ImGui.EndChild();
+        }
+
+        ImGui.End();
+
+        float windowPosY = ImGui.GetWindowViewport().Size.Y - footerSizeY;
+        ImGui.SetNextWindowPos(new(ImGui.GetWindowViewport().GetCenter().X, windowPosY), ImGuiCond.Always, new(0.5f, 0.5f));
+
+        if (!ImGui.Begin("##WelcomeFooter", windowFlags | ImGuiWindowFlags.AlwaysAutoResize))
+            return;
+
+        ImGui.Checkbox("Always open last project when possible", ref ContextHandler.SystemSettings.OpenLastProject);
 
         ImGui.End();
     }
