@@ -576,7 +576,7 @@ internal class AddObjectDialog(MainWindowContext window)
             _selectedTab = 2;
         }
         //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
-        if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 130)))
+        if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 80)))
         {
             Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2 - 10);
 
@@ -623,11 +623,14 @@ internal class AddObjectDialog(MainWindowContext window)
         Vector2 v = ImGui.GetCursorPos();
         ImGui.SetWindowFontScale(1.3f);
         ImGui.Text(_railShapeDesc[_railShape]);
+        float ts = ImGui.CalcTextSize(_railShapeDesc[_railShape]).Y;
         ImGui.SetWindowFontScale(1.0f);
         ImGui.SetCursorPosX(v.X);
-        ImGui.SetCursorPosY(v.Y + 35);
-        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 180), ImGuiChildFlags.Border))
+        ImGui.SetCursorPosY(v.Y + ts + 5);
+        
+        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 35 - ImGui.GetCursorPosY()), ImGuiChildFlags.Border))
         {
+            float h = ImGui.GetContentRegionAvail().Y;
             int A = 10;
             int B = 20;
             ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Rail name", A, B));
@@ -679,6 +682,7 @@ internal class AddObjectDialog(MainWindowContext window)
             }
             ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Rail type", A, B));
             ImGui.Combo("##railtype", ref _railType, ["Linear", "Bezier"], 2);
+            ImGui.SetCursorPosY(h / 1.8f);
             ImGui.Text("Preview:");
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f3f3f3f);
             if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Border | ImGuiChildFlags.AlwaysAutoResize))
