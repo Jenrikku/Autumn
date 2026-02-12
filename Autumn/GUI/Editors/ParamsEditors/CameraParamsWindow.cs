@@ -789,6 +789,14 @@ internal class CameraParamsWindow(MainWindowContext window)
                 (currcam.CamProperties.Distance + dashdistance) * mul ?? 0);
             }
 
+            if (StageCamera.SpecialProperties["LimitBoxMax"].Contains(currcam.Class))
+            {
+                if (currcam.CamProperties.LimitBoxMax != null)
+                    camera.Eye = Vector3.Min(camera.Eye, currcam.CamProperties.LimitBoxMax.Value * 0.01f);
+                if (currcam.CamProperties.LimitBoxMin != null)
+                    camera.Eye = Vector3.Max(camera.Eye, currcam.CamProperties.LimitBoxMin.Value * 0.01f);
+            }
+
             // apply extra rotations from rotator
             camera.Rotation = Quaternion.Concatenate(camera.Rotation, Quaternion.CreateFromAxisAngle(Vector3.UnitY, addangle));
             camera.Animate(0.01, out Vector3 eyeAnimated, out Quaternion rotAnimated);
