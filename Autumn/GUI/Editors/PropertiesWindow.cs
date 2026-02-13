@@ -735,7 +735,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                     }
 
-                    if (ImGui.Button("Add Property", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
+                    if (ImGui.Button("Add Property", new(ImGui.GetContentRegionAvail().X - style.ItemSpacing.X, default)))
                     {
                         window.SetupExtraPropsDialogNew(stageObj);
                     }

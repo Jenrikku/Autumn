@@ -105,11 +105,11 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         ImGuiWidgets.TextHeader("General Vision Params:");
 
-        DragFloat("Near Clip", ref scn.Stage.CameraParams.VisionParam.NearClipDistance, 1, reset_val: 100f, padding: 80);
-        DragFloat("Far Clip", ref scn.Stage.CameraParams.VisionParam.FarClipDistance, 1, max: 999999, reset_val: 10000f);
-        DragFloat("3D Depth", ref scn.Stage.CameraParams.VisionParam.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f);
-        DragFloat("3D Distance", ref scn.Stage.CameraParams.VisionParam.StereovisionDistance, 1, reset_val: 350);
-        DragFloat("FOV", ref scn.Stage.CameraParams.VisionParam.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45);
+        DragFloat("Near Clip", ref scn.Stage.CameraParams.VisionParam.NearClipDistance, 1, reset_val: 100f, padding: 60);
+        DragFloat("Far Clip", ref scn.Stage.CameraParams.VisionParam.FarClipDistance, 1, max: 999999, reset_val: 10000f, padding: 60);
+        DragFloat("3D Depth", ref scn.Stage.CameraParams.VisionParam.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f, padding: 60);
+        DragFloat("3D Distance", ref scn.Stage.CameraParams.VisionParam.StereovisionDistance, 1, reset_val: 350, padding: 60);
+        DragFloat("FOV", ref scn.Stage.CameraParams.VisionParam.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45, padding: 60);
         ImGui.NewLine();
         ImGui.Separator();
 
@@ -170,7 +170,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
 
 
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetContentRegionAvail().X / 2, default)))
         {
             scn.Stage.CameraParams.AddCamera(new(scn.Stage.CameraParams.Cameras[selectedcam]));
@@ -180,7 +180,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam < 0)
             ImGui.EndDisabled();
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetContentRegionAvail().X, default)))
         {
             scn.Stage.CameraParams.AddCamera(new());
@@ -195,7 +195,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             var op = ImGui.GetCursorPosX();
             ImGui.Text("UserName:");
             ImGui.SameLine();
-            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - 14);
+            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - ImGui.GetStyle().WindowPadding.X - 7);
             //ImGui.InputText("##UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, 128);
             ImGui.SetCursorPosX(op);
             var cls = Enum.GetNames<StageCamera.CameraClass>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString());
@@ -427,7 +427,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         float rval = val ?? -1f;
         if (val is null)
             ImGui.BeginDisabled();
-        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str, padding: padding));
+        ImGuiWidgets.SetPropertyWidthGen(str, padding: padding);
         if (ImGui.DragFloat("##" + str, ref rval, step) && val != null)
         {
             if (rval <= min) rval = min;

@@ -226,8 +226,8 @@ internal class SettingsDialog
         }
         ImGui.SeparatorText("Reset");
 
-        float resetWidth = (ImGui.GetContentRegionAvail().X- 10) / 3;
-        if (ImGui.Button("Values", new(resetWidth, 0)))
+        float resetWidth = (ImGui.GetContentRegionAvail().X) / 3;
+        if (ImGui.Button("Values", new(resetWidth - ImGui.GetStyle().ItemInnerSpacing.X, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
@@ -253,7 +253,7 @@ internal class SettingsDialog
         ImGui.SetItemTooltip("This will set all values to their default.");
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
 
-        if (ImGui.Button("Shortcuts", new(resetWidth, 0)))
+        if (ImGui.Button("Shortcuts", new(resetWidth - ImGui.GetStyle().ItemInnerSpacing.X, 0)))
         {
             File.Copy(Path.Join("Resources", "DefaultActions.yml"), Path.Join(_window.ContextHandler.SettingsPath, "actions.yml"), true);
             _window.ContextHandler.LoadActions(null);
@@ -300,7 +300,7 @@ internal class SettingsDialog
         }
 
         ImGui.SameLine();
-        ImGui.SetCursorPosX(dimensions.X - 10 - 80);
+        ImGui.SetCursorPosX(dimensions.X - ImGui.GetStyle().WindowPadding.X - 80);
 
         if (ImGui.Button("Ok", new(80, 0)))
         {
