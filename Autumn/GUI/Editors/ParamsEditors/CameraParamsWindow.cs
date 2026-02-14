@@ -195,6 +195,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         {
             if (ImGui.BeginTabBar("##CamerasInfos"))
             {
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
                 if (ImGui.BeginTabItem("Camera"))
                 {
             ImGuiWidgets.PrePropertyWidthName("Id");
@@ -396,6 +398,8 @@ internal class CameraParamsWindow(MainWindowContext window)
             CameraPreviewWindow(scn);
                 ImGui.EndTabItem();
                 }
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                 if (ImGui.BeginTabItem("Users"))
                 {
                     if (selectedchange)
@@ -752,7 +756,13 @@ internal class CameraParamsWindow(MainWindowContext window)
                         {
                             case ISceneObj x when selobj is IStageSceneObj a:
                             pos = a.StageObj.Translation * mul;
-                            break; 
+                            break;
+                            case ISceneObj x when selobj is RailSceneObj a:
+                            pos = a.RailObj.Points[0].Point0Trans * mul;
+                            break;
+                            case ISceneObj x when selobj is RailPointSceneObj a:
+                            pos = a.RailPoint.Point0Trans * mul;
+                            break;
                         }
                     break;
                 case 2:
