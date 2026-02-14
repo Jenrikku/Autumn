@@ -398,6 +398,7 @@ internal class MainWindowContext : WindowContext
     {
         _camParams.IsOpen = true;
         CurrentScene!.SelectedCam = i;
+        _camParams.SetSelectedChange();
         ImGui.SetWindowFocus("cameras");
     }
     public void UpdateCameraList()

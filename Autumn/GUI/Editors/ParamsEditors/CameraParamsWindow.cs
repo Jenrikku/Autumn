@@ -64,6 +64,9 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 "DemoCamera_DemoEndRollB",
                                 "DemoCamera_DemoEndRollA"];
 
+    private bool selectedchange = false;
+    public void SetSelectedChange() => selectedchange = true;
+    private List<IStageSceneObj> users = new();
     private bool fakebool = false;
     private int fakeint = -1;
     private float fakefl = -1;
@@ -137,6 +140,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                 {
                     selectedcam = _i;
                     scn.SelectedCam = selectedcam;
+                    selectedchange = true;
                 }
                 ImGui.PopID();
 
@@ -189,6 +193,10 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam > -1)
         {
+            if (ImGui.BeginTabBar("##CamerasInfos"))
+            {
+                if (ImGui.BeginTabItem("Camera"))
+                {
             ImGuiWidgets.PrePropertyWidthName("Id");
             ImGui.InputInt("##Id", ref scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId, 1);
 
@@ -386,6 +394,47 @@ internal class CameraParamsWindow(MainWindowContext window)
             }
 
             CameraPreviewWindow(scn);
+                ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Users"))
+                {
+                    if (selectedchange)
+                    {
+                        users.Clear();
+                        foreach (IStageSceneObj s in window.CurrentScene.EnumerateStageSceneObjs().Where(x => x.StageObj.CameraId == scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId && CameraParams.GetObjectCategory(x.StageObj) == scn.Stage.CameraParams.Cameras[selectedcam].Category))
+                        {
+                            users.Add(s);
+                        }
+                        selectedchange = false;
+                    }
+
+                    if (ImGui.BeginTable("Usertable", 1, _stageTableFlags, new Vector2(ImGui.GetContentRegionAvail().X, -1)))
+                    {
+
+                        ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                        ImGui.TableSetupColumn("User", ImGuiTableColumnFlags.WidthStretch, 1f);
+                        ImGui.TableHeadersRow();
+                        for (int i = 0; i < users.Count; i++)
+                        {
+                            ImGui.TableNextRow();
+                            ImGui.TableSetColumnIndex(0);
+                            ImGui.PushID("camselect" + i);
+                            if (ImGui.Selectable(users[i].StageObj.Name))
+                            {
+                                ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, users[i].PickingId, true);
+                                window.CameraToObject(users[i]);
+                            }
+                            ImGui.PopID();
+                        }
+                        ImGui.EndTable();
+                    }
+
+
+                    ImGui.EndTabItem();
+                }
+            
+            ImGui.EndTabBar();
+            }
         }
         ImGui.End();
 
