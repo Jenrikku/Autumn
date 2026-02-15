@@ -32,12 +32,14 @@ internal class SettingsDialog
     private int _hoverInfo = 0;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
-    private int _oldStyle = 0;
-    private int _selectedStyle = 0;
+    private int _oldTheme = 0;
+    private int _selectedTheme = 0;
     private int _mouseSpeed = 20;
     private string _romfspath = "";
     private bool _romfsIsValidPath = true;
     Vector2 dimensions = new(450, 0);
+
+    private readonly List<string> _availableThemes = new();
 
     /// <summary>
     /// Whether to reset the dialog to its defaults values once the "Ok" button has been pressed.
@@ -55,13 +57,11 @@ internal class SettingsDialog
     {
         _isOpened = true;
         _useClassNames = _window.ContextHandler.Settings.UseClassNames;
-        _selectedStyle = _window.ContextHandler.SystemSettings.Theme;
         _wasd = _window.ContextHandler.SystemSettings.UseWASD;
         _dbEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
         _middleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
         _zoomToMouse = _window.ContextHandler.SystemSettings.ZoomToMouse;
-        _oldStyle = _window.ContextHandler.SystemSettings.Theme;
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
         _restoreNativeFileDialogs = _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs;
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
@@ -73,6 +73,8 @@ internal class SettingsDialog
         _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
         _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
         _hoverInfo = (int)_window.ContextHandler.SystemSettings.ShowHoverInfo;
+
+        ReloadThemes();
     }
 
     /// <summary>
@@ -87,9 +89,20 @@ internal class SettingsDialog
         _enableVSync = true;
         _restoreNativeFileDialogs = false;
         _compLevel = 1;
-        _oldStyle = 0;
-        _selectedStyle = 0;
+        _oldTheme = 0;
+        _selectedTheme = 0;
         _mouseSpeed = 20;
+    }
+
+    public void ReloadThemes()
+    {
+        _availableThemes.Clear();
+        _availableThemes.AddRange(Theming.EnumerateAllThemeNames(_window.ContextHandler.SettingsPath));
+
+        _selectedTheme = _availableThemes.IndexOf(_window.ContextHandler.SystemSettings.Theme);
+        if (_selectedTheme < 0) _selectedTheme = 0;
+
+        _oldTheme = _selectedTheme;
     }
 
     public void Render()
@@ -129,21 +142,52 @@ internal class SettingsDialog
             {
                 #region Styling
 
-                string[] comb = ["Default", "Dark", "Light"];
-                ImGui.Combo("Application style", ref _selectedStyle, comb, comb.Count());
+                if (_availableThemes.Count <= 0) ImGui.BeginDisabled();
 
-                switch (_selectedStyle)
+                if (ImGui.Combo("Theme", ref _selectedTheme, _availableThemes.ToArray(), _availableThemes.Count))
+                    Theming.SetThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+
+                if (_availableThemes.Count <= 0) ImGui.EndDisabled();
+
+                ImGui.SameLine();
+                if (ImGui.Button(IconUtils.FOLDER))
                 {
-                    default:
-                        ImGui.StyleColorsDark();
-                        break;
+                    SingleFileChooserContext fileChooser = new(_window.ContextHandler, _window.WindowManager);
+                    fileChooser.SuccessCallback += result =>
+                    {
+                        if (!Theming.IsValidTomlFile(result[0])) return;
 
-                    case 2:
-                        ImGui.StyleColorsLight();
-                        break;
+                        string themeDir = Path.Join(_window.ContextHandler.SettingsPath, Theming.UserThemeSuffix);
+                        string dest = Path.Join(themeDir, Path.GetFileNameWithoutExtension(result[0])) + ".toml";
+                        Directory.CreateDirectory(themeDir);
+                        File.Copy(result[0], dest, true);
+
+                        ReloadThemes();
+                    };
+
+                    _window.WindowManager.Add(fileChooser);
                 }
 
+                ImGui.SameLine();
+
+                bool isReadOnly = Theming.IsThemeReadOnly(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+
+                if (isReadOnly) ImGui.BeginDisabled();
+
+                if (ImGui.Button(IconUtils.TRASH))
+                {
+                    string? theme = Theming.GetThemeFullPathByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                    if (theme is not null)
+                        File.Delete(theme);
+
+                    ReloadThemes();
+                    Theming.SetThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                }
+
+                if (isReadOnly) ImGui.EndDisabled();
+
                 #endregion
+
                 ImGui.Checkbox("Remember layout", ref _rememberLayout);
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Will save the window positions and sizes when closing the program");
@@ -226,24 +270,16 @@ internal class SettingsDialog
         }
         ImGui.SeparatorText("Reset");
 
-        float resetWidth = (ImGui.GetContentRegionAvail().X) / 3;
+        float resetWidth = ImGui.GetContentRegionAvail().X / 3;
         if (ImGui.Button("Values", new(resetWidth - ImGui.GetStyle().ItemInnerSpacing.X, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
-            _window.ContextHandler.SystemSettings.UseWASD = false;
-            _window.ContextHandler.SystemSettings.UseMiddleMouse = false;
-            _window.ContextHandler.SystemSettings.ZoomToMouse = false;
-            _window.ContextHandler.SystemSettings.EnableVSync = true;
-            _window.ContextHandler.SystemSettings.Theme = 0;
-            _window.ContextHandler.SystemSettings.MouseSpeed = 20;
-            _window.ContextHandler.SystemSettings.EnableDBEditor = false;
-            _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = false;
-            _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
+            _window.ContextHandler.SystemSettings.Reset();
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
-            _window.ContextHandler.SystemSettings.ShowRelationLines = false;
-            _window.ContextHandler.SystemSettings.ShowHoverInfo = 0;
 
-            ImGui.StyleColorsDark();
+            if (_availableThemes.Count > 0)
+                Theming.SetThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
+
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
             _isOpened = false;
@@ -281,16 +317,8 @@ internal class SettingsDialog
 
         if (ImGui.Button("Cancel", new(80, 0)))
         {
-            switch (_oldStyle)
-            {
-                default:
-                    ImGui.StyleColorsDark();
-                    break;
-
-                case 2:
-                    ImGui.StyleColorsLight();
-                    break;
-            }
+            if (_availableThemes.Count > 0)
+                Theming.SetThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
@@ -309,7 +337,6 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.UseWASD = _wasd;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = _middleMovesCamera;
             _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;
-            _window.ContextHandler.SystemSettings.Theme = _selectedStyle;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
             _window.ContextHandler.SystemSettings.ZoomToMouse = _zoomToMouse;
             _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
@@ -322,6 +349,9 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
             _window.ContextHandler.SystemSettings.ShowRelationLines = _viewrelationLine;
             _window.ContextHandler.SystemSettings.ShowHoverInfo = (Enums.HoverInfoMode)_hoverInfo;
+
+            if (_availableThemes.Count > 0)
+                _window.ContextHandler.SystemSettings.Theme = _availableThemes[_selectedTheme];
             
             ModelRenderer.VisibleAreas = _visibleDefaults[0];
             ModelRenderer.VisibleCameraAreas = _visibleDefaults[1];

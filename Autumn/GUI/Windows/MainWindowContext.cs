@@ -193,16 +193,7 @@ internal class MainWindowContext : WindowContext
                 ModelRenderer.VisibleTransparentWall = ContextHandler.SystemSettings.VisibleDefaults[4];
                 ModelRenderer.VisibleRelationLines = ContextHandler.SystemSettings.ShowRelationLines;
 
-                switch (ContextHandler.SystemSettings.Theme)
-                {
-                    case 2:
-                        ImGui.StyleColorsLight();
-                        break;
-
-                    default:
-                        ImGui.StyleColorsDark();
-                        break;
-                }
+                Theming.SetThemeByName(ContextHandler.SystemSettings.Theme, ContextHandler.SettingsPath); // Handles exceptions internally
 
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
@@ -348,36 +339,18 @@ internal class MainWindowContext : WindowContext
         _sceneWindow.IsTranslationFromDuplicate = true;
     public bool SceneTranslating
     {
-        get
-        {
-            return _sceneWindow.TranslationStarted || _sceneWindow.IsTranslationActive;
-        }
-        set
-        {
-            _sceneWindow.TranslationStarted = value;
-        } 
+        get => _sceneWindow.TranslationStarted || _sceneWindow.IsTranslationActive;
+        set => _sceneWindow.TranslationStarted = value;
     }
     public bool SceneRotating
     {
-        get
-        {
-            return _sceneWindow.RotationStarted || _sceneWindow.IsRotationActive;
-        }
-        set
-        {
-            _sceneWindow.RotationStarted = value;
-        } 
+        get => _sceneWindow.RotationStarted || _sceneWindow.IsRotationActive;
+        set => _sceneWindow.RotationStarted = value;
     }
     public bool SceneScaling
     {
-        get
-        {
-            return _sceneWindow.ScaleStarted || _sceneWindow.IsScaleActive;
-        }
-        set
-        {
-            _sceneWindow.ScaleStarted = value;
-        } 
+        get => _sceneWindow.ScaleStarted || _sceneWindow.IsScaleActive;
+        set => _sceneWindow.ScaleStarted = value;
     }
 
     // public void CancelTransform() => _sceneWindow.CancelTransform = true;
@@ -558,6 +531,7 @@ internal class MainWindowContext : WindowContext
             }
 
             ImGui.Separator();
+
             if (ImGui.MenuItem("Show all params"))
             {
                 _fogParams.IsOpen = true;
@@ -566,6 +540,7 @@ internal class MainWindowContext : WindowContext
                 _switchParams.IsOpen = true;
                 _camParams.IsOpen = true;
             }
+
             ImGui.Separator();
             ImGuiWidgets.CommandMenuItem(CommandID.AddALL, ContextHandler.ActionHandler, this);
             ImGuiWidgets.CommandMenuItem(CommandID.SaveALL, ContextHandler.ActionHandler, this);
