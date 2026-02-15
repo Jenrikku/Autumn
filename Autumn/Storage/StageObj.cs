@@ -35,7 +35,7 @@ internal class StageObj
 
     public StageObj(StageObj? parent = null) => Parent = parent;
 
-    public StageObj Clone(bool keepChildren = true)
+    public virtual StageObj Clone(bool keepChildren = true)
     {
         StageObj clone =
             new()

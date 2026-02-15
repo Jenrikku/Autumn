@@ -91,20 +91,20 @@ internal class AddStageDialog
     {
         Vector2 contentAvail = ImGui.GetContentRegionAvail();
         ImGuiStylePtr style = ImGui.GetStyle();
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 16);
+        ImGui.SetNextItemWidth(contentAvail.X);
         if (ImGui.Combo("##typeselect", ref _currentItem, _comboStrings, _comboStrings.Length))
             _stageListNeedsRebuild = true;
         _skipOk = false;
 
         #region Name and Scenario
 
-        float scenarioFieldWidth = 80 * _window.ScalingFactor;
+        float scenarioFieldWidth = contentAvail.X / 4;
 
-        ImGui.SetNextItemWidth(contentAvail.X - scenarioFieldWidth - style.ItemSpacing.X);
+        ImGui.SetNextItemWidth(3 *scenarioFieldWidth - style.ItemInnerSpacing.X);
         if (ImGui.InputTextWithHint("##name", "Name", ref _name, 100))
             _stageListNeedsRebuild = true;
 
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         ImGui.SetNextItemWidth(scenarioFieldWidth);
         ImGui.InputInt("##scenario", ref _scenarioNo, 1);
         _scenarioNo = _scenarioNo > 0 ? _scenarioNo < 0x100 ? _scenarioNo : 255 : 0;

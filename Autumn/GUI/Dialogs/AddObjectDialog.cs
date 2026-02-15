@@ -6,10 +6,15 @@ using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
 using ImGuiNET;
+using Silk.NET.OpenGL;
 
 namespace Autumn.GUI.Dialogs;
 
-internal class NewStageObjDialog(MainWindowContext window)
+/// <summary>
+/// Dialog window that displays all possible actors, areas and rails to add to a level
+/// </summary>
+/// <param name="window"></param>
+internal class AddObjectDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
 
@@ -27,6 +32,18 @@ internal class NewStageObjDialog(MainWindowContext window)
     int _priority = 0;
     int _shape = 0;
 
+    int _railShape = 0;
+    int _railType = 0;
+    readonly string[] _railShapeDesc = ["Line", "Circle (4)", "Circle (Any)", "Rectangle"];
+    bool _railClosed = false;
+    float _railCenterDistance = 1.0f;
+    float _railPointDistance = 0.5f;
+    float _railRectW = 3f;
+    float _railRectL = 2f;
+    int _railPointCount = 4;
+    bool _railAuto = true;
+
+
     private const ImGuiTableFlags _newObjectClassTableFlags =
         ImGuiTableFlags.ScrollY
         | ImGuiTableFlags.RowBg
@@ -36,10 +53,10 @@ internal class NewStageObjDialog(MainWindowContext window)
 
     private int _selectedTab = -1;
     private bool _useClassName = false;
-    public void Open()
+    public void Open(int tab = -1)
     {
         _isOpened = true;
-        _selectedTab = -1;
+        _selectedTab = tab;
         ResetArgs(null);
         _switch = [-1, -1, -1, -1, -1];
     }
@@ -98,8 +115,7 @@ internal class NewStageObjDialog(MainWindowContext window)
 
             if (ImGui.BeginTabItem("Rail"))
             {
-                //ObjectAreaTab(obj, pvw, pvh, style, ImGui.IsKeyDown(ImGuiKey.RightArrow));
-                ImGui.Text("Currently unsupported");
+                RailTab(pvw, pvh, style);
                 ImGui.EndTabItem();
             }
 
@@ -378,63 +394,64 @@ internal class NewStageObjDialog(MainWindowContext window)
             else
                 ImGui.TextWrapped(description);
             ImGui.EndChild();
-            if (ImGui.BeginTabBar("argswitch")){
+            if (ImGui.BeginTabBar("argswitch"))
+            {
                 Vector2 table = new Vector2(pvw / 2 - style.ItemSpacing.X * 2 - 4, pvh - (isArea ? 355 : 300) / window.ScalingFactor - 28);
                 if (ImGui.BeginTabItem("Args"))
                 {
-            if (
-                ImGui.BeginTable(
-                    "ArgTable",
-                    4,
-                    _newObjectClassTableFlags, table
-                )
-            )
-            {
-                ImGui.TableSetupScrollFreeze(0, 1);
-                ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
-                ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.35f);
-                ImGui.TableSetupColumn("Name");
-                ImGui.TableSetupColumn("Value");
-                ImGui.TableHeadersRow();
-                var m = isArea ? 8 : _objectType == 0 ? 10 : 8;
-                for (int i = 0; i < m; i++)
-                {
-                    string arg = $"Arg{i}";
-                    string name = "";
-                    string argDescription = "";
-                    string argType = "int";
-                    if (databaseHasEntry
-                        && dbEntry.Args is not null
-                        && dbEntry.Args.TryGetValue(arg, out var argData))
+                    if (
+                        ImGui.BeginTable(
+                            "ArgTable",
+                            4,
+                            _newObjectClassTableFlags, table
+                        )
+                    )
                     {
-                        if (argData.Name is not null)
-                            name = argData.Name;
-                        if (argData.Type is not null)
-                            argType = argData.Type;
-                        if (argData.Description is not null)
-                            argDescription = argData.Description;
+                        ImGui.TableSetupScrollFreeze(0, 1);
+                        ImGui.TableSetupColumn("Arg", ImGuiTableColumnFlags.None, 0.2f);
+                        ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.35f);
+                        ImGui.TableSetupColumn("Name");
+                        ImGui.TableSetupColumn("Value");
+                        ImGui.TableHeadersRow();
+                        var m = isArea ? 8 : _objectType == 0 ? 10 : 8;
+                        for (int i = 0; i < m; i++)
+                        {
+                            string arg = $"Arg{i}";
+                            string name = "";
+                            string argDescription = "";
+                            string argType = "int";
+                            if (databaseHasEntry
+                                && dbEntry.Args is not null
+                                && dbEntry.Args.TryGetValue(arg, out var argData))
+                            {
+                                if (argData.Name is not null)
+                                    name = argData.Name;
+                                if (argData.Type is not null)
+                                    argType = argData.Type;
+                                if (argData.Description is not null)
+                                    argDescription = argData.Description;
+                            }
+                            else continue;
+
+                            ImGui.TableNextRow();
+
+                            ImGui.TableSetColumnIndex(0);
+                            ImGui.Text($"{i}");
+                            ImGui.TableSetColumnIndex(1);
+                            ImGui.Text(argType);
+                            ImGui.TableSetColumnIndex(2);
+                            if (string.IsNullOrEmpty(name)) ImGui.TextDisabled("Unknown");
+                            else ImGui.Text(name);
+                            if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
+                            ImGui.TableSetColumnIndex(3);
+                            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                            ImGui.InputInt($"##{arg}input", ref _args[i]);
+                            if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
+                        }
+
+                        ImGui.EndTable();
                     }
-                    else continue;
-
-                    ImGui.TableNextRow();
-
-                    ImGui.TableSetColumnIndex(0);
-                    ImGui.Text($"{i}");
-                    ImGui.TableSetColumnIndex(1);
-                    ImGui.Text(argType);
-                    ImGui.TableSetColumnIndex(2);
-                    if (string.IsNullOrEmpty(name)) ImGui.TextDisabled("Unknown");
-                    else ImGui.Text(name);
-                    if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
-                    ImGui.TableSetColumnIndex(3);
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    ImGui.InputInt($"##{arg}input", ref _args[i]);
-                    if (!string.IsNullOrEmpty(argDescription)) ImGui.SetItemTooltip(argDescription);
-                }
-
-                ImGui.EndTable();
-            }   
-            ImGui.EndTabItem();
+                    ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Switches"))
                 {
@@ -518,7 +535,7 @@ internal class NewStageObjDialog(MainWindowContext window)
         if (ImGuiWidgets.ArrowButton("l", ImGuiDir.Left))
             _name = _class;
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(pvw / 2 - style.ItemSpacing.X * 4 - ImGui.CalcTextSize("<-").X/2 + 5);
+        ImGui.SetNextItemWidth(pvw / 2 - style.ItemSpacing.X * 4 - ImGui.CalcTextSize("<-").X / 2 + 5);
         if (ImGuiWidgets.InputTextRedWhenEmpty("##ClassName", ref _class, 128, "ClassName"))
             ResetArgs(dbEntry);
         ImGui.SetItemTooltip("ClassName");
@@ -551,6 +568,175 @@ internal class NewStageObjDialog(MainWindowContext window)
         }
     }
 
+    private void RailTab(float pvw, float pvh, ImGuiStylePtr style)
+    {
+        if (_selectedTab != 2)
+        {
+            _name = "";
+            _selectedTab = 2;
+        }
+        //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
+        if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 80)))
+        {
+            Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2 - 10);
+
+            Vector2 lpos = ImGui.GetCursorScreenPos() + rg / 2;
+            if (ImGui.Button(_railShapeDesc[0], rg))
+            {
+                _railShape = 0;
+                _railType = 0;
+                _railClosed = false;
+            }
+            ImGui.GetWindowDrawList().AddLine(lpos - new Vector2(rg.X / 3, -20), lpos + new Vector2(rg.X / 3, 20), ImGui.GetColorU32(ImGuiCol.Text), 3);
+            ImGui.SameLine(0, style.ItemInnerSpacing.X);
+            lpos = ImGui.GetCursorScreenPos() + rg / 2;
+            if (ImGui.Button(_railShapeDesc[1], rg))
+            {
+                _railShape = 1;
+                _railType = 1;
+                _railClosed = true;
+            }
+            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
+            lpos = ImGui.GetCursorScreenPos() + rg / 2;
+            if (ImGui.Button(_railShapeDesc[2], rg))
+            {
+                _railShape = 2;
+                _railType = 1;
+                _railClosed = true;
+            }
+            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
+            ImGui.SameLine(0, style.ItemInnerSpacing.X);
+            lpos = ImGui.GetCursorScreenPos() + rg / 4;
+            Vector2 lpos2 = ImGui.GetCursorScreenPos() + rg - rg / 4;
+            if (ImGui.Button(_railShapeDesc[3], rg))
+            {
+                _railShape = 3;
+                _railType = 0;
+                _railClosed = true;
+            }
+            ImGui.GetWindowDrawList().AddRect(lpos, lpos2, ImGui.GetColorU32(ImGuiCol.Text), 0, ImDrawFlags.None, 3);
+
+            ImGui.EndChild();
+        }
+        ImGui.SameLine();
+
+        Vector2 v = ImGui.GetCursorPos();
+        ImGui.SetWindowFontScale(1.3f);
+        ImGui.Text(_railShapeDesc[_railShape]);
+        float ts = ImGui.CalcTextSize(_railShapeDesc[_railShape]).Y;
+        ImGui.SetWindowFontScale(1.0f);
+        ImGui.SetCursorPosX(v.X);
+        ImGui.SetCursorPosY(v.Y + ts + 5);
+        
+        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 35 - ImGui.GetCursorPosY()), ImGuiChildFlags.Border))
+        {
+            float h = ImGui.GetContentRegionAvail().Y;
+            int A = 10;
+            int B = 20;
+            ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Rail name", A, B));
+            ImGui.InputText("##Name", ref _name, 128);
+            if (_railShape == 0)
+                _railClosed = false;
+            else
+            {
+                ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Loop", A, B));
+                ImGui.Checkbox("##Loop", ref _railClosed);
+            }
+
+            if (_railShape != 3)
+            {
+                ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Distance to center", A, B));
+                if (ImGui.InputFloat("##DistCent", ref _railCenterDistance, 0.1f))
+                    _railCenterDistance = float.Clamp(_railCenterDistance, 0.05f, 10);
+            }
+            if (_railShape == 1 || _railShape == 2)
+            {
+                if (_railShape != 0)
+                {
+                    ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Automatic handle distance", A, B));
+                    ImGui.Checkbox("##AutoDist", ref _railAuto);
+                }
+                else
+                    _railAuto = false;
+
+                if (_railAuto)
+                    ImGui.BeginDisabled();
+                ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Handle distance to point", A, B));
+                if (ImGui.InputFloat("##Handle", ref _railPointDistance, 0.1f))
+                    _railPointDistance = float.Clamp(_railPointDistance, 0.0f, 2.0f);
+                if (_railAuto)
+                    ImGui.EndDisabled();
+                if (_railShape == 2)
+                {
+                    ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Number of points", A, B));
+                    ImGui.InputInt("##Points", ref _railPointCount, 1);
+                    _railPointCount = int.Clamp(_railPointCount, 3, 25);
+                }
+            }
+            else if (_railShape == 3)
+            {
+                ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Width", A, B));
+                ImGui.InputFloat("##width", ref _railRectW, 0.1f);
+                ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Length", A, B));
+                ImGui.InputFloat("##length", ref _railRectL, 0.1f);
+            }
+            ImGui.SetNextItemWidth(ImGuiWidgets.PrePropertyWidthName("Rail type", A, B));
+            ImGui.Combo("##railtype", ref _railType, ["Linear", "Bezier"], 2);
+            ImGui.SetCursorPosY(h / 1.8f);
+            ImGui.Text("Preview:");
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f3f3f3f);
+            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Border | ImGuiChildFlags.AlwaysAutoResize))
+            {
+                Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2);
+                Vector2 lpos = ImGui.GetCursorScreenPos() + rg;
+                switch (_railShape)
+                {
+                    case 0:
+                        ImGui.GetWindowDrawList().AddLine(lpos - new Vector2(rg.X / 3 + 20 * _railCenterDistance, 0), lpos + new Vector2(rg.X / 3 + 20 * _railCenterDistance, 0), ImGui.GetColorU32(ImGuiCol.Text), 3);
+                        break;
+
+                    case 1:
+                    case 2:
+                        if (_railType == 1)
+                            ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
+                        ImGui.GetWindowDrawList().AddNgon(lpos, rg.X / 3.5f,(_railType == 1 ? 0x4fffffff : 0xffffffff) & ImGui.GetColorU32(ImGuiCol.Text), _railShape == 1 ? 4 : _railPointCount, 3);
+                        //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
+                        break;
+
+                    case 3:
+                        lpos = ImGui.GetCursorScreenPos() + rg - new Vector2(_railRectW * 15, _railRectL * 15);
+                        Vector2 lpos2 = ImGui.GetCursorScreenPos() + rg + new Vector2(_railRectW * 15, _railRectL * 15);
+                        ImGui.GetWindowDrawList().AddRect(lpos, lpos2, ImGui.GetColorU32(ImGuiCol.Text), 0, ImDrawFlags.None, 3);
+                        //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
+                        break;
+                }
+                
+                ImGui.EndChild();
+            }
+            ImGui.PopStyleColor();
+
+            ImGui.EndChild();
+        }
+        //ImGui.PopStyleColor();
+        if (String.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
+        if (ImGui.Button("Add", new(-1)))
+        {
+            RailPoint[] sent = _railShape switch
+            {
+                0 => RailDefaults.Line(_railCenterDistance),
+                1 => RailDefaults.Circle(_railCenterDistance, _railAuto ? 1.0f / _railPointCount * 2 : _railPointDistance),
+                2 => RailDefaults.Circle(_railPointCount, _railCenterDistance, _railAuto ? 1.0f / _railPointCount * 2 : _railPointDistance),
+                3 => RailDefaults.Rectangle(_railRectW, _railRectL),
+            };
+            window.AddSceneMouseClickAction(new AddRailAction(_name, _args, sent,
+            _railShape == 0 ? RailPointType.Linear : (_railType == 0 ? RailPointType.Linear : RailPointType.Bezier),
+             _railClosed).AddQueuedRail);
+            _isOpened = false;
+            ImGui.CloseCurrentPopup();
+        }
+        if (String.IsNullOrWhiteSpace(_name)) { ImGui.SetItemTooltip("Please set a name for the rail"); ImGui.EndDisabled(); }
+    }
+
     private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)
     {
         for (int i = 0; i < 10; i++)
@@ -559,8 +745,8 @@ internal class NewStageObjDialog(MainWindowContext window)
 
     public class AddObjectAction(string _name, string _class, int[] _args, int[] _sw, StageObjType _type, int _priority = -1, int _shape = 0)
     {
-        string[] _designList = ["LightArea", "FogAreaCameraPos", "FogArea"];
-        string[] _soundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
+        static string[] _designList = ["LightArea", "FogAreaCameraPos", "FogArea"];
+        static string[] _soundList = ["SoundEmitArea", "SoundEmitObj", "BgmChangeArea", "AudioEffectChangeArea", "AudioVolumeSettingArea"];
         public void AddQueuedObject(MainWindowContext window, Vector4 trans)
         {
             if (window.CurrentScene is null || window.GL is null)
@@ -610,11 +796,51 @@ internal class NewStageObjDialog(MainWindowContext window)
                 newObj.Properties.Add("ModelName", "-");
                 newObj.Properties.Add("SuffixName", "-");
             }
-            
+
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newObj);
+            ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, window.CurrentScene.EnumerateStageSceneObjs().Last().PickingId, true);
 
             if (window.Keyboard?.IsShiftPressed() ?? false)
                 window.AddSceneMouseClickAction(AddQueuedObject);
+        }
+    }
+
+    public class AddRailAction(string _name, int[] _args, RailPoint[] _points, RailPointType _type, bool _closed)
+    {
+        public void AddQueuedRail(MainWindowContext window, Vector4 trans)
+        {
+            if (window.CurrentScene is null || window.GL is null)
+                return;
+
+            RailObj newRail = new()
+            {
+                PointType = _type,
+                Name = _name,
+                Closed = _closed,
+                Type = StageObjType.Rail
+            };
+            newRail.FileType = StageFileType.Map;
+
+            for (int i = 0; i < 8; i++)
+                newRail.Properties.Add($"Arg{i}", _args[i]);
+
+            Vector3 off = new(trans.X * 100, trans.Y * 100, trans.Z * 100);
+            for (int i = 0; i < _points.Length; i++)
+            {
+                _points[i] *= 200;
+                _points[i].Point0Trans += off;
+                _points[i].Point1Trans += off;
+                _points[i].Point2Trans += off;
+                for (int b = 0; b < 8; b++)
+                    _points[i].Properties.Add($"Arg{b}", -1);
+                newRail.Points.Add(_points[i]);
+            }
+
+            ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);
+            ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, window.CurrentScene.EnumerateRailSceneObjs().Last().PickingId, true);
+
+            if (window.Keyboard?.IsShiftPressed() ?? false)
+                window.AddSceneMouseClickAction(AddQueuedRail);
         }
     }
 }

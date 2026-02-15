@@ -1,7 +1,10 @@
 using System.Numerics;
 using System.Reflection;
+using Autumn.Context;
+using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.History;
+using Autumn.Rendering.Area;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 
@@ -28,6 +31,17 @@ internal static class ChangeHandler
             if (context.CurrentScene.SelectedObjects.Count() > 1 && isSelected) // prevent it getting unselected when clicking on 1 of the multiselected
                 isSelected = false;
         }
+        // if (context.CurrentScene.TryGetPickableObj(id, out ISceneObj? sceneObj))
+        // {
+        //     if (sceneObj is RailSceneObj && context.CurrentScene.SelectedObjects.Where(x => x is RailPointSceneObj || x is RailHandleSceneObj).Count() > 0)
+        //     {
+        //         context.CurrentScene.SelectedObjects.
+        //     }
+        //     else if (sceneObj is RailPointSceneObj && context.CurrentScene.SelectedObjects.Where(x => x is RailHandleSceneObj).Count() > 0)
+        //     {
+
+        //     }
+        // }
 
         Change change =
             new(
@@ -90,6 +104,41 @@ internal static class ChangeHandler
 
         Change change = new(Undo: () => field.SetValue(obj, prior), Redo: () => field.SetValue(obj, final));
 
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeActorName(MainWindowContext window, ChangeHistory history, IStageSceneObj sceneObj, string prior, string final)
+    {
+        if (prior == final) return false;
+        Change change = new(
+            Undo: () => 
+            {
+                if (sceneObj is ActorSceneObj actorSceneObj)
+                {
+                    actorSceneObj.StageObj.Name = prior;
+                    actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                }
+                if (sceneObj is BasicSceneObj basicSceneObj && basicSceneObj.StageObj.IsArea())
+                {
+                    basicSceneObj.StageObj.Name = prior;
+                    basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(basicSceneObj.StageObj.Name);
+                }
+            }, 
+            Redo: () => 
+            {
+                if (sceneObj is ActorSceneObj actorSceneObj)
+                {
+                    actorSceneObj.StageObj.Name = final;
+                    actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
+                }
+                if (sceneObj is BasicSceneObj basicSceneObj && basicSceneObj.StageObj.IsArea())
+                {
+                    basicSceneObj.StageObj.Name = final;
+                    basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(basicSceneObj.StageObj.Name);
+                }
+            }
+            );
         change.Redo();
         history.Add(change);
         return true;
@@ -204,7 +253,7 @@ internal static class ChangeHandler
     }
 
     // See method above.
-    public static bool ChangeTransform(
+    public static bool ChangeStageObjTransform(
         ChangeHistory history,
         IStageSceneObj obj,
         string transform,
@@ -236,9 +285,216 @@ internal static class ChangeHandler
         return true;
     }
 
+    public static bool ChangeRailScale(
+        ChangeHistory history,
+        RailSceneObj obj,
+        Vector3 prior,
+        Vector3 final
+    )
+    {
+        final.X = final.X == 0 ? 0.01f : final.X;
+        final.Y = final.Y == 0 ? 0.01f : final.Y;
+        final.Z = final.Z == 0 ? 0.01f : final.Z;
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeScale = Vector3.One / final;
+                    obj.UpdateAfterScale();
+                },
+                Redo: () =>
+                {
+                    obj.FakeScale = final;
+                    obj.UpdateAfterScale();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangePointRot(
+        ChangeHistory history,
+        RailPointSceneObj obj,
+        Vector3 final
+    )
+    {
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeRotation = Vector3.Zero - final;
+                    obj.UpdateTransform();
+                },
+                Redo: () =>
+                {
+                    obj.FakeRotation = final;
+                    obj.UpdateTransform();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeRailRot(
+        ChangeHistory history,
+        RailSceneObj obj,
+        Vector3 final
+    )
+    {
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeRotation = Vector3.Zero - final;
+                    obj.UpdateAfterRotate();
+                },
+                Redo: () =>
+                {
+                    obj.FakeRotation = final;
+                    obj.UpdateAfterRotate();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+    public static bool ChangeHandleTransform(
+        ChangeHistory history,
+        RailHandleSceneObj obj,
+        Vector3 prior,
+        Vector3 final,
+        bool resetTransform = true
+    )
+    {
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.Offset = prior +(resetTransform ? - obj.ParentPoint.RailPoint.Point0Trans : Vector3.Zero);
+                    obj.UpdateTransform();
+                },
+                Redo: () =>
+                {
+                    obj.Offset = final;
+                    obj.UpdateTransform();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeRailPosition(
+        ChangeHistory history,
+        RailSceneObj obj,
+        Vector3 prior,
+        Vector3 final
+    )
+    {
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.FakeOffset = -final;
+                    obj.UpdateAfterMove();
+                },
+                Redo: () =>
+                {
+                    obj.FakeOffset = final;
+                    obj.UpdateAfterMove();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangePointPosition(
+        ChangeHistory history,
+        RailPointSceneObj obj,
+        Vector3 prior,
+        Vector3 final,
+        bool KeepHandles
+    )
+    {
+        Vector3 Difference = final-prior;
+        bool first = KeepHandles;
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    obj.RailPoint.Point0Trans = prior;
+                    obj.UpdateModelMoving();
+                },
+                Redo: () =>
+                {
+                    obj.RailPoint.Point0Trans = final;
+                    obj.UpdateModelMoving();
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeUnlinkChild(
+        MainWindowContext window,
+        ChangeHistory history,
+        StageObj child
+    )
+    {
+        StageObj parent = child.Parent!;
+        Change change =
+            new(
+                Undo: () =>
+                {   
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, parent);
+                },
+                Redo: () =>
+                {
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(child);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeSetChild(
+        MainWindowContext window,
+        ChangeHistory history,
+        StageObj child,
+        StageObj parent
+    )
+    {
+        var oldParent = child.Parent;
+        Change change =
+            new(
+                Undo: () =>
+                {   
+                    if (oldParent != null)
+                        window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, oldParent);
+                    else
+                        window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).UnlinkChild(child);
+                },
+                Redo: () =>
+                {
+                    window.CurrentScene?.Stage.GetStageFile(StageFileType.Map).SetChild(child, parent);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
     public static bool ChangeMultiTransform(
         ChangeHistory history,
-        Dictionary<IStageSceneObj, Vector3> sobjL,
+        Dictionary<ISceneObj, Vector3> sobjL,
         string transform
     )
     {
@@ -279,9 +535,370 @@ internal static class ChangeHandler
         return true;
     }
 
+    public static bool ChangeMultiScale(
+        ChangeHistory history,
+        Dictionary<ISceneObj, Vector3> originals,
+        Dictionary<ISceneObj, Vector3> news
+    )
+    {
+        List<Vector3> current = new();
+        foreach (ISceneObj obj in news.Keys)
+        {
+            if (obj is RailSceneObj)
+            {
+                Vector3 aa = news[obj];   
+                aa.X = news[obj].X == 0 ? 0.01f : news[obj].X;
+                aa.Y = news[obj].Y == 0 ? 0.01f : news[obj].Y;
+                aa.Z = news[obj].Z == 0 ? 0.01f : news[obj].Z;
+                news[obj] = aa;
+            }
+            current.Add(news[obj]);
+        }
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Scale = originals[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeScale = Vector3.One / news[obj];
+                                y.UpdateAfterScale();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                            break;
+
+                        }
+                    }
+                },
+                Redo: () =>
+                {
+                    int i = 0;
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Scale = news[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeScale = news[obj];
+                                y.UpdateAfterScale();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+    public static bool ChangeMultiRotate(
+        ChangeHistory history,
+        Dictionary<ISceneObj, Vector3> originals,
+        Dictionary<ISceneObj, Vector3> news
+    )
+       {
+        //List<Vector3> old = new();
+        List<Vector3> current = new();
+        foreach (ISceneObj obj in news.Keys)
+        {
+            current.Add(news[obj]);
+            //old.Add(originals[obj]);
+        }
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Rotation = originals[obj];
+                                obj.UpdateTransform();
+
+
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeRotation = Vector3.Zero - news[obj];
+                                y.UpdateAfterRotate();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                                y.FakeRotation = Vector3.Zero - news[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                                // y.Offset = originals[obj] + (/*resetTransform*/true ? - y.ParentPoint.RailPoint.Point0Trans : Vector3.Zero);
+                                // y.UpdateTransform();
+                            break;
+
+                        }
+                    }
+                },
+                Redo: () =>
+                {
+                    int i = 0;
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Rotation = news[obj];
+                                obj.UpdateTransform();
+
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeRotation = news[obj];
+                                y.UpdateAfterRotate();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                                y.FakeRotation = news[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                                // y.Offset = news[obj] + (-y.ParentPoint.RailPoint.Point0Trans);
+                                // y.UpdateTransform();
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+
+    public static bool ChangeMultiMove(
+        ChangeHistory history,
+        Dictionary<ISceneObj, Vector3> originals,
+        Dictionary<ISceneObj, Vector3> news
+    )
+    {
+        //List<Vector3> old = new();
+        List<Vector3> current = new();
+        foreach (ISceneObj obj in news.Keys)
+        {
+            current.Add(news[obj]);
+            //old.Add(originals[obj]);
+        }
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Translation = originals[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeOffset = -news[obj];
+                                y.UpdateAfterMove();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                                y.RailPoint.Point0Trans  = originals[obj];
+                                y.RailPoint.Point1Trans -= (news[obj] - originals[obj]);
+                                y.RailPoint.Point2Trans -= (news[obj] - originals[obj]);
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                                y.Offset = originals[obj] + (/*resetTransform*/true ? - y.ParentPoint.RailPoint.Point0Trans : Vector3.Zero);
+                                y.UpdateTransform();
+                            break;
+
+                        }
+                    }
+                },
+                Redo: () =>
+                {
+                    int i = 0;
+                    foreach (ISceneObj obj in news.Keys)
+                    {
+                        switch (obj)
+                        {
+                            case ISceneObj x when x is IStageSceneObj y:
+                                y.StageObj.Translation = news[obj];
+                                obj.UpdateTransform();
+                            break;
+                            case ISceneObj x when x is RailSceneObj y:
+                                y.FakeOffset = news[obj];
+                                y.UpdateAfterMove();
+                            break;
+                            case ISceneObj x when x is RailPointSceneObj y:
+                                y.RailPoint.Point0Trans  = news[obj];
+                                //y.RailPoint.Point1Trans += (news[obj] - originals[obj]);
+                                //y.RailPoint.Point2Trans += (news[obj] - originals[obj]);
+                                y.UpdateModelMoving();
+                            break;
+                            case ISceneObj x when x is RailHandleSceneObj y:
+                                y.Offset = news[obj] + (-y.ParentPoint.RailPoint.Point0Trans);
+                                y.UpdateTransform();
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            );
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
+    /// <summary>
+    /// This always adds the point at the end of the list
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="history"></param>
+    /// <param name="del"></param>
+    /// <returns></returns>
+    public static bool ChangeAddPoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, Vector3 initialPos)
+    {
+        uint pick = 0;
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene?.RemovePointRail(rl, pick);
+                },
+                Redo: () =>
+                {
+                    if (context.CurrentScene is null)
+                        return;
+
+                    context.CurrentScene.AddPointRail(rl, initialPos);
+                    pick = rl.RailPoints.Last().PickingId;
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeInsertPoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, int pos, Vector3 initialPos)
+    {
+        uint pick = 0;
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene?.RemovePointRail(rl, pick);
+                },
+                Redo: () =>
+                {
+                    if (context.CurrentScene is null)
+                        return;
+
+                    pick = context.CurrentScene.InsertPointRail(rl, pos+1, initialPos);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    public static bool ChangeMovePoint(MainWindowContext context, ChangeHistory history, RailSceneObj rl, RailPointSceneObj pt, int pos)
+    {
+        int oldpos = rl.RailPoints.IndexOf(pt);
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    context.CurrentScene!.MovePointRail(rl, pt.PickingId,oldpos);
+                },
+                Redo: () =>
+                {
+                    context.CurrentScene!.MovePointRail(rl, pt.PickingId, pos);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+    /// <summary>
+    /// This tries to add the point back to its original position
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="history"></param>
+    /// <param name="Point"></param>
+    /// <returns></returns>
+    public static bool ChangeRemovePoint(MainWindowContext context, ChangeHistory history, RailPointSceneObj Point)
+    {
+        var PointClone = Point;
+        var parent = Point.ParentRail;
+        uint pick = PointClone.PickingId;
+        int pos = parent.RailPoints.IndexOf(Point);
+        bool deleted = false;
+
+        Change change =
+            new(
+                Undo: () =>
+                {
+                    if (context.CurrentScene is null)
+                        return;
+
+                    if (deleted)
+                    {
+                        context.CurrentScene.ReAddObject(Point.ParentRail.RailObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
+                        parent = context.CurrentScene.EnumerateRailSceneObjs().Last();
+                        pick = parent.RailPoints[0].PickingId;
+                        deleted = false;
+                    }
+                    else
+                        pick = context.CurrentScene.InsertPointRail(context.CurrentScene.EnumerateRailSceneObjs().First(x => x.RailObj == parent.RailObj), pos, PointClone.RailPoint.Point0Trans, PointClone.RailPoint.Point1Trans, PointClone.RailPoint.Point2Trans);
+                    
+                    Console.WriteLine(pick);
+                    Console.WriteLine(history.RedoSteps);
+                    Console.WriteLine(history.UndoSteps);
+                },
+                Redo: () =>
+                {
+                    if (parent.RailPoints.Count < 2)
+                    {
+                        context.CurrentScene?.RemoveObject(parent);
+                        deleted = true;
+                    }
+                    else
+                        context.CurrentScene?.RemovePointRail(parent, pick);
+                    Console.WriteLine(pick);
+                    Console.WriteLine(history.RedoSteps);
+                    Console.WriteLine(history.UndoSteps);
+                }
+            );
+
+        change.Redo();
+        history.Add(change);
+        return true;
+    }
+
     public static bool ChangeRemove(MainWindowContext context, ChangeHistory history, ISceneObj del)
     {
-        var oldSO = del is IStageSceneObj delSt ? delSt.StageObj.Clone() : null; // FIXME: should not be null, rails need handling
+
+        var oldSO = del is IStageSceneObj delSt ? delSt.StageObj.Clone() : (del as RailSceneObj)!.RailObj.Clone();
         var delete = del;
 
         Change change =
@@ -292,7 +909,8 @@ internal static class ChangeHandler
                         return;
 
                     context.CurrentScene.ReAddObject(oldSO, context.ContextHandler.FSHandler, context.GLTaskScheduler);
-                    delete = context.CurrentScene.EnumerateSceneObjs().Last();
+                    if (delete is IStageSceneObj) delete = context.CurrentScene.EnumerateStageSceneObjs().Last();
+                    else if (delete is RailSceneObj) delete = context.CurrentScene.EnumerateRailSceneObjs().Last();
                 },
                 Redo: () =>
                 {
@@ -308,6 +926,7 @@ internal static class ChangeHandler
     public static bool ChangeCreate(MainWindowContext context, ChangeHistory history, StageObj newObj)
     {
         ISceneObj? delete = null;
+        bool isRail = newObj is RailObj;
 
         Change change =
             new(
@@ -321,7 +940,8 @@ internal static class ChangeHandler
                         return;
 
                     context.CurrentScene.AddObject(newObj, context.ContextHandler.FSHandler, context.GLTaskScheduler);
-                    delete = context.CurrentScene.EnumerateSceneObjs().Last();
+                    if (isRail) delete = context.CurrentScene.EnumerateRailSceneObjs().Last();
+                    else delete = context.CurrentScene.EnumerateStageSceneObjs().Last();
                 }
             );
 
@@ -339,31 +959,42 @@ internal static class ChangeHandler
     {
         var duplicate = dup;
         uint return_pick = 0;
+        Change change = new(
+                    Undo: () =>
+                    {
+                        context.CurrentScene?.SetObjectSelected(duplicate.PickingId, false);
+                        context.CurrentScene?.RemoveObject(duplicate);
+                    },
+                    Redo: () => 
+                    {
+                        if (context.CurrentScene is null)
+                            return;
 
-        Change change =
-            new(
-                Undo: () =>
-                {
-                    context.CurrentScene?.SetObjectSelected(duplicate.PickingId, false);
-                    context.CurrentScene?.RemoveObject(duplicate);
-                },
-                Redo: () =>
-                {
-                    if (context.CurrentScene is null)
-                        return;
+                        if (dup is IStageSceneObj)
+                        {
+                        StageObj clone = (duplicate as IStageSceneObj)!.StageObj.Clone();
 
-                    StageObj? clone = duplicate is IStageSceneObj stageDup ? stageDup.StageObj.Clone() : null;
-                    // FIXME: clone should never have to be null, handle rails properly
+                        return_pick = context.CurrentScene.DuplicateObj(
+                            clone,
+                            context.ContextHandler.FSHandler,
+                            context.GLTaskScheduler
+                        );
+                        duplicate = context.CurrentScene.EnumerateStageSceneObjs().Last();
+                        }
+                        else if (dup is RailSceneObj)
+                        {
+                        RailObj clone = (duplicate as RailSceneObj)!.RailObj.Clone();
 
-                    return_pick = context.CurrentScene.DuplicateObj(
-                        clone,
-                        context.ContextHandler.FSHandler,
-                        context.GLTaskScheduler
-                    );
-                    duplicate = context.CurrentScene.EnumerateSceneObjs().Last();
-                }
-            );
-
+                        return_pick = context.CurrentScene.DuplicateObj(
+                            clone,
+                            context.ContextHandler.FSHandler,
+                            context.GLTaskScheduler
+                        );
+                        duplicate = context.CurrentScene.EnumerateRailSceneObjs().Last();
+                        return_pick = duplicate.PickingId;
+                        }
+                    }
+        );
         change.Redo();
         history.Add(change);
         return return_pick;

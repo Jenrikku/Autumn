@@ -18,7 +18,7 @@ internal class ContextHandler
     public string SettingsPath { get; }
 
     public LayeredFSHandler FSHandler { get; }
-    public ActionHandler ActionHandler { get; }
+    public ActionHandler ActionHandler { get; private set; }
 
     public SortedSet<(string Name, byte Scenario)> ProjectStages { get; } = new();
 
@@ -41,7 +41,11 @@ internal class ContextHandler
 
         Yaz0Wrapper.Level = SystemSettings.Yaz0Compression;
         FSHandler = new(Settings.RomFSPath);
+        LoadActions(actionsFile);
+    }
 
+    public void LoadActions(string? actionsFile)
+    {
         var actions = YAMLWrapper.Deserialize<Dictionary<string, object>>(actionsFile);
         actions ??= YAMLWrapper.Deserialize<Dictionary<string, object>>(Path.Join("Resources", "DefaultActions.yml"));
 

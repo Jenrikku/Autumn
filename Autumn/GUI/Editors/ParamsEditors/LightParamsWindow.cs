@@ -182,8 +182,8 @@ internal class LightParamsWindow(MainWindowContext window)
                 }
 
             }
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(prevW - ImGui.CalcTextSize("Copy to:").X - style.ItemSpacing.X * 4);
+            ImGui.SameLine(0, style.ItemInnerSpacing.X);
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.Combo("##CopyTo", ref copyLight, lightTypes, lightTypes.Length);
             ImGui.Separator();
             int A = 22;
@@ -242,21 +242,21 @@ internal class LightParamsWindow(MainWindowContext window)
 
                 ImGui.Text("Constant 5");
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Constant 5", 22, 30) - 24 * window.ScalingFactor);
+                ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Constant 5", 22, 30) - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.CalcTextSize(IconUtils.MINUS).X- ImGui.GetStyle().WindowPadding.X);
                 ImGui.ColorEdit4("##Constant 5", ref ColorEdit, _colorEditFlags);
                 if (ColorEdit != _selectedlight.ConstantColors[5])
                 {
                     _selectedlight.ConstantColors[5] = ColorEdit;
                 }
-                ImGui.SameLine();
-                if (ImGui.Button($"X##5"))
+                ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+                if (ImGui.Button($"{IconUtils.MINUS}##5"))
                 {
                     _selectedlight.ConstantColors[5] = null;
                 }
             }
             else
             {
-                if (ImGui.Button("Add Constant 5"))
+                if (ImGui.Button("Add Constant 5", new Vector2(ImGui.GetContentRegionAvail().X, default)))
                 {
                     _selectedlight.ConstantColors[5] = new();
                 }

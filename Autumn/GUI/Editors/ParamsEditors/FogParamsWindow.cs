@@ -92,9 +92,10 @@ internal class FogParamsWindow(MainWindowContext window)
             // ImGui.Separator();
             // ImGui.SetWindowFontScale(1f);
             bool _disabled = _selectedfog == 0;
+            float w = ImGui.GetContentRegionAvail().X;
             if (_disabled)
                 ImGui.BeginDisabled();
-            if (ImGui.Button(IconUtils.MINUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.MINUS, new(w / 3 - style.ItemSpacing.X / 3, default)))
             {
                 scn.RemoveFogAt(_selectedfog);
                 _selectedfog -= 1;
@@ -102,14 +103,14 @@ internal class FogParamsWindow(MainWindowContext window)
             if (_disabled)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button(IconUtils.PASTE, new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.PASTE, new(w / 3 - style.ItemSpacing.X / 3, default)))
             {
                 scn.DuplicateFog(_selectedfog);
                 _selectedfog = scn.CountFogs() - 1;
             }
             ImGui.SetItemTooltip("Duplicate Fog");
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button(IconUtils.PLUS, new(ImGui.GetWindowWidth() / 3 - 8, default)))
+            if (ImGui.Button(IconUtils.PLUS, new(w / 3 - style.ItemSpacing.X / 3, default)))
             {
                 scn.AddFog(new() { AreaId = 0 });
                 _selectedfog = scn.CountFogs() - 1;

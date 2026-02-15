@@ -64,6 +64,9 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 "DemoCamera_DemoEndRollB",
                                 "DemoCamera_DemoEndRollA"];
 
+    private bool selectedchange = false;
+    public void SetSelectedChange() => selectedchange = true;
+    private List<IStageSceneObj> users = new();
     private bool fakebool = false;
     private int fakeint = -1;
     private float fakefl = -1;
@@ -105,11 +108,11 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         ImGuiWidgets.TextHeader("General Vision Params:");
 
-        DragFloat("Near Clip", ref scn.Stage.CameraParams.VisionParam.NearClipDistance, 1, reset_val: 100f, padding: 80);
-        DragFloat("Far Clip", ref scn.Stage.CameraParams.VisionParam.FarClipDistance, 1, max: 999999, reset_val: 10000f);
-        DragFloat("3D Depth", ref scn.Stage.CameraParams.VisionParam.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f);
-        DragFloat("3D Distance", ref scn.Stage.CameraParams.VisionParam.StereovisionDistance, 1, reset_val: 350);
-        DragFloat("FOV", ref scn.Stage.CameraParams.VisionParam.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45);
+        DragFloat("Near Clip", ref scn.Stage.CameraParams.VisionParam.NearClipDistance, 1, reset_val: 100f, padding: 60);
+        DragFloat("Far Clip", ref scn.Stage.CameraParams.VisionParam.FarClipDistance, 1, max: 999999, reset_val: 10000f, padding: 60);
+        DragFloat("3D Depth", ref scn.Stage.CameraParams.VisionParam.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f, padding: 60);
+        DragFloat("3D Distance", ref scn.Stage.CameraParams.VisionParam.StereovisionDistance, 1, reset_val: 350, padding: 60);
+        DragFloat("FOV", ref scn.Stage.CameraParams.VisionParam.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45, padding: 60);
         ImGui.NewLine();
         ImGui.Separator();
 
@@ -137,6 +140,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                 {
                     selectedcam = _i;
                     scn.SelectedCam = selectedcam;
+                    selectedchange = true;
                 }
                 ImGui.PopID();
 
@@ -170,7 +174,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
 
 
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetContentRegionAvail().X / 2, default)))
         {
             scn.Stage.CameraParams.AddCamera(new(scn.Stage.CameraParams.Cameras[selectedcam]));
@@ -180,7 +184,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam < 0)
             ImGui.EndDisabled();
-        ImGui.SameLine();
+        ImGui.SameLine(0, style.ItemInnerSpacing.X);
         if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetContentRegionAvail().X, default)))
         {
             scn.Stage.CameraParams.AddCamera(new());
@@ -189,13 +193,19 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         if (selectedcam > -1)
         {
+            if (ImGui.BeginTabBar("##CamerasInfos"))
+            {
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
+                if (ImGui.BeginTabItem("Camera"))
+                {
             ImGuiWidgets.PrePropertyWidthName("Id");
             ImGui.InputInt("##Id", ref scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId, 1);
 
             var op = ImGui.GetCursorPosX();
             ImGui.Text("UserName:");
             ImGui.SameLine();
-            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - 14);
+            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - ImGui.GetStyle().WindowPadding.X - 7);
             //ImGui.InputText("##UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, 128);
             ImGui.SetCursorPosX(op);
             var cls = Enum.GetNames<StageCamera.CameraClass>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString());
@@ -234,7 +244,57 @@ internal class CameraParamsWindow(MainWindowContext window)
                 foreach (var Camfield in renderAfter)
                 {
                     bool skip = false;
-                    CheckField(Camfield, scn, skip);
+                    if (Camfield.Name == "Rail") 
+                    {
+                        ImGui.Text("Rail:"); ImGui.SameLine();
+                        RailObj? rl = (RailObj?)Camfield.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
+                        var rails = window.CurrentScene!.EnumerateRailSceneObjs();
+                        string[] railStrings = new string[rails.Count() + 1];
+                        int bbbb = 1;
+                        railStrings[0] = "No Rail selected";
+                        foreach (RailSceneObj rail in rails)
+                        {
+                            railStrings[bbbb] = rail.RailObj.Name;
+                            bbbb += 1;
+                        }
+                        int rfrail = 0;
+                        if (rl is not null)
+                        {
+                            var rals = rails.FirstOrDefault(x => x.RailObj.Name == rl.Name); // In case the rail gets deleted
+                            if (rals != null)
+                                rfrail = rails.ToList().IndexOf(rals) + 1;
+                        }
+                        int rfr2 = rfrail;
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 15);
+                        ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
+                        if (rfr2 != rfrail)
+                        {
+                            if (rfr2 > 0)
+                            {
+                                scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = rails.ElementAt(rfr2 - 1).RailObj;
+                            }
+                            else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
+                        }
+                        ImGui.SameLine(0, style.ItemInnerSpacing.X);
+                        if (rfr2 == 0) ImGui.BeginDisabled();
+                        if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
+                        {
+                            if (rfr2 == 0)
+                            {
+                                window.OpenAddRailDialog();
+                            }
+                            else
+                            {
+                                var rail = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
+                                
+                                ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, rail!.PickingId,
+                                    !window.Keyboard?.IsCtrlPressed() ?? true);
+                                window.CameraToObject(rail!);
+                            }
+                        }
+                        if (rfr2 == 0) ImGui.EndDisabled();
+                    }
+                    else CheckField(Camfield, scn, skip);
                 }
             }
 
@@ -336,6 +396,49 @@ internal class CameraParamsWindow(MainWindowContext window)
             }
 
             CameraPreviewWindow(scn);
+                ImGui.EndTabItem();
+                }
+
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                if (ImGui.BeginTabItem("Users"))
+                {
+                    if (selectedchange)
+                    {
+                        users.Clear();
+                        foreach (IStageSceneObj s in window.CurrentScene.EnumerateStageSceneObjs().Where(x => x.StageObj.CameraId == scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId && CameraParams.GetObjectCategory(x.StageObj) == scn.Stage.CameraParams.Cameras[selectedcam].Category))
+                        {
+                            users.Add(s);
+                        }
+                        selectedchange = false;
+                    }
+
+                    if (ImGui.BeginTable("Usertable", 1, _stageTableFlags, new Vector2(ImGui.GetContentRegionAvail().X, -1)))
+                    {
+
+                        ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                        ImGui.TableSetupColumn("User", ImGuiTableColumnFlags.WidthStretch, 1f);
+                        ImGui.TableHeadersRow();
+                        for (int i = 0; i < users.Count; i++)
+                        {
+                            ImGui.TableNextRow();
+                            ImGui.TableSetColumnIndex(0);
+                            ImGui.PushID("camselect" + i);
+                            if (ImGui.Selectable(users[i].StageObj.Name))
+                            {
+                                ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, users[i].PickingId, true);
+                                window.CameraToObject(users[i]);
+                            }
+                            ImGui.PopID();
+                        }
+                        ImGui.EndTable();
+                    }
+
+
+                    ImGui.EndTabItem();
+                }
+            
+            ImGui.EndTabBar();
+            }
         }
         ImGui.End();
 
@@ -377,7 +480,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         float rval = val ?? -1f;
         if (val is null)
             ImGui.BeginDisabled();
-        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str, padding: padding));
+        ImGuiWidgets.SetPropertyWidthGen(str, padding: padding);
         if (ImGui.DragFloat("##" + str, ref rval, step) && val != null)
         {
             if (rval <= min) rval = min;
@@ -646,8 +749,21 @@ internal class CameraParamsWindow(MainWindowContext window)
             switch (previewReference)
             {
                 case 1:
-                    var selobj = (IStageSceneObj?)scn.SelectedObjects.FirstOrDefault(x => x is IStageSceneObj);
-                    if (selobj != null) pos = selobj.StageObj.Translation * mul;
+
+                    var selobj = scn.SelectedObjects.FirstOrDefault();
+                    if (selobj != null) 
+                        switch (selobj)
+                        {
+                            case ISceneObj x when selobj is IStageSceneObj a:
+                            pos = a.StageObj.Translation * mul;
+                            break;
+                            case ISceneObj x when selobj is RailSceneObj a:
+                            pos = a.RailObj.Points[0].Point0Trans * mul;
+                            break;
+                            case ISceneObj x when selobj is RailPointSceneObj a:
+                            pos = a.RailPoint.Point0Trans * mul;
+                            break;
+                        }
                     break;
                 case 2:
                     var mario = scn.Stage.GetStageFile(Enums.StageFileType.Map).GetObjInfos(Enums.StageObjType.Start).FirstOrDefault();
@@ -730,6 +846,14 @@ internal class CameraParamsWindow(MainWindowContext window)
                     pos.Z + (sideoff * mul * (float)Math.Sin(sideangle * Math.PI / 180))
                 ),
                 (currcam.CamProperties.Distance + dashdistance) * mul ?? 0);
+            }
+
+            if (StageCamera.SpecialProperties["LimitBoxMax"].Contains(currcam.Class))
+            {
+                if (currcam.CamProperties.LimitBoxMax != null)
+                    camera.Eye = Vector3.Min(camera.Eye, currcam.CamProperties.LimitBoxMax.Value * 0.01f);
+                if (currcam.CamProperties.LimitBoxMin != null)
+                    camera.Eye = Vector3.Max(camera.Eye, currcam.CamProperties.LimitBoxMin.Value * 0.01f);
             }
 
             // apply extra rotations from rotator

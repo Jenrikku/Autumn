@@ -23,10 +23,12 @@ internal static class AreaMaterial
             };
 
             out vec3 vPos;
+            out mat4x4 vTrans;
 
             void main() {
                 gl_Position = uViewProjection * uTransform * vec4(aPos.x, aPos.y + 10.0, aPos.z, 2.0);
                 vPos = aPos;
+                vTrans = uTransform;
             }
             """
         );
@@ -43,6 +45,7 @@ internal static class AreaMaterial
             }
 
             in vec3 vPos;
+            in mat4x4 vTrans;
 
             layout(std140) uniform ubMaterial {
                 vec4 uColor;
@@ -56,24 +59,36 @@ internal static class AreaMaterial
 
             void main() {                
                 vec3 absolute = abs(vPos);
+                vec3 scale = vec3(  length(vec3(vTrans[0][0], vTrans[1][0], vTrans[2][0])),
+                                    length(vec3(vTrans[0][1], vTrans[1][1], vTrans[2][1])), 
+                                    length(vec3(vTrans[0][2], vTrans[1][2], vTrans[2][2])));
+            float a = max3(
+                min(absolute.x, absolute.y),
+                min(absolute.x, absolute.z),
+                min(absolute.y, absolute.z));
 
-                float a = max3(
-                    min(absolute.x, absolute.y),
-                    min(absolute.x, absolute.z),
-                    min(absolute.y, absolute.z));
+            float wa = fwidth(a);
 
-                float wa = fwidth(a);
+            float outline = smoothstep(9 - wa , 10 + wa, a * 0.95);
 
-                float outline = smoothstep(10 - wa * 2, 10 - wa, a);
+            vec3 col = vec3(0.05 * vPos.x + 0.5, 0.05 * vPos.y + 0.5, 0.05 * vPos.z + 0.5);
+            oColor.r = abs(vPos.x * scale.x) < (0.9 / scale.x) ? (0) : (1);
+            oColor.g = abs(vPos.y * scale.y) < (0.9 / scale.y) ? (0) : (1);
+            oColor.b = abs(vPos.z * scale.z) < (0.9) ? (0) : (1);
 
-                if (outline < 1)
-                    discard;
+            oColor.rgb = vec3(0);
+            vec3 limit = (0.05 / scale);
+            col.r = col.r < (1.0 - limit.x) && col.r > (limit.x) ? 0 : 1;
+            col.g = col.g < (1.0 - limit.y) && col.g > (limit.y) ? 0 : 1;
+            col.b = col.b < (1.0 - limit.z) && col.b > (limit.z) ? 0 : 1;
+            float final = (col.r * col.b + col.g * col.b + col.g * col.r);
+            if (final < 0.5) discard;
 
-                oPickingId = uPickingId;
-
-                oColor = mix(vec4(0, 0, 0, 0), uColor, outline);
-
-                oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+            oColor.rgb = mix(uColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+            oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
+            oColor.rgb += vec3(clamp(outline * 0.5 - 0.12,0,1));
+            oColor.a = 1.0;
+            oPickingId = uPickingId;
             }
             """
         );

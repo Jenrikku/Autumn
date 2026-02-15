@@ -7,6 +7,7 @@ using Autumn.GUI.Editors;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
@@ -31,6 +32,7 @@ internal class MainWindowContext : WindowContext
 
     public bool IsTransformActive => _sceneWindow.IsTransformActive;
     public bool IsSceneFocused => _sceneWindow.IsWindowFocused || IsFocused;
+    public bool IsSceneHovered => _sceneWindow.IsSceneHovered;
 
     private bool _isFirstFrame = true;
 
@@ -38,8 +40,8 @@ internal class MainWindowContext : WindowContext
 
     #region Dialogs
     private readonly AddStageDialog _addStageDialog;
+    private readonly AddObjectDialog _addObjectDialog;
     private readonly ClosingDialog _closingDialog;
-    private readonly NewStageObjDialog _newStageObjDialog;
     private readonly SettingsDialog _settingsDialog;
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
@@ -50,6 +52,8 @@ internal class MainWindowContext : WindowContext
     public readonly EditExtraPropsDialog _editExtraPropsDialog;
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
+
+    public bool IsDialogOpen = false;
 
     #region Editor Windows 
     private readonly StageWindow _stageWindow;
@@ -77,7 +81,7 @@ internal class MainWindowContext : WindowContext
         // Initialize dialogs:
         _addStageDialog = new(this);
         _closingDialog = new(this);
-        _newStageObjDialog = new(this);
+        _addObjectDialog = new(this);
         _welcomeDialog = new(this);
         _editChildrenDialog = new(this);
         _editExtraPropsDialog = new(this);
@@ -117,6 +121,7 @@ internal class MainWindowContext : WindowContext
         {
             InfiniteGrid.Initialize(GL!);
             RailRenderer.Initialize(GL!);
+            RelationLine.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
@@ -185,6 +190,8 @@ internal class MainWindowContext : WindowContext
                 ModelRenderer.VisibleCameraAreas = ContextHandler.SystemSettings.VisibleDefaults[1];
                 ModelRenderer.VisibleRails = ContextHandler.SystemSettings.VisibleDefaults[2];
                 ModelRenderer.VisibleGrid = ContextHandler.SystemSettings.VisibleDefaults[3];
+                ModelRenderer.VisibleTransparentWall = ContextHandler.SystemSettings.VisibleDefaults[4];
+                ModelRenderer.VisibleRelationLines = ContextHandler.SystemSettings.ShowRelationLines;
 
                 switch (ContextHandler.SystemSettings.Theme)
                 {
@@ -250,7 +257,7 @@ internal class MainWindowContext : WindowContext
 #endif
             _addStageDialog.Render();
             _closingDialog.Render();
-            _newStageObjDialog.Render();
+            _addObjectDialog.Render();
             _editChildrenDialog.Render();
             _editExtraPropsDialog.Render();
             _editCCNT.Render();
@@ -328,7 +335,8 @@ internal class MainWindowContext : WindowContext
 
     public void OpenAddStageDialog() => _addStageDialog.Open();
 
-    public void OpenAddObjectDialog() => _newStageObjDialog.Open();
+    public void OpenAddObjectDialog() => _addObjectDialog.Open();
+    public void OpenAddRailDialog() => _addObjectDialog.Open(2);
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
     public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
@@ -338,6 +346,47 @@ internal class MainWindowContext : WindowContext
 
     public void SetSceneDuplicateTranslation() =>
         _sceneWindow.IsTranslationFromDuplicate = true;
+    public bool SceneTranslating
+    {
+        get
+        {
+            return _sceneWindow.TranslationStarted || _sceneWindow.IsTranslationActive;
+        }
+        set
+        {
+            _sceneWindow.TranslationStarted = value;
+        } 
+    }
+    public bool SceneRotating
+    {
+        get
+        {
+            return _sceneWindow.RotationStarted || _sceneWindow.IsRotationActive;
+        }
+        set
+        {
+            _sceneWindow.RotationStarted = value;
+        } 
+    }
+    public bool SceneScaling
+    {
+        get
+        {
+            return _sceneWindow.ScaleStarted || _sceneWindow.IsScaleActive;
+        }
+        set
+        {
+            _sceneWindow.ScaleStarted = value;
+        } 
+    }
+
+    // public void CancelTransform() => _sceneWindow.CancelTransform = true;
+    public void FinishTransform() => _sceneWindow.FinishTransform = true;
+    public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
+    public void CameraToObject() => _sceneWindow.CamToObj = true;
+    public void CameraToObject(ISceneObj obj) { _sceneWindow.CamToObj = true; _sceneWindow.CamSceneObj = obj; }
+    public void AddRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Add;
+    public void InsertRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Insert;
 
     public void SetSwitchSelected(int i)
     {
@@ -349,6 +398,7 @@ internal class MainWindowContext : WindowContext
     {
         _camParams.IsOpen = true;
         CurrentScene!.SelectedCam = i;
+        _camParams.SetSelectedChange();
         ImGui.SetWindowFocus("cameras");
     }
     public void UpdateCameraList()

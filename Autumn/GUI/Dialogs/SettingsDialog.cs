@@ -1,5 +1,6 @@
 using System.Numerics;
 using Autumn.GUI.Windows;
+using Autumn.Rendering;
 using Autumn.Utils;
 using Autumn.Wrappers;
 using ImGuiNET;
@@ -26,7 +27,9 @@ internal class SettingsDialog
     private bool _restoreNativeFileDialogs = false;
     private int _compLevel = 1;
     private bool _loadLast = true;
-    private bool[] _visibleDefaults = [false, true, true, true]; // Areas, CameraAreas, Rails, Grid
+    private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
+    private bool _viewrelationLine = true;
+    private int _hoverInfo = 0;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldStyle = 0;
@@ -68,6 +71,8 @@ internal class SettingsDialog
         _romfspath = _window.ContextHandler.Settings.RomFSPath ?? "";
         _romfsIsValidPath = Directory.Exists(_romfspath);
         _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
+        _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
+        _hoverInfo = (int)_window.ContextHandler.SystemSettings.ShowHoverInfo;
     }
 
     /// <summary>
@@ -158,6 +163,7 @@ internal class SettingsDialog
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
                 _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);
+                ImGui.Combo("Hover info", ref _hoverInfo, ["Disabled", "Tooltip", "Highlight (not implemented)", "Status (not implemented)"], 4);
                 ImGui.Checkbox("Preview stage lights without opening the ligths window", ref _prevlightonload); 
                 ImGui.EndTabItem();
             }
@@ -210,15 +216,18 @@ internal class SettingsDialog
                 ImGui.Checkbox("Show CameraAreas", ref _visibleDefaults[1]);
                 ImGui.Checkbox("Show Rails", ref _visibleDefaults[2]);
                 ImGui.Checkbox("Show Grid", ref _visibleDefaults[3]);
-                ImGui.TextDisabled("These settings require a restart!");
+                ImGui.Checkbox("Show Transparentwalls", ref _visibleDefaults[4]);
+                ImGui.Checkbox("Show Relationship Lines", ref _viewrelationLine);
+                ImGui.SameLine();
+                ImGuiWidgets.HelpTooltip("Shows a line between child objects and their parents");
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();
         }
         ImGui.SeparatorText("Reset");
 
-        float resetWidth = ImGui.GetWindowWidth() / 2 - ImGui.GetStyle().ItemSpacing.X * 1.65f;
-        if (ImGui.Button("Values", new(resetWidth, 0)))
+        float resetWidth = (ImGui.GetContentRegionAvail().X) / 3;
+        if (ImGui.Button("Values", new(resetWidth - ImGui.GetStyle().ItemInnerSpacing.X, 0)))
         {
             _window.ContextHandler.SetProjectSetting("UseClassNames", false);
             _window.ContextHandler.SystemSettings.UseWASD = false;
@@ -231,6 +240,8 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = false;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
+            _window.ContextHandler.SystemSettings.ShowRelationLines = false;
+            _window.ContextHandler.SystemSettings.ShowHoverInfo = 0;
 
             ImGui.StyleColorsDark();
             ImGui.CloseCurrentPopup();
@@ -240,7 +251,19 @@ internal class SettingsDialog
             return;
         }
         ImGui.SetItemTooltip("This will set all values to their default.");
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+
+        if (ImGui.Button("Shortcuts", new(resetWidth - ImGui.GetStyle().ItemInnerSpacing.X, 0)))
+        {
+            File.Copy(Path.Join("Resources", "DefaultActions.yml"), Path.Join(_window.ContextHandler.SettingsPath, "actions.yml"), true);
+            _window.ContextHandler.LoadActions(null);
+            ImGui.CloseCurrentPopup();
+            ImGui.EndPopup();
+            _isOpened = false;
+            Reset();
+            return;
+        }
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
 
         if (ImGui.Button("Layout", new(resetWidth, 0)))
         {
@@ -277,7 +300,7 @@ internal class SettingsDialog
         }
 
         ImGui.SameLine();
-        ImGui.SetCursorPosX(dimensions.X - 10 - 80);
+        ImGui.SetCursorPosX(dimensions.X - ImGui.GetStyle().WindowPadding.X - 80);
 
         if (ImGui.Button("Ok", new(80, 0)))
         {
@@ -297,6 +320,15 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.OpenLastProject = _loadLast;
             _window.ContextHandler.SystemSettings.RememberLayout = _rememberLayout;
             _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
+            _window.ContextHandler.SystemSettings.ShowRelationLines = _viewrelationLine;
+            _window.ContextHandler.SystemSettings.ShowHoverInfo = (Enums.HoverInfoMode)_hoverInfo;
+            
+            ModelRenderer.VisibleAreas = _visibleDefaults[0];
+            ModelRenderer.VisibleCameraAreas = _visibleDefaults[1];
+            ModelRenderer.VisibleRails = _visibleDefaults[2];
+            ModelRenderer.VisibleGrid = _visibleDefaults[3];
+            ModelRenderer.VisibleTransparentWall = _visibleDefaults[4];
+            ModelRenderer.VisibleRelationLines = _viewrelationLine;
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();

@@ -107,7 +107,6 @@ internal class StageCamera
     public string UserName = "CameraArea";
 
     public CameraProperties CamProperties = new();
-
     public VisionParams? VisionParam = null;
     public VOff? VelocityOffsetter; // Max offset or MaxOffsetAxisTwo, Offsets the camera as the player moves, MaxOffset only does it on the camera's X axis, while MaxOffsetAxisTwo does it on X and Z (Assuming Y up), horizontal space
     public Rot? Rotator; //AngleMax, IsEnable, Rotates the camera left or right a given angle (AngleMax)
@@ -266,7 +265,8 @@ internal class StageCamera
         public Vector3? LookAtPos;
         public bool? IsCalcStartPosUseLookAtPos; // Only used in Rail cameras ?
         public bool? IsLimitAngleFix; // Only used in Parallel cameras ?
-        public int? RailId;
+        // public int? RailId; // rail's l_id not used in-editor
+        public RailObj? Rail;
         // Follow class only?
         public float? HighAngle;
         public float? LowAngle;
@@ -380,6 +380,9 @@ internal class StageCamera
             else
                 switch (s)
                 {
+                    case "RailId":
+                    CamProperties.Rail = new() { RailNo = (int)dict[s].Value! };
+                    break;
                     case "Category":
                     case "Class":
                     case "UserGroupId":
@@ -389,6 +392,7 @@ internal class StageCamera
                     var bbb = typeof(CameraProperties).GetField(s);
                     bbb?.SetValue(CamProperties, dict[s].Value!);
                     break;
+                    
                 }
         }
 
@@ -406,7 +410,7 @@ internal class StageCamera
     {
         {"CameraPos", [CameraClass.FixAll, CameraClass.FixPos]},
         {"LookAtPos", [CameraClass.FixAll]},
-        {"RailId", [CameraClass.Rail]},
+        {"Rail", [CameraClass.Rail, CameraClass.RailTower]},
 
         {"LimitYMax", [CameraClass.Tower]},
         {"LimitYMin", [CameraClass.Tower]},
@@ -497,6 +501,7 @@ internal class StageCamera
             var vl = CamField.GetValue(CamProperties);
             if (vl == null) continue;
             if (CamField.FieldType == typeof(Vector3?)) TryAdd(rd, CamField.Name, new(Vec3ToDict((Vector3)vl)));
+            else if (CamField.FieldType == typeof(RailObj)) TryAdd(rd, "RailId", new((vl as RailObj)!.RailNo));
             else TryAdd(rd, CamField.Name, new(vl));
         }
 

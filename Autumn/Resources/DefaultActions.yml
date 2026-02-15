@@ -3,6 +3,16 @@ OpenSettings:
   Ctrl: false
   Key: S
   Shift: true
+CloseScene:
+  Alt: false
+  Ctrl: true
+  Key: W
+  Shift: false
+AddStage:
+  Alt: true
+  Ctrl: false
+  Key: A
+  Shift: false
 SaveStage:
   Alt: false
   Ctrl: true
@@ -38,13 +48,33 @@ HideObj:
   Ctrl: false
   Key: H
   Shift: false
-AddStage:
-  Alt: true
-  Ctrl: false
-  Key: A
-  Shift: false
-CloseScene:
+TranslateObj:
   Alt: false
-  Ctrl: true
-  Key: W
+  Ctrl: false
+  Key: G
+  Shift: false
+MoveToPoint:
+  Alt: false
+  Ctrl: false
+  Key: G
+  Shift: true
+RotateObj:
+  Alt: false
+  Ctrl: false
+  Key: R
+  Shift: false
+ScaleObj:
+  Alt: false
+  Ctrl: false
+  Key: S
+  Shift: false
+AddRailPoint:
+  Alt: false
+  Ctrl: false
+  Key: P
+  Shift: false
+CamToObj:
+  Alt: false
+  Ctrl: false
+  Key: Space
   Shift: false

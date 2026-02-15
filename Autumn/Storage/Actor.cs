@@ -20,7 +20,7 @@ internal class Actor
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
 
-    public AxisAlignedBoundingBox AABB { get; set; } = new();
+    public AxisAlignedBoundingBox AABB { get; set; } = new(2);
     public ActorLight InitLight = new();
 
     /// <summary>

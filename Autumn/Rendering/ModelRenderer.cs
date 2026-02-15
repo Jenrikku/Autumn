@@ -26,6 +26,9 @@ internal static class ModelRenderer
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
 
     private static RailGeometryParameters? s_railGeometryParams;
+    private static RailGeometryParameters? s_railHandleGeoParams;
+    private static RelationLineParams? s_relationParams;
+    private static CommonMaterialParameters? s_relationMaterialParams;
     private static CommonMaterialParameters? s_railMaterialParams;
     private static CommonMaterialParameters? s_railPointMaterialParams;
 
@@ -40,6 +43,8 @@ internal static class ModelRenderer
     public static bool VisibleCameraAreas = true;
     public static bool VisibleRails = true;
     public static bool VisibleGrid = true;
+    public static bool VisibleTransparentWall = true;
+    public static bool VisibleRelationLines = true;
 
     public static void Initialize(GL gl, LayeredFSHandler fsHandler)
     {
@@ -49,9 +54,12 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
 
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
-        s_railGeometryParams = new(lineWidth: 0.05f, camera: new(1));
-        s_railMaterialParams = new(new(0.75f, 0.5f, 0.5f, 1), s_highlightColor);
-        s_railPointMaterialParams = new(new(1, 1, 0, 1), s_highlightColor);
+        s_railGeometryParams = new(lineWidth: 0.08f, camera: new(1));
+        s_railHandleGeoParams = new(0.04f, new(1));
+        s_railMaterialParams = new(new(0.25f, 0.25f, 0.31f, 1), s_highlightColor);
+        s_railPointMaterialParams = new(new(1,0,0.3f, 1), s_highlightColor);
+        s_relationMaterialParams = new(new(0.2f, 0.5f, 0.91f, 1), s_highlightColor);
+        s_relationParams = new( 0.1f, new(1) );
 
         var narc = fsHandler.ReadShaders();
         if (narc is not null)
@@ -95,6 +103,8 @@ internal static class ModelRenderer
 
         s_commonSceneParams.ViewProjection = view * projection;
         s_railGeometryParams.Camera = cameraEye;
+        s_railHandleGeoParams!.Camera = cameraEye;
+        s_relationParams!.Camera = cameraEye;
     }
 
     public static void Draw(GL gl, ISceneObj sceneObj, Scene scn)
@@ -140,18 +150,27 @@ internal static class ModelRenderer
 
         if (sceneObj is RailSceneObj railSceneObj)
         {
-            if (!VisibleRails && !railSceneObj.Selected)
+            if(!railSceneObj.RailModel.Initialized)
                 return;
             s_railMaterialParams!.Selected = railSceneObj.Selected;
 
             gl.Disable(EnableCap.CullFace);
-            RailRenderer.Render(gl, railSceneObj, s_commonSceneParams, s_railGeometryParams!, s_railMaterialParams, s_railPointMaterialParams!);
+            RailRenderer.Render(gl, railSceneObj, railSceneObj.Selected,
+                s_commonSceneParams, s_railGeometryParams!, s_railHandleGeoParams!, s_railMaterialParams, s_railPointMaterialParams!);
             return;
         }
 
         if (sceneObj is ActorSceneObj actorSceneObj)
         {
             Actor actor = actorSceneObj.Actor;
+
+            if (actorSceneObj.StageObj.Parent != null && VisibleRelationLines)
+            {
+                s_relationMaterialParams!.Selected = sceneObj.Selected;
+
+                gl.CullFace(TriangleFace.Back);
+                RelationLine.Render(gl, s_commonSceneParams, s_relationParams!, s_relationMaterialParams, actorSceneObj.PickingId, actorSceneObj.StageObj.Translation, actorSceneObj.StageObj.Parent.Translation);
+            }
 
             if (actor.IsEmptyModel)
             {
@@ -161,6 +180,11 @@ internal static class ModelRenderer
                 gl.CullFace(TriangleFace.Back);
 
                 DefaultCubeRenderer.Render(gl, s_commonSceneParams, s_defaultCubeMaterialParams, sceneObj.PickingId);
+                return;
+            }
+
+            if (actor.Name == "TransparentWall" && !VisibleTransparentWall)
+            {
                 return;
             }
 

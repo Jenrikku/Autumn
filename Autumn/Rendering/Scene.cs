@@ -109,6 +109,14 @@ internal class Scene
 
         _selectedObjects.Clear();
     }
+    public void UnselectMultiple(List<ISceneObj> objs)
+    {
+        foreach (ISceneObj sceneObj in objs)
+        {    
+            sceneObj.Selected = false;
+            _selectedObjects.Remove(sceneObj);
+        }
+    }
 
     public void SetSelectedObjects(IEnumerable<ISceneObj> objs)
     {
@@ -144,7 +152,23 @@ internal class Scene
 
     public int CountSceneObjs()
     {
-        return _stageSceneObjs.Count + _railObjs.Count;
+        return _stageSceneObjs.Count + _railObjs.Count * 4; // Rail point Handles
+    }
+    public uint GetNextRailId()
+    {
+        var r = SelectedObjects.FirstOrDefault(x=> x is RailSceneObj);
+        if (r == null) return 0;
+        return _railObjs[(_railObjs.IndexOf(r as RailSceneObj) + 1) < _railObjs.Count ? _railObjs.IndexOf(r as RailSceneObj) + 1 : _railObjs.Count-1].PickingId;
+    }
+    public uint GetPreviousRailId()
+    {
+        var r = SelectedObjects.FirstOrDefault(x=> x is RailSceneObj);
+        if (r == null) return 0;
+        return _railObjs[(_railObjs.IndexOf(r as RailSceneObj) - 1) > -1 ? _railObjs.IndexOf(r as RailSceneObj) - 1 : 0].PickingId;
+    }
+    public RailSceneObj? GetRailSceneObj(RailObj rail)
+    {
+        return _railObjs.FirstOrDefault(x => x.RailObj == rail);
     }
 
     #endregion
@@ -265,7 +289,7 @@ internal class Scene
         var fogAreas = EnumerateStageSceneObjs().Where(x => x.StageObj.Name.Contains("FogArea") && x.StageObj.FileType == StageFileType.Design);
         if (!_stageFogList.ContainsKey(Stage.StageFogs[selectedfog]))
             _stageFogList.Add(Stage.StageFogs[selectedfog], new());
-        foreach (IStageSceneObj sobj in fogAreas.Cast<IStageSceneObj>())
+        foreach (IStageSceneObj sobj in fogAreas)
         {
             if (!sobj.StageObj.Properties.ContainsKey("Arg0") || sobj.StageObj.Properties["Arg0"]?.GetType() != typeof(int) || (int)sobj.StageObj.Properties["Arg0"]! != Stage.StageFogs[selectedfog].AreaId)
                 continue;
@@ -351,8 +375,6 @@ internal class Scene
 
     public void ReAddObject(StageObj stageObj, LayeredFSHandler fsHandler, GLTaskScheduler scheduler)
     {
-        Debug.Assert(stageObj is not null); // We need to handle object readding for rails and othet objects. See ChangeHandler.ChangeRemove
-
         if (stageObj.Parent != null)
         {
             StageObj parent = stageObj.Parent;
@@ -424,7 +446,10 @@ internal class Scene
             RemoveSwitchFromStageObj(stageSceneObj.StageObj, stageSceneObj);
             Stage.RemoveStageObj(stageSceneObj.StageObj);
         }
-
+        else if (sceneObj is RailSceneObj railSceneObj)
+        {
+            Stage.RemoveStageObj(railSceneObj.RailObj);
+        }
         DestroySceneObject(sceneObj);
     }
 
@@ -585,6 +610,135 @@ internal class Scene
         _stageSceneObjs.Add(actorSceneObj);
         _pickableObjs.Add(_lastPickingId++, actorSceneObj);
     }
+
+    #region Point Editing
+
+    public void AddPointRail(uint id, Vector3? position)
+    {
+        RailSceneObj? rl = EnumerateRailSceneObjs().FirstOrDefault(x => x.PickingId == id);
+        if (rl == null) return;
+        AddPointRail(rl, position);
+    }
+
+    public void AddPointRail(RailSceneObj rl, Vector3? position)
+    {
+        if (rl == null) return;
+        uint oldId = _lastPickingId;
+        RailPoint point;
+        if (rl.RailObj.PointType == Enums.RailPointType.Linear)
+        {
+            point = new() { Point0Trans = position ?? Vector3.Zero };
+            point.SetPointLinear();
+        }
+        else
+        {
+            point = new() { Point0Trans = position ?? Vector3.Zero, Point1Trans = position ?? Vector3.Zero, Point2Trans = position ?? Vector3.Zero};
+        }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
+        rl.RailPoints.Add(new RailPointSceneObj(point, rl, ref _lastPickingId));
+        rl.RailObj.Points.Add(point);
+        rl.UpdateModel();
+        for (uint i = oldId; i < _lastPickingId; i++)
+            rl.AddToHash(i);
+    }
+    public void AddPointRail(RailSceneObj rl, Vector3 pos0, Vector3 pos1, Vector3 pos2)
+    {
+        if (rl == null) return;
+        uint oldId = _lastPickingId;
+        RailPoint point;
+        if (rl.RailObj.PointType == Enums.RailPointType.Linear)
+        {
+            point = new() { Point0Trans = pos0 };
+            point.SetPointLinear();
+        }
+        else
+        {
+            point = new() { Point0Trans = pos0, Point1Trans = pos1, Point2Trans = pos2};
+        }
+        rl.RailPoints.Add(new RailPointSceneObj(point, rl, ref _lastPickingId));
+        rl.RailObj.Points.Add(point);
+        rl.UpdateModel();
+        for (uint i = oldId; i < _lastPickingId; i++)
+            rl.AddToHash(i);
+    }
+    public uint InsertPointRail(RailSceneObj rl, int pos,  Vector3 position)
+    {
+        if (rl == null) return 0;
+        uint oldId = _lastPickingId;
+        RailPoint point;
+        if (rl.RailObj.PointType == Enums.RailPointType.Linear)
+        {
+            point = new() { Point0Trans = position };
+            point.SetPointLinear();
+        }
+        else
+        {
+            point = new() { Point0Trans = position, Point1Trans = position, Point2Trans = position};
+        }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
+        rl.RailPoints.Insert(pos, new RailPointSceneObj(point, rl, ref _lastPickingId));
+        rl.RailObj.Points.Insert(pos, point);
+        rl.UpdateModel();
+        for (uint i = oldId; i < _lastPickingId; i++)
+            rl.AddToHash(i);
+        return _lastPickingId-3;
+    }
+    public uint InsertPointRail(RailSceneObj rl, int pos, Vector3 pos0, Vector3 pos1, Vector3 pos2)
+    {
+        if (rl == null) return 0;
+        uint oldId = _lastPickingId;
+        RailPoint point;
+        if (rl.RailObj.PointType == Enums.RailPointType.Linear)
+        {
+            point = new() { Point0Trans = pos0 };
+            point.SetPointLinear();
+        }
+        else
+        {
+            point = new() { Point0Trans = pos0, Point1Trans = pos1, Point2Trans = pos2};
+        }
+        for (int b = 0; b < 8; b++)
+            point.Properties.Add($"Arg{b}", -1);
+        rl.RailPoints.Insert(pos, new RailPointSceneObj(point, rl, ref _lastPickingId));
+        rl.RailObj.Points.Insert(pos, point);
+        rl.UpdateModel();
+        for (uint i = oldId; i < _lastPickingId; i++)
+            rl.AddToHash(i);
+        return _lastPickingId-3;
+    }
+    public void RemovePointRail(RailSceneObj rl, uint id)
+    {
+        if (rl == null) return;
+        var p = rl.GetObjectByPickingId(id);
+        // if (p is RailHandleSceneObj) // Return to parent position 
+        if (p is RailPointSceneObj)
+        {
+            rl.RailPoints.Remove((RailPointSceneObj)p);
+            rl.RailObj.Points.Remove(((RailPointSceneObj)p).RailPoint);
+            rl.RemoveFromHash(p.PickingId);
+            rl.RemoveFromHash(p.PickingId+1);
+            rl.RemoveFromHash(p.PickingId+2);
+        }
+        rl.UpdateModel();
+    }
+    public void MovePointRail(RailSceneObj rl, uint id, int index)
+    {
+        if (rl == null) return;
+        var p = rl.GetObjectByPickingId(id);
+        if (p is RailPointSceneObj)
+        {
+            rl.RailPoints.Remove((RailPointSceneObj)p);
+            rl.RailObj.Points.Remove(((RailPointSceneObj)p).RailPoint);
+
+            rl.RailPoints.Insert(index, (RailPointSceneObj)p);
+            rl.RailObj.Points.Insert(index, ((RailPointSceneObj)p).RailPoint);
+            rl.UpdateModel();  
+        }
+    }
+
+    #endregion
 
     private void DestroySceneObject(ISceneObj sceneObj)
     {

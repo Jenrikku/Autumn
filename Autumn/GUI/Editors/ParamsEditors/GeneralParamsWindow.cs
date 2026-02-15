@@ -58,7 +58,7 @@ internal class MiscParamsWindow(MainWindowContext window)
                 _musicIdx = Array.IndexOf(b.BgmArray, scn.Stage.DefaultBgm.BgmLabel);
                 int oldIdx = _musicIdx;
 
-                ImGui.SetNextItemWidth(prevW - 16 * window.ScalingFactor);
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                 ImGui.Combo("##musSelect", ref _musicIdx, b.BgmArray, b.BgmFiles.Count);
                 if (_musicIdx != oldIdx)
                 {

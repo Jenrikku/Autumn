@@ -33,6 +33,11 @@ internal class PropertiesWindow(MainWindowContext window)
     private string[] cameraStrings = [];
 
     public bool updateCameras = false;
+    public bool updateRailOwners = false;
+
+    public List<IStageSceneObj> railSceneOwners = new();
+    public List<StageCamera> railCameraOwners = new();
+
     public void Render()
     {
         ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
@@ -55,7 +60,9 @@ internal class PropertiesWindow(MainWindowContext window)
             return;
         }
 
-        IEnumerable<ISceneObj> selectedObjects = window.CurrentScene.SelectedObjects;
+        var scn = window.CurrentScene;
+
+        IEnumerable<ISceneObj> selectedObjects = scn.SelectedObjects;
         int selectedCount = selectedObjects.Count();
 
         if (selectedCount < 2 &&
@@ -73,92 +80,96 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.End();
             return;
         }
+        var style = ImGui.GetStyle();
+        float prevW = ImGui.GetWindowWidth();
 
         ISceneObj sceneObj = selectedObjects.First();
 
-        // Only one object selected and contains a StageObj:
-        if (selectedCount == 1 && sceneObj is IStageSceneObj stageSceneObj)
+        if (sceneObj != prevObj)
         {
-            StageObj stageObj = stageSceneObj.StageObj;
-
-            if (sceneObj != prevObj)
+            if (prevObj != null)
             {
-                if (prevObj != null)
+                if (prevObj is IStageSceneObj prevStageSceneObj)
                 {
-                    if (prevObj is IStageSceneObj prevStageSceneObj)
-                    {
-                        PosDrag.Finish(ref prevStageSceneObj.StageObj.Translation);
-                        RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation);
-                        ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale);
-                    }
-
-                    prevObj.UpdateTransform();
+                    PosDrag.Finish(ref prevStageSceneObj.StageObj.Translation);
+                    RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation);
+                    ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale);
+                }
+                else if (prevObj is RailPointSceneObj rps)
+                {
+                    PosDrag.Finish(ref rps.RailPoint.Point0Trans);
+                }
+                else if (prevObj is RailHandleSceneObj rph)
+                {
+                    PosDrag.Finish(ref rph.Offset);
                 }
 
-                updateCameras = true;
-                prevObj = sceneObj;
+                prevObj.UpdateTransform();
             }
+
+            updateCameras = true;
+            updateRailOwners = true;
+            prevObj = sceneObj;
+        }
+
+        //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0.2f, 0.2f, 0.8f, 0.5f));
+        // Only one object selected and contains a StageObj:
+        if (selectedCount == 1)
+        {
+            if (sceneObj is IStageSceneObj stageSceneObj)
+            {
+            StageObj stageObj = stageSceneObj.StageObj;
 
             if (updateCameras)
             {
-                var cams = window.CurrentScene.Stage.CameraParams.Cameras;
+                var cams = scn.Stage.CameraParams.Cameras;
                 if (stageObj.Name == "EntranceCameraObj") cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Entrance).ToList();
                 else if (stageObj.Type == StageObjType.CameraArea) cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Map).ToList();
                 else if (stageObj.Type == StageObjType.DemoScene) cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Event).ToList();
                 else cameraslinks = cams.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
 
-                cameraStrings = new string[cameraslinks.Count() + 1];
+                cameraStrings = new string[cameraslinks.Count + 1];
                 cameraStrings[0] = "No camera selected";
                 updateCameras = false;
             }
 
-
             string oldName = stageObj.Name;
             ImGui.GetIO().ConfigDragClickToInputText = true; //TODO - MOVE TO EDITOR STARTUP SETUP
-            ImGui.SetWindowFontScale(1.20f);
 
             // Fake dock
             string oldClassCCNT = GetClassFromCCNT(oldName);
             bool usedb = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(oldClassCCNT);
             bool usedbName = usedb && ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Name != null;
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
-            ImGui.Text(stageObj.Type.ToString() + ": " + (usedbName ? ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Name : oldName));
-            ImGui.SetWindowFontScale(1.0f);
             bool useDesc = usedb && ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Description != null;
-            if (useDesc) ImGui.SetItemTooltip(ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Description);
+            float ypos = SetTitle(stageObj.Type.ToString() + ": " + (usedbName ? ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Name : oldName), useDesc ? ClassDatabaseWrapper.DatabaseEntries[oldClassCCNT].Description : null);
 
-            var ypos = ImGui.GetCursorPosY();
             bool scrollToChild = false;
             if (stageObj.Parent is not null)
             {
-                ImGui.SameLine(ImGui.GetWindowWidth() - 24 - 12);
+                ImGui.SetCursorPosY(ypos);
+                ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X-20);
                 if (ImGui.Button("P", new(20, default)))
                 {
-                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoParent, window);
+                    window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                 }
             }
             else if (stageObj.Children != null && stageObj.Children.Count > 0)
             {
-                ImGui.SameLine(ImGui.GetWindowWidth() - 24 - 12);
+                ImGui.SetCursorPosY(ypos);
+                ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X-20);
                 if (ImGui.Button("C", new(20, default)))
                 {
                     if (stageObj.Children.Count == 1)
                     {
-                        window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoParent, window);
+                        window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                     }
                     else
                         scrollToChild = true;
                 }
             }
-            ImGui.SetCursorPosY(ypos);
-            ImGui.Separator();
-            //ImGui.Separator();
-            var style = ImGui.GetStyle();
-            float prevW = ImGui.GetWindowWidth();
             //ImGui.SetNextItemWidth(prevW + 200);
             if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
             {
-                //ImGui.PushStyleColor(ImGuiCol.ChildBg, ImGui.GetColorU32(ImGuiCol.Border));
                 if (ImGui.CollapsingHeader("General Info", ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
@@ -174,49 +185,48 @@ internal class PropertiesWindow(MainWindowContext window)
 
                     ImGui.Text("Name:");
                     ImGui.SameLine();
-                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Name") - ((stageObj is not RailObj) ? 28 : 0));
+                    var wdth = ImGuiWidgets.SetPropertyWidth("Name") - ((stageObj is not RailObj) ? 28 : 0);
+                    ImGui.SetNextItemWidth(wdth);
                     if (ImGui.InputTextWithHint("##namest", "Object Name", ref name, 128, ImGuiInputTextFlags.EnterReturnsTrue))
                     {
-                        ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, stageObj, "Name", stageObj.Name, name);
+                        ChangeHandler.ChangeActorName(window, scn.History!, stageSceneObj, stageObj.Name, name);
                     }
-                    if (stageObj is not RailObj)
+
+                    string newClassCCNT = GetClassFromCCNT(stageObj.Name);
+
+                    ImGui.SameLine(default, style.ItemInnerSpacing.X);
+
+                    bool hascl = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(newClassCCNT);
+
+                    if (!hascl) ImGui.BeginDisabled();
+
+                    if (ImGui.Button(IconUtils.BOOK))
                     {
-                        string newClassCCNT = GetClassFromCCNT(stageObj.Name);
-
-                        ImGui.SameLine(default, style.ItemInnerSpacing.X);
-
-                        bool hascl = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(newClassCCNT);
-
-                        if (!hascl) ImGui.BeginDisabled();
-
-                        if (ImGui.Button(IconUtils.BOOK))
-                        {
-                            window.OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntries[newClassCCNT]);
-                        }
-                        if (!hascl) ImGui.EndDisabled();
-                        if (window.ContextHandler.Settings.UseClassNames)
-                        {
-                            string hint = string.Empty;
-
-                            if (string.IsNullOrEmpty(stageObj.ClassName))
-                                hint = newClassCCNT;
-
-                            stageObj.ClassName ??= ""; // So that input text works well.
-
-                            InputText("ClassName", ref stageObj.ClassName, 128, ref stageObj, hint);
-                        }
-                        else
-                        {
-                            ImGui.SetItemTooltip(newClassCCNT);
-                            ImGui.BeginDisabled();
-                            var s = "";
-                            InputText("ClassName", ref s, 128, ref stageObj, newClassCCNT);
-                            ImGui.EndDisabled();
-                        }
-                        //ImGui.Text("File type: " + stageObj.FileType);
-                        //ImGui.Text("Object type: "+ stageObj.Type);
-
+                        window.OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntries[newClassCCNT]);
                     }
+                    if (!hascl) ImGui.EndDisabled();
+                    if (window.ContextHandler.Settings.UseClassNames)
+                    {
+                        string hint = string.Empty;
+
+                        if (string.IsNullOrEmpty(stageObj.ClassName))
+                            hint = newClassCCNT;
+
+                        stageObj.ClassName ??= ""; // So that input text works well.
+
+                        InputText("ClassName", ref stageObj.ClassName, 128, ref stageObj, hint);
+                    }
+                    else
+                    {
+                        ImGui.SetItemTooltip(newClassCCNT);
+                        ImGui.BeginDisabled();
+                        var s = "";
+                        InputText("ClassName", ref s, 128, ref stageObj, newClassCCNT);
+                        ImGui.EndDisabled();
+                    }
+                    //ImGui.Text("File type: " + stageObj.FileType);
+                    //ImGui.Text("Object type: "+ stageObj.Type);
+                    
                     InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
                     if (stageObj.Type != StageObjType.Start)
                     {
@@ -232,7 +242,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
                         int orff = rff;
                         //ImGuiWidgets.PrePropertyWidthName("Camera Id", 30, 20);
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL).X - 12);
                         ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
                         if (rff != orff)
                         {
@@ -249,16 +259,16 @@ internal class PropertiesWindow(MainWindowContext window)
                             {
                                 StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(stageObj);
                                 StageCamera newCam = new() { Category = camType };
-                                window.CurrentScene!.Stage.CameraParams.AddCamera(newCam);
-                                window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.Count - 1);
+                                scn!.Stage.CameraParams.AddCamera(newCam);
+                                window.SetCameraSelected(scn.Stage.CameraParams.Cameras.Count - 1);
                                 window.UpdateCameraList();
                                 stageObj.CameraId = newCam.UserGroupId;
                             }
                             else
                             {
                                 StageCamera.CameraCategory camType = CameraParams.GetObjectCategory(stageObj);
-                                var cm = window.CurrentScene!.Stage.CameraParams.GetCamera(stageObj.CameraId, camType);
-                                window.SetCameraSelected(window.CurrentScene.Stage.CameraParams.Cameras.IndexOf(cm!));
+                                var cm = scn!.Stage.CameraParams.GetCamera(stageObj.CameraId, camType);
+                                window.SetCameraSelected(scn.Stage.CameraParams.Cameras.IndexOf(cm!));
                             }
                         }
 
@@ -299,7 +309,6 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                     }
                     ImGui.PopItemWidth();
-                    //ImGui.PopStyleVar();
                     ImGui.EndChild();
                 }
 
@@ -321,9 +330,6 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                         ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
                         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                        ImGui.PopStyleVar();
-                        //ImGui.GetWindowWidth() - style.WindowPadding.X - 
-                        // prevW - PROP_WIDTH
                         ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
                         foreach (var (name, property) in stageObj.Properties)
                         {
@@ -383,7 +389,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     ImGui.InputInt("##" + name, ref rf, 1, default);
                                                     if (intBuf != rf)
                                                     {
-                                                        ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf);
+                                                        ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf);
                                                     }
                                                 }
                                                 else
@@ -396,7 +402,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     //ImGui.SetItemTooltip(argEntry.Values[argEntry.Values.Keys.ElementAt(rf)]);
                                                     if (intBuf != argEntry.Values.Keys.ElementAt(rf))
                                                     {
-                                                        ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, argEntry.Values.Keys.ElementAt(rf));
+                                                        ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, argEntry.Values.Keys.ElementAt(rf));
                                                     }
                                                 }
                                             }
@@ -408,7 +414,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 ImGui.Checkbox("##" + name + "cb", ref rf);
                                                 if ((intBuf != -1) != rf)
                                                 {
-                                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf ? 1 : -1);
+                                                    ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf ? 1 : -1);
                                                 }
                                             }
                                             else // if (argEntry.Type is null || argEntry.Type == "int")
@@ -420,7 +426,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 rf = int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
                                                 if (intBuf != rf)
                                                 {
-                                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, stageObj.Properties, name, intBuf, rf);
+                                                    ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf);
                                                     //stageObj.Properties[name] = rf;
                                                 }
                                             }
@@ -491,33 +497,16 @@ internal class PropertiesWindow(MainWindowContext window)
                                     ImGui.BeginDisabled();
                                 if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.UNLINK).X * 1.65f * window.ScalingFactor, default)))
                                 {
-                                    var p = window.CurrentScene!.GetSceneObjFromStageObj(stageObj.Parent!);
-                                    ChangeHandler.ToggleObjectSelection(
-                                                window,
-                                                window.CurrentScene.History,
-                                                p.PickingId,
-                                                !(window.Keyboard?.IsCtrlPressed() ?? false)
-                                            );
-
-                                    if (p is IStageSceneObj pSt)
-                                    {
-                                        AxisAlignedBoundingBox aabb = p.AABB * pSt.StageObj.Scale;
-                                        window.CurrentScene!.Camera.LookFrom(
-                                            pSt.StageObj.Translation * 0.01f,
-                                            aabb.GetDiagonal() * 0.01f
-                                        );
-                                    }
-                                    else
-                                    {
-                                        // TODO
-                                        // Also probably a good idea to use a switch
-                                    }
+                                    var p = scn!.GetSceneObjFromStageObj(stageObj.Parent!);
+                                    ChangeHandler.ToggleObjectSelection( window, scn.History, p.PickingId,
+                                        !(window.Keyboard?.IsCtrlPressed() ?? false));
+                                    window.CameraToObject(p);
                                 }
 
                                 ImGui.SameLine(default, style.ItemSpacing.X / 2);
                                 if (ImGui.Button(IconUtils.UNLINK + "##" + pName))
                                 {
-                                    window.CurrentScene!.Stage.GetStageFile(StageFileType.Map).UnlinkChild(stageObj);
+                                    ChangeHandler.ChangeUnlinkChild(window, window.CurrentScene.History, stageObj);
                                 }
 
                                 ImGui.SetItemTooltip("Unlink Parent");
@@ -536,7 +525,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, autoResize ? default : 150 * window.ScalingFactor)))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? 150 : 150 * window.ScalingFactor))))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -554,17 +543,12 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.TableSetColumnIndex(2);
 
                                             ImGui.PushID("SceneChildSelectable" + cidx);
-                                            if (ImGui.Selectable(ch.Name, false))
+                                            if (ImGui.Selectable(ch.Name, false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
                                             {
-                                                var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
-                                                ChangeHandler.ToggleObjectSelection(
-                                                    window,
-                                                    window.CurrentScene.History,
-                                                    child.PickingId,
-                                                    !window.Keyboard?.IsCtrlPressed() ?? true
-                                                );
-                                                AxisAlignedBoundingBox aabb = child.AABB * ch.Scale;
-                                                window.CurrentScene!.Camera.LookFrom(ch.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                                                var child = scn.GetSceneObjFromStageObj(ch);
+                                                ChangeHandler.ToggleObjectSelection(window, scn.History,
+                                                    child.PickingId, !window.Keyboard?.IsCtrlPressed() ?? true);
+                                                window.CameraToObject(child);
                                             }
 
                                             ImGui.TableSetColumnIndex(3);
@@ -576,16 +560,15 @@ internal class PropertiesWindow(MainWindowContext window)
                                             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
-                                            if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                             {
-                                                var child = window.CurrentScene.GetSceneObjFromStageObj(ch);
-                                                AxisAlignedBoundingBox aabb = child.AABB * ch.Scale;
-                                                window.CurrentScene!.Camera.LookFrom(ch.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
+                                                var child = scn.GetSceneObjFromStageObj(ch);
+                                                window.CameraToObject(child);
                                             }
 
                                             ImGui.TableSetColumnIndex(1);
                                             ImGui.PushID("SceneChildUnlink" + cidx);
-                                            if (ImGui.Button(IconUtils.UNLINK, new(-1, 25)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.UNLINK, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 remch = ch;
                                             }
@@ -593,9 +576,11 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             cidx++;
                                         }
-                                        if (remch != null) window.CurrentScene.Stage.GetStageFile(StageFileType.Map).UnlinkChild(remch);
+                                        if (remch != null) 
+                                            ChangeHandler.ChangeUnlinkChild(window, window.CurrentScene.History, remch);
 
                                         ImGui.EndTable();
+                                        ImGui.Spacing();
                                     }
                                 }
                                 else
@@ -628,7 +613,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.Text("Rail: ");
                         ImGui.SameLine();
 
-                        var rails = window.CurrentScene!.EnumerateRailSceneObjs();
+                        var rails = scn!.EnumerateRailSceneObjs();
                         string[] railStrings = new string[rails.Count() + 1];
                         int bbbb = 1;
                         railStrings[0] = "No Rail selected";
@@ -639,11 +624,14 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                         int rfrail = 0;
                         if (stageObj.Rail is not null)
-                        {
-                            rfrail = rails.ToList().IndexOf(rails.First(x => x.RailObj.Name == stageObj.Rail.Name)) + 1;
+                        {                            
+                            var rals = rails.FirstOrDefault(x => x.RailObj.Name == stageObj.Rail.Name); // In case the rail gets deleted
+                            if (rals != null)
+                                rfrail = rails.ToList().IndexOf(rals) + 1;
                         }
                         int rfr2 = rfrail;
-                        ImGuiWidgets.SetPropertyWidth("Rail");
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor + 7);
+
                         ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
                         if (rfr2 != rfrail)
                         {
@@ -653,6 +641,23 @@ internal class PropertiesWindow(MainWindowContext window)
                             }
                             else stageObj.Rail = null;
                         }
+                        ImGui.SameLine(0, style.ItemInnerSpacing.X);
+                        if (rfr2 == 0) ImGui.BeginDisabled();
+                        if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
+                        {
+                            if (rfr2 == 0)
+                            {
+                                window.OpenAddRailDialog();
+                            }
+                            else
+                            {
+                                var child = scn.GetRailSceneObj(stageObj.Rail!);
+                                ChangeHandler.ToggleObjectSelection( window, scn.History, child!.PickingId,
+                                    !window.Keyboard?.IsCtrlPressed() ?? true);
+                                window.CameraToObject(child);
+                            }
+                        }
+                        if (rfr2 == 0) ImGui.EndDisabled();
 
                         ImGui.EndChild();
                     }
@@ -694,7 +699,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 int i = intBuf;
                                 if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
                                 {
-                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene?.History!, stageObj.Properties, name, intBuf, i);
+                                    ChangeHandler.ChangeDictionaryValue(scn?.History!, stageObj.Properties, name, intBuf, i);
                                 }
                                 break;
                             case object p when p is float:
@@ -702,7 +707,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 float f = flBuf;
                                 if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
                                 {
-                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, flBuf, f);
+                                    ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, flBuf, f);
                                 }
                                 break;
                             case object p when p is string:
@@ -710,7 +715,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 string s = strBuf;
                                 if (ImGui.InputText("##" + name + "i", ref s, 128, ImGuiInputTextFlags.EnterReturnsTrue))
                                 {
-                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, strBuf, s);
+                                    ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, strBuf, s);
                                 }
                                 break;
                             case object p when p is bool:
@@ -718,7 +723,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 bool b = bl;
                                 if (ImGui.Checkbox("##" + name + "i", ref b))
                                 {
-                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, name, bl, b);
+                                    ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, bl, b);
                                 }
                                 break;
 
@@ -730,7 +735,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                     }
 
-                    if (ImGui.Button("Add Property", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
+                    if (ImGui.Button("Add Property", new(ImGui.GetContentRegionAvail().X - style.ItemSpacing.X, default)))
                     {
                         window.SetupExtraPropsDialogNew(stageObj);
                     }
@@ -739,22 +744,398 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.EndChild();
                 }
 
-                if (oldName != stageObj.Name)
-                {
-                    if (sceneObj is ActorSceneObj actorSceneObj)
-                    {
-                        actorSceneObj.UpdateActor(window.ContextHandler.FSHandler, window.GLTaskScheduler);
-                    }
-
-                    if (sceneObj is BasicSceneObj basicSceneObj && stageObj.IsArea())
-                    {
-                        basicSceneObj.MaterialParams.Color = AreaMaterial.GetAreaColor(stageObj.Name);
-                    }
-                }
-
                 ImGui.PopStyleColor();
             }
             ImGui.EndChild();
+            }
+            else if (sceneObj is RailSceneObj || sceneObj is RailPointSceneObj || sceneObj is RailHandleSceneObj)
+            {
+                RailSceneObj railSceneObj;
+                string t;
+                
+                if (sceneObj is RailSceneObj)
+                {
+                    railSceneObj = (sceneObj as RailSceneObj)!;
+                    t = $"Rail: {railSceneObj.RailObj.Name}";
+                }
+                else if (sceneObj is RailPointSceneObj)
+                {
+                    railSceneObj = (sceneObj as  RailPointSceneObj)!.ParentRail;
+                    t = $"{railSceneObj.RailObj.Name} Point {railSceneObj.RailPoints.IndexOf((sceneObj as  RailPointSceneObj)!)}";
+                }
+                else
+                {
+                    railSceneObj = (sceneObj as RailHandleSceneObj)!.ParentPoint.ParentRail;
+                    t = $"{railSceneObj.RailObj.Name} Point {railSceneObj.RailPoints.IndexOf((sceneObj as  RailHandleSceneObj)!.ParentPoint)}";
+                }
+
+                if (updateRailOwners)
+                {
+                    railSceneOwners = scn.EnumerateStageSceneObjs().Where(x => x.StageObj.Rail is not null && x.StageObj.Rail == railSceneObj.RailObj).ToList();
+                    railCameraOwners = scn.Stage.CameraParams.Cameras.Where(x => x.CamProperties.Rail is not null && x.CamProperties.Rail == railSceneObj.RailObj).ToList();
+                    updateRailOwners = false;
+                }
+
+                RailObj railObj = railSceneObj.RailObj;
+                
+
+                float ypos = SetTitle(t, null);
+                
+                if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
+                {
+                    if (ImGui.CollapsingHeader("Rail Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                        ImGui.BeginChild("rprop", default, ImGuiChildFlags.AutoResizeY);
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+
+                        ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+                        string s = railObj.Name;
+                        ImGuiWidgets.PrePropertyWidthName("Name");
+                        if (ImGui.InputTextWithHint("##" + "Name" + "i", "hint", ref s, 128, ImGuiInputTextFlags.EnterReturnsTrue))
+                        {
+                            ChangeHandler.ChangeFieldValue(scn?.History!, railObj, "Name", railObj.Name, s);
+                        }
+                        ImGuiWidgets.PrePropertyWidthName("Layer");
+                        ImGui.InputTextWithHint("##layername", "", ref railObj.Layer, 128, ImGuiInputTextFlags.EnterReturnsTrue);
+                        ImGuiWidgets.PrePropertyWidthName("Closed loop");
+                        if (ImGui.Checkbox("##CLOSED", ref railObj.Closed))
+                            railSceneObj.UpdateModelTmp();
+                        int pointtyp = railObj.PointType == RailPointType.Bezier ? 1 : 0;
+                        ImGuiWidgets.PrePropertyWidthName("Curve type");
+                        if (ImGui.Combo("##Type", ref pointtyp, ["Linear", "Bezier"], 2))
+                        {
+                            railObj.PointType = pointtyp == 0 ? RailPointType.Linear : RailPointType.Bezier; 
+                            railSceneObj.UpdateModelTmp();
+                        }
+                        ImGui.SetItemTooltip("Determines whether this rail will save with handles in the point positions or not. \r\nThis option is destructive after saving.");
+                        // ImGui.Text($"Center X: {railSceneObj.Center.X}");
+                        // ImGui.Text($"Center Y: {railSceneObj.Center.Y}");
+                        // ImGui.Text($"Center Z: {railSceneObj.Center.Z}");
+                        if (ImGui.CollapsingHeader("Rail Users", ImGuiTreeNodeFlags.DefaultOpen ))
+                        {
+                        if (ImGui.BeginTable("UserTable", 2,ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersH,
+                        new(ImGui.GetWindowWidth()-2, 100)))
+                        {
+                            ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                            ImGui.TableSetupColumn("User", ImGuiTableColumnFlags.WidthStretch);
+                            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                            ImGui.TableHeadersRow();
+
+                            for (int b = 0; b < railSceneOwners.Count; b++)
+                            {
+                                ImGui.TableNextRow();
+
+                                ImGui.TableSetColumnIndex(0);
+
+                                ImGui.PushID("sceneslecteparentObject" + b);
+                                if (ImGui.Selectable(railSceneOwners[b].StageObj.Name, false, ImGuiSelectableFlags.SpanAllColumns))
+                                {
+                                    ChangeHandler.ToggleObjectSelection(window, scn!.History, railSceneOwners[b].PickingId, true);
+
+                                    window.CameraToObject(railSceneOwners[b]);
+                                }
+                                ImGui.TableSetColumnIndex(1);
+                                ImGui.Text(railSceneOwners[b].StageObj.Type.ToString());
+                            }
+                            for (int b = 0; b < railCameraOwners.Count; b++)
+                            {
+                                ImGui.TableNextRow();
+
+                                ImGui.TableSetColumnIndex(0);
+
+                                ImGui.PushID("sceneslecteparentObject" + b);
+                                if (ImGui.Selectable(railCameraOwners[b].CameraName(), false, ImGuiSelectableFlags.SpanAllColumns))
+                                {
+                                    window.SetCameraSelected(scn!.Stage.CameraParams.Cameras.IndexOf(railCameraOwners[b]!));
+                                }
+                                ImGui.TableSetColumnIndex(1);
+                                ImGui.Text("Camera");
+                            }
+
+                            ImGui.EndTable();
+                            ImGui.Spacing();
+                        }
+                        }
+                        ImGui.PopItemWidth();
+                        ImGui.EndChild();
+                    }
+                    if (sceneObj is RailSceneObj)
+                    {
+                        if (ImGui.CollapsingHeader($"Rail Points", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("pointss", default, ImGuiChildFlags.AutoResizeY);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+                            ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+
+                            RailPointSceneObj? delay = null;
+                            bool n = false;
+
+                            bool autoResize = railObj.Points.Count < 8;
+                            if (ImGui.BeginTable("pointTable", 4,
+                                ImGuiTableFlags.RowBg
+                                | ImGuiTableFlags.BordersOuter
+                                | ImGuiTableFlags.BordersV
+                                | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
+                            {
+                                ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                                ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.WidthStretch, 0.15f);
+                                ImGui.TableSetupColumn("Index", ImGuiTableColumnFlags.WidthStretch, 0.8f);
+                                ImGui.TableSetupColumn("##UPs", ImGuiTableColumnFlags.WidthStretch, 0.1f);
+                                ImGui.TableSetupColumn("##DOWNs", ImGuiTableColumnFlags.WidthStretch, 0.1f);
+                                ImGui.TableHeadersRow();
+                                if (autoResize) ImGui.SetScrollY(0);
+                                int cidx = 0;
+                                foreach (RailPoint ch in railObj.Points)
+                                {
+                                    ImGui.TableNextRow();
+
+                                    ImGui.TableSetColumnIndex(1);
+
+                                    ImGui.PushID("ScenePointSelectable" + cidx);
+                                    if (ImGui.Selectable(cidx.ToString(), false, ImGuiSelectableFlags.None, new(ImGui.GetColumnWidth(), 30)))
+                                    {
+                                        var point = railSceneObj.RailPoints[cidx];
+                                        ChangeHandler.ToggleObjectSelection(window, scn!.History, point.PickingId,
+                                            !window.Keyboard?.IsCtrlPressed() ?? true);
+                                        window.CameraToObject(point);
+                                    }
+                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
+                                    ImGui.TableSetColumnIndex(0);
+                                    ImGui.PushID("ScenePointView" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                                    {
+                                        window.CameraToObject(railSceneObj.RailPoints[cidx]);
+                                    }
+                                    ImGui.PopStyleColor(3);
+
+                                    ImGui.TableSetColumnIndex(2);
+                                    if (cidx == 0) ImGui.BeginDisabled();
+                                    ImGui.PushID("ScenePointUP" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.ARROW_UP, new(ImGui.GetColumnWidth(), 30), cidx == 0))
+                                    {
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) > 0) 
+                                            delay = railSceneObj.RailPoints[cidx];
+                                        n = true;
+                                    }
+                                    if (cidx == 0) ImGui.EndDisabled();
+                                    ImGui.TableSetColumnIndex(3);
+                                    if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.BeginDisabled();
+                                    ImGui.PushID("ScenePointDOWN" + cidx);
+                                    if (ImGuiWidgets.HoverButton(IconUtils.ARROW_DOWN, new(ImGui.GetColumnWidth(), 30), cidx == railSceneObj.RailPoints.Count - 1))
+                                    {
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) < railSceneObj.RailPoints.Count - 1) 
+                                            delay = railSceneObj.RailPoints[cidx];
+                                    }
+                                    if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.EndDisabled();
+
+                                    cidx++;
+                                }
+                                ImGui.EndTable();
+                            }
+                            if (!autoResize) ImGui.Spacing();
+                            if (delay != null) ChangeHandler.ChangeMovePoint(window, window.CurrentScene.History, railSceneObj, delay, railSceneObj.RailPoints.IndexOf(delay) + (n ? -1 : 1));
+
+                            if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
+                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
+
+                            ImGui.PopItemWidth();
+                            ImGui.EndChild();
+                        }
+                    }
+                    if (sceneObj is not RailSceneObj)
+                    {
+                        string pnt = (sceneObj is RailPointSceneObj) ? $"Point" : $"Handle";
+                        if (ImGui.CollapsingHeader($"{pnt} Translation", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("trls", default, ImGuiChildFlags.AutoResizeY);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+                            ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+
+                            if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
+                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
+
+                            ImGui.PopItemWidth();
+                            ImGui.EndChild();
+                        }
+                    }
+                    if (sceneObj is RailPointSceneObj)
+                    {
+                        if (ImGui.CollapsingHeader($"Point Handles", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("handless", default, ImGuiChildFlags.AutoResizeY);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+                            ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+                            
+                            bool autoResize = railObj.Points.Count < 8;
+                            if (ImGui.BeginTable("handletable", 2,
+                                ImGuiTableFlags.RowBg
+                                | ImGuiTableFlags.BordersOuter
+                                | ImGuiTableFlags.BordersV
+                                | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, -1)))
+                            {
+                                ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
+                                ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
+                                ImGui.TableSetupColumn("Handle", ImGuiTableColumnFlags.WidthStretch, 0.4f);
+                                ImGui.TableHeadersRow();
+                                if (autoResize) ImGui.SetScrollY(0);
+                                for (int cc = 0; cc < 2; cc++)
+                                {
+                                    ImGui.TableNextRow();
+
+                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
+                                    ImGui.TableSetColumnIndex(0);
+                                    ImGui.PushID("SceneHandleView" + cc);
+                                    if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                    {
+                                        var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
+                                        window.CameraToObject(hndl!);
+                                    }
+                                    ImGui.PopStyleColor(3);
+
+                                    ImGui.TableSetColumnIndex(1);
+                                    ImGui.PushID("SceneHandleSelectable" + cc);
+                                    if (ImGui.Selectable(cc.ToString(), false))
+                                    {
+                                        var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
+                                        ChangeHandler.ToggleObjectSelection(window, scn!.History,
+                                            hndl!.PickingId,
+                                            !window.Keyboard?.IsCtrlPressed() ?? true
+                                        );
+                                        window.CameraToObject(hndl!);
+                                    }
+                                }
+                                ImGui.EndTable();
+                            }
+                            ImGui.PopItemWidth();
+                            ImGui.EndChild();
+                        }
+                    }
+                    if (sceneObj is not RailHandleSceneObj)
+                    {
+                        string pnt = (sceneObj is RailSceneObj) ? "Rail" : "Point";
+                        if (ImGui.CollapsingHeader($"{pnt} Arguments", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("arg", default, ImGuiChildFlags.AutoResizeY);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+                            ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
+                            foreach (var (name, property) in (sceneObj is RailSceneObj) ? railObj.Properties : (sceneObj as RailPointSceneObj)!.RailPoint.Properties)
+                            {
+                                if (property is null)
+                                {
+                                    ImGui.TextDisabled(name);
+                                    return;
+                                }
+                                if (!name.Contains("Arg")) continue;
+                                
+                                switch (property)
+                                {
+                                    case int:
+                                        int intBuf = (int)(property ?? -1);
+                                        if (sceneObj is RailSceneObj) InputIntProperties(name, ref intBuf, 1, ref railObj);
+                                        else 
+                                        {
+                                            RailPoint rpoint = (sceneObj as RailPointSceneObj)!.RailPoint;
+                                            InputIntProperties(name, ref intBuf, 1, ref rpoint);
+                                        }
+                                        break;
+                                }
+                            
+                            }
+                            ImGui.PopItemWidth();
+                            ImGui.EndChild();
+                        }
+                        if (sceneObj is not RailPointSceneObj)
+                        if (ImGui.CollapsingHeader("Extra Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("prp", default, ImGuiChildFlags.AutoResizeY);
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+
+                            ImGui.PushItemWidth(prevW - PROP_WIDTH);
+
+                            foreach (var (name, property) in railObj.Properties)
+                            {
+                                if (property is null)
+                                {
+                                    ImGui.TextDisabled(name);
+                                    continue;
+                                }
+                                if (name.Contains("Arg") || name == "Priority" || name == "ShapeModelNo") continue;
+
+                                if (ImGui.Button(IconUtils.TRASH + "##rmp" + name))
+                                {
+                                    railObj.Properties.Remove(name);
+                                    continue;
+                                }
+                                ImGui.SameLine(default, style.ItemInnerSpacing.X);
+                                if (ImGui.Button(IconUtils.PENCIL + "##edit" + name))
+                                {
+                                    window.SetupExtraPropsDialog(railObj, name);
+                                }
+                                ImGui.SameLine();
+                                ExtraPropName(name);
+                                switch (property)
+                                {
+                                    case object p when p is int:
+                                        int intBuf = (int)(p ?? -1);
+                                        int i = intBuf;
+                                        if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                        {
+                                            ChangeHandler.ChangeDictionaryValue(scn?.History!, railObj.Properties, name, intBuf, i);
+                                        }
+                                        break;
+                                    case object p when p is float:
+                                        float flBuf = (float)(p ?? -1);
+                                        float f = flBuf;
+                                        if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                        {
+                                            ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, flBuf, f);
+                                        }
+                                        break;
+                                    case object p when p is string:
+                                        string strBuf = (string)(p ?? string.Empty);
+                                        string st = strBuf;
+                                        if (ImGui.InputText("##" + name + "i", ref st, 128, ImGuiInputTextFlags.EnterReturnsTrue))
+                                        {
+                                            ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, strBuf, st);
+                                        }
+                                        break;
+                                    case object p when p is bool:
+                                        bool bl = (bool)(p ?? false);
+                                        bool b = bl;
+                                        if (ImGui.Checkbox("##" + name + "i", ref b))
+                                        {
+                                            ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, bl, b);
+                                        }
+                                        break;
+
+                                    default:
+                                        throw new NotImplementedException(
+                                            "The property type " + property?.GetType().FullName
+                                                ?? "null" + " is not supported."
+                                        );
+                                }
+                            }
+                            if (ImGui.Button("Add Property", new(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X, default)))
+                            {
+                                window.SetupExtraPropsDialogNew(railObj);
+                            }
+                            ImGui.PopItemWidth();
+                            ImGui.EndChild();
+                        }
+                    }
+                }
+                ImGui.EndChild();
+            }
         }
         else
         {
@@ -764,8 +1145,8 @@ internal class PropertiesWindow(MainWindowContext window)
             InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
             //InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
             ImGui.Text("CameraId"); ImGui.SameLine();
-            var cameraslinks = window.CurrentScene.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
-            string[] cameraStrings = new string[cameraslinks.Count() + 1];
+            var cameraslinks = scn.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
+            string[] cameraStrings = new string[cameraslinks.Count + 1];
             cameraStrings[0] = "No camera selected";
             for (int cs = 1; cs < cameraStrings.Length; cs++)
             {
@@ -777,7 +1158,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
             InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
 
-            foreach (ISceneObj obj in window.CurrentScene.SelectedObjects)
+            foreach (ISceneObj obj in scn.SelectedObjects)
             {
                 if (obj is not IStageSceneObj stageScene) continue;
 
@@ -792,8 +1173,28 @@ internal class PropertiesWindow(MainWindowContext window)
             }
         }
 
+        //ImGui.PopStyleColor();
         ImGui.End();
     }
+
+    #region Property Components
+
+
+    float SetTitle(string title, string? tooltip)
+    {
+        ImGui.SetWindowFontScale(1.20f);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
+        float r = ImGui.GetCursorPosY();
+        ImGui.Text(title);
+        ImGui.SetWindowFontScale(1.0f);
+        if (tooltip != null) ImGui.SetItemTooltip(tooltip);
+        ImGui.Separator();
+        //Child begins after this
+        return r;
+    }
+
+    #endregion
+
 
     #region Undoable Actions
 
@@ -1010,9 +1411,17 @@ internal class PropertiesWindow(MainWindowContext window)
                             break;
                     }
                 }
-                else
+                else if (sto is RailPointSceneObj rps && str == "Position")
                 {
-                    // TODO
+                    rps.RailPoint.Point0Trans = rV;
+                    rps.UpdateModel();
+                    rps.RailPoint.Point0Trans = tmprf;
+                }
+                else if (sto is RailHandleSceneObj rhs && str == "Position")
+                {
+                    rhs.Offset = rV;
+                    rhs.UpdateTransform();
+                    rhs.Offset = tmprf;
                 }
             }
             if (validate)
@@ -1035,8 +1444,27 @@ internal class PropertiesWindow(MainWindowContext window)
                 if (str == "Position") str = "Translation";
 
                 if (sto is IStageSceneObj stageSceneObj)
-                    ChangeHandler.ChangeTransform(_window.CurrentScene.History, stageSceneObj, str, rf, refVec3);
-
+                    ChangeHandler.ChangeStageObjTransform(_window.CurrentScene!.History, stageSceneObj, str, rf, refVec3);
+                else if (sto is RailPointSceneObj rps)
+                {
+                    ChangeHandler.ChangePointPosition(
+                        _window.CurrentScene!.History,
+                        rps,
+                        rf,
+                        refVec3,
+                        false
+                    );
+                }
+                else if (sto is RailHandleSceneObj rhs)
+                {
+                    ChangeHandler.ChangeHandleTransform(
+                        _window.CurrentScene!.History,
+                        rhs,
+                        rf,
+                        refVec3,
+                        false
+                    );
+                }
                 return true;
             }
 
@@ -1139,7 +1567,33 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGuiWidgets.SetPropertyWidth(str);
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
-            ChangeHandler.ChangeDictionaryValue(window.CurrentScene.History, sto.Properties, str, rf, i);
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+        }
+        return false;
+    }
+    private bool InputIntProperties(string str, ref int rf, int step, ref RailObj sto)
+    {
+        int i = rf;
+
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
+        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+        }
+        return false;
+    }
+    private bool InputIntProperties(string str, ref int rf, int step, ref RailPoint sto)
+    {
+        int i = rf;
+
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
+        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
         }
         return false;
     }
