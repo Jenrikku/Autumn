@@ -152,6 +152,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 {
                     window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                 }
+                ImGui.SetItemTooltip("Jump to parent");
             }
             else if (stageObj.Children != null && stageObj.Children.Count > 0)
             {
@@ -166,6 +167,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     else
                         scrollToChild = true;
                 }
+                ImGui.SetItemTooltip($"Jump to {(stageObj.Children.Count == 1 ? "child" : "children")}");
             }
             //ImGui.SetNextItemWidth(prevW + 200);
             if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
@@ -525,7 +527,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? 150 : 150 * window.ScalingFactor))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, 22 + (autoResize ? 34 * stageObj.Children.Count : 34 * 6) * window.ScalingFactor)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -780,6 +782,29 @@ internal class PropertiesWindow(MainWindowContext window)
                 
 
                 float ypos = SetTitle(t, null);
+
+                if (sceneObj is not RailSceneObj)
+                {
+                    float xp = ImGui.GetContentRegionAvail().X;
+                    ImGui.SetCursorPosY(ypos);
+                    ImGui.SetCursorPosX(xp - ImGui.CalcTextSize("Rail").X);
+                    if (ImGui.Button("Rail"))
+                    {
+                        ChangeHandler.ToggleObjectSelection(window, scn!.History, railSceneObj.PickingId, true);
+                        window.CameraToObject();
+                    }
+                    ImGui.SetItemTooltip("Jump to rail");
+                    if (sceneObj is RailHandleSceneObj)
+                    {
+                        ImGui.SetCursorPosY(ypos);
+                        ImGui.SetCursorPosX(xp - ImGui.CalcTextSize("Rail").X - ImGui.CalcTextSize("Point").X - style.ItemSpacing.X * 1.5f);
+                        if (ImGui.Button("Point"))
+                        {
+                            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
+                        }
+                        ImGui.SetItemTooltip("Jump to point"); 
+                    }
+                }
                 
                 if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
                 {
