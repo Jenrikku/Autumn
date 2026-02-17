@@ -152,6 +152,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 {
                     window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                 }
+                ImGui.SetItemTooltip("Jump to parent");
             }
             else if (stageObj.Children != null && stageObj.Children.Count > 0)
             {
@@ -166,6 +167,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     else
                         scrollToChild = true;
                 }
+                ImGui.SetItemTooltip($"Jump to {(stageObj.Children.Count == 1 ? "child" : "children")}");
             }
             //ImGui.SetNextItemWidth(prevW + 200);
             if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
@@ -780,6 +782,30 @@ internal class PropertiesWindow(MainWindowContext window)
                 
 
                 float ypos = SetTitle(t, null);
+
+                if (sceneObj is not RailSceneObj)
+                {
+                    float xp = ImGui.GetContentRegionAvail().X;
+                    ImGui.SetCursorPosY(ypos);
+                    ImGui.SetCursorPosX(xp - ImGui.CalcTextSize("Rail").X);
+                    if (ImGui.Button("Rail"))
+                    {
+                        ChangeHandler.ToggleObjectSelection(window, scn!.History, railSceneObj.PickingId, true);
+                        window.CameraToObject(railSceneObj);
+                    }
+                    ImGui.SetItemTooltip("Jump to rail");
+                    if (sceneObj is RailHandleSceneObj)
+                    {
+                        ImGui.SetCursorPosY(ypos);
+                        ImGui.SetCursorPosX(xp - ImGui.CalcTextSize("Rail").X - ImGui.CalcTextSize("Point").X - style.ItemSpacing.X * 1.5f);
+                        if (ImGui.Button("Point"))
+                        {
+                            ChangeHandler.ToggleObjectSelection(window, scn!.History, (sceneObj as RailHandleSceneObj)!.ParentPoint.PickingId, true);
+                            window.CameraToObject((sceneObj as RailHandleSceneObj)!.ParentPoint);
+                        }
+                        ImGui.SetItemTooltip("Jump to point"); 
+                    }
+                }
                 
                 if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
                 {
