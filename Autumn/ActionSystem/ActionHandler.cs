@@ -613,25 +613,44 @@ internal class ActionHandler
             {
                 if (window is not MainWindowContext mainContext)
                     return;
+                
+                if (mainContext.CurrentScene!.SelectedObjects.First() is IStageSceneObj stageSceneObj)
+                {
+                    StageObj parent = stageSceneObj.StageObj.Parent ?? stageSceneObj.StageObj;
 
-                if (mainContext.CurrentScene!.SelectedObjects.First() is not IStageSceneObj stageSceneObj)
-                    return;
-
-                StageObj parent = stageSceneObj.StageObj.Parent ?? stageSceneObj.StageObj;
-
-                if (stageSceneObj.StageObj.Parent != null)
-                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj == parent).PickingId, true);
-                else
-                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj.Parent == parent).PickingId, true);
+                    if (stageSceneObj.StageObj.Parent != null)
+                        ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj == parent).PickingId, true);
+                    else
+                        ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene.History, mainContext.CurrentScene.EnumerateStageSceneObjs().First(x => x.StageObj.Parent == parent).PickingId, true);
+                }
+                if (mainContext.CurrentScene.SelectedObjects.First() is RailPointSceneObj rpsO)
+                {
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene!.History, rpsO.ParentRail.PickingId, true);
+                }
+                if (mainContext.CurrentScene.SelectedObjects.First() is RailHandleSceneObj rhsO)
+                {
+                    ChangeHandler.ToggleObjectSelection(mainContext, mainContext.CurrentScene!.History, rhsO.ParentPoint.PickingId, true);
+                }
 
                 mainContext.CameraToObject();
             },
             enabled: window =>
             {
-                if (window is not MainWindowContext mainContext || mainContext.CurrentScene is null || mainContext.CurrentScene.SelectedObjects.First() is not IStageSceneObj stageSceneObj)
+                if (window is not MainWindowContext mainContext || mainContext.CurrentScene is null || mainContext.CurrentScene.SelectedObjects.Count() != 1)
                     return false;
-
-                return mainContext.CurrentScene.SelectedObjects.Count() == 1 && (stageSceneObj.StageObj.Parent != null || (stageSceneObj.StageObj.Children != null && stageSceneObj.StageObj.Children.Any()));
+                if (mainContext.CurrentScene.SelectedObjects.First() is IStageSceneObj stageSceneObj)
+                {
+                    return stageSceneObj.StageObj.Parent != null || (stageSceneObj.StageObj.Children != null && stageSceneObj.StageObj.Children.Any());
+                }
+                if (mainContext.CurrentScene.SelectedObjects.First() is RailPointSceneObj rpsO)
+                {
+                    return true;
+                }
+                if (mainContext.CurrentScene.SelectedObjects.First() is RailHandleSceneObj rhsO)
+                {
+                    return true;
+                }
+                return false;
             },
             Command.CommandCategory.Selection
         );

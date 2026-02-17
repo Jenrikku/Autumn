@@ -791,7 +791,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (ImGui.Button("Rail"))
                     {
                         ChangeHandler.ToggleObjectSelection(window, scn!.History, railSceneObj.PickingId, true);
-                        window.CameraToObject(railSceneObj);
+                        window.CameraToObject();
                     }
                     ImGui.SetItemTooltip("Jump to rail");
                     if (sceneObj is RailHandleSceneObj)
@@ -800,8 +800,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         ImGui.SetCursorPosX(xp - ImGui.CalcTextSize("Rail").X - ImGui.CalcTextSize("Point").X - style.ItemSpacing.X * 1.5f);
                         if (ImGui.Button("Point"))
                         {
-                            ChangeHandler.ToggleObjectSelection(window, scn!.History, (sceneObj as RailHandleSceneObj)!.ParentPoint.PickingId, true);
-                            window.CameraToObject((sceneObj as RailHandleSceneObj)!.ParentPoint);
+                            window.ContextHandler.ActionHandler.ExecuteAction(CommandID.GotoRelative, window);
                         }
                         ImGui.SetItemTooltip("Jump to point"); 
                     }
