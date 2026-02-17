@@ -525,7 +525,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? 150 : 150 * window.ScalingFactor))))
+                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, 22 + (autoResize ? 34 * stageObj.Children.Count : 34 * 6) * window.ScalingFactor)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);

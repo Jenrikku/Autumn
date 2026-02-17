@@ -725,7 +725,8 @@ internal class SceneWindow(MainWindowContext window)
                 var fs = window.CurrentScene.SelectedObjects.First();
                 if (fs is IStageSceneObj) s+= (fs as IStageSceneObj)!.StageObj.Name; 
                 else if (fs is RailSceneObj) s+= (fs as RailSceneObj)!.RailObj.Name;
-                else s += fs.PickingId;// ((IStageSceneObj)window.CurrentScene.SelectedObjects.First(x => x is IStageSceneObj)).StageObj.Name;
+                else if (fs is RailPointSceneObj) s += $"{(fs as RailPointSceneObj)!.ParentRail.RailObj.Name} Point {(fs as RailPointSceneObj)!.ParentRail.RailPoints.IndexOf((fs as RailPointSceneObj)!)}";
+                else if (fs is RailHandleSceneObj) s += $"{(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailObj.Name} Point {(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailPoints.IndexOf((fs as RailHandleSceneObj)!.ParentPoint)} Handle";
             }
 
 
