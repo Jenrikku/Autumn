@@ -1,4 +1,5 @@
 using System.Numerics;
+using Autumn.GUI.Theming;
 using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Utils;
@@ -97,7 +98,7 @@ internal class SettingsDialog
     public void ReloadThemes()
     {
         _availableThemes.Clear();
-        _availableThemes.AddRange(Theming.EnumerateAllThemeNames(_window.ContextHandler.SettingsPath));
+        _availableThemes.AddRange(ThemeLoader.EnumerateAllThemeNames(_window.ContextHandler.SettingsPath));
 
         _selectedTheme = _availableThemes.IndexOf(_window.ContextHandler.SystemSettings.Theme);
         if (_selectedTheme < 0) _selectedTheme = 0;
@@ -145,7 +146,10 @@ internal class SettingsDialog
                 if (_availableThemes.Count <= 0) ImGui.BeginDisabled();
 
                 if (ImGui.Combo("Theme", ref _selectedTheme, _availableThemes.ToArray(), _availableThemes.Count))
-                    Theming.SetThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                {
+                    Theme? theme = ThemeLoader.LoadThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                    if (theme is not null) _window.WindowManager.GlobalTheme = theme;
+                }
 
                 if (_availableThemes.Count <= 0) ImGui.EndDisabled();
 
@@ -155,9 +159,9 @@ internal class SettingsDialog
                     SingleFileChooserContext fileChooser = new(_window.ContextHandler, _window.WindowManager);
                     fileChooser.SuccessCallback += result =>
                     {
-                        if (!Theming.IsValidTomlFile(result[0])) return;
+                        if (!ThemeLoader.IsValidTomlFile(result[0])) return;
 
-                        string themeDir = Path.Join(_window.ContextHandler.SettingsPath, Theming.UserThemeSuffix);
+                        string themeDir = Path.Join(_window.ContextHandler.SettingsPath, ThemeLoader.UserThemeSuffix);
                         string dest = Path.Join(themeDir, Path.GetFileNameWithoutExtension(result[0])) + ".toml";
                         Directory.CreateDirectory(themeDir);
                         File.Copy(result[0], dest, true);
@@ -170,18 +174,20 @@ internal class SettingsDialog
 
                 ImGui.SameLine();
 
-                bool isReadOnly = Theming.IsThemeReadOnly(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                bool isReadOnly = ThemeLoader.IsThemeReadOnly(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
 
                 if (isReadOnly) ImGui.BeginDisabled();
 
                 if (ImGui.Button(IconUtils.TRASH))
                 {
-                    string? theme = Theming.GetThemeFullPathByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
-                    if (theme is not null)
-                        File.Delete(theme);
+                    string? themePath = ThemeLoader.GetThemeFullPathByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                    if (themePath is not null)
+                        File.Delete(themePath);
 
                     ReloadThemes();
-                    Theming.SetThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+
+                    Theme? theme = ThemeLoader.LoadThemeByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
+                    if (theme is not null) _window.WindowManager.GlobalTheme = theme;
                 }
 
                 if (isReadOnly) ImGui.EndDisabled();
@@ -278,7 +284,10 @@ internal class SettingsDialog
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
 
             if (_availableThemes.Count > 0)
-                Theming.SetThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
+            {
+                Theme? theme = ThemeLoader.LoadThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
+                if (theme is not null) _window.WindowManager.GlobalTheme = theme;
+            }
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
@@ -318,7 +327,10 @@ internal class SettingsDialog
         if (ImGui.Button("Cancel", new(80, 0)))
         {
             if (_availableThemes.Count > 0)
-                Theming.SetThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
+            {
+                Theme? theme = ThemeLoader.LoadThemeByName(_availableThemes[_oldTheme], _window.ContextHandler.SettingsPath);
+                if (theme is not null) _window.WindowManager.GlobalTheme = theme;
+            }
 
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();

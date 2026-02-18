@@ -6,9 +6,9 @@ using ImGuiNET;
 using Tomlyn;
 using Tomlyn.Model;
 
-namespace Autumn.GUI;
+namespace Autumn.GUI.Theming;
 
-internal static class Theming
+internal static class ThemeLoader
 {
     public static string BaseThemePath { get; } = Path.Join(Directory.GetCurrentDirectory(), "Resources", "Themes");
     public static string UserThemeSuffix { get; } = "themes";
@@ -71,29 +71,31 @@ internal static class Theming
         return File.Exists(Path.Join(BaseThemePath, themeName) + ".toml");
     }
 
-    public static void SetThemeByName(string themeName, string? settingsPath = null)
+    public static Theme? LoadThemeByName(string themeName, string? settingsPath = null)
     {
         string? path = GetThemeFullPathByName(themeName, settingsPath);
-        if (path is null) return;
+        if (path is null) return null;
 
-        SetImGuiThemeFromToml(path);
+        return LoadImGuiThemeFromToml(path);
     }
 
-    public static unsafe void SetImGuiThemeFromToml(string tomlPath)
+    public static unsafe Theme? LoadImGuiThemeFromToml(string tomlPath)
     {
-        string theme;
+        string themeContent;
         TomlTable model;
 
         try
         {
-            theme = File.ReadAllText(tomlPath);
-            model = Toml.ToModel(theme);
+            themeContent = File.ReadAllText(tomlPath);
+            model = Toml.ToModel(themeContent);
         }
         catch (Exception e)
         {
             Console.Error.WriteLine($"Could not load theme from {tomlPath}: {e.Message}");
-            return;
+            return null;
         }
+
+        Theme theme = new();
 
         ImGuiStyle* stylePtr = ImGui.GetStyle().NativePtr;
         FieldInfo[] fields = typeof(ImGuiStyle).GetFields();
@@ -102,10 +104,10 @@ internal static class Theming
         {
             if (val is TomlTable) continue; // Skip tables (dictionaries)
 
-            FieldInfo? field = fields.First(x => x.Name.ToLower() == key.ToLower());
+            FieldInfo? field = fields.FirstOrDefault(x => x.Name.ToLower() == key.ToLower());
+            if (field is null) continue; // Ignore unknown fields
 
             nint offset = Marshal.OffsetOf<ImGuiStyle>(char.ToUpper(key[0]) + key[1..^0]);
-            if (offset == 0 && key.ToLower() != "alpha") continue; // Ignore unknown fields
 
             nint b = (nint)stylePtr;
             nint res = b + offset;
@@ -141,15 +143,37 @@ internal static class Theming
             }
         }
 
-        if (!model.TryGetValue("colors", out object cols) || cols is not TomlTable colors)
-            return;
-
-        ImGuiStylePtr style = ImGui.GetStyle();
-        string[] colorNames = Enum.GetNames<ImGuiCol>();
-
-        foreach (var (key, val) in colors)
+        if (model.TryGetValue("colors", out object cols) && cols is TomlTable colors)
         {
-            int color = Array.FindIndex(colorNames, x => x.ToLower() == key.ToLower());
+            ImGuiStylePtr style = ImGui.GetStyle();
+            string[] colorNames = Enum.GetNames<ImGuiCol>();
+
+            foreach (var (key, val) in colors)
+            {
+                int color = Array.FindIndex(colorNames, x => x.ToLower() == key.ToLower());
+                if (color < 0) continue; // Ignore unknown colors
+                style.Colors[color] = readColor(val);
+            }
+        }
+
+        if (model.TryGetValue("extras", out object extr) && extr is TomlTable extras)
+        {
+            theme.AxisXColor = readColorByKey(extras, "AxisXColor");
+            theme.AxisYColor = readColorByKey(extras, "AxisYColor");
+            theme.AxisZColor = readColorByKey(extras, "AxisZColor");
+        }
+
+        theme.ImGuiStyle = *ImGui.GetStyle().NativePtr;
+        return theme;
+
+        static Vector4 readColorByKey(TomlTable table, string key)
+        {
+            if (!table.TryGetValue(key, out object val)) return new() { W = 1.0f };
+            return readColor(val);
+        }
+
+        static Vector4 readColor(object val)
+        {
             Vector4 res = new() { W = 1.0f };
 
             if (val is TomlArray arr && arr.Count >= 3)
@@ -183,11 +207,9 @@ internal static class Theming
             }
             else if (val is string col && col.StartsWith("rgba"))
             {
-                if (color < 0) continue; // Ignore unknown colors
-
                 string[] comps = col[5..^1].Split(", ");
 
-                if (comps.Length < 4) continue; // Ignore incorrectly formatted colors
+                if (comps.Length < 4) return res; // Ignore incorrectly formatted colors
 
                 int.TryParse(comps[0], out int r);
                 int.TryParse(comps[1], out int g);
@@ -197,7 +219,7 @@ internal static class Theming
                 res = new(r / 255f, g / 255f, b / 255f, a);
             }
 
-            style.Colors[color] = res;
+            return res;
         }
     }
 }

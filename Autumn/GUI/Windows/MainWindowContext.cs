@@ -4,6 +4,7 @@ using Autumn.Context;
 using Autumn.Enums;
 using Autumn.GUI.Dialogs;
 using Autumn.GUI.Editors;
+using Autumn.GUI.Theming;
 using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Rail;
@@ -193,7 +194,8 @@ internal class MainWindowContext : WindowContext
                 ModelRenderer.VisibleTransparentWall = ContextHandler.SystemSettings.VisibleDefaults[4];
                 ModelRenderer.VisibleRelationLines = ContextHandler.SystemSettings.ShowRelationLines;
 
-                Theming.SetThemeByName(ContextHandler.SystemSettings.Theme, ContextHandler.SettingsPath); // Handles exceptions internally
+                Theme? theme = ThemeLoader.LoadThemeByName(contextHandler.SystemSettings.Theme, contextHandler.SettingsPath); // Handles exceptions internally
+                if (theme is not null) windowManager.GlobalTheme = theme;
 
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
