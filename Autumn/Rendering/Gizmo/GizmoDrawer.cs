@@ -640,11 +640,11 @@ internal static class GizmoDrawer
 
         var col = hovered ? HOVER_COLOR : s_axisColors[axis];
 
-        ClippedLine(center, handleEndPos, col, 2.5f);
+        ClippedLine(center, handleEndPos, col, 2.5f); // line thickness
 
         if (isArrow)
         {
-            var (row0, row1) = GetBillboardPlaneMatrix2d(axis, handleEndPos, gizmoScaleFactor * 5);
+            var (row0, row1) = GetBillboardPlaneMatrix2d(axis, handleEndPos, gizmoScaleFactor * 5); // arrow point length
 
             #region generating lines
             for (int i = 0; i <= ELLIPSE_NUM_SEGMENTS; i++)
@@ -663,7 +663,7 @@ internal static class GizmoDrawer
                 s_ellipsePoints[0],
                 s_ellipsePoints[ELLIPSE_NUM_SEGMENTS / 2],
                 WorldToScreen(
-                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor
+                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor // Triangle width
                 ),
                 col
             );
