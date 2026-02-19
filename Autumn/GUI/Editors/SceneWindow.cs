@@ -580,8 +580,8 @@ internal class SceneWindow(MainWindowContext window)
                     rt * tl, 100, out TransformGizmoAxis);
                 break;
             }
-            GizmoDrawer.EndGizmoDrawing();
         }
+        GizmoDrawer.EndGizmoDrawing();
 
 
         if (window.CurrentScene is not null)
