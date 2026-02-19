@@ -569,15 +569,15 @@ internal class SceneWindow(MainWindowContext window)
             {
                 case 1:
                 MoveGizmoHovered = GizmoDrawer.TranslationGizmo(
-                    tl, 800 / Vector3.Distance(eyeAnimated, trls), out TransformGizmoAxis);
+                    tl, 100, out TransformGizmoAxis);
                 break;
                 case 2:
                 RotGizmoHovered = GizmoDrawer.RotationGizmo(
-                    tl, 800 / Vector3.Distance(eyeAnimated, trls), out TransformGizmoAxis);
+                    tl, 100, out TransformGizmoAxis);
                 break;
                 case 3:
                 ScaleGizmoHovered = GizmoDrawer.ScaleGizmo(
-                    rt * tl, 600 / Vector3.Distance(eyeAnimated, trls), out TransformGizmoAxis);
+                    rt * tl, 100, out TransformGizmoAxis);
                 break;
             }
             GizmoDrawer.EndGizmoDrawing();
