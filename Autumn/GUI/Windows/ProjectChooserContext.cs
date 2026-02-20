@@ -58,6 +58,9 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
             ImGui.TableNextRow();
 
+            ImGui.TableSetColumnIndex(1);
+            ImGui.Text(dir.LastWriteTime.ToString());
+
             ImGui.TableSetColumnIndex(0);
 
             var flags = FileSelectableFlags;
@@ -76,10 +79,6 @@ internal class ProjectChooserContext : FileChooserWindowContext
                     break;
                 }
             }
-
-            ImGui.TableNextColumn();
-
-            ImGui.Text(dir.LastWriteTime.ToString());
         }
 
         ImGui.EndTable();

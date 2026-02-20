@@ -41,6 +41,16 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
             ImGui.TableNextRow();
 
+            ImGui.TableSetColumnIndex(1);
+
+            if (info is FileInfo fileInfo)
+                ImGui.Text(MathUtils.ToNearestSizeUnit(fileInfo.Length));
+            else
+                ImGui.Text("N/A"); // ImGui crashes if removed
+
+            ImGui.TableNextColumn();
+            ImGui.Text(info.LastWriteTime.ToString());
+
             ImGui.TableSetColumnIndex(0);
 
             if (ImGui.Selectable(info.Name, false, _fileSelectableFlags))
@@ -63,17 +73,6 @@ internal class SingleFileChooserContext : FileChooserWindowContext
                     }
                 }
             }
-
-            ImGui.TableNextColumn();
-
-            if (info is FileInfo fileInfo)
-                ImGui.Text(MathUtils.ToNearestSizeUnit(fileInfo.Length));
-            else
-                ImGui.Text("N/A"); // ImGui crashes if removed
-
-            ImGui.TableNextColumn();
-
-            ImGui.Text(info.LastWriteTime.ToString());
         }
 
         ImGui.EndTable();

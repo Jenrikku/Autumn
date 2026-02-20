@@ -1,4 +1,5 @@
 ﻿using Autumn.ActionSystem;
+using Autumn.GUI.Theming;
 using Autumn.GUI.Windows;
 using ImGuiNET;
 using Silk.NET.Core.Contexts;
@@ -9,6 +10,22 @@ namespace Autumn.GUI;
 internal class WindowManager
 {
     public IGLContext? SharedContext { get; private set; } = null;
+
+    private Theme _globalTheme = new();
+    public Theme GlobalTheme
+    {
+        get => _globalTheme;
+        set
+        {
+            _globalTheme = value;
+            GlobalThemeUpdatedEvent?.Invoke(value);
+
+            foreach (WindowContext context in _contexts)
+                context.RefreshTheme();
+        }
+    }
+
+    public event Action<Theme>? GlobalThemeUpdatedEvent; 
 
     private bool _isRunning = false;
 

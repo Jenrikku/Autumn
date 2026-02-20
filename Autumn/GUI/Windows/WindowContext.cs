@@ -44,6 +44,8 @@ internal abstract class WindowContext
 
     private static RawImage[]? s_iconCache;
 
+    private bool _themeChanged = false;
+
     public WindowContext(ContextHandler contextHandler, WindowManager windowManager)
     {
         ContextHandler = contextHandler;
@@ -111,6 +113,7 @@ internal abstract class WindowContext
             }
 
             ImGuiController = new(GL, Window, InputContext, SetFont);
+            WindowManager.GlobalTheme.UpdateImGuiTheme();
 
             var win32 = Window.Native?.Win32;
 
@@ -154,6 +157,15 @@ internal abstract class WindowContext
             GL.DepthFunc(DepthFunction.Lequal);
         };
 
+        Window.Render += delta =>
+        {
+            if (_themeChanged)
+            {
+                WindowManager.GlobalTheme.UpdateImGuiTheme();
+                _themeChanged = false;
+            }
+        };
+
         Window.Update += delta => ImGuiController?.Update((float)delta);
 
         Window.FocusChanged += focused => IsFocused = focused;
@@ -181,7 +193,9 @@ internal abstract class WindowContext
     /// <returns>Whether the window can be safely closed.</returns>
     public virtual bool Close() => true;
 
-    private unsafe void SetFont()
+    public void RefreshTheme() => _themeChanged = true;
+
+    private void SetFont()
     {
         var io = ImGui.GetIO();
 

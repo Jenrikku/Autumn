@@ -331,6 +331,7 @@ internal static class ImGuiWidgets
         ImGui.PushStyleColor(ImGuiCol.ChildBg, col);
         return ImGui.BeginChild(name, size, flags);
     }
+
     public static void EndChild()
     {
         ImGui.PopStyleColor();
@@ -353,10 +354,10 @@ internal static class ImGuiWidgets
         //ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetCursorScreenPos(), ImGui.GetCursorScreenPos()+ new Vector2( 30, 40), 0xff0000ff);
         //ImGui.GetWindowDrawList().AddCircle(ImGui.GetMousePos(), 20, 0xff00ff00);
         //ImGui.GetWindowDrawList().AddBezierCubic(Vector2.Zero, Vector2.UnitX * 20, Vector2.UnitY * 20, Vector2.One * 20, 0xff00ff00, 4);
-        if (hovering && !disabled) 
+        if (hovering && !disabled)
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-        bool r = ImGui.Button(text, size ?? new Vector2( 30, 40));
-        if (hovering) 
+        bool r = ImGui.Button(text, size ?? new Vector2(30, 40));
+        if (hovering)
             ImGui.PopStyleColor();
         ImGui.PopStyleColor(3);
         return r;

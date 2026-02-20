@@ -18,6 +18,7 @@
     <PackageReference Include="Silk.NET.Windowing" Version="2.21.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="Tomlyn" Version="0.20.0" />
   </ItemGroup>
 
   <ItemGroup>

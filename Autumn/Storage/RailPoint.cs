@@ -4,16 +4,17 @@ namespace Autumn.Storage;
 
 internal class RailPoint
 {
-    public Dictionary<string, object?> Properties { get; set; } = new();
-    
+    public Dictionary<string, object?> Properties { get; init; } = new();
+
     ///<summary> Reference point </summary>
     public Vector3 Point0Trans = new();
-    
+
     ///<summary> Previous Handle (Handle1) </summary>
     public Vector3 Point1Trans = new();
 
     ///<summary> Next Handle (Handle2) </summary>
     public Vector3 Point2Trans = new();
+
     public void SetPointLinear()
     {
         Point1Trans = Point0Trans + Vector3.UnitX * 100;

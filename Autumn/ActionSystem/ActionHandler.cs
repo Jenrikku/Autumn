@@ -1,12 +1,9 @@
 using Autumn.Enums;
 using Autumn.GUI;
 using Autumn.GUI.Windows;
-using Autumn.History;
 using Autumn.Rendering;
 using Autumn.Rendering.Storage;
-using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
-using Silk.NET.SDL;
 using TinyFileDialogsSharp;
 using ImGuiNET;
 
@@ -14,8 +11,7 @@ namespace Autumn.ActionSystem;
 
 internal class ActionHandler
 {
-    public Dictionary<CommandID, (Command Command, Shortcut? Shortcut)> Actions => _actions;
-    private readonly Dictionary<CommandID, (Command Command, Shortcut? Shortcut)> _actions = new();
+    public Dictionary<CommandID, (Command Command, Shortcut? Shortcut)> Actions { get; } = new();
 
     /// <summary>
     /// Create a new instance of ActionHandler.
@@ -62,14 +58,14 @@ internal class ActionHandler
 
             actions.TryGetValue(id, out Shortcut? shortcut);
 
-            _actions.Add(id, (command, shortcut));
+            Actions.Add(id, (command, shortcut));
         }
     }
 
 
     public void ExecuteShortcuts(WindowContext? focusedWindow)
     {
-        foreach (var (command, shortcut) in _actions.Values)
+        foreach (var (command, shortcut) in Actions.Values)
         {
             if ((shortcut?.IsTriggered() ?? false) && command.Enabled(focusedWindow))
                 command.Action.Invoke(focusedWindow);
@@ -78,21 +74,21 @@ internal class ActionHandler
 
     public void ExecuteAction(CommandID commandID, WindowContext? focusedWindow)
     {
-        _actions[commandID].Command.Action.Invoke(focusedWindow);
+        Actions[commandID].Command.Action.Invoke(focusedWindow);
     }
 
     public bool SetShortcut(CommandID commandID, Shortcut shortcut)
     {
-        if (!_actions.TryGetValue(commandID, out var action))
+        if (!Actions.TryGetValue(commandID, out var action))
             return false;
 
-        _actions[commandID] = (action.Command, shortcut);
+        Actions[commandID] = (action.Command, shortcut);
         return true;
     }
 
     public (Command? Command, Shortcut? Shortcut) GetAction(CommandID commandID)
     {
-        if (!_actions.TryGetValue(commandID, out var value))
+        if (!Actions.TryGetValue(commandID, out var value))
             return (null, null);
 
         return value;
@@ -100,7 +96,7 @@ internal class ActionHandler
 
     public IEnumerator<(Command Command, Shortcut? Shortcut)> EnumerateActions()
     {
-        foreach (var value in _actions.Values)
+        foreach (var value in Actions.Values)
             yield return value;
     }
 
@@ -470,8 +466,7 @@ internal class ActionHandler
                 ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects);
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
-            ,
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
             Command.CommandCategory.Selection
         );
     private static Command UnselectAll() =>

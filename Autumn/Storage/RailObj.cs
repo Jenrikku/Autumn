@@ -10,7 +10,7 @@ internal class RailObj : StageObj
 
     public bool Closed = false;
 
-    public List<RailPoint> Points { get; set; } = new();
+    public List<RailPoint> Points { get; init; } = new();
 
     public static bool operator ==(RailObj r, RailObj rb)
     {
@@ -33,36 +33,40 @@ internal class RailObj : StageObj
     public override RailObj Clone(bool keepChildren = true)
     {
         RailObj clone = new()
-            {
-                Type = Type,
-                FileType = FileType,
-                Layer = Layer,
-                Name = Name,
-            };
-        clone.PointType = PointType;
-        clone.RailNo = RailNo;
-        clone.Closed = Closed;
-        clone.Points = new();
+        {
+            Type = Type,
+            FileType = FileType,
+            Layer = Layer,
+            Name = Name,
+            PointType = PointType,
+            RailNo = RailNo,
+            Closed = Closed
+        };
+
         foreach (RailPoint p in Points)
-        {   
+        {
             if (PointType == RailPointType.Bezier)
-                clone.Points.Add(new RailPoint() { /*ID = p.ID,*/ Properties = p.Properties, 
+                clone.Points.Add(new RailPoint()
+                { /*ID = p.ID,*/
+                    Properties = p.Properties,
                     Point0Trans = p.Point0Trans,
                     Point1Trans = p.Point1Trans,
                     Point2Trans = p.Point2Trans
-                    });
+                });
             else
             {
-                clone.Points.Add(new RailPoint() { /*ID = p.ID,*/ Properties = p.Properties, 
+                clone.Points.Add(new RailPoint()
+                { /*ID = p.ID,*/
+                    Properties = p.Properties,
                     Point0Trans = p.Point0Trans,
-                    });
+                });
                 clone.Points.Last().SetPointLinear();
             }
         }
+
         foreach (string s in Properties.Keys)
-        {
             clone.Properties.Add(s, Properties[s]);
-        }
+
         return clone;
     }
 }
