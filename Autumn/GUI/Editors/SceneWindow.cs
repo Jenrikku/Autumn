@@ -821,33 +821,9 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
         
-        var olpos = ImGui.GetCursorPos();
-        ImGui.SetCursorScreenPos(upperRightCorner + new Vector2(_innerPadding.X, _innerPadding.Y + _cubeSize));
-        if (ImGui.BeginChild("OverlayGizmos", new (34 , 120)))
-        {
-            var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
-            col.W = 0.7f;
-            ImGui.PushStyleColor(ImGuiCol.Button, col);
-            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
-            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)))
-                TransformGizmo = TransformGizmo == 1 ? 0 : 1;
-            ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30))) 
-                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
-            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30))) 
-                TransformGizmo = TransformGizmo == 2 ? 0 : 2;
-            ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
-            ImGui.EndChild();
-            ImGui.PopStyleVar();
-            ImGui.PopStyleColor();
-        }
-        ImGui.SetCursorPos(olpos);
-
+        GizmoButtons(upperRightCorner);
         ActionPanel(contentAvail);
-
         ActionMenu(deltaSeconds);
-
 
         ImGui.End();
     }
@@ -1017,6 +993,31 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.PopStyleVar(2);
         //ImGui.PopFont();
         ImGui.SetCursorPos(opos);
+    }
+    private void GizmoButtons(Vector2 upperRightCorner)
+    {
+        var olpos = ImGui.GetCursorPos();
+        ImGui.SetCursorScreenPos(upperRightCorner + new Vector2(_innerPadding.X, _innerPadding.Y + _cubeSize));
+        if (ImGui.BeginChild("OverlayGizmos", new (34 , 120)))
+        {
+            var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
+            col.W = 0.7f;
+            ImGui.PushStyleColor(ImGuiCol.Button, col);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
+            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)))
+                TransformGizmo = TransformGizmo == 1 ? 0 : 1;
+            ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30))) 
+                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
+            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30))) 
+                TransformGizmo = TransformGizmo == 2 ? 0 : 2;
+            ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
+            ImGui.EndChild();
+            ImGui.PopStyleVar();
+            ImGui.PopStyleColor();
+        }
+        ImGui.SetCursorPos(olpos);
     }
     private void TabsPanel()
     {
