@@ -32,5 +32,8 @@ internal static class IconUtils
     public const string BOOK = "\uF02D";
     public const string FOLDER = "\uF07B";
     public const string MAG_GLASS = "\uF002";
+    public const string MOVE = "\uf0b2";
+    public const string ROTATE = "\uF021";
+    public const string SCALE = "\uf424";
 
 }

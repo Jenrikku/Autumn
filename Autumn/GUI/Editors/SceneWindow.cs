@@ -74,6 +74,8 @@ internal class SceneWindow(MainWindowContext window)
     private bool _isSceneWindowFocused;
 
     private Vector2 _viewportSize;
+    private Vector2 _innerPadding = new Vector2(-40, 40);
+    private float _cubeSize = 45;
     private Matrix4x4 tl = Matrix4x4.Identity;
     private Matrix4x4 rt = Matrix4x4.Identity;
     private Vector3 trls = Vector3.Zero;
@@ -473,8 +475,8 @@ internal class SceneWindow(MainWindowContext window)
         Vector2 upperRightCorner = new(sceneImageRectMax.X, sceneImageRectMin.Y);
 
         bool orientationCubeHovered = GizmoDrawer.OrientationCube(
-            upperRightCorner + new Vector2(-60, 60),
-            radius: 45,
+            upperRightCorner + _innerPadding,
+            radius: _cubeSize,
             out Vector3 facingDirection
         );
         bool MoveGizmoHovered = false;
@@ -818,6 +820,30 @@ internal class SceneWindow(MainWindowContext window)
                 
             }
         }
+        
+        var olpos = ImGui.GetCursorPos();
+        ImGui.SetCursorScreenPos(upperRightCorner + new Vector2(_innerPadding.X, _innerPadding.Y + _cubeSize));
+        if (ImGui.BeginChild("OverlayGizmos", new (34 , 120)))
+        {
+            var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
+            col.W = 0.7f;
+            ImGui.PushStyleColor(ImGuiCol.Button, col);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
+            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)))
+                TransformGizmo = TransformGizmo == 1 ? 0 : 1;
+            ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30))) 
+                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
+            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30))) 
+                TransformGizmo = TransformGizmo == 2 ? 0 : 2;
+            ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
+            ImGui.EndChild();
+            ImGui.PopStyleVar();
+            ImGui.PopStyleColor();
+        }
+        ImGui.SetCursorPos(olpos);
+
         ActionPanel(contentAvail);
 
         ActionMenu(deltaSeconds);
@@ -952,12 +978,6 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
         float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6*11 + 12;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
-        if (ImGui.Button(IconUtils.ARROW_UP))
-        {
-            TransformGizmo += 1;
-        }
-        ImGui.SetItemTooltip($"Gizmo: {(TransformGizmo == 0 ? "None" : (TransformGizmo == 1 ? "Translate" : TransformGizmo == 2 ? "Rotate" : "Scale"))}");
-        ImGui.SameLine();
 
         if (ImGui.Button(IconUtils.GRID))
         {

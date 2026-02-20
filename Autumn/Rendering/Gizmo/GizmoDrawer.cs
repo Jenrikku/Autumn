@@ -704,8 +704,7 @@ internal static class GizmoDrawer
 
         bool Plane(int axisA, int axisB)
         {
-            var colA = s_axisColors[axisA];
-            var colB = s_axisColors[axisB];
+            var colC = s_axisColors[OtherAxis(axisA, axisB)];
 
             Vector2 posA = WorldToScreen(
                 center + s_transformMatVectors[axisA] * radius * gizmoScaleFactor * 0.7f
@@ -718,15 +717,13 @@ internal static class GizmoDrawer
                 MathUtils.IsPointInTriangle(mousePos, center2d, posA, posB)
             );
 
-            var col = AdditiveBlend(colA, colB);
-
             Drawlist.AddTriangleFilled(
                 center2d,
                 posA,
                 posB,
-                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : col, 0x55)
+                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : colC, 0x80)
             );
-            Drawlist.AddLine(posA, posB, hovered ? HOVER_COLOR : col, 1.5f);
+            Drawlist.AddLine(posA, posB, hovered ? HOVER_COLOR : colC, 1.5f);
 
             return hovered;
         }
@@ -739,7 +736,7 @@ internal static class GizmoDrawer
 
         #region best effort depth sorting
         Span<(float sortKey, (AxisPlaneUnion apu, HoveredAxis ha) value)> items =
-            stackalloc (float sortKey, (AxisPlaneUnion apu, HoveredAxis ha))[] {
+            [
                 (
                     Vector3.Dot(-s_view.CamForwardVector, axisVecX * 0.5f) + 0.5f,
                     (AxisPlaneUnion.Axis(0), HoveredAxis.X_AXIS)
@@ -764,7 +761,7 @@ internal static class GizmoDrawer
                     Vector3.Dot(-s_view.CamForwardVector, (axisVecY + axisVecZ) * 0.5f),
                     (AxisPlaneUnion.Plane(1, 2), HoveredAxis.YZ_PLANE)
                 )
-            };
+            ];
 
         Sort(items);
         #endregion
@@ -829,8 +826,7 @@ internal static class GizmoDrawer
 
         bool Plane(int axisA, int axisB)
         {
-            var colA = s_axisColors[axisA];
-            var colB = s_axisColors[axisB];
+            var colC = s_axisColors[OtherAxis(axisA, axisB)];
 
             Vector2 posA = WorldToScreen(
                 center + s_transformMatVectors[axisA] * lineLength * gizmoScaleFactor * 0.5f
@@ -848,17 +844,15 @@ internal static class GizmoDrawer
                 MathUtils.IsPointInQuad(mousePos, center2d, posA, posAB, posB)
             );
 
-            var col = AdditiveBlend(colA, colB);
-
             Drawlist.AddQuadFilled(
                 center2d,
                 posA,
                 posAB,
                 posB,
-                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : col, 0x55)
+                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : colC, 0x80)
             );
-            Drawlist.AddLine(posA, posAB, hovered ? HOVER_COLOR : col, 1.5f);
-            Drawlist.AddLine(posAB, posB, hovered ? HOVER_COLOR : col, 1.5f);
+            Drawlist.AddLine(posA, posAB, hovered ? HOVER_COLOR : colC, 1.5f);
+            Drawlist.AddLine(posAB, posB, hovered ? HOVER_COLOR : colC, 1.5f);
 
             return hovered;
         }
@@ -871,7 +865,7 @@ internal static class GizmoDrawer
 
         #region best effort depth sorting
         Span<(float sortKey, (AxisPlaneUnion apu, HoveredAxis ha) value)> items =
-            stackalloc (float sortKey, (AxisPlaneUnion apu, HoveredAxis ha))[] {
+            [
                 (
                     Vector3.Dot(-s_view.CamForwardVector, axisVecX * 0.5f) + 0.5f,
                     (AxisPlaneUnion.Axis(0), HoveredAxis.X_AXIS)
@@ -896,7 +890,7 @@ internal static class GizmoDrawer
                     Vector3.Dot(-s_view.CamForwardVector, (axisVecY + axisVecZ) * 0.5f),
                     (AxisPlaneUnion.Plane(1, 2), HoveredAxis.YZ_PLANE)
                 )
-            };
+            ];
 
         Sort(items);
         #endregion
@@ -930,5 +924,10 @@ internal static class GizmoDrawer
             hoveredAxis = HoveredAxis.FREE;
 
         return hoveredAxis != HoveredAxis.NONE;
+    }
+
+    public static int OtherAxis(int A, int B)
+    {
+        return (A + B) ^ 0b11; 
     }
 }
