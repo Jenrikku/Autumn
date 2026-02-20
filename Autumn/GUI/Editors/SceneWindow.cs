@@ -1007,12 +1007,12 @@ internal class SceneWindow(MainWindowContext window)
             if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)))
                 TransformGizmo = TransformGizmo == 1 ? 0 : 1;
             ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30))) 
-                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
-            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
             if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30))) 
                 TransformGizmo = TransformGizmo == 2 ? 0 : 2;
             ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30))) 
+                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
+            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
             ImGui.EndChild();
             ImGui.PopStyleVar();
             ImGui.PopStyleColor();
