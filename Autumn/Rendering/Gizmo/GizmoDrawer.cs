@@ -518,7 +518,7 @@ internal static class GizmoDrawer
 
             bool isHovered = false;
 
-            const float HOVER_LINE_THICKNESS = 5;
+            const float HOVER_LINE_THICKNESS = 8;
             #region hover test
             Vector2 diff = mousePos - center2d;
 
@@ -571,7 +571,7 @@ internal static class GizmoDrawer
                 ELLIPSE_NUM_SEGMENTS / 2 + 1,
                 color,
                 ImDrawFlags.None,
-                2.5f
+                HOVER_LINE_THICKNESS / 2
             );
 
             return isHovered;
@@ -630,17 +630,17 @@ internal static class GizmoDrawer
         var axisDir2d = Vector2.Normalize(handleEndPos2d - center2d);
 
         bool hovered =
-            Math.Abs(Vector2.Dot(mousePos - center2d, new(-axisDir2d.Y, axisDir2d.X))) < 3
+            Math.Abs(Vector2.Dot(mousePos - center2d, new(-axisDir2d.Y, axisDir2d.X))) < 5 // hover line width
             && Vector2.Dot(mousePos - center2d, axisDir2d) >= 0
             && Vector2.Dot(mousePos - handleEndPos2d, axisDir2d) <= 0;
 
-        hovered |= (mousePos - handleEndPos2d).LengthSquared() < 4.5f * 4.5f;
+        hovered |= (mousePos - handleEndPos2d).LengthSquared() < 7.5f * 4.5f;
 
         hovered = HoverablePart(hovered);
 
         var col = hovered ? HOVER_COLOR : s_axisColors[axis];
 
-        ClippedLine(center, handleEndPos, col, 2.5f); // line thickness
+        ClippedLine(center, handleEndPos, col, 6f); // visual line thickness
 
         if (isArrow)
         {
@@ -663,13 +663,13 @@ internal static class GizmoDrawer
                 s_ellipsePoints[0],
                 s_ellipsePoints[ELLIPSE_NUM_SEGMENTS / 2],
                 WorldToScreen(
-                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor // Triangle width
+                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor // visual Triangle width
                 ),
                 col
             );
         }
         else
-            Drawlist.AddCircleFilled(handleEndPos2d, 4.5f, col);
+            Drawlist.AddCircleFilled(handleEndPos2d, 7.5f, col); // scale gizmo point radius
 
         return hovered;
     }
@@ -790,7 +790,7 @@ internal static class GizmoDrawer
             }
         }
 
-        if (HoverableRing(center2d, radius + 10, 6f, false, 0x55_FF_FF_FF, 0x88_FF_FF_FF))
+        if (HoverableRing(center2d, radius + 20, 6f, false, 0x55_FF_FF_FF, 0x88_FF_FF_FF))
             hoveredAxis = HoveredAxis.ALL_AXES;
 
         return hoveredAxis != HoveredAxis.NONE;
