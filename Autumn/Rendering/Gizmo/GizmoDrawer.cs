@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Autumn.GUI;
 using Autumn.Utils;
 using ImGuiNET;
 
@@ -12,6 +13,17 @@ namespace Autumn.Rendering.Gizmo;
 /// </summary>
 internal static class GizmoDrawer
 {
+    public static void Initialize(WindowManager windowManager, IntPtr user_texture_id)
+    {
+        windowManager.GlobalThemeUpdatedEvent += theme =>
+        {
+            s_axisColors[0] = ImGui.ColorConvertFloat4ToU32(theme.AxisXColor);
+            s_axisColors[1] = ImGui.ColorConvertFloat4ToU32(theme.AxisYColor);
+            s_axisColors[2] = ImGui.ColorConvertFloat4ToU32(theme.AxisZColor);
+        };
+        SetOrientationCubeTexture(user_texture_id);
+    }
+
     [DllImport("cimgui")]
     private static extern unsafe bool igItemAdd(
         in Rect bb,

@@ -85,3 +85,8 @@ NavHighlight = [66, 150, 249, 1.0]
 NavWindowingHighlight = [255, 255, 255, 0.7]
 NavWindowingDimBg = [204, 204, 204, 0.2]
 ModalWindowDimBg = [204, 204, 204, 0.35]
+
+[extras]
+AxisXColor = [255, 68, 68, 255]
+AxisYColor = [68, 255, 68, 255]
+AxisZColor = [68, 68, 255, 255]
