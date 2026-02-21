@@ -1004,13 +1004,13 @@ internal class SceneWindow(MainWindowContext window)
             col.W = 0.7f;
             ImGui.PushStyleColor(ImGuiCol.Button, col);
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
-            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)) || (!ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
+            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
                 TransformGizmo = TransformGizmo == 1 ? 0 : 1;
             ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30)) || (!ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
+            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
                 TransformGizmo = TransformGizmo == 2 ? 0 : 2;
             ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30)) || (!ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
+            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
                 TransformGizmo = TransformGizmo == 3 ? 0 : 3;
             ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
             ImGui.EndChild();
