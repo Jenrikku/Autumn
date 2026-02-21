@@ -171,6 +171,7 @@ internal class SettingsDialog
 
                     _window.WindowManager.Add(fileChooser);
                 }
+                ImGui.SetItemTooltip("Add theme");
 
                 ImGui.SameLine();
 
@@ -191,6 +192,7 @@ internal class SettingsDialog
                 }
 
                 if (isReadOnly) ImGui.EndDisabled();
+                else ImGui.SetItemTooltip("Remove theme");
 
                 #endregion
 
