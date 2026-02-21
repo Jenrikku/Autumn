@@ -5,7 +5,7 @@ namespace Autumn.GUI.Theming;
 
 internal class Theme
 {
-    public ImGuiStyle ImGuiStyle;
+    public ImGuiStyle? ImGuiStyle;
 
     public Vector4 AxisXColor;
     public Vector4 AxisYColor;
@@ -16,6 +16,7 @@ internal class Theme
     /// </summary>
     public unsafe void UpdateImGuiTheme()
     {
-        *ImGui.GetStyle().NativePtr = ImGuiStyle;
+        if (!ImGuiStyle.HasValue) return;
+        *ImGui.GetStyle().NativePtr = ImGuiStyle.Value;
     }
 }
