@@ -16,7 +16,7 @@ internal class SceneWindow(MainWindowContext window)
     public bool IsWindowFocused => _isSceneWindowFocused;
     public bool IsSceneHovered => _isSceneHovered;
     public bool IsTransformActive => IsTranslationActive || IsRotationActive || IsScaleActive;
-
+    public bool IsTransformFromGizmo = false;
     public bool IsTranslationActive = false;
     public bool IsTranslationFromDuplicate = false;
     public bool TranslationStarted = false;
@@ -44,6 +44,7 @@ internal class SceneWindow(MainWindowContext window)
     public ISceneObj? CamSceneObj;
     public AddRailPointState AddRailPoint = AddRailPointState.None; // 0 false, 1 to rail, 2 to point
 
+    private TransformGizmo _transformGizmo = TransformGizmo.None;
     private Vector3 _axisLock = Vector3.One;
     private bool _persistentMouseDrag = false;
     private Vector2 _previousMousePos = Vector2.Zero;
@@ -63,7 +64,13 @@ internal class SceneWindow(MainWindowContext window)
     private bool _isSceneWindowFocused;
 
     private Vector2 _viewportSize;
-
+    private Vector2 _innerPadding = new Vector2(-45, 45);
+    private float _cubeSize = 45;
+    private Matrix4x4 tl = Matrix4x4.Identity;
+    private Matrix4x4 rt = Matrix4x4.Identity;
+    private Vector3 trls = Vector3.Zero;
+    private Vector3 rots = Vector3.Zero;
+    // private Vector3 scls = Vector3.Zero;
     public void AddMouseClickAction(Action<MainWindowContext, Vector4> action)
     {
         _mouseClickActions.Enqueue(action);
@@ -73,24 +80,86 @@ internal class SceneWindow(MainWindowContext window)
     {
         if (ImGui.IsKeyPressed(ImGuiKey.X, false))
         {
-            if (_axisLock.Y != 0 || _axisLock.Z != 0)
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift))
+                _axisLock = Vector3.One - Vector3.UnitX;
+            else if (_axisLock.Y != 0 || _axisLock.Z != 0)
                 _axisLock = Vector3.UnitX;
             else
                 _axisLock = Vector3.One;
         }
         else if (ImGui.IsKeyPressed(ImGuiKey.Z, false))
         {
-            if (_axisLock.X != 0 || _axisLock.Y != 0)
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift))
+                _axisLock = Vector3.One - Vector3.UnitZ;
+            else if (_axisLock.X != 0 || _axisLock.Y != 0)
                 _axisLock = Vector3.UnitZ;
             else
                 _axisLock = Vector3.One;
         }
         else if (ImGui.IsKeyPressed(ImGuiKey.Y, false))
         {
-            if (_axisLock.Z != 0 || _axisLock.X != 0)
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift))
+                _axisLock = Vector3.One - Vector3.UnitY;
+            else if (_axisLock.Z != 0 || _axisLock.X != 0)
                 _axisLock = Vector3.UnitY;
             else
                 _axisLock = Vector3.One;
+        }
+    }
+
+    public void GetAxisText(Vector3 STR)
+    {
+        if (IsTranslationActive)
+            ActTransform.FullTransformString = "Moving ";
+        else if (IsScaleActive)
+            ActTransform.FullTransformString = "Scaling ";
+        else if (IsRotationActive)
+            ActTransform.FullTransformString = "Rotating ";
+
+        if (window.CurrentScene!.SelectedObjects.Count() > 1)
+            ActTransform.FullTransformString += "multiple objects";
+        else
+        {
+            var fs = window.CurrentScene.SelectedObjects.First();
+            if (fs is IStageSceneObj) ActTransform.FullTransformString+= (fs as IStageSceneObj)!.StageObj.Name; 
+            else if (fs is RailSceneObj) ActTransform.FullTransformString+= (fs as RailSceneObj)!.RailObj.Name;
+            else if (fs is RailPointSceneObj) ActTransform.FullTransformString += $"{(fs as RailPointSceneObj)!.ParentRail.RailObj.Name} Point {(fs as RailPointSceneObj)!.ParentRail.RailPoints.IndexOf((fs as RailPointSceneObj)!)}";
+            else if (fs is RailHandleSceneObj) ActTransform.FullTransformString += $"{(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailObj.Name} Point {(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailPoints.IndexOf((fs as RailHandleSceneObj)!.ParentPoint)} Handle";
+        }
+
+        if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ)
+        {
+            ActTransform.FullTransformString += " on the ";
+
+            if (_axisLock == Vector3.UnitX)
+                ActTransform.FullTransformString += "X ";
+            else if (_axisLock == Vector3.UnitY)
+                ActTransform.FullTransformString += "Y ";
+            else if (_axisLock == Vector3.UnitZ)
+                ActTransform.FullTransformString += "Z ";
+
+
+            ActTransform.FullTransformString += "axis";
+
+            if (_transformChangeString != "-" && _transformChangeString != "" && _axisLock != Vector3.One)
+                ActTransform.FullTransformString += ": " + (_transformChangeString != "-" ? _transformChangeString : "");
+            else
+                ActTransform.FullTransformString += ": ";
+
+
+
+            if (_axisLock == Vector3.UnitX)
+                ActTransform.FullTransformString += $" {STR.X:0.00}";
+
+            if (_axisLock == Vector3.UnitY)
+                ActTransform.FullTransformString += $" {STR.Y:0.00}";
+
+            if (_axisLock == Vector3.UnitZ)
+                ActTransform.FullTransformString += $" {STR.Z:0.00}";
+        }
+        else
+        {
+            ActTransform.FullTransformString += ": " + $"X: {STR.X:0.00}, Y: {STR.Y:0.00}, Z: {STR.Z:0.00}";
         }
     }
 
@@ -108,6 +177,9 @@ internal class SceneWindow(MainWindowContext window)
 
         bool sceneReady = window.CurrentScene?.IsReady ?? false;
 
+        ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0x00000000);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0x00000000);
         if (sceneReady)
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
@@ -120,8 +192,10 @@ internal class SceneWindow(MainWindowContext window)
         {
             if (sceneReady)
                 ImGui.PopStyleVar();
+            ImGui.PopStyleColor(3);
             return;
         }
+        ImGui.PopStyleColor(3);
 
         if (!sceneReady)
         {
@@ -132,9 +206,8 @@ internal class SceneWindow(MainWindowContext window)
 
         Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 24 * window.ScalingFactor);
         aspectRatio = contentAvail.X / contentAvail.Y;
-
-        Vector2 sceneWindowRegionMin = ImGui.GetWindowContentRegionMin();
-        Vector2 sceneWindowRegionMax = ImGui.GetWindowContentRegionMax();
+        Vector2 sceneWindowRegionMin = ImGui.GetCursorScreenPos();
+        Vector2 sceneWindowRegionMax = ImGui.GetCursorScreenPos() + contentAvail;
 
         if (contentAvail.X < 0 || contentAvail.Y < 0)
         {
@@ -392,11 +465,116 @@ internal class SceneWindow(MainWindowContext window)
         Vector2 upperRightCorner = new(sceneImageRectMax.X, sceneImageRectMin.Y);
 
         bool orientationCubeHovered = GizmoDrawer.OrientationCube(
-            upperRightCorner + new Vector2(-60, 60),
-            radius: 45,
+            upperRightCorner + _innerPadding,
+            radius: _cubeSize,
             out Vector3 facingDirection
         );
+        bool MoveGizmoHovered = false;
+        bool RotGizmoHovered = false;
+        bool ScaleGizmoHovered = false;
+        HoveredAxis TransformGizmoAxis = HoveredAxis.NONE;
+
+        if (window.CurrentScene!.SelectedObjects.Any() && window.ContextHandler.SystemSettings.LastGizmo != 0)
+        {
+            // Method one: Gizmo is placed in the middle position of the selected objects
+            if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.Middle)
+            {
+                int st = 0;
+                trls = Vector3.Zero;
+                rots = Vector3.Zero;
+                foreach (ISceneObj s in window.CurrentScene!.SelectedObjects)
+                {
+                    if (s is ActorSceneObj ac)
+                    {
+                        trls += ac.StageObj.Translation * 0.01f;
+                        rots += ac.StageObj.Rotation;
+                        //scls += ac.StageObj.Scale;
+                    }
+                    else if (s is RailSceneObj rc)
+                    {
+                        trls += (rc.FakeOffset + rc.Center) * 0.01f;;
+                        rots += rc.FakeRotation;
+                        //scls += ac.StageObj.Scale;
+                    }
+                    else if (s is RailPointSceneObj rp)
+                    {
+                        trls += rp.RailPoint.Point0Trans * 0.01f;
+                        rots += rp.FakeRotation;
+                        //scls += ac.StageObj.Scale;
+                    }
+                    else if (s is RailHandleSceneObj rh)
+                    {
+                        trls += (rh.ParentPoint.RailPoint.Point0Trans + rh.Offset) * 0.01f;
+                        //scls += ac.StageObj.Scale;
+                    }
+
+                    st += 1;
+                }
+                trls /= st;
+                rots /= st;
+                // scls /= st;
+            }
+            // Method two: Gizmo is placed on the first object
+            else if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.First && window.CurrentScene!.SelectedObjects.First() != null)
+            {
+                ISceneObj fst = window.CurrentScene!.SelectedObjects.First();
+                trls = fst switch 
+                {
+                    ISceneObj x when x is IStageSceneObj stg => stg.StageObj.Translation * 0.01f,
+                    ISceneObj x when x is RailSceneObj r => (r.Center + r.FakeOffset) * 0.01f,
+                    ISceneObj x when x is RailPointSceneObj rp => rp.RailPoint.Point0Trans * 0.01f,
+                    ISceneObj x when x is RailHandleSceneObj rp => (rp.ParentPoint.RailPoint.Point0Trans + rp.Offset) * 0.01f,
+                    _ => Vector3.Zero
+                };
+                rots = fst switch 
+                {
+                    ISceneObj x when x is IStageSceneObj stg => stg.StageObj.Rotation,
+                    ISceneObj x when x is RailSceneObj r => r.FakeRotation,
+                    ISceneObj x when x is RailPointSceneObj rp => rp.FakeRotation,
+                    _ => Vector3.Zero
+                };
+            }
+            // Method three: Gizmo is placed on the last object
+            else if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.Last && window.CurrentScene!.SelectedObjects.Last() != null)
+            {
+                ISceneObj lst = window.CurrentScene!.SelectedObjects.Last();
+                trls = lst switch
+                {
+                    ISceneObj x when x is IStageSceneObj stg => stg.StageObj.Translation * 0.01f,
+                    ISceneObj x when x is RailSceneObj r => (r.Center + r.FakeOffset) * 0.01f,
+                    ISceneObj x when x is RailPointSceneObj rp => rp.RailPoint.Point0Trans * 0.01f,
+                    ISceneObj x when x is RailHandleSceneObj rp => (rp.ParentPoint.RailPoint.Point0Trans + rp.Offset) * 0.01f,
+                    _ => Vector3.Zero
+                };
+                rots = lst switch
+                {
+                    ISceneObj x when x is IStageSceneObj stg => stg.StageObj.Rotation,
+                    ISceneObj x when x is RailSceneObj r => r.FakeRotation,
+                    ISceneObj x when x is RailPointSceneObj rp => rp.FakeRotation,
+                    _ => Vector3.Zero
+                };
+
+            }
+            tl = Matrix4x4.CreateTranslation(trls);
+            rt = Matrix4x4.CreateRotationX(rots.X / 180 * (float)Math.PI)* Matrix4x4.CreateRotationY(rots.Y / 180 * (float)Math.PI) * Matrix4x4.CreateRotationZ(rots.Z / 180 * (float)Math.PI) ;
+            switch (window.ContextHandler.SystemSettings.LastGizmo)
+            {
+                case TransformGizmo.Translate:
+                MoveGizmoHovered = GizmoDrawer.TranslationGizmo(
+                    tl,  float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
+                break;
+                case TransformGizmo.Rotate:
+                RotGizmoHovered = GizmoDrawer.RotationGizmo(
+                    tl, float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
+                break;
+                case TransformGizmo.Scale:
+                ScaleGizmoHovered = GizmoDrawer.ScaleGizmo(
+                    rt * tl, float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
+                break;
+            }
+        }
         GizmoDrawer.EndGizmoDrawing();
+
 
         if (window.CurrentScene is not null)
         {
@@ -478,7 +656,22 @@ internal class SceneWindow(MainWindowContext window)
                 if (!_isSceneWindowFocused)
                     ImGui.SetWindowFocus();
 
-                if (orientationCubeHovered)
+                if (MoveGizmoHovered && !IsTransformFromGizmo && !ImGui.IsKeyDown(ImGuiKey.ModShift))
+                {
+                    TranslationStarted = true;
+                    IsTransformFromGizmo = true;
+                }
+                else if (RotGizmoHovered && !IsTransformFromGizmo && !ImGui.IsKeyDown(ImGuiKey.ModShift))
+                {
+                    RotationStarted = true;
+                    IsTransformFromGizmo = true;
+                }
+                else if (ScaleGizmoHovered && !IsTransformFromGizmo && !ImGui.IsKeyDown(ImGuiKey.ModShift))
+                {
+                    ScaleStarted = true;
+                    IsTransformFromGizmo = true;
+                }
+                else if (orientationCubeHovered)
                 {
                     camera.LookAt(camera.Eye, camera.Eye - facingDirection);
                 }
@@ -494,6 +687,30 @@ internal class SceneWindow(MainWindowContext window)
                         pixel,
                         !(window.Keyboard?.IsShiftPressed() ?? false)
                     );
+                }
+                if (IsTransformFromGizmo && (RotationStarted || TranslationStarted || ScaleStarted))
+                {
+                    switch (TransformGizmoAxis)
+                    {
+                        case HoveredAxis.X_AXIS:
+                        _axisLock = Vector3.UnitX;
+                        break;
+                        case HoveredAxis.Y_AXIS:
+                        _axisLock = Vector3.UnitY;
+                        break;
+                        case HoveredAxis.Z_AXIS:
+                        _axisLock = Vector3.UnitZ;
+                        break;                    
+                        case HoveredAxis.YZ_PLANE:
+                        _axisLock = Vector3.One - Vector3.UnitX;
+                        break;
+                        case HoveredAxis.XZ_PLANE:
+                        _axisLock = Vector3.One - Vector3.UnitY;
+                        break;
+                        case HoveredAxis.XY_PLANE:
+                        _axisLock = Vector3.One - Vector3.UnitZ;
+                        break;
+                    }
                 }
             }
             else if ((_mouseMoveKey == ImGuiMouseButton.Right ? (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && ImGui.IsKeyDown(ImGuiKey.ModAlt)) : ImGui.IsMouseClicked(ImGuiMouseButton.Right))
@@ -593,10 +810,10 @@ internal class SceneWindow(MainWindowContext window)
                 
             }
         }
+        
+        GizmoButtons(upperRightCorner);
         ActionPanel(contentAvail);
-
         ActionMenu(deltaSeconds);
-
 
         ImGui.End();
     }
@@ -706,55 +923,18 @@ internal class SceneWindow(MainWindowContext window)
     private void ActionPanel(Vector2 contentAvail)
     {
         var opos = ImGui.GetCursorPos();
+        // Needed for the gizmos not to overlap with this panel
+        ImGui.GetWindowDrawList().AddRectFilled(
+            ImGui.GetCursorScreenPos() - new Vector2(0, 4), 
+            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetWindowWidth(), 28),
+            ImGui.GetColorU32(ImGuiCol.WindowBg) | 0xFF000000);
+
         if (IsTranslationActive || IsScaleActive || IsRotationActive)
         {
             ImGui.SetWindowFontScale(1.0f);
-            string s = "";
-
-            if (IsTranslationActive)
-                s = "Moving ";
-            else if (IsScaleActive)
-                s = "Scaling ";
-            else if (IsRotationActive)
-                s = "Rotating ";
-
-            if (window.CurrentScene!.SelectedObjects.Count() > 1)
-                s += "multiple objects";
-            else
-            {
-                var fs = window.CurrentScene.SelectedObjects.First();
-                if (fs is IStageSceneObj) s+= (fs as IStageSceneObj)!.StageObj.Name; 
-                else if (fs is RailSceneObj) s+= (fs as RailSceneObj)!.RailObj.Name;
-                else if (fs is RailPointSceneObj) s += $"{(fs as RailPointSceneObj)!.ParentRail.RailObj.Name} Point {(fs as RailPointSceneObj)!.ParentRail.RailPoints.IndexOf((fs as RailPointSceneObj)!)}";
-                else if (fs is RailHandleSceneObj) s += $"{(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailObj.Name} Point {(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailPoints.IndexOf((fs as RailHandleSceneObj)!.ParentPoint)} Handle";
-            }
-
-
-            if (_axisLock != Vector3.One)
-            {
-                s += " on the ";
-
-                if (_axisLock == Vector3.UnitX)
-                    s += "X ";
-                else if (_axisLock == Vector3.UnitY)
-                    s += "Y ";
-                else
-                    s += "Z ";
-
-                s += "axis";
-
-                if (_transformChangeString != "-" && _transformChangeString != "" && _axisLock != Vector3.One)
-                    s += ": " + (_transformChangeString != "-" ? _transformChangeString : "");
-                else
-                    s += ": " + ActTransform.FullTransformString;
-            }
-            else
-            {
-                s += ": " + ActTransform.FullTransformString;
-            }
 
             ImGui.SetCursorPos(opos + new Vector2(8, -2));
-            ImGui.Text(s);
+            ImGui.Text(ActTransform.FullTransformString);
             ImGui.SetWindowFontScale(1.0f);
             ImGui.SetCursorPos(opos);
         }
@@ -762,44 +942,77 @@ internal class SceneWindow(MainWindowContext window)
         //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*5 + 5*11;
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*5 + 5*10;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
+
         if (ImGui.Button(IconUtils.GRID))
         {
             ModelRenderer.VisibleGrid = !ModelRenderer.VisibleGrid;
         }
-        ImGui.SetItemTooltip("Toggle Grid");
+        ImGui.SetItemTooltip($"Grid visibility {(ModelRenderer.VisibleGrid ? "ON" : "OFF")}");
         ImGui.SameLine();
 
         if (ImGui.Button(IconUtils.TRANSPARENT))
         {
             ModelRenderer.VisibleTransparentWall = !ModelRenderer.VisibleTransparentWall;
         }
-        ImGui.SetItemTooltip("Toggle Transparent Walls");
+        ImGui.SetItemTooltip($"Transparent walls visibility {(ModelRenderer.VisibleTransparentWall ? "ON" : "OFF")}");
         ImGui.SameLine();
         
         if (ImGui.Button(IconUtils.PATH))
         {
             ModelRenderer.VisibleRails = !ModelRenderer.VisibleRails;
         }
-        ImGui.SetItemTooltip("Toggle Rails");
+        ImGui.SetItemTooltip($"Rails visibility {(ModelRenderer.VisibleRails ? "ON" : "OFF")}");
         ImGui.SameLine();
 
         if (ImGui.Button(IconUtils.AREA))
         {
             ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
         }
-        ImGui.SetItemTooltip("Toggle Areas");
+        ImGui.SetItemTooltip($"Area visibility {(ModelRenderer.VisibleAreas ? "ON" : "OFF")}");
         ImGui.SameLine();
         if (ImGui.Button(IconUtils.CAMERA))
         {
             ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
-        ImGui.SetItemTooltip("Toggle CameraAreas");
+        ImGui.SetItemTooltip($"CameraArea visibility {(ModelRenderer.VisibleCameraAreas ? "ON" : "OFF")}");
+        ImGui.SameLine();
+
 
         ImGui.PopStyleVar(2);
         //ImGui.PopFont();
         ImGui.SetCursorPos(opos);
+    }
+    private void GizmoButtons(Vector2 upperRightCorner)
+    {
+        var olpos = ImGui.GetCursorPos();
+        ImGui.SetCursorScreenPos(upperRightCorner + new Vector2(_innerPadding.X, _innerPadding.Y + _cubeSize));
+        if (ImGui.BeginChild("OverlayGizmos", new (34 , 120)))
+        {
+            var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
+            col.W = 0.7f;
+            ImGui.PushStyleColor(ImGuiCol.Button, col);
+            _transformGizmo = window.ContextHandler.SystemSettings.LastGizmo;
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
+            if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Translate ? TransformGizmo.None : TransformGizmo.Translate;
+            ImGui.SetItemTooltip($"Move Gizmo {(_transformGizmo == TransformGizmo.Translate ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Rotate ? TransformGizmo.None : TransformGizmo.Rotate;
+            ImGui.SetItemTooltip($"Rotate Gizmo {(_transformGizmo == TransformGizmo.Rotate ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.SCALE + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Scale ? TransformGizmo.None : TransformGizmo.Scale;
+            window.ContextHandler.SystemSettings.LastGizmo = _transformGizmo;
+            ImGui.SetItemTooltip($"Scale Gizmo {(_transformGizmo == TransformGizmo.Scale ? "ON" : "OFF")}");
+            ImGui.EndChild();
+            ImGui.PopStyleVar();
+            ImGui.PopStyleColor();
+        }
+        ImGui.SetCursorPos(olpos);
+    }
+    private void TabsPanel()
+    {
     }
 
     public void TranslateAction(Vector3 _ndcMousePos3D)
@@ -815,7 +1028,8 @@ internal class SceneWindow(MainWindowContext window)
 
             //multiply by distance to camera to make it responsive at different distances
 
-            GetAxis();
+            if (!IsTransformFromGizmo)
+                GetAxis();
             if (_axisLock != Vector3.One)
             {
                 TransformChange();
@@ -899,21 +1113,7 @@ internal class SceneWindow(MainWindowContext window)
                     break;
             }
 
-            if (_axisLock == Vector3.One)
-            {
-                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
-            }
-            else
-            {
-                if (_axisLock == Vector3.UnitX)
-                    ActTransform.FullTransformString = $" {STR.X}";
-
-                if (_axisLock == Vector3.UnitY)
-                    ActTransform.FullTransformString = $" {STR.Y}";
-
-                if (_axisLock == Vector3.UnitZ)
-                    ActTransform.FullTransformString = $" {STR.Z}";
-            }
+            GetAxisText(STR);
         }
 
         if ((IsTranslationFromDuplicate || TranslationStarted) && !IsTranslationActive)
@@ -993,11 +1193,13 @@ internal class SceneWindow(MainWindowContext window)
         else if (
             (
                 FinishTransform
+                || (IsTransformFromGizmo && ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
             ) && IsTranslationActive
         )
         { // Apply action
+            IsTransformFromGizmo = false;
             IsTranslationActive = false;
             FinishTransform = false;
             _axisLock = Vector3.One;
@@ -1098,6 +1300,7 @@ internal class SceneWindow(MainWindowContext window)
             && IsTranslationActive
         )
         { // Cancel action
+            IsTransformFromGizmo = false;
             IsTranslationActive = false;
 
             foreach (ISceneObj scobj in window.CurrentScene!.SelectedObjects)
@@ -1163,7 +1366,8 @@ internal class SceneWindow(MainWindowContext window)
             if (!_isSceneWindowFocused)
                 ImGui.SetWindowFocus();
 
-            GetAxis();
+            if (!IsTransformFromGizmo)
+                GetAxis();
             if (_axisLock != Vector3.One)
                 TransformChange();
             else
@@ -1242,21 +1446,7 @@ internal class SceneWindow(MainWindowContext window)
                 ISceneObj x when x is RailSceneObj y => y.FakeRotation,
             };
 
-            if (_axisLock == Vector3.One)
-            {
-                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
-            }
-            else
-            {
-                if (_axisLock == Vector3.UnitX)
-                    ActTransform.FullTransformString = $" {STR.X}";
-
-                if (_axisLock == Vector3.UnitY)
-                    ActTransform.FullTransformString = $" {STR.Y}";
-
-                if (_axisLock == Vector3.UnitZ)
-                    ActTransform.FullTransformString = $" {STR.Z}";
-            }
+            GetAxisText(STR);
         }
 
         if (RotationStarted && !IsRotationActive)
@@ -1301,17 +1491,22 @@ internal class SceneWindow(MainWindowContext window)
             //     else { IsRotationActive = false; return;}
             //     ActTransform.Relative.Add(sobj, Vector3.UnitX * (float)rot);
             // }
-            if (ActTransform.Originals.Count < 1) 
+            if (ActTransform.Originals.Count < 1)
+            {
                 IsRotationActive = false;
+                IsTransformFromGizmo = false;
+            }
         }
         else if (
             (
                 FinishTransform
+                || (IsTransformFromGizmo && ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
             ) && IsRotationActive
         )
         { // Apply action
+            IsTransformFromGizmo = false;
             IsRotationActive = false;
             FinishTransform = false;
             _axisLock = Vector3.One;
@@ -1408,6 +1603,7 @@ internal class SceneWindow(MainWindowContext window)
             && IsRotationActive
         )
         { // Cancel action
+            IsTransformFromGizmo = false;
             IsRotationActive = false;
 
             foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)
@@ -1436,7 +1632,8 @@ internal class SceneWindow(MainWindowContext window)
                 ImGui.SetWindowFocus();
             //multiply by distance to camera
 
-            GetAxis();
+            if (!IsTransformFromGizmo)
+                GetAxis();
 
             if (_axisLock != Vector3.One)
             {
@@ -1534,19 +1731,7 @@ internal class SceneWindow(MainWindowContext window)
                 ISceneObj x when x is RailSceneObj y => y.FakeScale,
             };
 
-            if (_axisLock == Vector3.One)
-            {
-                ActTransform.FullTransformString = $"X: {STR.X}, Y: {STR.Y}, Z: {STR.Z}";
-            }
-            else
-            {
-                if (_axisLock == Vector3.UnitX)
-                    ActTransform.FullTransformString = $" {STR.X}";
-                if (_axisLock == Vector3.UnitY)
-                    ActTransform.FullTransformString = $" {STR.Y}";
-                if (_axisLock == Vector3.UnitZ)
-                    ActTransform.FullTransformString = $" {STR.Z}";
-            }
+            GetAxisText(STR);
         }
 
         if (ScaleStarted && !IsScaleActive)// && !ImGui.IsKeyDown(ImGuiKey.ModCtrl))
@@ -1622,17 +1807,22 @@ internal class SceneWindow(MainWindowContext window)
                 }
             }
             window.CurrentScene.UnselectMultiple(remove);
-            if (ActTransform.Originals.Count < 1) 
+            if (ActTransform.Originals.Count < 1)
+            {
                 IsScaleActive = false;
+                IsTransformFromGizmo = false;
+            }
         }
         else if (
             (
                 FinishTransform
+                || (IsTransformFromGizmo && ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 || ImGui.IsKeyPressed(ImGuiKey.MouseLeft, false)
                 || ImGui.IsKeyPressed(ImGuiKey.Enter, false)
             ) && IsScaleActive
         )
         { // Apply action
+            IsTransformFromGizmo = false;
             IsScaleActive = false;
             FinishTransform = false;
             _axisLock = Vector3.One;
@@ -1696,6 +1886,7 @@ internal class SceneWindow(MainWindowContext window)
             && IsScaleActive
         )
         { // Cancel action
+            IsTransformFromGizmo = false;
             IsScaleActive = false;
 
             foreach (ISceneObj sobj in window.CurrentScene!.SelectedObjects)

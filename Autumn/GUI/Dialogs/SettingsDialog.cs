@@ -31,6 +31,7 @@ internal class SettingsDialog
     private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
     private bool _viewrelationLine = true;
     private int _hoverInfo = 0;
+    private int _gizmoPos = 0;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldTheme = 0;
@@ -74,6 +75,7 @@ internal class SettingsDialog
         _prevlightonload = _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights;
         _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
         _hoverInfo = (int)_window.ContextHandler.SystemSettings.ShowHoverInfo;
+        _gizmoPos = (int)_window.ContextHandler.SystemSettings.GizmoPosition;
 
         ReloadThemes();
     }
@@ -171,6 +173,7 @@ internal class SettingsDialog
 
                     _window.WindowManager.Add(fileChooser);
                 }
+                ImGui.SetItemTooltip("Add theme");
 
                 ImGui.SameLine();
 
@@ -191,6 +194,7 @@ internal class SettingsDialog
                 }
 
                 if (isReadOnly) ImGui.EndDisabled();
+                else ImGui.SetItemTooltip("Remove theme");
 
                 #endregion
 
@@ -261,6 +265,7 @@ internal class SettingsDialog
             if (ImGui.BeginTabItem("Defaults"))
             {
                 ImGui.Checkbox("Load last project on launch", ref _loadLast);
+                ImGui.Combo("Gizmo position", ref _gizmoPos, ["Middle point", "First object", "Last object"], 3);
                 ImGui.Text("Visibility:");
                 ImGui.Checkbox("Show Areas", ref _visibleDefaults[0]);
                 ImGui.Checkbox("Show CameraAreas", ref _visibleDefaults[1]);
@@ -361,6 +366,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.AlwaysPreviewStageLights = _prevlightonload;
             _window.ContextHandler.SystemSettings.ShowRelationLines = _viewrelationLine;
             _window.ContextHandler.SystemSettings.ShowHoverInfo = (Enums.HoverInfoMode)_hoverInfo;
+            _window.ContextHandler.SystemSettings.GizmoPosition = (Enums.GizmoPosition)_gizmoPos;
 
             if (_availableThemes.Count > 0)
                 _window.ContextHandler.SystemSettings.Theme = _availableThemes[_selectedTheme];

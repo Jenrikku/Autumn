@@ -124,6 +124,7 @@ internal class MainWindowContext : WindowContext
             RailRenderer.Initialize(GL!);
             RelationLine.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
+            _propertiesWindow.Initialize(windowManager);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
             var cubeTexPixels = new Rgba32[cubeTex.Width * cubeTex.Height];
@@ -139,7 +140,7 @@ internal class MainWindowContext : WindowContext
                 true
             );
 
-            GizmoDrawer.SetOrientationCubeTexture((nint)cubeTexName);
+            GizmoDrawer.Initialize(windowManager, (nint)cubeTexName);
 
             if (s_welcomeImage != 0)
                 return;

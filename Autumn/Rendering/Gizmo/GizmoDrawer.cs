@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Autumn.GUI;
 using Autumn.Utils;
 using ImGuiNET;
 
@@ -12,6 +13,17 @@ namespace Autumn.Rendering.Gizmo;
 /// </summary>
 internal static class GizmoDrawer
 {
+    public static void Initialize(WindowManager windowManager, IntPtr user_texture_id)
+    {
+        windowManager.GlobalThemeUpdatedEvent += theme =>
+        {
+            s_axisColors[0] = ImGui.ColorConvertFloat4ToU32(theme.AxisXColor);
+            s_axisColors[1] = ImGui.ColorConvertFloat4ToU32(theme.AxisYColor);
+            s_axisColors[2] = ImGui.ColorConvertFloat4ToU32(theme.AxisZColor);
+        };
+        SetOrientationCubeTexture(user_texture_id);
+    }
+
     [DllImport("cimgui")]
     private static extern unsafe bool igItemAdd(
         in Rect bb,
@@ -518,7 +530,7 @@ internal static class GizmoDrawer
 
             bool isHovered = false;
 
-            const float HOVER_LINE_THICKNESS = 5;
+            const float HOVER_LINE_THICKNESS = 8;
             #region hover test
             Vector2 diff = mousePos - center2d;
 
@@ -571,7 +583,7 @@ internal static class GizmoDrawer
                 ELLIPSE_NUM_SEGMENTS / 2 + 1,
                 color,
                 ImDrawFlags.None,
-                2.5f
+                HOVER_LINE_THICKNESS / 2
             );
 
             return isHovered;
@@ -630,21 +642,21 @@ internal static class GizmoDrawer
         var axisDir2d = Vector2.Normalize(handleEndPos2d - center2d);
 
         bool hovered =
-            Math.Abs(Vector2.Dot(mousePos - center2d, new(-axisDir2d.Y, axisDir2d.X))) < 3
+            Math.Abs(Vector2.Dot(mousePos - center2d, new(-axisDir2d.Y, axisDir2d.X))) < 5 // hover line width
             && Vector2.Dot(mousePos - center2d, axisDir2d) >= 0
             && Vector2.Dot(mousePos - handleEndPos2d, axisDir2d) <= 0;
 
-        hovered |= (mousePos - handleEndPos2d).LengthSquared() < 4.5f * 4.5f;
+        hovered |= (mousePos - handleEndPos2d).LengthSquared() < 7.5f * 4.5f;
 
         hovered = HoverablePart(hovered);
 
         var col = hovered ? HOVER_COLOR : s_axisColors[axis];
 
-        ClippedLine(center, handleEndPos, col, 2.5f);
+        ClippedLine(center, handleEndPos, col, 6f); // visual line thickness
 
         if (isArrow)
         {
-            var (row0, row1) = GetBillboardPlaneMatrix2d(axis, handleEndPos, gizmoScaleFactor * 5);
+            var (row0, row1) = GetBillboardPlaneMatrix2d(axis, handleEndPos, gizmoScaleFactor * 5); // arrow point length
 
             #region generating lines
             for (int i = 0; i <= ELLIPSE_NUM_SEGMENTS; i++)
@@ -663,13 +675,13 @@ internal static class GizmoDrawer
                 s_ellipsePoints[0],
                 s_ellipsePoints[ELLIPSE_NUM_SEGMENTS / 2],
                 WorldToScreen(
-                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor
+                    center + s_transformMatVectors[axis] * (lineLength + 8) * gizmoScaleFactor // visual Triangle width
                 ),
                 col
             );
         }
         else
-            Drawlist.AddCircleFilled(handleEndPos2d, 4.5f, col);
+            Drawlist.AddCircleFilled(handleEndPos2d, 7.5f, col); // scale gizmo point radius
 
         return hovered;
     }
@@ -704,8 +716,7 @@ internal static class GizmoDrawer
 
         bool Plane(int axisA, int axisB)
         {
-            var colA = s_axisColors[axisA];
-            var colB = s_axisColors[axisB];
+            var colC = s_axisColors[OtherAxis(axisA, axisB)];
 
             Vector2 posA = WorldToScreen(
                 center + s_transformMatVectors[axisA] * radius * gizmoScaleFactor * 0.7f
@@ -718,15 +729,13 @@ internal static class GizmoDrawer
                 MathUtils.IsPointInTriangle(mousePos, center2d, posA, posB)
             );
 
-            var col = AdditiveBlend(colA, colB);
-
             Drawlist.AddTriangleFilled(
                 center2d,
                 posA,
                 posB,
-                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : col, 0x55)
+                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : colC, 0x80)
             );
-            Drawlist.AddLine(posA, posB, hovered ? HOVER_COLOR : col, 1.5f);
+            Drawlist.AddLine(posA, posB, hovered ? HOVER_COLOR : colC, 1.5f);
 
             return hovered;
         }
@@ -793,7 +802,7 @@ internal static class GizmoDrawer
             }
         }
 
-        if (HoverableRing(center2d, radius + 10, 6f, false, 0x55_FF_FF_FF, 0x88_FF_FF_FF))
+        if (HoverableRing(center2d, radius + 20, 6f, false, 0x55_FF_FF_FF, 0x88_FF_FF_FF))
             hoveredAxis = HoveredAxis.ALL_AXES;
 
         return hoveredAxis != HoveredAxis.NONE;
@@ -829,8 +838,7 @@ internal static class GizmoDrawer
 
         bool Plane(int axisA, int axisB)
         {
-            var colA = s_axisColors[axisA];
-            var colB = s_axisColors[axisB];
+            var colC = s_axisColors[OtherAxis(axisA, axisB)];
 
             Vector2 posA = WorldToScreen(
                 center + s_transformMatVectors[axisA] * lineLength * gizmoScaleFactor * 0.5f
@@ -848,17 +856,15 @@ internal static class GizmoDrawer
                 MathUtils.IsPointInQuad(mousePos, center2d, posA, posAB, posB)
             );
 
-            var col = AdditiveBlend(colA, colB);
-
             Drawlist.AddQuadFilled(
                 center2d,
                 posA,
                 posAB,
                 posB,
-                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : col, 0x55)
+                ColorWithAlpha(hovered ? 0xFF_FF_FF_FF : colC, 0x80)
             );
-            Drawlist.AddLine(posA, posAB, hovered ? HOVER_COLOR : col, 1.5f);
-            Drawlist.AddLine(posAB, posB, hovered ? HOVER_COLOR : col, 1.5f);
+            Drawlist.AddLine(posA, posAB, hovered ? HOVER_COLOR : colC, 1.5f);
+            Drawlist.AddLine(posAB, posB, hovered ? HOVER_COLOR : colC, 1.5f);
 
             return hovered;
         }
@@ -930,5 +936,10 @@ internal static class GizmoDrawer
             hoveredAxis = HoveredAxis.FREE;
 
         return hoveredAxis != HoveredAxis.NONE;
+    }
+
+    public static int OtherAxis(int A, int B)
+    {
+        return (A + B) ^ 0b11; 
     }
 }

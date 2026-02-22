@@ -212,7 +212,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             var cat = Enum.GetNames<StageCamera.CameraCategory>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Category.ToString());
 
             ImGuiWidgets.PrePropertyWidthName("Class");
-            if (ImGui.Combo("##ClassCombo", ref cls, Enum.GetNames<StageCamera.CameraClass>(), 12))
+            if (ImGui.Combo("##ClassCombo", ref cls, Enum.GetNames<StageCamera.CameraClass>(), Enum.GetNames<StageCamera.CameraClass>().Length))
             {
                 scn.Stage.CameraParams.Cameras[selectedcam].Class = Enum.Parse<StageCamera.CameraClass>(Enum.GetNames<StageCamera.CameraClass>().ToList()[cls]);
             }

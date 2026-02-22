@@ -37,6 +37,18 @@ internal class PropertiesWindow(MainWindowContext window)
 
     public List<IStageSceneObj> railSceneOwners = new();
     public List<StageCamera> railCameraOwners = new();
+    
+    public void Initialize(WindowManager windowManager)
+    {
+        windowManager.GlobalThemeUpdatedEvent += theme =>
+        {
+            s_axisColors[0] = ImGui.ColorConvertFloat4ToU32(theme.AxisXColor);
+            s_axisColors[1] = ImGui.ColorConvertFloat4ToU32(theme.AxisYColor);
+            s_axisColors[2] = ImGui.ColorConvertFloat4ToU32(theme.AxisZColor);
+        };
+    }
+
+    private static uint[] s_axisColors = [ 0xFF_04_04_6C, 0xFF_15_6C_15, 0xFF_6C_27_15 ];
 
     public void Render()
     {
@@ -1343,7 +1355,7 @@ internal class PropertiesWindow(MainWindowContext window)
             //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 0);
             itemWidth = itemWidth / 3 - style.ItemSpacing.X - 7;
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_04_04_6C); // NEEDS CONSTANT
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[0] & 0x7fffffff); // NEEDS CONSTANT
             if (ImGui.BeginChild(str + "XTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("X") / 2);
@@ -1359,7 +1371,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_15_6C_15); // NEEDS CONSTANT
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[1] & 0x7fffffff); // NEEDS CONSTANT
             if (ImGui.BeginChild(str + "YTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Y") / 2);
@@ -1375,7 +1387,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0xFF_6C_27_15); // NEEDS CONSTANT
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[2] & 0x7fffffff); // NEEDS CONSTANT
             if (ImGui.BeginChild(str + "ZTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Z") / 2);
