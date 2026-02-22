@@ -64,7 +64,7 @@ internal class SceneWindow(MainWindowContext window)
     private bool _isSceneWindowFocused;
 
     private Vector2 _viewportSize;
-    private Vector2 _innerPadding = new Vector2(-40, 40);
+    private Vector2 _innerPadding = new Vector2(-45, 45);
     private float _cubeSize = 45;
     private Matrix4x4 tl = Matrix4x4.Identity;
     private Matrix4x4 rt = Matrix4x4.Identity;
