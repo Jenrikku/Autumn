@@ -748,7 +748,7 @@ internal static class GizmoDrawer
 
         #region best effort depth sorting
         Span<(float sortKey, (AxisPlaneUnion apu, HoveredAxis ha) value)> items =
-            [
+            stackalloc (float sortKey, (AxisPlaneUnion apu, HoveredAxis ha))[] {
                 (
                     Vector3.Dot(-s_view.CamForwardVector, axisVecX * 0.5f) + 0.5f,
                     (AxisPlaneUnion.Axis(0), HoveredAxis.X_AXIS)
@@ -773,7 +773,7 @@ internal static class GizmoDrawer
                     Vector3.Dot(-s_view.CamForwardVector, (axisVecY + axisVecZ) * 0.5f),
                     (AxisPlaneUnion.Plane(1, 2), HoveredAxis.YZ_PLANE)
                 )
-            ];
+            };
 
         Sort(items);
         #endregion
@@ -877,7 +877,7 @@ internal static class GizmoDrawer
 
         #region best effort depth sorting
         Span<(float sortKey, (AxisPlaneUnion apu, HoveredAxis ha) value)> items =
-            [
+            stackalloc (float sortKey, (AxisPlaneUnion apu, HoveredAxis ha))[] {
                 (
                     Vector3.Dot(-s_view.CamForwardVector, axisVecX * 0.5f) + 0.5f,
                     (AxisPlaneUnion.Axis(0), HoveredAxis.X_AXIS)
@@ -902,7 +902,7 @@ internal static class GizmoDrawer
                     Vector3.Dot(-s_view.CamForwardVector, (axisVecY + axisVecZ) * 0.5f),
                     (AxisPlaneUnion.Plane(1, 2), HoveredAxis.YZ_PLANE)
                 )
-            ];
+            };
 
         Sort(items);
         #endregion
