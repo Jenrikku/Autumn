@@ -993,6 +993,7 @@ internal class SceneWindow(MainWindowContext window)
             var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
             col.W = 0.7f;
             ImGui.PushStyleColor(ImGuiCol.Button, col);
+            _transformGizmo = window.ContextHandler.SystemSettings.LastGizmo;
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
             if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Translate ? TransformGizmo.None : TransformGizmo.Translate;
