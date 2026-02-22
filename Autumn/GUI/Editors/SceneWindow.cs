@@ -17,7 +17,6 @@ internal class SceneWindow(MainWindowContext window)
     public bool IsSceneHovered => _isSceneHovered;
     public bool IsTransformActive => IsTranslationActive || IsRotationActive || IsScaleActive;
     public bool IsTransformFromGizmo = false;
-    private byte _transformGizmoPosMulti = 1;
     public bool IsTranslationActive = false;
     public bool IsTranslationFromDuplicate = false;
     public bool TranslationStarted = false;
@@ -45,16 +44,7 @@ internal class SceneWindow(MainWindowContext window)
     public ISceneObj? CamSceneObj;
     public AddRailPointState AddRailPoint = AddRailPointState.None; // 0 false, 1 to rail, 2 to point
 
-    private int _transformGizmo = 0; // 0 none, 1 move, 2 rotate, 3 scale
-    public int TransformGizmo
-    {
-        get { return _transformGizmo; }
-        set
-        {
-            _transformGizmo = value > 3 ? 0 : (value < 0 ? 3 : value);
-        }
-    }
-
+    private TransformGizmo _transformGizmo = TransformGizmo.None;
     private Vector3 _axisLock = Vector3.One;
     private bool _persistentMouseDrag = false;
     private Vector2 _previousMousePos = Vector2.Zero;
@@ -484,10 +474,10 @@ internal class SceneWindow(MainWindowContext window)
         bool ScaleGizmoHovered = false;
         HoveredAxis TransformGizmoAxis = HoveredAxis.NONE;
 
-        if (window.CurrentScene!.SelectedObjects.Any() && TransformGizmo > 0)
+        if (window.CurrentScene!.SelectedObjects.Any() && window.ContextHandler.SystemSettings.LastGizmo != 0)
         {
             // Method one: Gizmo is placed in the middle position of the selected objects
-            if (_transformGizmoPosMulti == 0)
+            if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.Middle)
             {
                 int st = 0;
                 trls = Vector3.Zero;
@@ -525,7 +515,7 @@ internal class SceneWindow(MainWindowContext window)
                 // scls /= st;
             }
             // Method two: Gizmo is placed on the first object
-            else if (_transformGizmoPosMulti == 1 && window.CurrentScene!.SelectedObjects.First() != null)
+            else if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.First && window.CurrentScene!.SelectedObjects.First() != null)
             {
                 ISceneObj fst = window.CurrentScene!.SelectedObjects.First();
                 trls = fst switch 
@@ -545,7 +535,7 @@ internal class SceneWindow(MainWindowContext window)
                 };
             }
             // Method three: Gizmo is placed on the last object
-            else if (_transformGizmoPosMulti == 2 && window.CurrentScene!.SelectedObjects.Last() != null)
+            else if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.Last && window.CurrentScene!.SelectedObjects.Last() != null)
             {
                 ISceneObj lst = window.CurrentScene!.SelectedObjects.Last();
                 trls = lst switch
@@ -567,17 +557,17 @@ internal class SceneWindow(MainWindowContext window)
             }
             tl = Matrix4x4.CreateTranslation(trls);
             rt = Matrix4x4.CreateRotationX(rots.X / 180 * (float)Math.PI)* Matrix4x4.CreateRotationY(rots.Y / 180 * (float)Math.PI) * Matrix4x4.CreateRotationZ(rots.Z / 180 * (float)Math.PI) ;
-            switch (TransformGizmo)
+            switch (window.ContextHandler.SystemSettings.LastGizmo)
             {
-                case 1:
+                case TransformGizmo.Translate:
                 MoveGizmoHovered = GizmoDrawer.TranslationGizmo(
-                    tl,  float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180)/* 800 / Vector3.Distance(eyeAnimated, trls)*/, out TransformGizmoAxis);
+                    tl,  float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
                 break;
-                case 2:
+                case TransformGizmo.Rotate:
                 RotGizmoHovered = GizmoDrawer.RotationGizmo(
                     tl, float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
                 break;
-                case 3:
+                case TransformGizmo.Scale:
                 ScaleGizmoHovered = GizmoDrawer.ScaleGizmo(
                     rt * tl, float.Clamp(800 / Vector3.Distance(eyeAnimated, trls), 50, 180), out TransformGizmoAxis);
                 break;
@@ -952,7 +942,7 @@ internal class SceneWindow(MainWindowContext window)
         //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6*11 + 12;
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*5 + 5*10;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
 
         if (ImGui.Button(IconUtils.GRID))
@@ -1004,15 +994,16 @@ internal class SceneWindow(MainWindowContext window)
             col.W = 0.7f;
             ImGui.PushStyleColor(ImGuiCol.Button, col);
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
-            if (ImGui.Button(IconUtils.MOVE+"##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
-                TransformGizmo = TransformGizmo == 1 ? 0 : 1;
-            ImGui.SetItemTooltip($"Move Gizmo {(TransformGizmo == 1 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.ROTATE+"##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
-                TransformGizmo = TransformGizmo == 2 ? 0 : 2;
-            ImGui.SetItemTooltip($"Rotate Gizmo {(TransformGizmo == 2 ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE+"##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
-                TransformGizmo = TransformGizmo == 3 ? 0 : 3;
-            ImGui.SetItemTooltip($"Scale Gizmo {(TransformGizmo == 3 ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Translate ? TransformGizmo.None : TransformGizmo.Translate;
+            ImGui.SetItemTooltip($"Move Gizmo {(_transformGizmo == TransformGizmo.Translate ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Rotate ? TransformGizmo.None : TransformGizmo.Rotate;
+            ImGui.SetItemTooltip($"Rotate Gizmo {(_transformGizmo == TransformGizmo.Rotate ? "ON" : "OFF")}");
+            if (ImGui.Button(IconUtils.SCALE + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
+                _transformGizmo = _transformGizmo == TransformGizmo.Scale ? TransformGizmo.None : TransformGizmo.Scale;
+            window.ContextHandler.SystemSettings.LastGizmo = _transformGizmo;
+            ImGui.SetItemTooltip($"Scale Gizmo {(_transformGizmo == TransformGizmo.Scale ? "ON" : "OFF")}");
             ImGui.EndChild();
             ImGui.PopStyleVar();
             ImGui.PopStyleColor();
