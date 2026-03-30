@@ -825,15 +825,17 @@ internal class AddObjectDialog(MainWindowContext window)
                 newRail.Properties.Add($"Arg{i}", _args[i]);
 
             Vector3 off = new(trans.X * 100, trans.Y * 100, trans.Z * 100);
+            RailPoint[] newRailPoints = new RailPoint[_points.Length];
             for (int i = 0; i < _points.Length; i++)
             {
-                _points[i] *= 200;
-                _points[i].Point0Trans += off;
-                _points[i].Point1Trans += off;
-                _points[i].Point2Trans += off;
+                newRailPoints[i] = _points[i].Clone(); 
+                newRailPoints[i] *= 200;
+                newRailPoints[i].Point0Trans += off;
+                newRailPoints[i].Point1Trans += off;
+                newRailPoints[i].Point2Trans += off;
                 for (int b = 0; b < 8; b++)
-                    _points[i].Properties.Add($"Arg{b}", -1);
-                newRail.Points.Add(_points[i]);
+                    newRailPoints[i].Properties.Add($"Arg{b}", -1);
+                newRail.Points.Add(newRailPoints[i]);
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);

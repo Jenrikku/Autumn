@@ -28,4 +28,14 @@ internal class RailPoint
         p.Point2Trans *= f;
         return p;
     }
+    public RailPoint Clone()
+    {
+        var r = new RailPoint() { Point0Trans = this.Point0Trans, Point1Trans = this.Point1Trans, Point2Trans = this.Point2Trans };
+        foreach (string s in this.Properties.Keys)
+        {
+            r.Properties.Add(s, this.Properties[s]);
+        }
+        return r;
+
+    }
 }

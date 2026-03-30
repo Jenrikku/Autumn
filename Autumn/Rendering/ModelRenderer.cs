@@ -240,7 +240,7 @@ internal static class ModelRenderer
 
                     if (material.BlendingEnabled)
                     {
-                        gl.Enable(EnableCap.Blend | (EnableCap)0x0B60);// Attempt at Fog rendering
+                        gl.Enable(EnableCap.Blend);
 
                         gl.BlendColor(
                             material.BlendingColor.X,
@@ -347,7 +347,7 @@ internal static class ModelRenderer
                         else
                             gl.CullFace(material.CullFaceMode);
 
-                        gl.Enable(EnableCap.Blend);// Attempt at Fog rendering
+                        gl.Enable(EnableCap.Blend);
 
                         gl.BlendColor(
                             material.BlendingColor.X,
@@ -579,7 +579,7 @@ internal static class ModelRenderer
 
                     if (material.BlendingEnabled)
                     {
-                        gl.Enable(EnableCap.Blend | (EnableCap)0x0B60);// Attempt at Fog rendering
+                        gl.Enable(EnableCap.Blend);
 
                         gl.BlendColor(
                             material.BlendingColor.X,
@@ -669,7 +669,7 @@ internal static class ModelRenderer
 
                 if (material.BlendingEnabled)
                 {
-                    gl.Enable(EnableCap.Blend | (EnableCap)0x0B60);// Attempt at Fog rendering
+                    gl.Enable(EnableCap.Blend);
 
                     gl.BlendColor(
                         material.BlendingColor.X,
