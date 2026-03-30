@@ -48,6 +48,11 @@ HideObj:
   Ctrl: false
   Key: H
   Shift: false
+ShowAllObjs:
+  Alt: true
+  Ctrl: false
+  Key: H
+  Shift: false
 TranslateObj:
   Alt: false
   Ctrl: false

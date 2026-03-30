@@ -35,6 +35,7 @@ internal class ActionHandler
                 CommandID.RemoveObj => RemoveObj(),
                 CommandID.DuplicateObj => DuplicateObj(),
                 CommandID.HideObj => HideObj(),
+                CommandID.ShowAllObjs => ShowAllObjs(),
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
                 CommandID.GotoRelative => GotoRelative(),
@@ -396,7 +397,7 @@ internal class ActionHandler
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.CurrentScene.SelectedObjects.Any()
+                && mainContext.CurrentScene.SelectedObjCount > 0
                 && !mainContext.IsTransformActive,
             Command.CommandCategory.Selection
         );
@@ -436,7 +437,7 @@ internal class ActionHandler
             enabled: window =>
                 window is MainWindowContext mainContext
                 && mainContext.CurrentScene is not null
-                && mainContext.CurrentScene.SelectedObjects.Any()
+                && mainContext.CurrentScene.SelectedObjCount > 0
                 && !mainContext.IsTransformActive,
             Command.CommandCategory.Selection
         );
@@ -466,18 +467,24 @@ internal class ActionHandler
                 ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, mainContext.CurrentScene.SelectedObjects);
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 && mainContext.IsSceneFocused,
             Command.CommandCategory.Selection
         );
-    private static Command UnselectAll() =>
+    private static Command ShowAllObjs() =>
         new(
-            displayName: "Unselect all objects",
+            displayName: "Show all hidden objects",
             action: window =>
             {
                 if (window is not MainWindowContext mainContext)
                     return;
-
-                mainContext.CurrentScene!.UnselectAllObjects();
+                List<ISceneObj> changes = mainContext.CurrentScene!.EnumerateSceneObjs().Where(x => !x.IsVisible).ToList();
+                if (changes.Count > 0)
+                    ChangeHandler.ChangeHideMultiple(mainContext.CurrentScene!.History, changes);
+            },
+            enabled: window =>
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused,
+            Command.CommandCategory.Selection
+        );
             },
             enabled: window =>
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
@@ -497,7 +504,7 @@ internal class ActionHandler
                 else mainContext.FinishTransform();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 
                 && mainContext.IsSceneFocused && (mainContext.SceneTranslating != mainContext.IsSceneHovered)
                 && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating,
             Command.CommandCategory.Transform
@@ -512,7 +519,7 @@ internal class ActionHandler
                 mainContext.MoveToPoint();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneHovered
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 && mainContext.IsSceneHovered
                 && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneRotating && !mainContext.SceneTranslating,
             Command.CommandCategory.Transform
         );
@@ -528,7 +535,7 @@ internal class ActionHandler
                 else mainContext.FinishTransform();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0
                 && mainContext.IsSceneFocused && (mainContext.SceneRotating != mainContext.IsSceneHovered)
                 && !ImGui.GetIO().WantTextInput && !mainContext.SceneScaling && !mainContext.SceneTranslating,
             Command.CommandCategory.Transform
@@ -545,7 +552,7 @@ internal class ActionHandler
                 else mainContext.FinishTransform();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() 
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0
                 && mainContext.IsSceneFocused && (mainContext.SceneScaling != mainContext.IsSceneHovered)
                 && !ImGui.GetIO().WantTextInput && !mainContext.SceneTranslating && !mainContext.SceneRotating,
             Command.CommandCategory.Transform
@@ -571,7 +578,7 @@ internal class ActionHandler
 
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 && mainContext.IsSceneFocused
                 && (mainContext.CurrentScene.SelectedObjects.First() is RailSceneObj || mainContext.CurrentScene.SelectedObjects.First() is RailPointSceneObj),
             Command.CommandCategory.Rail
         );    
@@ -585,7 +592,7 @@ internal class ActionHandler
                 mainContext.CameraToObject();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 && mainContext.IsSceneFocused,
             Command.CommandCategory.Selection
         );
     private Command ShowHandles() =>

@@ -16,6 +16,7 @@ internal enum CommandID
     DuplicateObj,
     RemoveObj,
     HideObj,
+    ShowAllObjs,
     GotoRelative,
     UnselectAll,
     TranslateObj,

@@ -194,6 +194,19 @@ internal class Scene
         }
     }
 
+    public void SelectAllObjects()
+    {
+        foreach (ISceneObj sceneObj in _stageSceneObjs)
+        {
+            sceneObj.Selected = true;
+            _selectedObjects.Add(sceneObj);
+        }
+        foreach (ISceneObj sceneObj in _railObjs)
+        {
+            sceneObj.Selected = true;
+            _selectedObjects.Add(sceneObj);
+        }
+    }
     public void SetSelectedObjects(IEnumerable<ISceneObj> objs)
     {
         UnselectAllObjects();
