@@ -17,6 +17,7 @@ namespace Autumn.GUI.Dialogs;
 internal class AddObjectDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
 
     private string _name = "";
     private string _class = "";

@@ -11,6 +11,7 @@ namespace Autumn.GUI.Dialogs;
 internal class DatabaseEditor(MainWindowContext _window)
 {
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     private SortedDictionary<string, ClassDatabaseWrapper.DatabaseEntry> _dbEntries;
     private int _argsel = -1;
     readonly string[] switches = ["A", "B", "Appear", "DeadOn", "Kill"];

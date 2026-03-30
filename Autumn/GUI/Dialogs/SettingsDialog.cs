@@ -18,6 +18,7 @@ internal class SettingsDialog
     private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     private bool _useClassNames = false;
     private bool _dbEditor = false;
     private bool _rememberLayout = false;

@@ -14,6 +14,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
 {
 
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     private string _name = string.Empty;
     private List<StageObj>[] _selectedObjs = [new(), new()]; // General / Children
     private List<StageObj> _newChildren = new();

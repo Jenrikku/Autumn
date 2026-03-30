@@ -66,6 +66,7 @@ internal class ActionHandler
 
     public void ExecuteShortcuts(WindowContext? focusedWindow)
     {
+        if (focusedWindow != null && focusedWindow is MainWindowContext && (focusedWindow as MainWindowContext)!.IsDialogOpen) return;
         foreach (var (command, shortcut) in Actions.Values)
         {
             if ((shortcut?.IsTriggered() ?? false) && command.Enabled(focusedWindow))

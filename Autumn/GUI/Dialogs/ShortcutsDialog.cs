@@ -9,6 +9,7 @@ namespace Autumn.GUI.Dialogs;
 internal class ShortcutsDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
 
     public void Open()
     {

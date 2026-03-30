@@ -55,7 +55,9 @@ internal class MainWindowContext : WindowContext
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
-    public bool IsDialogOpen = false;
+    public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
+                            || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen
+                            || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen || _welcomeDialog.IsOpen;
 
     #region Editor Windows 
     private readonly StageWindow _stageWindow;
@@ -243,7 +245,7 @@ internal class MainWindowContext : WindowContext
 
             if (!ContextHandler.IsProjectLoaded)
             {
-                if (!_welcomeDialog.IsOpened) RenderWelcomeScreen(barHeight);
+                if (!_welcomeDialog.IsOpen) RenderWelcomeScreen(barHeight);
             }
             else
             {
