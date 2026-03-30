@@ -18,7 +18,7 @@ internal enum CommandID
     HideObj,
     ShowAllObjs,
     GotoRelative,
-    UnselectAll,
+    ToggleSelectAll,
     TranslateObj,
     MoveToPoint,
     RotateObj,

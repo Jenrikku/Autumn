@@ -53,6 +53,11 @@ ShowAllObjs:
   Ctrl: false
   Key: H
   Shift: false
+ToggleSelectAll:
+  Alt: false
+  Ctrl: false
+  Key: A
+  Shift: false
 TranslateObj:
   Alt: false
   Ctrl: false

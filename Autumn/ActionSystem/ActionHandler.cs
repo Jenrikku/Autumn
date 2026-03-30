@@ -39,7 +39,7 @@ internal class ActionHandler
                 CommandID.Undo => Undo(),
                 CommandID.Redo => Redo(),
                 CommandID.GotoRelative => GotoRelative(),
-                CommandID.UnselectAll => UnselectAll(),
+                CommandID.ToggleSelectAll => ToggleSelectAll(),
                 CommandID.TranslateObj => TranslateObj(),
                 CommandID.RotateObj => RotateObj(),
                 CommandID.ScaleObj => ScaleObj(),
@@ -485,9 +485,20 @@ internal class ActionHandler
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused,
             Command.CommandCategory.Selection
         );
+    private static Command ToggleSelectAll() =>
+        new(
+            displayName: "Toggle selection for all objects",
+            action: window =>
+            {
+                if (window is not MainWindowContext mainContext)
+                    return;
+                if (mainContext.CurrentScene!.SelectedObjCount > 0)
+                    mainContext.CurrentScene!.UnselectAllObjects();
+                else
+                    mainContext.CurrentScene!.SelectAllObjects();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjects.Any() && mainContext.IsSceneFocused,
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused ,
             Command.CommandCategory.Selection
         );
 
