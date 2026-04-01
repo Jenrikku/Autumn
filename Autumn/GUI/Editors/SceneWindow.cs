@@ -127,7 +127,7 @@ internal class SceneWindow(MainWindowContext window)
             else if (fs is RailHandleSceneObj) ActTransform.FullTransformString += $"{(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailObj.Name} Point {(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailPoints.IndexOf((fs as RailHandleSceneObj)!.ParentPoint)} Handle";
         }
 
-        if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ)
+        if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ || _axisLock != Vector3.One)
         {
             ActTransform.FullTransformString += " on the ";
 
@@ -137,25 +137,47 @@ internal class SceneWindow(MainWindowContext window)
                 ActTransform.FullTransformString += "Y ";
             else if (_axisLock == Vector3.UnitZ)
                 ActTransform.FullTransformString += "Z ";
+            else
+            {
+                if (_axisLock == Vector3.UnitX + Vector3.UnitY)
+                    ActTransform.FullTransformString += "Z ";
+                else if (_axisLock == Vector3.UnitY + Vector3.UnitZ)
+                    ActTransform.FullTransformString += "X ";
+                else if (_axisLock == Vector3.UnitZ + Vector3.UnitX)
+                    ActTransform.FullTransformString += "Y ";
+            }
 
-
-            ActTransform.FullTransformString += "axis";
+            if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ)
+                ActTransform.FullTransformString += "axis";
+            else
+                ActTransform.FullTransformString += "plane";
 
             if (_transformChangeString != "-" && _transformChangeString != "" && _axisLock != Vector3.One)
                 ActTransform.FullTransformString += ": " + (_transformChangeString != "-" ? _transformChangeString : "");
             else
-                ActTransform.FullTransformString += ": ";
+            {
+                if (_axisLock == Vector3.UnitX)
+                    ActTransform.FullTransformString += $": {STR.X:0.00}";
+
+                if (_axisLock == Vector3.UnitY)
+                    ActTransform.FullTransformString += $": {STR.Y:0.00}";
+
+                if (_axisLock == Vector3.UnitZ)
+                    ActTransform.FullTransformString += $": {STR.Z:0.00}";
+
+
+                if (_axisLock == Vector3.UnitX + Vector3.UnitY)
+                    ActTransform.FullTransformString += $": X: {STR.X:0.00}, Y: {STR.Y:0.00}";
+
+                if (_axisLock == Vector3.UnitY + Vector3.UnitZ)
+                    ActTransform.FullTransformString += $": Y: {STR.Y:0.00}, Z: {STR.Z:0.00}";
+
+                if (_axisLock == Vector3.UnitZ + Vector3.UnitX)
+                    ActTransform.FullTransformString += $": X: {STR.X:0.00}, Z: {STR.Z:0.00}";
+            }
 
 
 
-            if (_axisLock == Vector3.UnitX)
-                ActTransform.FullTransformString += $" {STR.X:0.00}";
-
-            if (_axisLock == Vector3.UnitY)
-                ActTransform.FullTransformString += $" {STR.Y:0.00}";
-
-            if (_axisLock == Vector3.UnitZ)
-                ActTransform.FullTransformString += $" {STR.Z:0.00}";
         }
         else
         {
@@ -1658,12 +1680,7 @@ internal class SceneWindow(MainWindowContext window)
             if (!IsTransformFromGizmo)
                 GetAxis();
 
-            if (_axisLock != Vector3.One)
-            {
-                TransformChange();
-            }
-            else
-                _transformChangeString = "";
+            TransformChange();
 
             var fst = window.CurrentScene!.SelectedObjects.First();
             switch (fst)
@@ -1706,9 +1723,7 @@ internal class SceneWindow(MainWindowContext window)
 
                     if (_transformChangeString != string.Empty && _transformChangeString != "-")
                     {
-                        (sobj as IStageSceneObj)!.StageObj.Scale =
-                            ActTransform.Originals[sobj]
-                            + Vector3.One * (distB - distA) / 500 * _axisLock * float.Parse(_transformChangeString); // original scale * (distance to selection from mouse )
+                        (sobj as IStageSceneObj)!.StageObj.Scale = Vector3.One - _axisLock + _axisLock * float.Parse(_transformChangeString);
                     }
                     else
                     {
