@@ -583,9 +583,6 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.Text(ch.Type.ToString());
 
-                                            ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
                                             if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
@@ -600,7 +597,6 @@ internal class PropertiesWindow(MainWindowContext window)
                                             {
                                                 remch = ch;
                                             }
-                                            ImGui.PopStyleColor(3);
 
                                             cidx++;
                                         }
@@ -952,16 +948,12 @@ internal class PropertiesWindow(MainWindowContext window)
                                             !window.Keyboard?.IsCtrlPressed() ?? true);
                                         window.CameraToObject(point);
                                     }
-                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("ScenePointView" + cidx);
                                     if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         window.CameraToObject(railSceneObj.RailPoints[cidx]);
                                     }
-                                    ImGui.PopStyleColor(3);
 
                                     ImGui.TableSetColumnIndex(2);
                                     if (cidx == 0) ImGui.BeginDisabled();
@@ -1039,17 +1031,13 @@ internal class PropertiesWindow(MainWindowContext window)
                                 {
                                     ImGui.TableNextRow();
 
-                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("SceneHandleView" + cc);
-                                    if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
                                         window.CameraToObject(hndl!);
                                     }
-                                    ImGui.PopStyleColor(3);
 
                                     ImGui.TableSetColumnIndex(1);
                                     ImGui.PushID("SceneHandleSelectable" + cc);

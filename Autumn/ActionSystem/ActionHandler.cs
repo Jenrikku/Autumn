@@ -47,6 +47,8 @@ internal class ActionHandler
                 CommandID.AddRailPoint => AddRailPoint(),
                 CommandID.ShowHandles => ShowHandles(),
                 CommandID.CamToObj => CamToObj(),
+                CommandID.Search => SearchObj(),
+                CommandID.FlyCamMode => ToggleFlyCam(),
                 #if DEBUG
                 CommandID.AddALL => AddAllStages(),
                 CommandID.SaveALL => SaveAllStages(),
@@ -66,7 +68,7 @@ internal class ActionHandler
 
     public void ExecuteShortcuts(WindowContext? focusedWindow)
     {
-        if (focusedWindow != null && focusedWindow is MainWindowContext && (focusedWindow as MainWindowContext)!.IsDialogOpen) return;
+        if (focusedWindow != null && focusedWindow is MainWindowContext && ((focusedWindow as MainWindowContext)!.IsDialogOpen || (focusedWindow as MainWindowContext)!.FlyCamOn)) return;
         foreach (var (command, shortcut) in Actions.Values)
         {
             if ((shortcut?.IsTriggered() ?? false) && command.Enabled(focusedWindow))
@@ -502,6 +504,34 @@ internal class ActionHandler
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused ,
             Command.CommandCategory.Selection
         );
+
+    private Command ToggleFlyCam() => 
+        new(
+        displayName: "Toggle fly cam",
+        action: window =>
+        {
+            if (window is not MainWindowContext mainContext)
+                return;
+            mainContext.ToggleFlyCam();
+        },
+        enabled: window =>
+            window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused ,
+        Command.CommandCategory.General
+    );
+
+    private Command SearchObj() => 
+        new(
+        displayName: "Search Objects",
+        action: window =>
+        {
+            if (window is not MainWindowContext mainContext)
+                return;
+            mainContext.OpenSearchDialog();
+        },
+        enabled: window =>
+            window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused ,
+        Command.CommandCategory.Selection
+    );
 
 #region Scene Transform Actions
     private static Command TranslateObj() =>

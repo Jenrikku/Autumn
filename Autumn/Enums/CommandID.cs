@@ -28,4 +28,6 @@ internal enum CommandID
     CamToObj,
     AddALL,
     SaveALL,
+    Search,
+    FlyCamMode,
 }

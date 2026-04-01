@@ -31,6 +31,7 @@ internal class SceneWindow(MainWindowContext window)
     public bool FinishTransform = false;
 
     private string _transformChangeString = "";
+    public bool FlyCam = false;
 
     internal static class ActTransform
     {
@@ -316,7 +317,7 @@ internal class SceneWindow(MainWindowContext window)
         camMoveSpeed *= window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
         if ((_isSceneHovered || _isSceneWindowFocused) && !ImGui.GetIO().WantTextInput)
         {
-            if (window.ContextHandler.SystemSettings.UseWASD)
+            if (window.ContextHandler.SystemSettings.UseWASD || FlyCam)
             {
                 if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
                 {
@@ -335,6 +336,8 @@ internal class SceneWindow(MainWindowContext window)
                     if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
                         camera.Eye += Vector3.UnitY * camMoveSpeed;
                 }
+                if (FlyCam && (window.Keyboard?.IsKeyPressed(Key.Escape) ?? false))
+                    FlyCam = false;
             }
         }
 
@@ -782,7 +785,7 @@ internal class SceneWindow(MainWindowContext window)
                 else
                     _isObjectOptionsEnabled = false;
             }
-            else if ((_isSceneHovered && window.CurrentScene.SelectedObjCount > 0) || IsTranslationActive || IsScaleActive || IsRotationActive)
+            else if (!FlyCam && ((_isSceneHovered && window.CurrentScene.SelectedObjCount > 0) || IsTranslationActive || IsScaleActive || IsRotationActive))
             {
                 Vector3 _ndcMousePos3D =
                     new(ndcMousePos.X * sceneImageSize.X / 2,
@@ -790,50 +793,50 @@ internal class SceneWindow(MainWindowContext window)
                         (normPickingDepth * 10 - 1) / 10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);
 
-            if (TranslateToPoint)
-            {
-                TranslateToPoint = false;
-                var sobj = window.CurrentScene.SelectedObjects.First();
-
-                switch (sobj)
+                if (TranslateToPoint)
                 {
-                    case ISceneObj x when x is IStageSceneObj y:
-                        ChangeHandler.ChangeStageObjTransform(
-                            window.CurrentScene.History,
-                            y,
-                            "Translation",
-                            y.StageObj.Translation,
-                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
-                        );
-                        break;
-                    case ISceneObj x when x is RailPointSceneObj y:
-                    ChangeHandler.ChangePointPosition(
-                            window.CurrentScene.History,
-                            y,
-                            y.RailPoint.Point0Trans,
-                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                            !ImGui.IsKeyDown(ImGuiKey.ModShift)
-                        );
-                        break;
-                    case ISceneObj x when x is RailHandleSceneObj y:
-                        ChangeHandler.ChangeHandleTransform(
-                            window.CurrentScene.History,
-                            y,
-                            y.Offset,
-                            -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                            false
-                        );
-                        break;
-                    case ISceneObj x when x is RailSceneObj y:
-                    break;
-                }
+                    TranslateToPoint = false;
+                    var sobj = window.CurrentScene.SelectedObjects.First();
 
-                if (!_isSceneWindowFocused)
-                    ImGui.SetWindowFocus();
-            }
-            TranslateAction(_ndcMousePos3D);
-            RotateAction(ndcMousePos);
-            ScaleAction(_ndcMousePos3D);
+                    switch (sobj)
+                    {
+                        case ISceneObj x when x is IStageSceneObj y:
+                            ChangeHandler.ChangeStageObjTransform(
+                                window.CurrentScene.History,
+                                y,
+                                "Translation",
+                                y.StageObj.Translation,
+                                100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                            );
+                            break;
+                        case ISceneObj x when x is RailPointSceneObj y:
+                        ChangeHandler.ChangePointPosition(
+                                window.CurrentScene.History,
+                                y,
+                                y.RailPoint.Point0Trans,
+                                100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                                !ImGui.IsKeyDown(ImGuiKey.ModShift)
+                            );
+                            break;
+                        case ISceneObj x when x is RailHandleSceneObj y:
+                            ChangeHandler.ChangeHandleTransform(
+                                window.CurrentScene.History,
+                                y,
+                                y.Offset,
+                                -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                                false
+                            );
+                            break;
+                        case ISceneObj x when x is RailSceneObj y:
+                        break;
+                    }
+
+                    if (!_isSceneWindowFocused)
+                        ImGui.SetWindowFocus();
+                }
+                TranslateAction(_ndcMousePos3D);
+                RotateAction(ndcMousePos);
+                ScaleAction(_ndcMousePos3D);
                 
             }
         }
@@ -967,6 +970,15 @@ internal class SceneWindow(MainWindowContext window)
 
             ImGui.SetCursorPos(opos + new Vector2(8, -2));
             ImGui.Text(ActTransform.FullTransformString);
+            ImGui.SetWindowFontScale(1.0f);
+            ImGui.SetCursorPos(opos);
+        }
+        else if (FlyCam)
+        {
+            ImGui.SetWindowFontScale(1.0f);
+
+            ImGui.SetCursorPos(opos + new Vector2(8, -2));
+            ImGui.Text("Fly Cam Mode enabled, press Esc to exit.");
             ImGui.SetWindowFontScale(1.0f);
             ImGui.SetCursorPos(opos);
         }

@@ -88,3 +88,13 @@ CamToObj:
   Ctrl: false
   Key: Space
   Shift: false
+Search:
+  Alt: false
+  Ctrl: true
+  Key: F
+  Shift: false
+FlyCamMode:
+  Alt: false
+  Ctrl: false
+  Key: F
+  Shift: true

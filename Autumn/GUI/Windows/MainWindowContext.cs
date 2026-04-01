@@ -58,12 +58,14 @@ internal class MainWindowContext : WindowContext
     public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
                             || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen
                             || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen || _welcomeDialog.IsOpen;
+    public bool FlyCamOn => _sceneWindow.FlyCam;
 
     #region Editor Windows 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
     private readonly SceneWindow _sceneWindow;
+    private readonly SearchWindow _searchObjDialog;
     private readonly WelcomeDialog _welcomeDialog;
     #endregion
 
@@ -93,6 +95,7 @@ internal class MainWindowContext : WindowContext
         _editCCNT = new(this);
         _shortcutsDialog = new(this);
         _DBEditorDialog = new(this);
+        _searchObjDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -275,6 +278,7 @@ internal class MainWindowContext : WindowContext
             _fogParams.Render();
             _lightParams.Render();
             _switchParams.Render();
+            _searchObjDialog.Render();
 
             if (_isFirstFrame)
             {
@@ -343,6 +347,7 @@ internal class MainWindowContext : WindowContext
     public void OpenAddRailDialog() => _addObjectDialog.Open(2);
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
+    public void OpenSearchDialog() => _searchObjDialog.IsOpen = true;
     public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
@@ -369,6 +374,7 @@ internal class MainWindowContext : WindowContext
     // public void CancelTransform() => _sceneWindow.CancelTransform = true;
     public void FinishTransform() => _sceneWindow.FinishTransform = true;
     public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
+    public void ToggleFlyCam() => _sceneWindow.FlyCam = !_sceneWindow.FlyCam;
     public void CameraToObject() => _sceneWindow.CamToObj = true;
     public void CameraToObject(ISceneObj obj) { _sceneWindow.CamToObj = true; _sceneWindow.CamSceneObj = obj; }
     public void AddRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Add;
@@ -518,6 +524,9 @@ internal class MainWindowContext : WindowContext
                 _lightParams.IsOpen = true;
             if (ImGui.MenuItem("Edit Switches"))
                 _switchParams.IsOpen = true;
+            ImGui.Separator();
+            if (ImGui.MenuItem("Search"))
+                _searchObjDialog.IsOpen = true;
             ImGui.EndMenu();
         }
 
