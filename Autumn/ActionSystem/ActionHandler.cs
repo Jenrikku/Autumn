@@ -27,10 +27,10 @@ internal class ActionHandler
                 CommandID.OpenProject => OpenProject(),
                 CommandID.CloseProject => CloseProject(),
                 CommandID.OpenSettings => OpenSettings(),
-                CommandID.CloseScene => CloseScene(),
                 CommandID.Exit => Exit(),
                 CommandID.AddStage => AddStage(),
                 CommandID.SaveStage => SaveStage(),
+                CommandID.CloseCurrentStage => CloseCurrentStage(),
                 CommandID.AddObject => AddObj(),
                 CommandID.RemoveObj => RemoveObj(),
                 CommandID.DuplicateObj => DuplicateObj(),
@@ -322,7 +322,7 @@ internal class ActionHandler
             },
             enabled: window => window is MainWindowContext && window.ContextHandler.IsProjectLoaded
         );
-    private static Command CloseScene() =>
+    private static Command CloseCurrentStage() =>
         new(
             displayName: "Close Current Scene",
             action: window =>
@@ -330,7 +330,7 @@ internal class ActionHandler
                 if (window is not MainWindowContext mainWindow)
                     return;
 
-                mainWindow.CloseCurrentScene();
+                mainWindow.CloseStage(mainWindow.CurrentScene!);
             },
             enabled: window => window is MainWindowContext mainContext && mainContext.CurrentScene is not null
         );

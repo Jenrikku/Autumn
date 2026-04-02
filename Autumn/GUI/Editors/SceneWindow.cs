@@ -15,6 +15,7 @@ internal class SceneWindow(MainWindowContext window)
 {
     public bool IsWindowFocused => _isSceneWindowFocused;
     public bool IsSceneHovered => _isSceneHovered;
+    public bool ExternalSceneChange = true;
     public bool IsTransformActive => IsTranslationActive || IsRotationActive || IsScaleActive;
     public bool IsTransformFromGizmo = false;
     public bool IsTranslationActive = false;
@@ -177,8 +178,6 @@ internal class SceneWindow(MainWindowContext window)
                     ActTransform.FullTransformString += $": X: {STR.X:0.00}, Z: {STR.Z:0.00}";
             }
 
-
-
         }
         else
         {
@@ -189,9 +188,6 @@ internal class SceneWindow(MainWindowContext window)
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public unsafe void Render(double deltaSeconds)
     {
-        if (window.CurrentScene is null)
-            return;
-
         float aspectRatio;
 
         Vector2 sceneImageRectMin;
@@ -220,14 +216,25 @@ internal class SceneWindow(MainWindowContext window)
         }
         ImGui.PopStyleColor(3);
 
-        if (!sceneReady)
+        if (!window.ContextHandler.IsProjectLoaded)
         {
-            ImGui.TextDisabled("The stage is being loaded, please wait...");
+            ImGui.TextDisabled("No project loaded.");
             ImGui.End();
             return;
         }
 
-        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 24 * window.ScalingFactor);
+        Vector2 TPos = ImGui.GetCursorPos() + new Vector2(0, 1);
+        if (!sceneReady)
+        {
+            TabsPanel();
+            ImGui.SetCursorPosY(TPos.Y);
+            ImGui.TextDisabled("Please open a stage.");
+            ImGui.End();
+            return;
+        }
+        ImGui.SetCursorPosY(26 * window.ScalingFactor);
+
+        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 26 * window.ScalingFactor);
         aspectRatio = contentAvail.X / contentAvail.Y;
         Vector2 sceneWindowRegionMin = ImGui.GetCursorScreenPos();
         Vector2 sceneWindowRegionMax = ImGui.GetCursorScreenPos() + contentAvail;
@@ -846,9 +853,26 @@ internal class SceneWindow(MainWindowContext window)
             window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             Canvas.CanvasRenderer.Render(window.GL!, window);
         }
+
         GizmoButtons(upperRightCorner);
         ActionPanel(contentAvail);
         ActionMenu(deltaSeconds);
+        ImGui.SetCursorPos(TPos);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.UnitX * 2);
+        if (ImGui.BeginChild("TabsChild", new Vector2(-1, 25 * window.ScalingFactor), ImGuiChildFlags.AlwaysUseWindowPadding))
+        {
+            if (!TabsPanel())
+            {
+                ImGui.TextDisabled("No stage loaded.");
+                ImGui.PopStyleVar();
+                ImGui.EndChild();
+                ImGui.End();
+                return;
+            }
+            ImGui.EndChild();
+        }
+        ImGui.PopStyleVar();
 
         ImGui.End();
     }
@@ -1068,8 +1092,49 @@ internal class SceneWindow(MainWindowContext window)
         }
         ImGui.SetCursorPos(olpos);
     }
-    private void TabsPanel()
+    private bool TabsPanel()
     {
+        ImGui.PushStyleVar(ImGuiStyleVar.TabRounding, 0);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(default, 0));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemInnerSpacing, Vector2.UnitX );
+
+        if (ImGui.BeginTabBar("##SuperSceneTabs"))
+        {
+            for (int i = 0; i < window.Scenes.Count; i++)
+            {
+                ImGuiTabItemFlags flags = ImGuiTabItemFlags.NoPushId;
+
+                Scene scene = window.Scenes[i];
+
+                if (!scene.IsSaved) 
+                    flags |= ImGuiTabItemFlags.UnsavedDocument;
+                if (scene == window.CurrentScene && ExternalSceneChange) 
+                {
+                    flags |= ImGuiTabItemFlags.SetSelected;
+                }
+
+                bool opened = true;
+                string displayName = scene.Stage.Name + scene.Stage.Scenario;
+                if (ImGui.BeginTabItem($"{displayName}##SceneTab{i}", ref opened, flags | ImGuiTabItemFlags.NoAssumedClosure) && (ExternalSceneChange ? window.CurrentScene == scene : window.CurrentScene != scene))
+                {
+                    ExternalSceneChange = false;
+                    window.CurrentScene = scene;
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8));
+                ImGui.SetItemTooltip(scene.Stage.UserPath);
+                ImGui.PopStyleVar();
+                if (!opened)
+                {
+                    window.CloseStage(scene);
+                }
+            }
+
+            ImGui.EndTabBar();
+        }
+        ImGui.PopStyleVar(3);
+        return window.Scenes.Count > 0;
     }
 
     public void TranslateAction(Vector3 _ndcMousePos3D)

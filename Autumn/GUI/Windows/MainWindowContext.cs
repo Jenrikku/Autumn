@@ -47,6 +47,7 @@ internal class MainWindowContext : WindowContext
     private readonly SettingsDialog _settingsDialog;
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
+    private readonly SaveReminderDialog _saveReminderDialog;
     #endregion
 
     #region Editor Dialogs
@@ -56,7 +57,7 @@ internal class MainWindowContext : WindowContext
     #endregion
 
     public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
-                            || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen
+                            || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen || _saveReminderDialog.IsOpen
                             || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen || _welcomeDialog.IsOpen;
     public bool FlyCamOn => _sceneWindow.FlyCam;
 
@@ -96,6 +97,7 @@ internal class MainWindowContext : WindowContext
         _shortcutsDialog = new(this);
         _DBEditorDialog = new(this);
         _searchObjDialog = new(this);
+        _saveReminderDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -272,6 +274,7 @@ internal class MainWindowContext : WindowContext
             _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
+            _saveReminderDialog.Render();
 
             _miscParams.Render();
             _camParams.Render();
@@ -415,19 +418,36 @@ internal class MainWindowContext : WindowContext
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
     internal void SetupExtraPropsDialog(StageObj stageObj, string propName) => _editExtraPropsDialog.Open(stageObj, propName);
     internal void SetupExtraPropsDialogNew(StageObj stageObj) => _editExtraPropsDialog.New(stageObj);
-    internal void CloseCurrentScene()
+    internal void SetSceneChange() => _sceneWindow.ExternalSceneChange = true;
+    internal void OpenSaveReminder(Scene s) => _saveReminderDialog.Open(s);
+    internal void CloseStage(Scene s)
     {
-        int i = Scenes.IndexOf(CurrentScene!) - 1;
-        Scenes.Remove(CurrentScene!);
-        if (i < 0)
-            CurrentScene = null;
-        else
-            CurrentScene = Scenes[i];
+        if (ContextHandler.SystemSettings.SaveReminder && !s.IsSaved)
+        {
+            OpenSaveReminder(s);
+            return;
+        }
+        if (s == CurrentScene)
+        {
+            if (Scenes.IndexOf(s) > 0)
+            {
+                CurrentScene = Scenes[Scenes.IndexOf(s)-1];
+            }
+            else if (Scenes.Count > 1)
+            {
+               CurrentScene = Scenes[1];
+            }
+            else
+            {
+                CurrentScene = null;
+            }
+        }
+        SetSceneChange();
+        Scenes.Remove(s);
         if (Scenes.Count == 0)
         {
             ImGui.SetWindowFocus("Stages");
         }
-
     }
 
     /// <summary>
@@ -598,66 +618,15 @@ internal class MainWindowContext : WindowContext
             ImGui.EndMenu();
         }
         ImGui.SetCursorPos(c);
-        #region SceneTabs
         // Opened stages are displayed in tabs in the main menu bar.
-
-        ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
 
         if (ContextHandler.ProjectChanged)
         {
             CurrentScene = null;
             Scenes.Clear();
             ContextHandler.ProjectChanged = false;
+            ImGui.SetWindowFocus("Stages");
         }
-
-        if (Scenes.Count > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
-        {
-            for (int i = 0; i < Scenes.Count; i++)
-            {
-                ImGuiTabItemFlags flags = ImGuiTabItemFlags.NoPushId;
-
-                Scene scene = Scenes[i];
-
-                if (!scene.IsSaved)
-                    flags |= ImGuiTabItemFlags.UnsavedDocument;
-
-                bool opened = true;
-                string displayName = scene.Stage!.Name + scene.Stage.Scenario;
-
-                ImGui.PushID(displayName);
-
-                if (ImGui.BeginTabItem(displayName, ref opened, flags) && CurrentScene != scene)
-                    CurrentScene = scene;
-
-                ImGui.EndTabItem();
-                ImGui.SetItemTooltip(scene.Stage.UserPath);
-
-                ImGui.PopID();
-
-                // Remove the tab when it is closed.
-                // This also closes the stage.
-                if (!opened && Scenes.Remove(scene))
-                {
-                    // TO-DO: Check whether the stage is not saved.
-
-                    i--;
-
-                    // Set the scene to the one before if possible.
-                    if (i < 0)
-                        CurrentScene = null;
-                    else
-                        CurrentScene = Scenes[i];
-                    if (Scenes.Count == 0)
-                    {
-                        ImGui.SetWindowFocus("Stages");
-                    }
-                }
-            }
-
-            ImGui.EndTabBar();
-        }
-
-        #endregion
 
         ImGui.EndMainMenuBar();
 

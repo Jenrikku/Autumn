@@ -3,7 +3,7 @@ OpenSettings:
   Ctrl: false
   Key: S
   Shift: true
-CloseScene:
+CloseCurrentStage:
   Alt: false
   Ctrl: true
   Key: W

@@ -6,7 +6,7 @@ internal enum CommandID
     OpenProject,
     OpenSettings,
     CloseProject,
-    CloseScene,
+    CloseCurrentStage,
     Exit,
     AddStage,
     SaveStage,

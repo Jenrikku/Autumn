@@ -91,51 +91,10 @@ internal class StageWindow
             {
                 foreach (var (name, scenario) in window.ContextHandler.ProjectStages)
                 {
-                    if (scenario == 0)
+                    if (scenario == 0) // Why?
                         continue;
-
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
-
-                    if (ImGui.Selectable(name +$"##{name}{scenario}", false, ImGuiSelectableFlags.SpanAllColumns))
-                    {
-                        Scene? scene = window.Scenes.Find(scene =>
-                            scene.Stage.Name == name && scene.Stage.Scenario == scenario
-                        );
-
-                        if (scene is not null) // Stage already opened
-                            window.CurrentScene = scene;
-                        else
-                        {
-                            window.BackgroundManager.Add(
-                                $"Loading stage \"{name + scenario}\"...",
-                                manager =>
-                                {
-                                    Stage stage = window.ContextHandler.FSHandler.ReadStage(name, scenario);
-
-                                    Scene newScene =
-                                        new(
-                                            stage,
-                                            window.ContextHandler.FSHandler,
-                                            window.GLTaskScheduler,
-                                            ref manager.StatusMessageSecondary
-                                        )
-                                        {
-                                            IsSaved = true
-                                        };
-
-                                    newScene.ResetCamera();
-                                    window.Scenes.Add(newScene);
-                                    ImGui.SetWindowFocus("Objects");
-                                }
-                            );
-                        }
-
-                    }
-
-                    ImGui.TableNextColumn();
-
-                    ImGui.Text(scenario.ToString());
+                    
+                    StageSelectable(name, scenario);
                 }
             }
             else
@@ -143,58 +102,13 @@ internal class StageWindow
                 foreach (
                     SystemDataTable.StageDefine _stage in window
                         .ContextHandler.FSHandler.ReadGameSystemDataTable()!
-                        .WorldList[currentItem - 1]
-                        .StageList
+                        .WorldList[currentItem - 1].StageList
                 )
                 {
                     if (!window.ContextHandler.ProjectStages.Contains((_stage.Stage, (byte)_stage.Scenario)))
                         continue;
 
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
-
-                    if (ImGui.Selectable(_stage.Stage + $"##{_stage.Stage}{_stage.Scenario}", false))
-                    {
-                        Scene? scene = window.Scenes.Find(scene =>
-                            scene.Stage.Name == _stage.Stage && scene.Stage.Scenario == _stage.Scenario
-                        );
-
-                        if (scene is not null) // Stage already opened
-                            window.CurrentScene = scene;
-                        else
-                        {
-                            window.BackgroundManager.Add(
-                                $"Loading stage \"{_stage.Stage + _stage.Scenario}\"...",
-                                manager =>
-                                {
-                                    Stage stage = window.ContextHandler.FSHandler.ReadStage(
-                                        _stage.Stage,
-                                        (byte)_stage.Scenario
-                                    );
-
-                                    Scene newScene =
-                                        new(
-                                            stage,
-                                            window.ContextHandler.FSHandler,
-                                            window.GLTaskScheduler,
-                                            ref manager.StatusMessageSecondary
-                                        )
-                                        {
-                                            IsSaved = true
-                                        };
-
-                                    newScene.ResetCamera();
-                                    window.Scenes.Add(newScene);
-                                    ImGui.SetWindowFocus("Objects");
-                                }
-                            );
-                        }
-
-                    }
-
-                    ImGui.TableNextColumn();
-
-                    ImGui.Text(_stage.Scenario.ToString());
+                    StageSelectable(_stage.Stage, (byte)_stage.Scenario);
                 }
             }
 
@@ -202,5 +116,56 @@ internal class StageWindow
         }
 
         ImGui.End();
+    }
+
+    private void StageSelectable(string stageName, byte scenario)
+    {
+        ImGui.TableNextRow();
+        ImGui.TableSetColumnIndex(0);
+
+        if (ImGui.Selectable(stageName +$"##{stageName}{scenario}", false, ImGuiSelectableFlags.SpanAllColumns))
+        {
+            Scene? scene = window.Scenes.Find(scene =>
+                scene.Stage.Name == stageName && scene.Stage.Scenario == scenario
+            );
+
+            if (scene is not null) // Stage already opened
+            {
+                window.CurrentScene = scene;
+                window.SetSceneChange();
+            }
+            else
+            {
+                window.BackgroundManager.Add(
+                    $"Loading stage \"{stageName + scenario}\"...",
+                    manager =>
+                    {
+                        Stage stage = window.ContextHandler.FSHandler.ReadStage(stageName, scenario);
+
+                        Scene newScene =
+                            new(
+                                stage,
+                                window.ContextHandler.FSHandler,
+                                window.GLTaskScheduler,
+                                ref manager.StatusMessageSecondary
+                            )
+                            {
+                                IsSaved = true
+                            };
+
+                        newScene.ResetCamera();
+                        window.Scenes.Add(newScene);
+                        window.CurrentScene = newScene;
+                        window.SetSceneChange();
+                        ImGui.SetWindowFocus("Objects");
+                    }
+                );
+            }
+
+        }
+
+        ImGui.TableNextColumn();
+
+        ImGui.Text(scenario.ToString());
     }
 }

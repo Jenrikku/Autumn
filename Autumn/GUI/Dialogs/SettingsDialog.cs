@@ -21,6 +21,7 @@ internal class SettingsDialog
     public bool IsOpen => _isOpened;
     private bool _useClassNames = false;
     private bool _dbEditor = false;
+    private bool _saveRem = false;
     private bool _rememberLayout = false;
     private bool _prevlightonload = false;
     private bool _wasd = false;
@@ -81,6 +82,7 @@ internal class SettingsDialog
         _viewrelationLine = _window.ContextHandler.SystemSettings.ShowRelationLines;
         _hoverInfo = (int)_window.ContextHandler.SystemSettings.ShowHoverInfo;
         _gizmoPos = (int)_window.ContextHandler.SystemSettings.GizmoPosition;
+        _saveRem = _window.ContextHandler.SystemSettings.SaveReminder;
         EXPERIMENTAL_PostProcess = _window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess;
         EXPERIMENTAL_SelectionOutline = _window.ContextHandler.SystemSettings.EXPERIMENTAL_SelectionOutline;
         EXPERIMENTAL_ActorShadows = _window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows;
@@ -232,6 +234,7 @@ internal class SettingsDialog
             if (ImGui.BeginTabItem("Editor Functionality"))
             {
                 ImGui.Checkbox("Use ClassNames", ref _useClassNames);
+                ImGui.Checkbox("Warn the user when trying to close an unsaved stage", ref _saveRem);
                 ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
                 ImGui.Checkbox("Restore Native File Dialogs", ref _restoreNativeFileDialogs);
                 ImGui.Checkbox("Enable VSync", ref _enableVSync);
@@ -376,6 +379,7 @@ internal class SettingsDialog
             _window.ContextHandler.SetGlobalSetting("RomFSPath", _romfspath);
             _window.ContextHandler.SetProjectSetting("UseClassNames", _useClassNames);
             _window.ContextHandler.SystemSettings.UseWASD = _wasd;
+            _window.ContextHandler.SystemSettings.SaveReminder = _saveRem;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = _middleMovesCamera;
             _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;

@@ -28,6 +28,7 @@ internal class SystemSettings
     public bool EnableDBEditor;
     public bool[] VisibleDefaults = [];
     public bool ShowRelationLines;
+    public bool SaveReminder = true;
     public TransformGizmo LastGizmo = TransformGizmo.None;
     public GizmoPosition GizmoPosition = GizmoPosition.First;
     public HoverInfoMode ShowHoverInfo;
@@ -59,9 +60,11 @@ internal class SystemSettings
         ZoomToMouse = false;
         RememberLayout = true;
         EnableDBEditor = false;
+        SaveReminder = true;
         ShowRelationLines = true;
         ShowHoverInfo = HoverInfoMode.Disabled;
         Yaz0Compression = Yaz0Wrapper.CompressionLevel.Medium;
+        GizmoPosition = GizmoPosition.First;
 
         // Areas, CameraAreas, Rails, Grid, TransparentWall
         VisibleDefaults = [false, true, true, true, false];
