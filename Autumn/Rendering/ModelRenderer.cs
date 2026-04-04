@@ -31,6 +31,7 @@ internal static class ModelRenderer
 
     private static CommonSceneParameters? s_commonSceneParams;
     private static CommonMaterialParameters? s_defaultCubeMaterialParams;
+    private static CommonMaterialParameters? s_transparentWallMaterialParams;
 
     private static RailGeometryParameters? s_railGeometryParams;
     private static RailGeometryParameters? s_railHandleGeoParams;
@@ -63,6 +64,7 @@ internal static class ModelRenderer
         s_commonSceneParams = new();
 
         s_defaultCubeMaterialParams = new(new(1, 0.5f, 0, 1), s_highlightColor);
+        s_transparentWallMaterialParams = new(new(0.3f, 0.3f, 0.3f, 1), s_highlightColor);
         s_railGeometryParams = new(lineWidth: 0.08f, camera: new(1));
         s_railHandleGeoParams = new(0.04f, new(1));
         s_railMaterialParams = new(new(0.25f, 0.25f, 0.31f, 1), s_highlightColor);
@@ -483,8 +485,14 @@ internal static class ModelRenderer
                     return;
                 }
 
-                if (actor.Name.Contains("TransparentWall") && !VisibleTransparentWall)
+                if (actor.Name.Contains("TransparentWall"))
                 {
+                    if (!VisibleTransparentWall && !sceneObj.Selected)
+                        return;
+                    s_commonSceneParams.Transform = sceneObj.Transform;
+                    s_transparentWallMaterialParams!.Selected = sceneObj.Selected;
+
+                    TransparentWallRenderer.Render(gl, s_commonSceneParams, s_transparentWallMaterialParams, sceneObj.PickingId);
                     return;
                 }
             }

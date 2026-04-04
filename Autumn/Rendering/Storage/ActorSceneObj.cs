@@ -39,8 +39,7 @@ internal class ActorSceneObj : IStageSceneObj
         StageObj = stageObj;
         Actor = actorObj;
         PickingId = pickingId;
-
-        AABB = actorObj.AABB;
+        AABB = stageObj.Name.Contains("TransparentWall") ? actorObj.AABB * 4 : actorObj.AABB;
 
         UpdateTransform();
     }

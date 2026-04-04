@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using Autumn.Rendering.DefaultCube;
 using Autumn.Rendering.Storage;
 using SceneGL;
 using SceneGL.Materials;
@@ -61,7 +60,7 @@ internal static class AreaRenderer
         #endregion
 
         float w = 1;
-        
+
         #region Cube part Helpers
         void Face(uint facetype)
         {

@@ -138,6 +138,7 @@ internal class MainWindowContext : WindowContext
             RailRenderer.Initialize(GL!);
             RelationLine.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
+            TransparentWallRenderer.Initialize(GL!);
             Canvas.CanvasRenderer.Initialize(GL!);
             _propertiesWindow.Initialize(windowManager);
 
