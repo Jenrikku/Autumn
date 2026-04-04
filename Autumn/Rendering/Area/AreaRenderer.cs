@@ -102,7 +102,6 @@ internal static class AreaRenderer
     public static RenderableModel GenerateSphereModel(GL gl, float scale = 10)
     {
         ModelBuilder<ushort, Vertex> builder = new();
-        scale /= 1.5f;
         #region Transform Helpers
 
         #endregion
