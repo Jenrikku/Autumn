@@ -501,7 +501,7 @@ internal class ActionHandler
                     mainContext.CurrentScene!.SelectAllObjects();
             },
             enabled: window =>
-                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused ,
+                window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.IsSceneFocused && !mainContext.IsTransformActive,
             Command.CommandCategory.Selection
         );
 
