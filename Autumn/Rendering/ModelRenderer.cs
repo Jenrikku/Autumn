@@ -153,7 +153,7 @@ internal static class ModelRenderer
 
             gl.CullFace(TriangleFace.Back);
 
-            AreaRenderer.Render(gl, s_commonSceneParams, basicSceneObj.MaterialParams, sceneObj.PickingId);
+            AreaRenderer.Render(gl, s_commonSceneParams, basicSceneObj.MaterialParams, basicSceneObj.StageObj.Properties.TryGetValue("ShapeModelNo", out object? val) ? (int)val! : 0, sceneObj.PickingId);
             return;
         }
 
@@ -454,7 +454,7 @@ internal static class ModelRenderer
 
                 gl.CullFace(TriangleFace.Back);
 
-                AreaRenderer.Render(gl, s_commonSceneParams, basicSceneObj.MaterialParams, sceneObj.PickingId);
+                AreaRenderer.Render(gl, s_commonSceneParams, basicSceneObj.MaterialParams, basicSceneObj.StageObj.Properties.TryGetValue("ShapeModelNo", out object? val) ? (int)val! : 0, sceneObj.PickingId);
                 return;
             }
 
