@@ -288,7 +288,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                         InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
-                    if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
+                    if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea || stageObj.Type == StageObjType.AreaChild)
                     {
                         if (!stageObj.Properties.ContainsKey("Priority"))
                         {
@@ -308,9 +308,10 @@ internal class PropertiesWindow(MainWindowContext window)
 
                         if (!stageObj.Properties.ContainsKey("ShapeModelNo"))
                         {
-                            ImGui.Text("ShapeModelNo:");
+                            ImGui.Text("Shape:");
+                            ImGui.SetItemTooltip("ShapeModelNo");
                             ImGui.SameLine();
-                            ImGuiWidgets.SetPropertyWidth("ShapeModelNo");
+                            ImGuiWidgets.SetPropertyWidth("Shape");
                             if (ImGui.Button("No shape property"))
                             {
                                 stageObj.Properties["ShapeModelNo"] = 0;
@@ -318,8 +319,25 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                         else
                         {
+                            ImGui.Text("Shape:");
+                            ImGui.SetItemTooltip("ShapeModelNo");
+                            ImGui.SameLine();
+                            ImGuiWidgets.SetPropertyWidth("Shape");
                             int shp = (int)stageObj.Properties["ShapeModelNo"]!;
-                            InputIntProperties("ShapeModelNo", ref shp, 1, ref stageObj);
+                            if (shp < 0 || shp > 3)
+                            {
+                                if (ImGui.InputInt("##ShapeModelNoInt", ref shp, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, "ShapeModelNo", stageObj.Properties["ShapeModelNo"], shp);
+                                }
+                            }
+                            else
+                            {
+                                if (ImGui.Combo("##ShapeModelNoCombo", ref shp, ["Cube (Base)", "Cube (Middle)", "Sphere", "Cylinder"], 4))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, "ShapeModelNo", stageObj.Properties["ShapeModelNo"], shp);
+                                }
+                            }
                         }
                     }
                     ImGui.PopItemWidth();

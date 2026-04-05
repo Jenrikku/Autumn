@@ -513,7 +513,7 @@ internal class AddObjectDialog(MainWindowContext window)
                 ImGui.Text("Shape:");
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Shape:").X - style.ItemSpacing.X * 2);
-                ImGui.Combo("##Shape1", ref _shape, ["Cube", "Sphere", "Cylinder"], 3);
+                ImGui.Combo("##Shape1", ref _shape, ["Cube (Base)", "Cube (Middle)", "Sphere", "Cylinder"], 4);
             }
             ImGui.EndChild();
         }
