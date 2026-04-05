@@ -563,8 +563,6 @@ internal static class ModelRenderer
                 } 
             }
 
-            
-
             for (int h = 0; h < m.Count; h++)
             {
                 var material = m[h];
@@ -644,7 +642,6 @@ internal static class ModelRenderer
 
     public static void DrawSubActor(GL gl, ActorSceneObj actorSceneObj, Actor act, int idx, Scene scn)
     {
-        #warning hardcoded to Opaque layers only for now
         foreach (var (mesh, material) in act.EnumerateMeshes())
         {
             string className = actorSceneObj.StageObj.Name;
@@ -660,7 +657,6 @@ internal static class ModelRenderer
                 s_viewMatrix);
 
             material.SetSelectionColor(new(s_highlightColor, actorSceneObj.Selected ? 0.4f : 0));
-            # warning maybe replace with parent Actor's light type and don't try to match the other one
             if (scn.CanPreviewLights) material.SetLight0((scn.PreviewOneLight ? (scn.PreviewLight ?? scn.GetPreviewLight(act.InitLight.Type)) : scn.GetPreviewLight(act.InitLight.Type)) ?? _defaultLight);
             else material.SetLight0(_defaultLight); 
             material.SetViewRotation(s_cameraRotation);

@@ -146,7 +146,6 @@ internal class PropertiesWindow(MainWindowContext window)
             }
 
             string oldName = stageObj.Name;
-            ImGui.GetIO().ConfigDragClickToInputText = true; //TODO - MOVE TO EDITOR STARTUP SETUP
 
             // Fake dock
             string oldClassCCNT = GetClassFromCCNT(oldName);

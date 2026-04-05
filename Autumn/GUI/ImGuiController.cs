@@ -73,6 +73,7 @@ internal class ImGuiController : IDisposable
         onConfigureIO?.Invoke();
 
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+        io.ConfigDragClickToInputText = true;
 
         unsafe
         {

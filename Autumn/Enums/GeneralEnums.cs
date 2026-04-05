@@ -64,3 +64,16 @@ internal enum ArgType
     /// </summary>
     PicketHeight,
 }
+
+public enum FSPath
+{
+    Root,
+    Actors,
+    Stages,
+    Sound,
+    Layout,
+    System,
+    CCNT,
+    Effect,
+    Localization   
+}

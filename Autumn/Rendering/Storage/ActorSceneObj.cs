@@ -71,7 +71,7 @@ internal class ActorSceneObj : IStageSceneObj
         SubActors.Clear();
         SubActorTransforms.Clear();
         Shadows.Clear();
-
+        BaseSubActorCount = 0;
 
         fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? actorClass);
 

@@ -1,9 +1,18 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Autumn.Background;
+using Autumn.Enums;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Wrappers;
 using NARCSharp;
+using SPICA.Formats.CtrGfx;
+using SPICA.Formats.CtrH3D;
+using SPICA.Formats.CtrH3D.LUT;
+using SPICA.Formats.CtrH3D.Model;
+using SPICA.Formats.CtrH3D.Model.Material;
+using SPICA.Formats.CtrH3D.Model.Mesh;
+using SPICA.Formats.CtrH3D.Texture;
 
 namespace Autumn.FileSystems;
 
@@ -47,15 +56,65 @@ internal class LayeredFSHandler
 
         return new();
     }
-    
-    #warning TODO -> NEEDS REFACTOR MAKE IT READ FROM EITHER FILESYSTEM
+
     public void ReadActorExtras(string actorName, string className, ActorSceneObj actor, GLTaskScheduler scheduler)
     {
-        OriginalFS.ReadActorExtras(actorName, className, actor, scheduler);
+        if (ClassModifiersWrapper.ModifierEntries.ContainsKey(className))
+        {
+            ClassModifiersWrapper.ModifierEntry act;
+            if (ClassModifiersWrapper.ModifierEntries[className].Variants != null && ClassModifiersWrapper.ModifierEntries[className].Variants!.ContainsKey(actorName))
+            {
+                act = ClassModifiersWrapper.ModifierEntries[className].Variants![actorName]!;
+            }
+            else if (ClassModifiersWrapper.ModifierEntries[className].Default != null)
+            {
+                act = ClassModifiersWrapper.ModifierEntries[className].Default!.Value;
+            }
+            else return;
+            
+            if (act.ExtraModels != null)
+            {
+                foreach (string s in act.ExtraModels!.Keys)
+                {
+                    string ex;
+                    RomFSHandler? FS;
+                    if (ModFS != null && File.Exists(Path.Join(ModFS.GetPath(FSPath.Actors), s + ".szs")))
+                    {
+                        FS = ModFS;
+                    }
+                    else if (OriginalFS != null && File.Exists(Path.Join(OriginalFS.GetPath(FSPath.Actors), s + ".szs")))
+                    {
+                        FS = OriginalFS;
+                    }
+                    else continue;
+                    ex = Path.Join(FS.GetPath(FSPath.Actors), s + ".szs");
+                    if(FS.CachedActors.ContainsKey(s))
+                    {
+                        actor.SubActors.Add(FS.CachedActors[s]);
+                        continue;
+                    }
+                    FS.ReadActorExtras(s, ex, actor, scheduler);
+                }
+            }
+        }
     }
     public Actor? ReadActorExtrasArg(string subActorName, GLTaskScheduler scheduler)
     {
-        return OriginalFS.ReadActorExtrasArg(subActorName, scheduler);
+        string ex;
+        RomFSHandler? FS;
+        if (ModFS != null && File.Exists(Path.Join(ModFS.GetPath(FSPath.Actors), subActorName + ".szs")))
+        {
+            FS = ModFS;
+        }
+        else if (OriginalFS != null && File.Exists(Path.Join(OriginalFS.GetPath(FSPath.Actors), subActorName + ".szs")))
+        {
+            FS = OriginalFS;
+        }
+        else return null;
+        ex = Path.Join(FS.GetPath(FSPath.Actors), subActorName + ".szs");
+        if (FS.CachedActors.ContainsKey(subActorName))
+            return FS.CachedActors[subActorName];
+        return FS.ReadActorExtrasArg(subActorName, ex, scheduler);
     }
 
     public Actor ReadActor(string name, GLTaskScheduler scheduler)
