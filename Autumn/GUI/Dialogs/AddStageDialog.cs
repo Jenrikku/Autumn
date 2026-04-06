@@ -295,10 +295,12 @@ internal class AddStageDialog
                                 ref manager.StatusMessageSecondary
                             );
 
-                        _window.Scenes.Add(scene);
 
                         Reset();
                         scene.ResetCamera();
+                        _window.Scenes.Add(scene);
+                        _window.CurrentScene = scene;
+                        _window.SetSceneChange();
                         ImGui.SetWindowFocus("Objects");
                     }
                 );
@@ -382,10 +384,12 @@ internal class AddStageDialog
                         ref manager.StatusMessageSecondary
                     );
 
-                _window.Scenes.Add(scene);
 
                 Reset();
                 scene.ResetCamera();
+                _window.Scenes.Add(scene);
+                _window.CurrentScene = scene;
+                _window.SetSceneChange();
                 ImGui.SetWindowFocus("Objects");
             }
         );

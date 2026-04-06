@@ -14,11 +14,12 @@ internal class LightParamsWindow(MainWindowContext window)
     StageLight? _selectedlight;
     int _lightIdx;
     int _selectedlightarea = -1;
-    int selectedlightName = -1;
+    public int ExternalLightSelect = -1;
+
     ImGuiWidgets.InputComboBox lightAreaCombo = new();
 
     string[] lightTypes = ["Map Obj Light", "Obj Light", "Player Light", "Stage Map Light"];
-    int copyLight = 0;
+    int _copyLight = 0;
 
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
@@ -73,6 +74,7 @@ internal class LightParamsWindow(MainWindowContext window)
         if (ImGui.BeginTabBar("Ltabs", ImGuiTabBarFlags.None))
         {
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
+            bool f = true;
             if (ImGui.BeginTabItem("Light Params"))
             {
                 scn.UseLightArea = false;
@@ -96,7 +98,7 @@ internal class LightParamsWindow(MainWindowContext window)
             else
                 scn.PreviewLight = null;
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            if (ImGui.BeginTabItem("Light Areas"))
+            if (ImGui.BeginTabItem("Light Areas", ref f, ExternalLightSelect > -1 ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None))
             {
                 scn.UseLightArea = true;
                 LightAreaTab(scn, prevW, style);
@@ -165,7 +167,7 @@ internal class LightParamsWindow(MainWindowContext window)
         {
             if (ImGui.Button("Copy to:"))
             {
-                switch (copyLight)
+                switch (_copyLight)
                 {
                     case 0:
                         scn.Stage.LightParams.MapObjectLight = new(_selectedlight);
@@ -184,7 +186,7 @@ internal class LightParamsWindow(MainWindowContext window)
             }
             ImGui.SameLine(0, style.ItemInnerSpacing.X);
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.Combo("##CopyTo", ref copyLight, lightTypes, lightTypes.Length);
+            ImGui.Combo("##CopyTo", ref _copyLight, lightTypes, lightTypes.Length);
             ImGui.Separator();
             int A = 22;
             int B = 30;
@@ -285,7 +287,11 @@ internal class LightParamsWindow(MainWindowContext window)
                     ImGui.TableSetColumnIndex(0);
                     ImGui.PushID("lightarea" + scn.Stage.LightAreaNames.Keys.ElementAt(_i));
                     var st = scn.Stage.LightAreaNames.Keys.ElementAt(_i).ToString();
-
+                    if (ExternalLightSelect > -1 && scn.Stage.LightAreaNames.Keys.ElementAt(_i) == ExternalLightSelect)
+                    {
+                        _selectedlightarea = _i;
+                        ExternalLightSelect = -1;
+                    }
                     if (ImGui.Selectable(st, _i == _selectedlightarea, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         _selectedlightarea = _i;
@@ -333,7 +339,8 @@ internal class LightParamsWindow(MainWindowContext window)
             string prevRefStr = refStr;
 
             int aId = scn.Stage.LightAreaNames.Keys.ElementAt(_selectedlightarea);
-            ImGui.InputInt("Area Id", ref aId);
+            ImGuiWidgets.PrePropertyWidthName("Area Id");
+            ImGui.InputInt("##AreaIdint", ref aId);
             if (aId != scn.Stage.LightAreaNames.Keys.ElementAt(_selectedlightarea) && !scn.Stage.LightAreaNames.ContainsKey(aId))
             {
                 string tmpS = scn.Stage.LightAreaNames.Values.ElementAt(_selectedlightarea);
@@ -350,7 +357,7 @@ internal class LightParamsWindow(MainWindowContext window)
                 ImGui.Text("Light Name:");
                 ImGui.SameLine();
                 var keyArray = ReadLightAreas.Keys.ToArray();
-                lightAreaCombo.Use("Light Name", ref refStr, ReadLightAreas.Keys.ToList(), ImGui.GetContentRegionAvail().X);
+                lightAreaCombo.Use("Light Name", ref refStr, ReadLightAreas.Keys.ToList(), ImGuiWidgets.SetPropertyWidthGen("Light Name"));
                 ImGui.SetCursorPosX(p);
                 //ImGui.Combo("Light Name", ref selectedlightName, keyArray, ReadLightAreas.Keys.Count - 1);
 
@@ -366,8 +373,8 @@ internal class LightParamsWindow(MainWindowContext window)
                     if (scn.PreviewLightAreas != area) scn.PreviewLightAreas = area;
 
                     ImGui.BeginDisabled();
-                    ImGui.DragInt("InterpolateFrame", ref area.InterpolateFrame, 1);
-                    ImGui.InputText("Name", ref area.Name, 128);
+                    ImGuiWidgets.DragInt("InterpolateFrame", ref area.InterpolateFrame, 1);
+                    ImGuiWidgets.InputText("Name", ref area.Name, 128);
                     ImGui.PopItemWidth();
                     ImGui.PushItemWidth(prevW - style.ItemSpacing.X);
                     ImGui.EndDisabled();

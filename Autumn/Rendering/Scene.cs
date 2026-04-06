@@ -319,6 +319,15 @@ internal class Scene
         }
         Stage.LightAreaNames.Add(_i, "[汎用]デフォルトライト");
     }
+    public string? GetLightArea(int id)
+    {
+        Stage.LightAreaNames.TryGetValue(id, out string? ret);
+        return ret;
+    }
+    public StageFog? GetFog(int id)
+    {
+        return Stage.StageFogs.FirstOrDefault(x => x.AreaId == id);
+    }
     public void AddFog(StageFog fog)
     {
         for (int i = 0; i < 9999; i++)

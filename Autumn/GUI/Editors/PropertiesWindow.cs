@@ -372,6 +372,16 @@ internal class PropertiesWindow(MainWindowContext window)
                             if (!name.Contains("Arg")) continue;
                             bool valueChanged = false;
                             string cls = GetClassFromCCNT(stageObj.Name);
+                            if ((stageObj.Name.Contains("FogArea", StringComparison.InvariantCultureIgnoreCase)
+                                || stageObj.Name.Equals("LightArea", StringComparison.InvariantCultureIgnoreCase))
+                                && name == "Arg0")
+                            {
+                                bool isfog = stageObj.Name.Contains("FogArea", StringComparison.InvariantCultureIgnoreCase);
+                                string t = isfog ? "Fog" : "Light";
+                                int intBuf = (int)(property ?? -1);
+                                InputFogLight(t, intBuf, 1, ref stageSceneObj, isfog);
+                                continue;
+                            }
                             if (!ClassDatabaseWrapper.DatabaseEntries.ContainsKey(cls))
                             {
                                 switch (property)
@@ -1677,7 +1687,43 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(name + IconUtils.TRASH + IconUtils.TRASH + IconUtils.TRASH, 1, 2));
     }
 
-    private bool InputSwitch(string str, ref int rf, int step, ref IStageSceneObj sco)
+    private bool InputFogLight(string str, int rf, int step, ref IStageSceneObj sco, bool isFog)
+    {
+        int i = rf;
+
+        string tt = isFog ? "Edit Fog" : "Edit Light Area";
+        var f = window.CurrentScene!.GetFog(rf);
+        var l = window.CurrentScene!.GetLightArea(rf);
+
+        bool disable = rf < 0 || (isFog ? (f == null) : (l == null));
+        if (disable)
+            ImGui.BeginDisabled();
+        if (ImGui.Button(str + " id##flbtn", new(ImGui.GetWindowWidth() / 3 - ImGui.GetStyle().ItemSpacing.X, default)))
+        {
+            if (isFog)
+                window.SetFogSelected(window.CurrentScene.Stage.StageFogs.IndexOf(f!));
+            else
+                window.SetLightSelected(rf);
+        }
+        if (disable)
+            ImGui.EndDisabled();
+
+        if (!disable && tt != "")
+            ImGui.SetItemTooltip(tt);
+
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
+        if (ImGui.InputInt("##" + str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            i = Math.Clamp(i, -1, 9999);
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sco.StageObj.Properties, "Arg0", rf, i);
+            
+        }
+        if (tt != "")
+            ImGui.SetItemTooltip(tt);
+
+        return false;
+    }    private bool InputSwitch(string str, ref int rf, int step, ref IStageSceneObj sco)
     {
         int i = rf;
 

@@ -325,6 +325,8 @@ internal class MainWindowContext : WindowContext
                             );
                         scene.ResetCamera();
                         Scenes.Add(scene);
+                        CurrentScene = scene;
+                        SetSceneChange();
                         ImGui.SetWindowFocus("Objects");
                     }
                 );
@@ -389,6 +391,18 @@ internal class MainWindowContext : WindowContext
         _switchParams.IsOpen = true;
         _switchParams.SelectedSwitch = i;
         ImGui.SetWindowFocus("Switches##SwitchWindow");
+    }
+    public void SetFogSelected(int i)
+    {
+        _fogParams.IsOpen = true;
+        _fogParams.SelectedFog = i;
+        ImGui.SetWindowFocus("Fog##FogParams");
+    }
+    public void SetLightSelected(int i)
+    {
+        _lightParams.IsOpen = true;
+        _lightParams.ExternalLightSelect = i;
+        ImGui.SetWindowFocus("Lights##LightParams");
     }
     public void SetCameraSelected(int i)
     {
