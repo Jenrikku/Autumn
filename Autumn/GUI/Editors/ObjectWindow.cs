@@ -114,9 +114,6 @@ internal class ObjectWindow(MainWindowContext window)
                     );
                 }
 
-                ImGui.PopStyleColor(4);
-                //ImGui.PopFont();
-
                 ImGui.TableSetColumnIndex(1);
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
