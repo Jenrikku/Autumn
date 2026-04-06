@@ -209,13 +209,14 @@ internal class SearchWindow
             
         int obj = 0;
         ImGui.SeparatorText("Search results:");
-        ImGui.SetNextItemWidth(prevW);
-
+        float autoResize = -1;
+        if (ImGui.GetContentRegionAvail().Y < 220 * window.ScalingFactor) 
+            autoResize = 220 * window.ScalingFactor;
         if (ImGui.BeginTable("searchTable", 3,
             ImGuiTableFlags.RowBg
             | ImGuiTableFlags.BordersOuter
             | ImGuiTableFlags.BordersV
-            | ImGuiTableFlags.ScrollY))
+            | ImGuiTableFlags.ScrollY, new Vector2(prevW, autoResize)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
