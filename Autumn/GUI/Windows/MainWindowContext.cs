@@ -560,8 +560,7 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Edit Switches"))
                 _switchParams.IsOpen = true;
             ImGui.Separator();
-            if (ImGui.MenuItem("Search"))
-                _searchObjDialog.IsOpen = true;
+            ImGuiWidgets.CommandMenuItem(CommandID.Search, ContextHandler.ActionHandler, this);
             ImGui.EndMenu();
         }
 

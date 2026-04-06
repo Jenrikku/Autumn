@@ -505,7 +505,7 @@ internal class ActionHandler
             Command.CommandCategory.Selection
         );
 
-    private Command ToggleFlyCam() => 
+    private static Command ToggleFlyCam() => 
         new(
         displayName: "Toggle fly cam",
         action: window =>
@@ -519,9 +519,9 @@ internal class ActionHandler
         Command.CommandCategory.General
     );
 
-    private Command SearchObj() => 
+    private static Command SearchObj() => 
         new(
-        displayName: "Search Objects",
+        displayName: "Search",
         action: window =>
         {
             if (window is not MainWindowContext mainContext)
@@ -602,7 +602,7 @@ internal class ActionHandler
 
 #endregion
     
-    private Command AddRailPoint() =>
+    private static Command AddRailPoint() =>
         new(
             displayName: "Add point to the selected rail",
             action: window =>
@@ -624,7 +624,7 @@ internal class ActionHandler
                 && (mainContext.CurrentScene.SelectedObjects.First() is RailSceneObj || mainContext.CurrentScene.SelectedObjects.First() is RailPointSceneObj),
             Command.CommandCategory.Rail
         );    
-    private Command CamToObj() =>
+    private static Command CamToObj() =>
         new(
             displayName: "Move camera to object",
             action: window =>
@@ -637,7 +637,7 @@ internal class ActionHandler
                 window is MainWindowContext mainContext && mainContext.CurrentScene is not null && mainContext.CurrentScene.SelectedObjCount > 0 && mainContext.IsSceneFocused,
             Command.CommandCategory.Selection
         );
-    private Command ShowHandles() =>
+    private static Command ShowHandles() =>
         new(
             displayName: "Moves the handles from their origin",
             action: window =>
@@ -650,7 +650,7 @@ internal class ActionHandler
             Command.CommandCategory.Rail
         );
 
-    private Command GotoRelative() =>
+    private static Command GotoRelative() =>
         new(
             displayName: "Select Parent // First Child",
             action: window =>

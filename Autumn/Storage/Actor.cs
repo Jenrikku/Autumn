@@ -268,6 +268,10 @@ internal class Actor
                         }
                     }
                 }
+                if (srt!.ContainsKey("UseMaterialFogEnableFlag"))
+                {
+                    Info.UseFog = false;
+                }
             }
         }
     }
