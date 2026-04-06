@@ -1479,15 +1479,13 @@ internal class PropertiesWindow(MainWindowContext window)
         bool isActive = false;
         public bool Use(ref Vector3 rf, ref ISceneObj sto, float v_speed = 1, float? width = null, bool linked = false)
         {
-            if (!isActive)
+            if (!isActive && baseValue != rf)
             {
                 baseValue = new(rf.X, rf.Y, rf.Z);
-                Console.WriteLine("Not active");
             }
             if (refVec3 != rf)
             {
                 refVec3 = rf;
-                Console.WriteLine("RefUpdated");
             }
             bool validate = false;
             isActive = DragFloatX.IsActive || DragFloatY.IsActive || DragFloatZ.IsActive;
