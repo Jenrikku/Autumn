@@ -695,7 +695,7 @@ internal class Scene
         fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? actorClass);
 
         Actor actor;
-        actor = fsHandler.ReadActorNew(actorName, actorClass, scheduler);
+        actor = fsHandler.ReadActor(actorName, actorClass, scheduler);
 
         ActorSceneObj actorSceneObj = new(stageObj, actor, _lastPickingId);
 
@@ -746,7 +746,7 @@ internal class Scene
         }
         foreach (ActorShadow shadow in actor.InitShadow)
         {
-            actorSceneObj.Shadows.Add( fsHandler.ReadActor( shadow.GetShadowVolumeString(), scheduler));
+            actorSceneObj.Shadows.Add( fsHandler.ReadActorBasic( shadow.GetShadowVolumeString(), scheduler));
         }
 
         scheduler.EnqueueGLTask( gl => 

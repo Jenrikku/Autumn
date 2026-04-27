@@ -439,8 +439,13 @@ internal partial class RomFSHandler
         return stage;
     }
 
-
-    public Actor ReadActor(string name, GLTaskScheduler scheduler)
+    /// <summary>
+    /// Called for actors where their model name is the same as the actor name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="scheduler"></param>
+    /// <returns>The actor if it's found, and an empty actor otherwise</returns>
+    public Actor ReadActorBasic(string name, GLTaskScheduler scheduler)
     {
         string path = Path.Join(_actorsPath, name + ".szs");
 
@@ -573,7 +578,13 @@ internal partial class RomFSHandler
         return actor;
     }
 
-    public Actor ReadActorNew(string actorName, string baseModelName, string actorClass, GLTaskScheduler scheduler)
+    /// <summary>
+    /// Called for actors where their model name differs from the actor name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="scheduler"></param>
+    /// <returns>The actor if it's found, and an empty actor otherwise</returns>
+    public Actor ReadKnownActor(string actorName, string baseModelName, string actorClass, GLTaskScheduler scheduler)
     {
         string path = Path.Join(_actorsPath, baseModelName + ".szs");
         // Return cached actor if valid (not modified externally)
