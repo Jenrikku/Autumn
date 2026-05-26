@@ -116,13 +116,15 @@ internal class Scene
             List<ActorSceneObj> shsss = new();
             foreach (ISceneObj o in EnumerateSceneObjs())
             {
-                if (o is not ActorSceneObj || !o.IsVisible) continue;
-                if ((o as ActorSceneObj)!.StageObj.Parent != null) 
-                    ModelRenderer.DrawRelLines(window.GL!, (o as ActorSceneObj)!);
+                if (o is not ActorSceneObj actor || !o.IsVisible) continue;
+
+                if (actor.StageObj.Parent != null)
+                    ModelRenderer.DrawRelLines(window.GL!, actor);
+
                 if (window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows && window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
-                    if ((o as ActorSceneObj)!.Shadows.Count > 0)
+                    if (actor.Shadows.Count > 0)
                     {
-                        shsss.Add((o as ActorSceneObj)!);
+                        shsss.Add(actor);
                     }
             }
             if (window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows && window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
@@ -913,12 +915,13 @@ internal class Scene
         }
 
         if (Opaque.Contains(sceneObj)) Opaque.Remove(sceneObj);
-        if (sceneObj is ActorSceneObj)
+
+        if (sceneObj is ActorSceneObj actor)
         {
-            if (Shadows.Contains(sceneObj)) Shadows.Remove((sceneObj as ActorSceneObj)!);
-            if (Translucent.Contains(sceneObj)) Translucent.Remove((sceneObj as ActorSceneObj)!);
-            if (Additive.Contains(sceneObj)) Additive.Remove((sceneObj as ActorSceneObj)!);
-            if (Subtractive.Contains(sceneObj)) Subtractive.Remove((sceneObj as ActorSceneObj)!);
+            if (Shadows.Contains(sceneObj)) Shadows.Remove(actor);
+            if (Translucent.Contains(sceneObj)) Translucent.Remove(actor);
+            if (Additive.Contains(sceneObj)) Additive.Remove(actor);
+            if (Subtractive.Contains(sceneObj)) Subtractive.Remove(actor);
         }  
 
         _pickableObjs.Remove(sceneObj.PickingId);

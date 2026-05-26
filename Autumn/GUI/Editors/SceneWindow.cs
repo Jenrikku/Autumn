@@ -401,7 +401,7 @@ internal class SceneWindow(MainWindowContext window)
                 switch (CamSceneObj)
                 {
                     case ISceneObj x when x is IStageSceneObj y:
-                        aabb *= y.StageObj.Scale * ((y is ActorSceneObj) ? (y as ActorSceneObj)!.DeltaScale: Vector3.One);
+                        aabb *= y.StageObj.Scale * ((y is ActorSceneObj actor) ? actor.DeltaScale : Vector3.One);
                         camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
                         break;
                     case ISceneObj x when x is RailSceneObj y:
