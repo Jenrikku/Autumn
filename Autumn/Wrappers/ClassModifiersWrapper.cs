@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.Utils;
@@ -293,7 +294,7 @@ internal static class ClassModifiersWrapper
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{e.Message} while reading Arg ${k} of entry {Path.GetFileName(path)}");
+                Debug.WriteLine($"{e.Message} while reading Arg ${k} of entry {Path.GetFileName(path)}");
             }
         }
         return entry;

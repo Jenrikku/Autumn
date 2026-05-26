@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using NARCSharp;
 
@@ -17,7 +18,7 @@ internal static class SZSWrapper
         }
         catch
         {
-            Console.WriteLine($"File in {path} was not a valid szs file");
+            Debug.WriteLine($"File in {path} was not a valid szs file");
             return null;
         }
 

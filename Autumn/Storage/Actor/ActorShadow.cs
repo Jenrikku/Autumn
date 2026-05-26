@@ -1,4 +1,5 @@
 
+using System.Diagnostics;
 using System.Numerics;
 using BYAMLSharp;
 
@@ -84,7 +85,7 @@ internal class ActorShadow
         }
         catch (NotImplementedException e) 
         {
-            Console.WriteLine($"{e.Message}: {s}");
+            Debug.WriteLine($"{e.Message}: {s}");
         }
     }
     public void GetExecCategory(string s)
@@ -100,7 +101,7 @@ internal class ActorShadow
         }
         catch (NotImplementedException e)
         {
-            Console.WriteLine($"{e.Message}: {s}");
+            Debug.WriteLine($"{e.Message}: {s}");
         }
     }
 

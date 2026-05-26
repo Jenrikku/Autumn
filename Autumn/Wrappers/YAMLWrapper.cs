@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SharpYaml.Serialization;
 
 namespace Autumn.Wrappers;
@@ -27,7 +28,7 @@ internal static class YAMLWrapper
         }
         catch (Exception? y)
         {
-            Console.WriteLine($"File in {path} was incorrectly formatted: {y.Message}");
+            Debug.WriteLine($"File in {path} was incorrectly formatted: {y.Message}");
             return default;
         }
 
