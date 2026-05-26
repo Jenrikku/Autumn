@@ -16,3 +16,6 @@
 [submodule "Autumn/Resources/RedPepper-ClassDataBase"]
 	path = Autumn/Resources/RedPepper-ClassDataBase
 	url = https://github.com/fruityloops1/RedPepper-ClassDataBase
+[submodule "Autumn/Resources/Autumn-ClassModifiers"]
+	path = Autumn/Resources/Autumn-ClassModifiers
+	url = https://github.com/KirbysDarkNebula/Autumn-ClassModifiers

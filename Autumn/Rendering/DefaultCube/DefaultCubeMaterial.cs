@@ -72,9 +72,11 @@ internal static class DefaultCubeMaterial
 
             out vec4 oColor;
             out uint oPickingId;
+            out vec4 oPostProc;            
 
             void main() {
                 oPickingId = uPickingId;
+                oPostProc = vec4((uHighlightColor.a > 0.1 ? 1 : 0), 0, 0, 0);
 
                 vec3 absolute = abs(vPos);
 

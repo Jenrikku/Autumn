@@ -1,8 +1,11 @@
+using System.Text;
 using Autumn.Enums;
 using Autumn.Rendering;
 using Autumn.Rendering.CtrH3D;
 using Autumn.Rendering.CtrH3D.Animation;
 using Autumn.Rendering.Storage;
+using BYAMLSharp;
+using NARCSharp;
 using SceneGL.GLHelpers;
 using SceneGL.Materials.Common;
 using Silk.NET.OpenGL;
@@ -19,9 +22,12 @@ internal class Actor
 {
     public string Name { get; private set; }
     public bool IsEmptyModel { get; private set; }
+    public bool IsShadowModel { get; set; } = false;
 
     public AxisAlignedBoundingBox AABB { get; set; } = new(2);
     public ActorLight InitLight = new();
+    public List<ActorShadow> InitShadow = new();
+    public ActorInfo Info;
 
     /// <summary>
     /// An array of mesh lists. Each entry in the array represents a mesh layer.
@@ -74,6 +80,7 @@ internal class Actor
 
     public void AddTexture(GL gl, H3DTexture texture)
     {
+        if (_textures.ContainsKey(texture.Name)) return;
         byte[] textureData = texture.ToRGBA();
 
         uint glTexture = TextureHelper.CreateTexture2D<byte>(
@@ -169,13 +176,105 @@ internal class Actor
         return true;
     }
 
-    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(
-        H3DMeshLayer layer
-    )
+    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes(H3DMeshLayer layer)
     {
         foreach (var tuple in _meshes[(int)layer])
             yield return tuple;
     }
+    public IEnumerable<(H3DRenderingMesh Mesh, H3DRenderingMaterial Material)> EnumerateMeshes()
+    {
+        for (int layer = 0; layer < 4; layer++)
+        foreach (var tuple in _meshes[(int)layer])
+            yield return tuple;
+    }
+
+    public int CountMeshesLayer(H3DMeshLayer l) => _meshes[(int)l].Count;
 
     public void ForceModelNotEmpty() => IsEmptyModel = false;
+
+
+    public void ReadActorInits(NARCFileSystem narc, Encoding enc)
+    {
+        if (narc.TryGetFile("InitLight.byml", out byte[] light))
+        {
+            BYAML act_lights = BYAMLParser.Read(light, enc);
+            if (act_lights.RootNode.NodeType == BYAMLNodeType.Dictionary)
+            {
+                var lrt = act_lights.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>();
+                if (lrt!.ContainsKey("LightCalcType"))
+                    InitLight.GetCalcType((string)lrt["LightCalcType"].Value!);
+                if (lrt!.ContainsKey("LightType"))
+                    InitLight.GetType((string)lrt["LightType"].Value!);
+            }
+        }
+        if (narc.TryGetFile("InitShadow.byml", out byte[] shadows))
+        {
+            BYAML act_sh = BYAMLParser.Read(shadows, enc);
+            if (act_sh.RootNode.NodeType == BYAMLNodeType.Dictionary)
+            {
+                var srt = act_sh.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>();
+                if (srt!.ContainsKey("Category") && srt["Category"].Value != null)
+                {
+                    if (srt["Category"].NodeType == BYAMLNodeType.String && !string.IsNullOrEmpty((string)srt["Category"].Value!))
+                        Console.WriteLine($"{Name} Shadows Contains actual category");
+                }
+                if (srt!.ContainsKey("Shadows"))
+                {
+                    //Console.WriteLine("Contains Shadows");
+                    var shArr = srt["Shadows"];
+                    if (shArr.NodeType == BYAMLNodeType.Array)
+                    {
+                        BYAMLNode[] shs = shArr.GetValueAs<BYAMLNode[]>()!;
+                        foreach (BYAMLNode shd in shs)
+                        {
+                            if (shd.NodeType is not BYAMLNodeType.Dictionary) continue;
+                            InitShadow.Add(new (shd.GetValueAs<Dictionary<string, BYAMLNode>>()!));
+                        }
+                    }
+                    //srt.TryGetValue("", out BYAMLNode SName)
+                }
+            }
+        }
+        if (narc.TryGetFile("InitActor.byml", out byte[] actInfo))
+        {
+            BYAML act_inf = BYAMLParser.Read(actInfo, enc);
+            if (act_inf.RootNode.NodeType == BYAMLNodeType.Dictionary)
+            {
+                Info = new();
+                var srt = act_inf.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>();
+                if (srt!.ContainsKey("MaterialController"))
+                {
+                    // Info.ProjectionYOffset = ;
+                    var a = srt["MaterialController"].GetValueAs<Dictionary<string, BYAMLNode>>();
+                    if (a != null)
+                    {
+                        if (a.ContainsKey("ProjTex1dLocalTransY"))
+                        {
+                            if (a["ProjTex1dLocalTransY"].Value != null)
+                            {
+                                var b = a["ProjTex1dLocalTransY"].GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                                Info.ProjectionYOffset = b["Offset"].GetValueAs<float>();
+                                if (b.ContainsKey("HeightScale")) Info.ProjectionYOffset *= b["HeightScale"].GetValueAs<float>();
+                            }
+                        }
+                        else if (a.ContainsKey("ProjTex1dRelTransY"))
+                        {
+                            if (a["ProjTex1dRelTransY"].Value != null)
+                            {
+                                var b = a["ProjTex1dRelTransY"].GetValueAs<Dictionary<string, BYAMLNode>>()!;
+                                Info.ProjectionYOffset = b["Offset"].GetValueAs<float>();
+                                if (b.ContainsKey("HeightScale")) Info.ProjectionYOffset *= b["HeightScale"].GetValueAs<float>();
+                            }
+                        }
+                    }
+                }
+                if (srt!.ContainsKey("UseMaterialFogEnableFlag"))
+                {
+                    Info.UseFog = false;
+                }
+            }
+        }
+    }
+
+
 }

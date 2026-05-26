@@ -15,6 +15,7 @@ internal class SceneWindow(MainWindowContext window)
 {
     public bool IsWindowFocused => _isSceneWindowFocused;
     public bool IsSceneHovered => _isSceneHovered;
+    public bool ExternalSceneChange = true;
     public bool IsTransformActive => IsTranslationActive || IsRotationActive || IsScaleActive;
     public bool IsTransformFromGizmo = false;
     public bool IsTranslationActive = false;
@@ -31,6 +32,7 @@ internal class SceneWindow(MainWindowContext window)
     public bool FinishTransform = false;
 
     private string _transformChangeString = "";
+    public bool FlyCam = false;
 
     internal static class ActTransform
     {
@@ -116,7 +118,7 @@ internal class SceneWindow(MainWindowContext window)
         else if (IsRotationActive)
             ActTransform.FullTransformString = "Rotating ";
 
-        if (window.CurrentScene!.SelectedObjects.Count() > 1)
+        if (window.CurrentScene!.SelectedObjCount > 1)
             ActTransform.FullTransformString += "multiple objects";
         else
         {
@@ -127,7 +129,7 @@ internal class SceneWindow(MainWindowContext window)
             else if (fs is RailHandleSceneObj) ActTransform.FullTransformString += $"{(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailObj.Name} Point {(fs as RailHandleSceneObj)!.ParentPoint.ParentRail.RailPoints.IndexOf((fs as RailHandleSceneObj)!.ParentPoint)} Handle";
         }
 
-        if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ)
+        if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ || _axisLock != Vector3.One)
         {
             ActTransform.FullTransformString += " on the ";
 
@@ -137,25 +139,45 @@ internal class SceneWindow(MainWindowContext window)
                 ActTransform.FullTransformString += "Y ";
             else if (_axisLock == Vector3.UnitZ)
                 ActTransform.FullTransformString += "Z ";
+            else
+            {
+                if (_axisLock == Vector3.UnitX + Vector3.UnitY)
+                    ActTransform.FullTransformString += "Z ";
+                else if (_axisLock == Vector3.UnitY + Vector3.UnitZ)
+                    ActTransform.FullTransformString += "X ";
+                else if (_axisLock == Vector3.UnitZ + Vector3.UnitX)
+                    ActTransform.FullTransformString += "Y ";
+            }
 
-
-            ActTransform.FullTransformString += "axis";
+            if (_axisLock == Vector3.UnitX || _axisLock == Vector3.UnitY || _axisLock == Vector3.UnitZ)
+                ActTransform.FullTransformString += "axis";
+            else
+                ActTransform.FullTransformString += "plane";
 
             if (_transformChangeString != "-" && _transformChangeString != "" && _axisLock != Vector3.One)
                 ActTransform.FullTransformString += ": " + (_transformChangeString != "-" ? _transformChangeString : "");
             else
-                ActTransform.FullTransformString += ": ";
+            {
+                if (_axisLock == Vector3.UnitX)
+                    ActTransform.FullTransformString += $": {STR.X:0.00}";
+
+                if (_axisLock == Vector3.UnitY)
+                    ActTransform.FullTransformString += $": {STR.Y:0.00}";
+
+                if (_axisLock == Vector3.UnitZ)
+                    ActTransform.FullTransformString += $": {STR.Z:0.00}";
 
 
+                if (_axisLock == Vector3.UnitX + Vector3.UnitY)
+                    ActTransform.FullTransformString += $": X: {STR.X:0.00}, Y: {STR.Y:0.00}";
 
-            if (_axisLock == Vector3.UnitX)
-                ActTransform.FullTransformString += $" {STR.X:0.00}";
+                if (_axisLock == Vector3.UnitY + Vector3.UnitZ)
+                    ActTransform.FullTransformString += $": Y: {STR.Y:0.00}, Z: {STR.Z:0.00}";
 
-            if (_axisLock == Vector3.UnitY)
-                ActTransform.FullTransformString += $" {STR.Y:0.00}";
+                if (_axisLock == Vector3.UnitZ + Vector3.UnitX)
+                    ActTransform.FullTransformString += $": X: {STR.X:0.00}, Z: {STR.Z:0.00}";
+            }
 
-            if (_axisLock == Vector3.UnitZ)
-                ActTransform.FullTransformString += $" {STR.Z:0.00}";
         }
         else
         {
@@ -166,9 +188,6 @@ internal class SceneWindow(MainWindowContext window)
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public unsafe void Render(double deltaSeconds)
     {
-        if (window.CurrentScene is null)
-            return;
-
         float aspectRatio;
 
         Vector2 sceneImageRectMin;
@@ -197,14 +216,25 @@ internal class SceneWindow(MainWindowContext window)
         }
         ImGui.PopStyleColor(3);
 
-        if (!sceneReady)
+        if (!window.ContextHandler.IsProjectLoaded)
         {
-            ImGui.TextDisabled("The stage is being loaded, please wait...");
+            ImGui.TextDisabled("No project loaded.");
             ImGui.End();
             return;
         }
 
-        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 24 * window.ScalingFactor);
+        Vector2 TPos = ImGui.GetCursorPos() + new Vector2(0, 1);
+        if (!sceneReady)
+        {
+            TabsPanel();
+            ImGui.SetCursorPosY(TPos.Y);
+            ImGui.TextDisabled("Please open a stage.");
+            ImGui.End();
+            return;
+        }
+        ImGui.SetCursorPosY(26 * window.ScalingFactor);
+
+        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 26 * window.ScalingFactor);
         aspectRatio = contentAvail.X / contentAvail.Y;
         Vector2 sceneWindowRegionMin = ImGui.GetCursorScreenPos();
         Vector2 sceneWindowRegionMax = ImGui.GetCursorScreenPos() + contentAvail;
@@ -217,9 +247,14 @@ internal class SceneWindow(MainWindowContext window)
 
         window.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
         window.SceneFramebuffer.Create(window.GL!);
-
+        if (window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+        {
+            window.ExtrasFrameBuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
+            window.ExtrasFrameBuffer.Create(window.GL!);
+        }
+        Vector2 imPos = ImGui.GetCursorPos();
         ImGui.Image(
-            new IntPtr(window.SceneFramebuffer.GetColorTexture(0)),
+            new IntPtr(window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? window.ExtrasFrameBuffer.GetColorTexture(0) : window.SceneFramebuffer.GetColorTexture(0)),
             contentAvail,
             new Vector2(0, 1),
             new Vector2(1, 0)
@@ -289,7 +324,7 @@ internal class SceneWindow(MainWindowContext window)
         camMoveSpeed *= window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
         if ((_isSceneHovered || _isSceneWindowFocused) && !ImGui.GetIO().WantTextInput)
         {
-            if (window.ContextHandler.SystemSettings.UseWASD)
+            if (window.ContextHandler.SystemSettings.UseWASD || FlyCam)
             {
                 if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
                 {
@@ -308,13 +343,15 @@ internal class SceneWindow(MainWindowContext window)
                     if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
                         camera.Eye += Vector3.UnitY * camMoveSpeed;
                 }
+                if (FlyCam && (window.Keyboard?.IsKeyPressed(Key.Escape) ?? false))
+                    FlyCam = false;
             }
         }
 
-            // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjects.Count() > 0){
+            // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjCount > 0){
             //     camera.LookAt(camera.Eye, window.CurrentScene.SelectedObjects.First().StageObj.Translation*0.01f);
             // }
-        if (window.CurrentScene.SelectedObjects.Any() || CamToObj)
+        if (window.CurrentScene.SelectedObjCount > 0 || CamToObj)
         {
             CamToObj = CamToObj ? CamToObj : (window.Keyboard?.IsKeyPressed(Key.Space) ?? false);
             if (!ImGui.GetIO().WantTextInput)
@@ -364,7 +401,7 @@ internal class SceneWindow(MainWindowContext window)
                 switch (CamSceneObj)
                 {
                     case ISceneObj x when x is IStageSceneObj y:
-                        aabb *= y.StageObj.Scale;
+                        aabb *= y.StageObj.Scale * ((y is ActorSceneObj) ? (y as ActorSceneObj)!.DeltaScale: Vector3.One);
                         camera.LookFrom(y.StageObj.Translation * 0.01f, aabb.GetDiagonal() * 0.01f);
                         break;
                     case ISceneObj x when x is RailSceneObj y:
@@ -433,7 +470,7 @@ internal class SceneWindow(MainWindowContext window)
         window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         window.CurrentScene?.Render(
-            window.GL,
+            window,
             viewMatrix,
             projectionMatrix,
             window.CurrentScene.Camera.Rotation,
@@ -474,7 +511,7 @@ internal class SceneWindow(MainWindowContext window)
         bool ScaleGizmoHovered = false;
         HoveredAxis TransformGizmoAxis = HoveredAxis.NONE;
 
-        if (window.CurrentScene!.SelectedObjects.Any() && window.ContextHandler.SystemSettings.LastGizmo != 0)
+        if (window.CurrentScene!.SelectedObjCount > 0 && window.ContextHandler.SystemSettings.LastGizmo != 0)
         {
             // Method one: Gizmo is placed in the middle position of the selected objects
             if (window.ContextHandler.SystemSettings.GizmoPosition == GizmoPosition.Middle)
@@ -720,9 +757,9 @@ internal class SceneWindow(MainWindowContext window)
                 if (window.CurrentScene.TryGetPickableObj(pixel, out _pickObject) && _pickObject != null && (_pickObject is IStageSceneObj || _pickObject is RailSceneObj))
                 {
                     _objectOptionsPos = windowMousePos;
-                    bool select1 = window.CurrentScene.SelectedObjects.Count() == 1;
+                    bool select1 = window.CurrentScene.SelectedObjCount == 1;
 
-                    bool selectover1 = window.CurrentScene.SelectedObjects.Count() > 0;
+                    bool selectover1 = window.CurrentScene.SelectedObjCount > 0;
 
                     _selNotSame = selectover1 ? !window.CurrentScene.SelectedObjects.Contains(_pickObject) : true;
 
@@ -755,7 +792,7 @@ internal class SceneWindow(MainWindowContext window)
                 else
                     _isObjectOptionsEnabled = false;
             }
-            else if ((_isSceneHovered && window.CurrentScene.SelectedObjects.Any()) || IsTranslationActive || IsScaleActive || IsRotationActive)
+            else if (!FlyCam && ((_isSceneHovered && window.CurrentScene.SelectedObjCount > 0) || IsTranslationActive || IsScaleActive || IsRotationActive))
             {
                 Vector3 _ndcMousePos3D =
                     new(ndcMousePos.X * sceneImageSize.X / 2,
@@ -763,57 +800,79 @@ internal class SceneWindow(MainWindowContext window)
                         (normPickingDepth * 10 - 1) / 10f);
                 _ndcMousePos3D = Vector3.Transform(_ndcMousePos3D, window.CurrentScene.Camera.Rotation);
 
-            if (TranslateToPoint)
-            {
-                TranslateToPoint = false;
-                var sobj = window.CurrentScene.SelectedObjects.First();
-
-                switch (sobj)
+                if (TranslateToPoint)
                 {
-                    case ISceneObj x when x is IStageSceneObj y:
-                        ChangeHandler.ChangeStageObjTransform(
-                            window.CurrentScene.History,
-                            y,
-                            "Translation",
-                            y.StageObj.Translation,
-                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
-                        );
-                        break;
-                    case ISceneObj x when x is RailPointSceneObj y:
-                    ChangeHandler.ChangePointPosition(
-                            window.CurrentScene.History,
-                            y,
-                            y.RailPoint.Point0Trans,
-                            100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                            !ImGui.IsKeyDown(ImGuiKey.ModShift)
-                        );
-                        break;
-                    case ISceneObj x when x is RailHandleSceneObj y:
-                        ChangeHandler.ChangeHandleTransform(
-                            window.CurrentScene.History,
-                            y,
-                            y.Offset,
-                            -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
-                            false
-                        );
-                        break;
-                    case ISceneObj x when x is RailSceneObj y:
-                    break;
-                }
+                    TranslateToPoint = false;
+                    var sobj = window.CurrentScene.SelectedObjects.First();
 
-                if (!_isSceneWindowFocused)
-                    ImGui.SetWindowFocus();
-            }
-            TranslateAction(_ndcMousePos3D);
-            RotateAction(ndcMousePos);
-            ScaleAction(_ndcMousePos3D);
+                    switch (sobj)
+                    {
+                        case ISceneObj x when x is IStageSceneObj y:
+                            ChangeHandler.ChangeStageObjTransform(
+                                window.CurrentScene.History,
+                                y,
+                                "Translation",
+                                y.StageObj.Translation,
+                                100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z)
+                            );
+                            break;
+                        case ISceneObj x when x is RailPointSceneObj y:
+                        ChangeHandler.ChangePointPosition(
+                                window.CurrentScene.History,
+                                y,
+                                y.RailPoint.Point0Trans,
+                                100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                                !ImGui.IsKeyDown(ImGuiKey.ModShift)
+                            );
+                            break;
+                        case ISceneObj x when x is RailHandleSceneObj y:
+                            ChangeHandler.ChangeHandleTransform(
+                                window.CurrentScene.History,
+                                y,
+                                y.Offset,
+                                -y.ParentPoint.RailPoint.Point0Trans + 100 * new Vector3(worldMousePos.X, worldMousePos.Y, worldMousePos.Z),
+                                false
+                            );
+                            break;
+                        case ISceneObj x when x is RailSceneObj y:
+                        break;
+                    }
+
+                    if (!_isSceneWindowFocused)
+                        ImGui.SetWindowFocus();
+                }
+                TranslateAction(_ndcMousePos3D);
+                RotateAction(ndcMousePos);
+                ScaleAction(_ndcMousePos3D);
                 
             }
         }
-        
+        if (window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+        {
+            window.ExtrasFrameBuffer.Use(window.GL!);
+            window.GL!.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            Canvas.CanvasRenderer.Render(window.GL!, window);
+        }
+
         GizmoButtons(upperRightCorner);
         ActionPanel(contentAvail);
         ActionMenu(deltaSeconds);
+        ImGui.SetCursorPos(TPos);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.UnitX * 2);
+        if (ImGui.BeginChild("TabsChild", new Vector2(-1, 25 * window.ScalingFactor), ImGuiChildFlags.AlwaysUseWindowPadding))
+        {
+            if (!TabsPanel())
+            {
+                ImGui.TextDisabled("No stage loaded.");
+                ImGui.PopStyleVar();
+                ImGui.EndChild();
+                ImGui.End();
+                return;
+            }
+            ImGui.EndChild();
+        }
+        ImGui.PopStyleVar();
 
         ImGui.End();
     }
@@ -938,12 +997,29 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.SetWindowFontScale(1.0f);
             ImGui.SetCursorPos(opos);
         }
+        else if (FlyCam)
+        {
+            ImGui.SetWindowFontScale(1.0f);
+
+            ImGui.SetCursorPos(opos + new Vector2(8, -2));
+            ImGui.Text("Fly Cam Mode enabled, press Esc to exit.");
+            ImGui.SetWindowFontScale(1.0f);
+            ImGui.SetCursorPos(opos);
+        }
 
         //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*5 + 5*10;
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6*11 +12;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
+
+
+        if (ImGui.Button(IconUtils.USER))
+        {
+            window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess = !window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess;
+        }
+        ImGui.SetItemTooltip($"Post Processing {(window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? "ON" : "OFF")}");
+        ImGui.SameLine();
 
         if (ImGui.Button(IconUtils.GRID))
         {
@@ -979,6 +1055,11 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.SetItemTooltip($"CameraArea visibility {(ModelRenderer.VisibleCameraAreas ? "ON" : "OFF")}");
         ImGui.SameLine();
 
+        if (ImGui.Button("A"))
+        {
+            ModelRenderer.UseFullAlphaPipeline = !ModelRenderer.UseFullAlphaPipeline;
+        }
+        ImGui.SetItemTooltip($"Pipeline {(ModelRenderer.UseFullAlphaPipeline ? "ON": "OFF")}");
 
         ImGui.PopStyleVar(2);
         //ImGui.PopFont();
@@ -1011,8 +1092,49 @@ internal class SceneWindow(MainWindowContext window)
         }
         ImGui.SetCursorPos(olpos);
     }
-    private void TabsPanel()
+    private bool TabsPanel()
     {
+        ImGui.PushStyleVar(ImGuiStyleVar.TabRounding, 0);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(default, 0));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemInnerSpacing, Vector2.UnitX );
+
+        if (ImGui.BeginTabBar("##SuperSceneTabs"))
+        {
+            for (int i = 0; i < window.Scenes.Count; i++)
+            {
+                ImGuiTabItemFlags flags = ImGuiTabItemFlags.NoPushId;
+
+                Scene scene = window.Scenes[i];
+
+                if (!scene.IsSaved) 
+                    flags |= ImGuiTabItemFlags.UnsavedDocument;
+                if (scene == window.CurrentScene && ExternalSceneChange) 
+                {
+                    flags |= ImGuiTabItemFlags.SetSelected;
+                }
+
+                bool opened = true;
+                string displayName = scene.Stage.Name + scene.Stage.Scenario;
+                if (ImGui.BeginTabItem($"{displayName}##SceneTab{i}", ref opened, flags | ImGuiTabItemFlags.NoAssumedClosure) && (ExternalSceneChange ? window.CurrentScene == scene : window.CurrentScene != scene))
+                {
+                    ExternalSceneChange = false;
+                    window.CurrentScene = scene;
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8));
+                ImGui.SetItemTooltip(scene.Stage.UserPath);
+                ImGui.PopStyleVar();
+                if (!opened)
+                {
+                    window.CloseStage(scene);
+                }
+            }
+
+            ImGui.EndTabBar();
+        }
+        ImGui.PopStyleVar(3);
+        return window.Scenes.Count > 0;
     }
 
     public void TranslateAction(Vector3 _ndcMousePos3D)
@@ -1205,7 +1327,7 @@ internal class SceneWindow(MainWindowContext window)
             _axisLock = Vector3.One;
 
             // Add to Undo stack
-            if (window.CurrentScene!.SelectedObjects.Count() == 1)
+            if (window.CurrentScene!.SelectedObjCount == 1)
             {
                 var sobj = window.CurrentScene.SelectedObjects.First();
                 switch (sobj)
@@ -1511,7 +1633,7 @@ internal class SceneWindow(MainWindowContext window)
             FinishTransform = false;
             _axisLock = Vector3.One;
 
-            if (window.CurrentScene!.SelectedObjects.Count() == 1)
+            if (window.CurrentScene!.SelectedObjCount == 1)
             {
                 var sobj = window.CurrentScene.SelectedObjects.First();
                 switch (sobj)
@@ -1635,12 +1757,7 @@ internal class SceneWindow(MainWindowContext window)
             if (!IsTransformFromGizmo)
                 GetAxis();
 
-            if (_axisLock != Vector3.One)
-            {
-                TransformChange();
-            }
-            else
-                _transformChangeString = "";
+            TransformChange();
 
             var fst = window.CurrentScene!.SelectedObjects.First();
             switch (fst)
@@ -1683,9 +1800,7 @@ internal class SceneWindow(MainWindowContext window)
 
                     if (_transformChangeString != string.Empty && _transformChangeString != "-")
                     {
-                        (sobj as IStageSceneObj)!.StageObj.Scale =
-                            ActTransform.Originals[sobj]
-                            + Vector3.One * (distB - distA) / 500 * _axisLock * float.Parse(_transformChangeString); // original scale * (distance to selection from mouse )
+                        (sobj as IStageSceneObj)!.StageObj.Scale = Vector3.One - _axisLock + _axisLock * float.Parse(_transformChangeString);
                     }
                     else
                     {
@@ -1827,7 +1942,7 @@ internal class SceneWindow(MainWindowContext window)
             FinishTransform = false;
             _axisLock = Vector3.One;
 
-            if (window.CurrentScene!.SelectedObjects.Count() == 1)
+            if (window.CurrentScene!.SelectedObjCount == 1)
             {
                 var sobj = window.CurrentScene.SelectedObjects.First();
                 switch (sobj)

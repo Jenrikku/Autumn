@@ -29,8 +29,21 @@
     <ProjectReference Include="..\Libraries\tinyfiledialogs\src\TinyFileDialogsSharp.csproj" />
   </ItemGroup>
 
+
+  <Target Name="CopyTasks" AfterTargets="Build">
+    <ItemGroup>
+      <DBFiles Include="$(MSBuildProjectDirectory)\Resources\RedPepper-ClassDataBase\Data\*"/>
+      <ModifierFiles Include="$(MSBuildProjectDirectory)\Resources\Autumn-ClassModifiers\Modifiers\*"/>
+      <Icons Include="$(MSBuildProjectDirectory)\Resources\Icons\*"/>
+      <Themes Include="$(MSBuildProjectDirectory)\Resources\Themes\*"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(ModifierFiles)" DestinationFolder="$(OutDir)\Resources\Modifiers\" SkipUnchangedFiles="true"/>
+    <Copy SourceFiles="@(DBFiles)" DestinationFolder="$(OutDir)\Resources\ClassDB\" SkipUnchangedFiles="True"/>
+    <Copy SourceFiles="@(Icons)" DestinationFolder="$(OutDir)\Resources\Icons\" SkipUnchangedFiles="True"/>
+    <Copy SourceFiles="@(Themes)" DestinationFolder="$(OutDir)\Resources\Themes\" SkipUnchangedFiles="True"/>
+  </Target>
   <ItemGroup>
-    <Content Include="$(MSBuildProjectDirectory)\Resources\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+    <Content Include="$(MSBuildProjectDirectory)\Resources\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" DestinationFolder="$(OutDir)\Resources\"/>
   </ItemGroup>
 
 </Project>

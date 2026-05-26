@@ -59,11 +59,14 @@ namespace Autumn.Rendering
                 in vec2 vTexCoord;
 
                 out vec4 oColor;
+                out uint oPick;
+                out vec4 oPostProc;
 
                 void main() {
                     
                     oColor = vec4(0.5);
-                    
+                    oPick = -1u; // Is this even valid?
+                    oPostProc = vec4(0);
 
                     float fwx = fwidth(vTexCoord.x);
                     float fwy = fwidth(vTexCoord.y);

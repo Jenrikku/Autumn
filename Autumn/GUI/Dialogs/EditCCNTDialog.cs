@@ -19,6 +19,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
 {
 
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     private Dictionary<string, string> _tmpCCNT = new();
     private string _search = "";
     private string _oname = "";

@@ -8,14 +8,16 @@ namespace Autumn.Rendering.Area;
 
 internal static class AreaMaterial
 {
-    private static readonly ShaderSource s_vertexShader =
+    private static readonly ShaderSource s_vertexCenterShader =
         new(
-            "Area.vert",
+            "AreaCentered.vert",
             ShaderType.VertexShader,
             """
             #version 330
 
             layout(location = 0) in vec3 aPos;
+            layout(location = 1) in vec2 aUV;
+            layout(location = 2) in float aFaceType;
 
             layout(std140) uniform ubScene {
                 mat4x4 uViewProjection;
@@ -23,19 +25,53 @@ internal static class AreaMaterial
             };
 
             out vec3 vPos;
+            out vec2 vUV;
+            out float vFaceType;
+            out mat4x4 vTrans;
+
+            void main() {
+                gl_Position = uViewProjection * uTransform * vec4(aPos.x, aPos.y, aPos.z, 2.0);
+                vPos = aPos;
+                vTrans = uTransform;
+                vUV = aUV;
+                vFaceType = aFaceType;
+            }
+            """
+        );
+    private static readonly ShaderSource s_vertexBaseShader =
+        new(
+            "AreaBase.vert",
+            ShaderType.VertexShader,
+            """
+            #version 330
+
+            layout(location = 0) in vec3 aPos;
+            layout(location = 1) in vec2 aUV;
+            layout(location = 2) in float aFaceType;
+
+            layout(std140) uniform ubScene {
+                mat4x4 uViewProjection;
+                mat4x4 uTransform;
+            };
+
+            out vec3 vPos;
+            out vec2 vUV;    
+            out float vFaceType;
             out mat4x4 vTrans;
 
             void main() {
                 gl_Position = uViewProjection * uTransform * vec4(aPos.x, aPos.y + 10.0, aPos.z, 2.0);
                 vPos = aPos;
                 vTrans = uTransform;
+                vUV = aUV;
+                vFaceType = aFaceType;
             }
             """
         );
 
-    private static readonly ShaderSource s_fragmentShader =
+    private static readonly ShaderSource s_CubeFragment =
         new(
-            "Area.frag",
+            "CubeArea.frag",
             ShaderType.FragmentShader,
             """
             #version 330
@@ -45,6 +81,8 @@ internal static class AreaMaterial
             }
 
             in vec3 vPos;
+            in vec2 vUV;
+            in float vFaceType;
             in mat4x4 vTrans;
 
             layout(std140) uniform ubMaterial {
@@ -56,51 +94,258 @@ internal static class AreaMaterial
 
             out vec4 oColor;
             out uint oPickingId;
+            out vec4 oPostProc;
 
-            void main() {                
-                vec3 absolute = abs(vPos);
+            const float PI = 3.14159;
+
+            vec2 rotate(vec2 samplePosition, float rotation){
+                float angle = rotation * PI / 180;
+                return vec2(cos(angle) * samplePosition.x + sin(angle) * samplePosition.y, 
+                            cos(angle) * samplePosition.y - sin(angle) * samplePosition.x);
+            }
+
+            void main() {
                 vec3 scale = vec3(  length(vec3(vTrans[0][0], vTrans[1][0], vTrans[2][0])),
                                     length(vec3(vTrans[0][1], vTrans[1][1], vTrans[2][1])), 
                                     length(vec3(vTrans[0][2], vTrans[1][2], vTrans[2][2])));
-                float a = max3(
-                    min(absolute.x, absolute.y),
-                    min(absolute.x, absolute.z),
-                    min(absolute.y, absolute.z));
-
-                float wa = fwidth(a);
-
-                float outline = smoothstep(9 - wa , 10 + wa, a * 0.95);
-
-                vec3 col = vec3(0.05 * vPos.x + 0.5, 0.05 * vPos.y + 0.5, 0.05 * vPos.z + 0.5);
-                oColor.r = abs(vPos.x * scale.x) < (0.9 / scale.x) ? (0) : (1);
-                oColor.g = abs(vPos.y * scale.y) < (0.9 / scale.y) ? (0) : (1);
-                oColor.b = abs(vPos.z * scale.z) < (0.9) ? (0) : (1);
-
-                oColor.rgb = vec3(0);
-                vec3 limit = (0.05 / scale);
-                col.r = col.r < (1.0 - limit.x) && col.r > (limit.x) ? 0 : 1;
-                col.g = col.g < (1.0 - limit.y) && col.g > (limit.y) ? 0 : 1;
-                col.b = col.b < (1.0 - limit.z) && col.b > (limit.z) ? 0 : 1;
-                float final = (col.r * col.b + col.g * col.b + col.g * col.r);
-                if (final < 0.5) discard;
-
-                oColor.rgb = mix(uColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
-                oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
-                oColor.rgb += vec3(clamp(outline * 0.5 - 0.12,0,1));
                 oColor.a = 1.0;
                 oPickingId = uPickingId;
+                oPostProc = vec4((uHighlightColor.a > 0.1 ? 1 : 0), 0, 0, 0);
+                oColor.rgb = vec3(vUV,0);//uColor.rgb;
+                float xMin = 0.05;
+                float yMin = 0.05;
+                float dist = length(vUV - 0.5);
+                vec3 col = vec3(0);
+                float sz = 0.45;
+                if (vFaceType < 0.8)
+                {
+                    oColor.rgb = (vUV.x < xMin || vUV.x > 1.0 - xMin) ? vec3(1) : vec3(0);
+                    oColor.rgb += (vUV.y < yMin || vUV.y > 1.0 - yMin) ? vec3(1) : vec3(0);
+                    if (oColor.r < 0.1) discard;
+                    vec2 nUV = vUV.x < 0.5 ? vUV : 1.0 - vUV;
+                    col = vec3(nUV.xxx);
+                    nUV = vUV.y < 0.5 ? vUV : 1.0 - vUV;
+                    col += vec3(nUV.yyy);
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1)); //= col;
+                    //oColor.rgb *= col;
+                    //oColor.rgb = vec3(nUV.yy, 0);
+                }
+                if (vFaceType < 1.8)
+                {
+                    xMin = 0.05 / scale.x;
+                    yMin = 0.05 / scale.z;
+                    oColor.rgb = (vUV.x < xMin || vUV.x > 1.0 - xMin) ? vec3(1) : vec3(0);
+                    oColor.rgb += (vUV.y < yMin || vUV.y > 1.0 - yMin) ? vec3(1) : vec3(0);
+                    if (oColor.r < 0.1) discard;
+                    vec2 nUV = vUV.x < 0.5 ? vUV : 1.0 - vUV;
+                    col = vec3(nUV.xxx);
+                    nUV = vUV.y < 0.5 ? vUV : 1.0 - vUV;
+                    col += vec3(nUV.yyy);
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1)); //= col;
+                    //oColor.rgb *= col;
+                    //oColor.rgb = vec3(nUV.yy, 0);
+                }
+                else if (vFaceType < 2.8)
+                {
+                    xMin = 0.05 / scale.x;
+                    yMin = 0.05 / scale.z;
+                    oColor.rgb = (vUV.x < xMin || vUV.x > 1.0 - xMin) ? vec3(1) : vec3(0);
+                    oColor.rgb += (vUV.y < xMin || vUV.y > 1.0 - xMin) ? vec3(1) : vec3(0);
+                    
+                    float v = (scale.z + scale.x) / 2;
+                    vec2 rUV = rotate((vUV - 0.5) * v, 45) + 0.5;
+                    col = vec3(rUV.x > sz && rUV.x < 1-sz ? 1 : 0);
+                    col += vec3(rUV.y > sz && rUV.y < 1-sz ? 1 : 0);
+                    oColor.rgb += col;
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1));
+                    
+                    if ((oColor.r < 0.1)) discard;
+                    
+                }
+                oColor.rgb = mix(uColor.rgb, uColor.rgb, oColor.rgb);
+                //oColor.rgb *= uColor.rgb * 2;
+                oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+                oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
+                // oColor.rgb = scale;
             }
             """
         );
 
-    public static readonly ShaderProgram Program = new(s_vertexShader, s_fragmentShader);
+    private static readonly ShaderSource s_SphereFragment =
+        new(
+            "SphereArea.frag",
+            ShaderType.FragmentShader,
+            """
+            #version 330
+
+            float max3(float a, float b, float c) {
+                return max(max(a, b), c);
+            }
+
+            in vec3 vPos;
+            in vec2 vUV;
+            in float vFaceType;
+            in mat4x4 vTrans;
+
+            layout(std140) uniform ubMaterial {
+                vec4 uColor;
+                vec4 uHighlightColor;
+            };
+
+            uniform uint uPickingId;
+
+            out vec4 oColor;
+            out uint oPickingId;
+            out vec4 oPostProc;
+
+            const float PI = 3.14159;
+
+            vec2 rotate(vec2 samplePosition, float rotation){
+                float angle = rotation * PI / 180;
+                return vec2(cos(angle) * samplePosition.x + sin(angle) * samplePosition.y, 
+                            cos(angle) * samplePosition.y - sin(angle) * samplePosition.x);
+            }
+
+            void main() {
+                oColor.a = 1.0;
+                oPickingId = uPickingId;
+                oPostProc = vec4((uHighlightColor.a > 0.1 ? 1 : 0), 0, 0, 0);
+                oColor.rgb = vec3(vUV,0);//uColor.rgb;
+                float xMin = 0.1;
+                float yMin = 0.1;
+                vec3 col = vec3(0);
+                oColor.rgb = (vUV.x < xMin || vUV.x > 1.0 - xMin) ? vec3(1) : vec3(0);
+                oColor.rgb += (vUV.y < yMin || vUV.y > 1.0 - yMin) ? vec3(1) : vec3(0);
+                if (oColor.r < 0.1) discard;
+                vec2 nUV = vUV.x < 0.5 ? vUV : 1.0 - vUV;
+                col = vec3(nUV.xxx);
+                nUV = vUV.y < 0.5 ? vUV : 1.0 - vUV;
+                col += vec3(nUV.yyy);
+
+                oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1));
+                oColor.rgb = mix(uColor.rgb, uColor.rgb, oColor.rgb);
+                
+                oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+                oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
+
+            }
+            """
+        );
+    private static readonly ShaderSource s_CylinderFragment =
+        new(
+            "CylinderArea.frag",
+            ShaderType.FragmentShader,
+            """
+            #version 330
+
+            float max3(float a, float b, float c) {
+                return max(max(a, b), c);
+            }
+
+            in vec3 vPos;
+            in vec2 vUV;
+            in float vFaceType;
+            in mat4x4 vTrans;
+
+            layout(std140) uniform ubMaterial {
+                vec4 uColor;
+                vec4 uHighlightColor;
+            };
+
+            uniform uint uPickingId;
+
+            out vec4 oColor;
+            out uint oPickingId;
+            out vec4 oPostProc;
+
+            const float PI = 3.14159;
+
+            vec2 rotate(vec2 samplePosition, float rotation){
+                float angle = rotation * PI / 180;
+                return vec2(cos(angle) * samplePosition.x + sin(angle) * samplePosition.y, 
+                            cos(angle) * samplePosition.y - sin(angle) * samplePosition.x);
+            }
+
+            void main() {
+                vec3 scale = vec3(  length(vec3(vTrans[0][0], vTrans[1][0], vTrans[2][0])),
+                                    length(vec3(vTrans[0][1], vTrans[1][1], vTrans[2][1])), 
+                                    length(vec3(vTrans[0][2], vTrans[1][2], vTrans[2][2])));
+                oColor.a = 1.0;
+                oPickingId = uPickingId;
+                oPostProc = vec4((uHighlightColor.a > 0.1 ? 1 : 0), 0, 0, 0);
+                oColor.rgb = vec3(vUV,0);//uColor.rgb;
+                float xMin = 0.05;
+                float yMin = 0.1;
+                float dist = length(vUV - 0.5);
+                vec3 col = vec3(0);
+                float sz = 0.45;
+                if (vFaceType <0.8) // Sides
+                {
+                    oColor.rgb = (vUV.x < xMin || vUV.x > 1.0 - xMin) ? vec3(1) : vec3(0);
+                    oColor.rgb += (vUV.y < yMin || vUV.y > 1.0 - yMin) ? vec3(1) : vec3(0);
+                    if (oColor.r < 0.1) discard;
+                    vec2 nUV = vUV.x < 0.5 ? vUV : 1.0 - vUV;
+                    col = vec3(nUV.xxx);
+                    nUV = vUV.y < 0.5 ? vUV : 1.0 - vUV;
+                    col += vec3(nUV.yyy);
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1)); //= col;
+                    //oColor.rgb *= col;
+                    //oColor.rgb = vec3(nUV.yy, 0);
+                }
+                else if (vFaceType < 1.8) // Top Face
+                {
+                    
+                    oColor.rgb = vec3(dist > 0.43 && dist < 0.5 ? 1 : 0);
+                    if (!(dist > 0.43 && dist < 0.5)) discard;
+                    col = vec3(dist * 0.8);
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1));
+                    //oColor.rgb = col;
+                }
+                else if (vFaceType < 2.8) // Bottom Face
+                {
+                    oColor.rgb = vec3(dist > 0.43 && dist < 0.5 ? 1 : 0);
+                    col = vec3(dist * 0.8);
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1));
+                    
+                    float v = (scale.z + scale.x) / 2;
+                    vec2 rUV = rotate((vUV - 0.5) * v, 45) + 0.5;
+                    col = vec3(rUV.x > sz && rUV.x < 1-sz ? 1 : 0);
+                    col += vec3(rUV.y > sz && rUV.y < 1-sz ? 1 : 0);
+                    oColor.rgb += col;
+                    oColor.rgb = clamp(oColor.rgb, vec3(0), vec3(1));
+                    oColor.rgb = dist < 0.5 ? oColor.rgb : vec3(0);
+                    if ((oColor.r < 0.1)) discard;
+                }
+                oColor.rgb = mix(uColor.rgb, uColor.rgb, oColor.rgb);
+                //oColor.rgb *= uColor.rgb * 2;
+                oColor.rgb = mix(oColor.rgb, uHighlightColor.rgb, uHighlightColor.a);
+                oColor.rgb = gl_FrontFacing ? oColor.rgb : oColor.rgb *0.80;
+            }
+            """
+        );
+
+    public static readonly ShaderProgram CenterCubeProgram = new(s_vertexCenterShader, s_CubeFragment);
+    public static readonly ShaderProgram BaseCubeProgram = new(s_vertexBaseShader, s_CubeFragment);
+    public static readonly ShaderProgram SphereProgram = new(s_vertexCenterShader, s_SphereFragment);
+    public static readonly ShaderProgram CylinderProgram = new(s_vertexBaseShader, s_CylinderFragment);
 
     public static bool TryUse(
         GL gl,
+        int AreaType,
         CommonSceneParameters scene,
         CommonMaterialParameters material,
         out ProgramUniformScope scope
-    ) => Program.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _);
+    )
+    {
+        return AreaType switch
+        {
+            1 => CenterCubeProgram.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _),
+            2 => SphereProgram.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _),
+            3 => CylinderProgram.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _),
+            _ => BaseCubeProgram.TryUse(gl, null, [scene.ShaderParameters, material.ShaderParameters], out scope, out _),
+
+        }; 
+    }
 
     public static Vector4 GetAreaColor(string name)
     {

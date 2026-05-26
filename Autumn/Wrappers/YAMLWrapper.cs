@@ -25,8 +25,9 @@ internal static class YAMLWrapper
             text = File.ReadAllText(path);
             result = serializer.Deserialize<T>(text);
         }
-        catch
+        catch (Exception? y)
         {
+            Console.WriteLine($"File in {path} was incorrectly formatted: {y.Message}");
             return default;
         }
 

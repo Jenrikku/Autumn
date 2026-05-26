@@ -73,6 +73,7 @@ internal class ImGuiController : IDisposable
         onConfigureIO?.Invoke();
 
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+        io.ConfigDragClickToInputText = true;
 
         unsafe
         {
@@ -261,7 +262,7 @@ internal class ImGuiController : IDisposable
         io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
     }
 
-    private bool TryMapKey(Key key, out ImGuiKey result)
+    public bool TryMapKey(Key key, out ImGuiKey result)
     {
         ImGuiKey KeyToImGuiKeyShortcut(Key keyToConvert, Key startKey1, ImGuiKey startKey2)
         {

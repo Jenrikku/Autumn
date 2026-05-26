@@ -3,7 +3,7 @@ OpenSettings:
   Ctrl: false
   Key: S
   Shift: true
-CloseScene:
+CloseCurrentStage:
   Alt: false
   Ctrl: true
   Key: W
@@ -48,6 +48,16 @@ HideObj:
   Ctrl: false
   Key: H
   Shift: false
+ShowAllObjs:
+  Alt: true
+  Ctrl: false
+  Key: H
+  Shift: false
+ToggleSelectAll:
+  Alt: false
+  Ctrl: false
+  Key: A
+  Shift: false
 TranslateObj:
   Alt: false
   Ctrl: false
@@ -78,3 +88,13 @@ CamToObj:
   Ctrl: false
   Key: Space
   Shift: false
+Search:
+  Alt: false
+  Ctrl: true
+  Key: F
+  Shift: false
+FlyCamMode:
+  Alt: false
+  Ctrl: false
+  Key: F
+  Shift: true

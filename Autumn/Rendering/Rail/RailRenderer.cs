@@ -230,11 +230,6 @@ internal static class RailRenderer
         Matrix4x4 transform
     )
     {
-        RenderableModel model = s_pointModel!;
-
-        if (isHandle)
-            model = s_pointHandleModel!;
-
         scene.Transform = transform;
         material.Selected = selected;
 
@@ -249,7 +244,10 @@ internal static class RailRenderer
             if (RailPointMaterial.Program.TryGetUniformLoc("uIsHandle", out int location2))
                 gl.Uniform1(location2, (float)(isHandle ? 1 : 0));
 
-            model.Draw(gl);
+            if (isHandle)
+                s_pointHandleModel!.Draw(gl);
+            else
+                s_pointModel!.Draw(gl);
         }
     }
 }

@@ -21,11 +21,12 @@ internal class PropertiesWindow(MainWindowContext window)
     private int mClip = -1;
     private int mCamera = -1;
     private string mLayer = "共通";
+    private bool localTr = true;
     private ISceneObj? prevObj = null;
     private StageObj multiselector = new();
-    DragFloat3 PosDrag = new(window);
-    DragFloat3 RotDrag = new(window);
-    LinkedDragFloat3 ScaleDrag = new(window);
+    DragFloat3 PosDrag = new(window, "Position");
+    DragFloat3 RotDrag = new(window, "Rotation");
+    LinkedDragFloat3 ScaleDrag = new(window, "Scale");
     ImGuiWidgets.InputComboBox namebox = new();
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.AutoHideTabBar | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; //ImGuiWidgets.NO_TAB_BAR };
 
@@ -75,16 +76,38 @@ internal class PropertiesWindow(MainWindowContext window)
         var scn = window.CurrentScene;
 
         IEnumerable<ISceneObj> selectedObjects = scn.SelectedObjects;
-        int selectedCount = selectedObjects.Count();
+        int selectedCount = scn.SelectedObjCount;
 
         if (selectedCount < 2 &&
         (multiselector.Layer != mLayer
         || multiselector.ClippingGroupId != mClip
         || multiselector.ViewId != mView
-        || multiselector.CameraId != mCamera)
+        || multiselector.CameraId != mCamera
+        || multiselector.Translation != Vector3.Zero
+        || multiselector.Scale != Vector3.One
+        || multiselector.Rotation != Vector3.Zero)
         )
         {
             multiselector = new();
+            if (prevObj != null)
+            {
+                if (prevObj is IStageSceneObj prevStageSceneObj)
+                {
+                    PosDrag.Finish(ref prevStageSceneObj.StageObj.Translation, prevStageSceneObj);
+                    RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation, prevStageSceneObj);
+                    ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale, prevStageSceneObj);
+                }
+                else if (prevObj is RailPointSceneObj rps)
+                {
+                    PosDrag.Finish(ref rps.RailPoint.Point0Trans, rps);
+                }
+                else if (prevObj is RailHandleSceneObj rph)
+                {
+                    PosDrag.Finish(ref rph.Offset, rph);
+                }
+
+                prevObj.UpdateTransform();
+            }
         }
         if (selectedCount <= 0)
         {
@@ -103,17 +126,17 @@ internal class PropertiesWindow(MainWindowContext window)
             {
                 if (prevObj is IStageSceneObj prevStageSceneObj)
                 {
-                    PosDrag.Finish(ref prevStageSceneObj.StageObj.Translation);
-                    RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation);
-                    ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale);
+                    PosDrag.Finish(ref prevStageSceneObj.StageObj.Translation, prevStageSceneObj);
+                    RotDrag.Finish(ref prevStageSceneObj.StageObj.Rotation, prevStageSceneObj);
+                    ScaleDrag.Finish(ref prevStageSceneObj.StageObj.Scale, prevStageSceneObj);
                 }
                 else if (prevObj is RailPointSceneObj rps)
                 {
-                    PosDrag.Finish(ref rps.RailPoint.Point0Trans);
+                    PosDrag.Finish(ref rps.RailPoint.Point0Trans, rps);
                 }
                 else if (prevObj is RailHandleSceneObj rph)
                 {
-                    PosDrag.Finish(ref rph.Offset);
+                    PosDrag.Finish(ref rph.Offset, rph);
                 }
 
                 prevObj.UpdateTransform();
@@ -146,7 +169,6 @@ internal class PropertiesWindow(MainWindowContext window)
             }
 
             string oldName = stageObj.Name;
-            ImGui.GetIO().ConfigDragClickToInputText = true; //TODO - MOVE TO EDITOR STARTUP SETUP
 
             // Fake dock
             string oldClassCCNT = GetClassFromCCNT(oldName);
@@ -245,7 +267,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     if (stageObj.Type != StageObjType.Start)
                     {
                         InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
-                        ImGui.Text("Camera Id:"); ImGui.SameLine();
+                        ImGui.Text("Camera:"); ImGui.SameLine();
                         for (int cs = 1; cs < cameraStrings.Length; cs++)
                         {
                             cameraStrings[cs] = cameraslinks[cs - 1].CameraName();
@@ -255,8 +277,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         if (csd != null) rff = cameraslinks.IndexOf(csd) + 1;
                         else if (stageObj.CameraId != -1) stageObj.CameraId = -1; // Make sure cameras return to -1 if the camera is removed, since the combobox shows that, it should be coherent with it
                         int orff = rff;
-                        //ImGuiWidgets.PrePropertyWidthName("Camera Id", 30, 20);
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera Id:") - ImGui.CalcTextSize(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL).X - 12);
+                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera:") - ImGui.CalcTextSize(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL).X - 12);
                         ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
                         if (rff != orff)
                         {
@@ -288,7 +309,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                         InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
-                    if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea)
+                    if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea || stageObj.Type == StageObjType.AreaChild)
                     {
                         if (!stageObj.Properties.ContainsKey("Priority"))
                         {
@@ -308,9 +329,10 @@ internal class PropertiesWindow(MainWindowContext window)
 
                         if (!stageObj.Properties.ContainsKey("ShapeModelNo"))
                         {
-                            ImGui.Text("ShapeModelNo:");
+                            ImGui.Text("Shape:");
+                            ImGui.SetItemTooltip("ShapeModelNo");
                             ImGui.SameLine();
-                            ImGuiWidgets.SetPropertyWidth("ShapeModelNo");
+                            ImGuiWidgets.SetPropertyWidth("Shape");
                             if (ImGui.Button("No shape property"))
                             {
                                 stageObj.Properties["ShapeModelNo"] = 0;
@@ -318,8 +340,25 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                         else
                         {
+                            ImGui.Text("Shape:");
+                            ImGui.SetItemTooltip("ShapeModelNo");
+                            ImGui.SameLine();
+                            ImGuiWidgets.SetPropertyWidth("Shape");
                             int shp = (int)stageObj.Properties["ShapeModelNo"]!;
-                            InputIntProperties("ShapeModelNo", ref shp, 1, ref stageObj);
+                            if (shp < 0 || shp > 3)
+                            {
+                                if (ImGui.InputInt("##ShapeModelNoInt", ref shp, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, "ShapeModelNo", stageObj.Properties["ShapeModelNo"], shp);
+                                }
+                            }
+                            else
+                            {
+                                if (ImGui.Combo("##ShapeModelNoCombo", ref shp, ["Cube (Base)", "Cube (Middle)", "Sphere", "Cylinder"], 4))
+                                {
+                                    ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, "ShapeModelNo", stageObj.Properties["ShapeModelNo"], shp);
+                                }
+                            }
                         }
                     }
                     ImGui.PopItemWidth();
@@ -331,9 +370,9 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
                     ImGui.BeginChild("trl", default, ImGuiChildFlags.AutoResizeY);
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-                    PosDrag.Use("Position", ref stageObj.Translation, ref sceneObj, 10);
-                    RotDrag.Use("Rotation", ref stageObj.Rotation, ref sceneObj, 0.5f);
-                    ScaleDrag.Use("Scale", ref stageObj.Scale, ref sceneObj, 0.01f, style);
+                    PosDrag.Use(ref stageObj.Translation, ref sceneObj, 10);
+                    RotDrag.Use(ref stageObj.Rotation, ref sceneObj, 0.5f);
+                    ScaleDrag.Use(ref stageObj.Scale, ref sceneObj, 0.01f, style);
                     ImGui.EndChild();
                 }
 
@@ -353,25 +392,35 @@ internal class PropertiesWindow(MainWindowContext window)
                                 return;
                             }
                             if (!name.Contains("Arg")) continue;
+                            bool valueChanged = false;
                             string cls = GetClassFromCCNT(stageObj.Name);
+                            if ((stageObj.Name.Contains("FogArea", StringComparison.InvariantCultureIgnoreCase)
+                                || stageObj.Name.Equals("LightArea", StringComparison.InvariantCultureIgnoreCase))
+                                && name == "Arg0")
+                            {
+                                bool isfog = stageObj.Name.Contains("FogArea", StringComparison.InvariantCultureIgnoreCase);
+                                string t = isfog ? "Fog" : "Light";
+                                int intBuf = (int)(property ?? -1);
+                                InputFogLight(t, intBuf, 1, ref stageSceneObj, isfog);
+                                continue;
+                            }
                             if (!ClassDatabaseWrapper.DatabaseEntries.ContainsKey(cls))
                             {
                                 switch (property)
                                 {
                                     case int:
                                         int intBuf = (int)(property ?? -1);
-                                        InputIntProperties(name, ref intBuf, 1, ref stageObj);
-
+                                        valueChanged = InputIntProperties(name, ref intBuf, 1, ref stageObj);
                                         break;
 
                                     case string:
                                         string strBuf = (string)(property ?? string.Empty);
-                                        InputTextProperties(name, ref strBuf, 128, ref stageObj);
+                                        valueChanged = InputTextProperties(name, ref strBuf, 128, ref stageObj);
                                         break;
 
                                     case float:
                                         float flBuf = (float)(property ?? -1);
-                                        InputFloatProperties(name, ref flBuf, 1, ref stageObj);
+                                        valueChanged = InputFloatProperties(name, ref flBuf, 1, ref stageObj);
                                         break;
 
                                     default:
@@ -404,6 +453,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     if (intBuf != rf)
                                                     {
                                                         ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf);
+                                                        valueChanged = true;
                                                     }
                                                 }
                                                 else
@@ -417,6 +467,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     if (intBuf != argEntry.Values.Keys.ElementAt(rf))
                                                     {
                                                         ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, argEntry.Values.Keys.ElementAt(rf));
+                                                        valueChanged = true;
                                                     }
                                                 }
                                             }
@@ -429,6 +480,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 if ((intBuf != -1) != rf)
                                                 {
                                                     ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf ? 1 : -1);
+                                                    valueChanged = true;
                                                 }
                                             }
                                             else // if (argEntry.Type is null || argEntry.Type == "int")
@@ -441,6 +493,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 if (intBuf != rf)
                                                 {
                                                     ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf);
+                                                    valueChanged = true;
                                                     //stageObj.Properties[name] = rf;
                                                 }
                                             }
@@ -448,19 +501,19 @@ internal class PropertiesWindow(MainWindowContext window)
                                         }
                                         else
                                         {
-                                            InputIntProperties(name, ref intBuf, 1, ref stageObj);
+                                            valueChanged = InputIntProperties(name, ref intBuf, 1, ref stageObj);
                                             ImGui.SetItemTooltip("No description");
                                         }
                                         break;
 
                                     case string:
                                         string strBuf = (string)(property ?? string.Empty);
-                                        InputTextProperties(name, ref strBuf, 128, ref stageObj);
+                                        valueChanged = InputTextProperties(name, ref strBuf, 128, ref stageObj);
                                         break;
 
                                     case float:
                                         float flBuf = (float)(property ?? -1);
-                                        InputFloatProperties(name, ref flBuf, 1, ref stageObj);
+                                        valueChanged = InputFloatProperties(name, ref flBuf, 1, ref stageObj);
                                         break;
 
                                     default:
@@ -468,6 +521,16 @@ internal class PropertiesWindow(MainWindowContext window)
                                             "The property type " + property?.GetType().FullName
                                                 ?? "null" + " is not supported."
                                         );
+                                }
+                            }
+                            if (valueChanged && ClassModifiersWrapper.ModifierEntries.ContainsKey(cls))
+                            {
+                                var entry = ClassModifiersWrapper.GetEntry(stageObj.Name, cls);
+                                if (entry != null && entry!.Value.Args != null && entry!.Value.Args.ContainsKey(name))
+                                {
+                                    (sceneObj as ActorSceneObj)!.UpdateActorFromArg(window.ContextHandler.FSHandler, (ClassModifiersWrapper.ModifierEntry)entry, name, window.GLTaskScheduler);
+                                    if (valueChanged) Console.WriteLine(name);
+                                    if (valueChanged) Console.WriteLine(stageObj.Properties[name]);
                                 }
                             }
                         }
@@ -569,9 +632,6 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.Text(ch.Type.ToString());
 
-                                            ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
                                             if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
@@ -586,7 +646,6 @@ internal class PropertiesWindow(MainWindowContext window)
                                             {
                                                 remch = ch;
                                             }
-                                            ImGui.PopStyleColor(3);
 
                                             cidx++;
                                         }
@@ -938,16 +997,12 @@ internal class PropertiesWindow(MainWindowContext window)
                                             !window.Keyboard?.IsCtrlPressed() ?? true);
                                         window.CameraToObject(point);
                                     }
-                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("ScenePointView" + cidx);
                                     if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         window.CameraToObject(railSceneObj.RailPoints[cidx]);
                                     }
-                                    ImGui.PopStyleColor(3);
 
                                     ImGui.TableSetColumnIndex(2);
                                     if (cidx == 0) ImGui.BeginDisabled();
@@ -976,8 +1031,8 @@ internal class PropertiesWindow(MainWindowContext window)
                             if (!autoResize) ImGui.Spacing();
                             if (delay != null) ChangeHandler.ChangeMovePoint(window, window.CurrentScene.History, railSceneObj, delay, railSceneObj.RailPoints.IndexOf(delay) + (n ? -1 : 1));
 
-                            if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
-                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
+                            if (sceneObj is RailPointSceneObj) PosDrag.Use(ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
+                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use(ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
 
                             ImGui.PopItemWidth();
                             ImGui.EndChild();
@@ -993,8 +1048,8 @@ internal class PropertiesWindow(MainWindowContext window)
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
                             ImGui.PushItemWidth(ImGui.GetWindowWidth() - style.WindowPadding.X * 2 - PROP_WIDTH / 2);
 
-                            if (sceneObj is RailPointSceneObj) PosDrag.Use("Position", ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
-                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use("Position", ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
+                            if (sceneObj is RailPointSceneObj) PosDrag.Use(ref (sceneObj as RailPointSceneObj)!.RailPoint.Point0Trans, ref sceneObj, 10);
+                            else if (sceneObj is RailHandleSceneObj) PosDrag.Use(ref (sceneObj as RailHandleSceneObj)!.Offset, ref sceneObj, 10);
 
                             ImGui.PopItemWidth();
                             ImGui.EndChild();
@@ -1025,17 +1080,13 @@ internal class PropertiesWindow(MainWindowContext window)
                                 {
                                     ImGui.TableNextRow();
 
-                                    ImGui.PushStyleColor(ImGuiCol.Button, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0);
-                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0);
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("SceneHandleView" + cc);
-                                    if (ImGui.Button(IconUtils.MAG_GLASS, new(-1, 25)))
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
                                         window.CameraToObject(hndl!);
                                     }
-                                    ImGui.PopStyleColor(3);
 
                                     ImGui.TableSetColumnIndex(1);
                                     ImGui.PushID("SceneHandleSelectable" + cc);
@@ -1177,24 +1228,123 @@ internal class PropertiesWindow(MainWindowContext window)
         else
         {
             // Multiple objects selected:
-            ImGui.TextDisabled("Multiple objects selected.");
-            InputText("Layer", ref multiselector.Layer, 30, ref multiselector);
-            InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
-            //InputInt("CameraId", ref multiselector.CameraId, 1, ref multiselector);
-            ImGui.Text("CameraId"); ImGui.SameLine();
+            SetTitle("Multiple objects", null);
+            bool propertyChanged = false;
+            propertyChanged = InputText("Layer", ref multiselector.Layer, 30, ref multiselector);
+            propertyChanged = InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
+            ImGui.Text("Camera:"); ImGui.SameLine();
             var cameraslinks = scn.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
             string[] cameraStrings = new string[cameraslinks.Count + 1];
             cameraStrings[0] = "No camera selected";
+            int rff = 0;
             for (int cs = 1; cs < cameraStrings.Length; cs++)
             {
                 cameraStrings[cs] = cameraslinks[cs - 1].Category.ToString();
                 cameraStrings[cs] += "Camera";
                 cameraStrings[cs] += cameraslinks[cs - 1].UserGroupId;
+                if (multiselector.CameraId == cameraslinks[cs -1].UserGroupId)
+                {
+                    rff = cs;
+                }
             }
-            int rff = 0;
-            ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length);
-            InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
+            ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidth("Camera:") - ImGui.CalcTextSize(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL).X - 12);
+            if (ImGui.Combo("##CAMERA SELECT", ref rff, cameraStrings, cameraStrings.Length))
+            // if (rff != multiselector.CameraId)
+            {
+                propertyChanged = true;
+                if (rff == 0) multiselector.CameraId = -1;
+                else multiselector.CameraId = cameraslinks[rff - 1].UserGroupId;
+            }
+            ImGui.SameLine(default, style.ItemSpacing.X / 2);
+            if (ImGui.Button(rff == 0 ? IconUtils.PLUS : IconUtils.PENCIL)) // Edit the camera -> open the camera window and select it. Add if no camera selected
+            {
 
+                ImGui.SetWindowFocus("Cameras");
+                if (rff == 0)
+                {
+                    StageCamera.CameraCategory camType = StageCamera.CameraCategory.Object;
+                    StageCamera newCam = new() { Category = camType };
+                    scn!.Stage.CameraParams.AddCamera(newCam);
+                    window.SetCameraSelected(scn.Stage.CameraParams.Cameras.Count - 1);
+                    window.UpdateCameraList();
+                    multiselector.CameraId = newCam.UserGroupId;
+                }
+                else
+                {
+                    StageCamera.CameraCategory camType = StageCamera.CameraCategory.Object;
+                    var cm = scn!.Stage.CameraParams.GetCamera(multiselector.CameraId, camType);
+                    window.SetCameraSelected(scn.Stage.CameraParams.Cameras.IndexOf(cm!));
+                }
+            }
+            propertyChanged = InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
+
+
+            if (ImGui.CollapsingHeader("Object Transform", ImGuiTreeNodeFlags.DefaultOpen))
+            {
+                ImGui.Checkbox($"Transform type: {(localTr ? "Relative" : "Global")}", ref localTr);
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                ImGui.BeginChild("trl", default, ImGuiChildFlags.AutoResizeY);
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+                // Reimplement entirely for multiple?
+                Vector3 Dif = multiselector.Translation;
+                if (ImGui.DragFloat3("MultiPos", ref multiselector.Translation, 10))
+                {
+                    Dif = multiselector.Translation - Dif;
+                    foreach (ISceneObj obj in scn.SelectedObjects)
+                    {
+                        if (obj is RailPointSceneObj) 
+                        {
+                            (obj as RailPointSceneObj)!.RailPoint.Point0Trans = localTr ? (obj as RailPointSceneObj)!.RailPoint.Point0Trans + Dif : multiselector.Translation;
+                            (obj as RailPointSceneObj)!.UpdateModel();
+                        }
+                        else if (obj is RailHandleSceneObj)
+                        {
+                             (obj as RailHandleSceneObj)!.Offset = localTr ? (obj as RailHandleSceneObj)!.Offset + Dif : multiselector.Translation;
+                            (obj as RailHandleSceneObj)!.UpdateTransform();
+                        }
+                        else if (obj is IStageSceneObj stageScene) 
+                        {
+                            stageScene.StageObj.Translation = localTr ? stageScene.StageObj.Translation + Dif : multiselector.Translation;
+                            obj.UpdateTransform();
+                        }
+                    }
+                }
+                Dif = multiselector.Rotation;
+                if (ImGui.DragFloat3("MultiRot", ref multiselector.Rotation, 0.5f))
+                {
+                    Dif = multiselector.Rotation - Dif;
+                    foreach (ISceneObj obj in scn.SelectedObjects)
+                    {
+                        if (obj is not IStageSceneObj stageScene) continue;
+                        stageScene.StageObj.Rotation = localTr ? stageScene.StageObj.Rotation + Dif : multiselector.Rotation;
+                        stageScene.UpdateTransform();
+                    }
+                }
+                Dif = multiselector.Scale;
+                if (ImGui.DragFloat3("MultiScale", ref multiselector.Scale, 0.01f))
+                {
+                    Dif = multiselector.Scale - Dif;
+                    foreach (ISceneObj obj in scn.SelectedObjects)
+                    {
+                        if (obj is not IStageSceneObj stageScene) continue;
+                        stageScene.StageObj.Scale = localTr ? stageScene.StageObj.Scale + Dif : multiselector.Scale;
+                        stageScene.UpdateTransform();
+                    }
+                }
+                // if (PosDrag.Use("Position", ref multiselector.Translation, 10))
+                // {
+                //     foreach (ISceneObj obj in scn.SelectedObjects)
+                //     {
+                //         if (obj is not IStageSceneObj stageScene) continue;
+                //         stageScene.StageObj.Translation = localTr ? stageScene.StageObj.Translation + multiselector.Translation : multiselector.Translation;
+                //     }
+                // }
+                // RotDrag.Use("Rotation", ref multiselector.Rotation, ref sceneObj, 0.5f);
+                // ScaleDrag.Use("Scale", ref multiselector.Scale, ref sceneObj, 0.01f, style);
+                ImGui.EndChild();
+            }
+
+            //if (propertyChanged)
             foreach (ISceneObj obj in scn.SelectedObjects)
             {
                 if (obj is not IStageSceneObj stageScene) continue;
@@ -1207,7 +1357,9 @@ internal class PropertiesWindow(MainWindowContext window)
                     stageScene.StageObj.ClippingGroupId = multiselector.ClippingGroupId;
                 if (multiselector.Layer != mLayer)
                     stageScene.StageObj.Layer = multiselector.Layer;
+                
             }
+            
         }
 
         //ImGui.PopStyleColor();
@@ -1242,6 +1394,7 @@ internal class PropertiesWindow(MainWindowContext window)
         bool isFinished = true;
         Vector2 min, max = new();
         public float reference = 0.723764823f;
+        public bool IsActive => (isEditing || isDragging) && !isFinished;
 
         public bool Use(string str, ref float rf, ImGuiStylePtr style, float v_speed = 1, bool isSingle = true)
         {
@@ -1308,33 +1461,42 @@ internal class PropertiesWindow(MainWindowContext window)
 
     private class DragFloat3
     {
+        string RefString = "Position";
         CustomDragFloat DragFloatX;
         CustomDragFloat DragFloatY;
         CustomDragFloat DragFloatZ;
         Vector3 refVec3;
+        Vector3 baseValue;
         MainWindowContext _window;
-        public DragFloat3(MainWindowContext window)
+        public DragFloat3(MainWindowContext window, string name)
         {
             _window = window;
             DragFloatX = new();
             DragFloatY = new();
             DragFloatZ = new();
+            RefString = name;
         }
-        public bool Use(string str, ref Vector3 rf, ref ISceneObj sto, float v_speed = 1, float? width = null, bool linked = false)
+        bool isActive = false;
+        public bool Use(ref Vector3 rf, ref ISceneObj sto, float v_speed = 1, float? width = null, bool linked = false)
         {
+            if (!isActive && baseValue != rf)
+            {
+                baseValue = new(rf.X, rf.Y, rf.Z);
+            }
             if (refVec3 != rf)
             {
                 refVec3 = rf;
             }
-            var style = ImGui.GetStyle();
             bool validate = false;
+            isActive = DragFloatX.IsActive || DragFloatY.IsActive || DragFloatZ.IsActive;
+            var style = ImGui.GetStyle();
 
-            float stringWidth = ImGui.CalcTextSize(str + ":").X;
+            float stringWidth = ImGui.CalcTextSize(RefString + ":").X;
             float itemWidth;// = width ?? (ImGui.GetWindowWidth() - stringWidth) / 3 - style.ItemSpacing.X * 2 - 4;
 
             if (width == null)
             {
-                ImGui.Text(str + ":");
+                ImGui.Text(RefString + ":");
                 ImGui.SameLine(default, style.ItemSpacing.X);
                 if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * 3 / 4 - ImGui.GetStyle().ItemSpacing.X / 2) > (stringWidth + 12))
                 {
@@ -1355,8 +1517,8 @@ internal class PropertiesWindow(MainWindowContext window)
             //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 0);
             itemWidth = itemWidth / 3 - style.ItemSpacing.X - 7;
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[0] & 0x7fffffff); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "XTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[0] & 0x7fffffff);
+            if (ImGui.BeginChild(RefString + "XTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("X") / 2);
                 ImGui.Text("X");
@@ -1365,14 +1527,14 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.PopStyleColor();
             ImGui.SameLine(default, 0);
             ImGui.SetNextItemWidth(itemWidth);
-            if (DragFloatX.Use(str + "X", ref refVec3.X, style, v_speed, false))
+            if (DragFloatX.Use(RefString + "X", ref refVec3.X, style, v_speed, false))
                 validate = true;
 
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[1] & 0x7fffffff); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "YTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[1] & 0x7fffffff);
+            if (ImGui.BeginChild(RefString + "YTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Y") / 2);
                 ImGui.Text("Y");
@@ -1381,14 +1543,14 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.PopStyleColor();
             ImGui.SameLine(default, 0);
             ImGui.SetNextItemWidth(itemWidth);
-            if (DragFloatY.Use(str + "Y", ref refVec3.Y, style, v_speed, false))
+            if (DragFloatY.Use(RefString + "Y", ref refVec3.Y, style, v_speed, false))
                 validate = true;
 
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[2] & 0x7fffffff); // NEEDS CONSTANT
-            if (ImGui.BeginChild(str + "ZTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[2] & 0x7fffffff);
+            if (ImGui.BeginChild(RefString + "ZTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Z") / 2);
                 ImGui.Text("Z");
@@ -1398,7 +1560,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SameLine(default, 0);
 
             ImGui.SetNextItemWidth(itemWidth);
-            if (DragFloatZ.Use(str + "Z", ref refVec3.Z, style, v_speed, false))
+            if (DragFloatZ.Use(RefString + "Z", ref refVec3.Z, style, v_speed, false))
                 validate = true;
 
 
@@ -1426,39 +1588,34 @@ internal class PropertiesWindow(MainWindowContext window)
 
                 if (sto is IStageSceneObj stageSceneObj)
                 {
-                    switch (str)
+                    switch (RefString)
                     {
                         case "Position":
                         case "Translation":
                             stageSceneObj.StageObj.Translation = rV;
                             stageSceneObj.UpdateTransform();
-                            stageSceneObj.StageObj.Translation = tmprf;
                             break;
 
                         case "Rotation":
                             stageSceneObj.StageObj.Rotation = rV;
                             stageSceneObj.UpdateTransform();
-                            stageSceneObj.StageObj.Rotation = tmprf;
                             break;
 
                         case "Scale":
                             stageSceneObj.StageObj.Scale = rV;
                             stageSceneObj.UpdateTransform();
-                            stageSceneObj.StageObj.Scale = tmprf;
                             break;
                     }
                 }
-                else if (sto is RailPointSceneObj rps && str == "Position")
+                else if (sto is RailPointSceneObj rps && RefString == "Position")
                 {
                     rps.RailPoint.Point0Trans = rV;
                     rps.UpdateModel();
-                    rps.RailPoint.Point0Trans = tmprf;
                 }
-                else if (sto is RailHandleSceneObj rhs && str == "Position")
+                else if (sto is RailHandleSceneObj rhs && RefString == "Position")
                 {
                     rhs.Offset = rV;
                     rhs.UpdateTransform();
-                    rhs.Offset = tmprf;
                 }
             }
             if (validate)
@@ -1478,16 +1635,15 @@ internal class PropertiesWindow(MainWindowContext window)
                         refVec3 = new(refVec3.Z);
                     }
                 }
-                if (str == "Position") str = "Translation";
 
                 if (sto is IStageSceneObj stageSceneObj)
-                    ChangeHandler.ChangeStageObjTransform(_window.CurrentScene!.History, stageSceneObj, str, rf, refVec3);
+                    ChangeHandler.ChangeStageObjTransform(_window.CurrentScene!.History, stageSceneObj, RefString == "Position" ? "Translation" : RefString, baseValue, refVec3);
                 else if (sto is RailPointSceneObj rps)
                 {
                     ChangeHandler.ChangePointPosition(
                         _window.CurrentScene!.History,
                         rps,
-                        rf,
+                        baseValue,
                         refVec3,
                         false
                     );
@@ -1497,33 +1653,61 @@ internal class PropertiesWindow(MainWindowContext window)
                     ChangeHandler.ChangeHandleTransform(
                         _window.CurrentScene!.History,
                         rhs,
-                        rf,
+                        baseValue,
                         refVec3,
                         false
                     );
                 }
+                isActive = false;
                 return true;
             }
 
             return false;
         }
 
-        public void Finish(ref Vector3 rf)
+        public void Finish(ref Vector3 rf, ISceneObj sto)
         {
             DragFloatX.Finish(ref rf.X);
             DragFloatY.Finish(ref rf.Y);
             DragFloatZ.Finish(ref rf.Z);
+            if (baseValue != refVec3)
+            {
+                if (sto is IStageSceneObj stageSceneObj)
+                    ChangeHandler.ChangeStageObjTransform(_window.CurrentScene!.History, stageSceneObj, RefString == "Position" ? "Translation" : RefString, baseValue, refVec3);
+                else if (sto is RailPointSceneObj rps)
+                {
+                    ChangeHandler.ChangePointPosition(
+                        _window.CurrentScene!.History,
+                        rps,
+                        baseValue,
+                        refVec3,
+                        false
+                    );
+                }
+                else if (sto is RailHandleSceneObj rhs)
+                {
+                    ChangeHandler.ChangeHandleTransform(
+                        _window.CurrentScene!.History,
+                        rhs,
+                        baseValue,
+                        refVec3,
+                        false
+                    );
+                }
+            }
+            isActive = false;
         }
+        
     }
 
-    private class LinkedDragFloat3(MainWindowContext window)
+    private class LinkedDragFloat3(MainWindowContext window, string name)
     {
-        DragFloat3 ScaleDrag3 = new(window);
+        DragFloat3 ScaleDrag3 = new(window, name);
         bool isLinked = false;
-        public bool Use(string str, ref Vector3 rf, ref ISceneObj sto, float v_speed, ImGuiStylePtr style)
+        public bool Use(ref Vector3 rf, ref ISceneObj sto, float v_speed, ImGuiStylePtr style)
         {
-            ImGui.Text(str + ":");
-            float stringWidth = ImGui.CalcTextSize(str + ":").X;
+            ImGui.Text(name + ":");
+            float stringWidth = ImGui.CalcTextSize(name + ":").X;
             float itemWidth;
             ImGui.SameLine();
             if (ImGui.GetWindowWidth() - (ImGui.GetWindowWidth() * 3 / 4 - style.ItemSpacing.X / 2) > (stringWidth + 12))
@@ -1535,7 +1719,7 @@ internal class PropertiesWindow(MainWindowContext window)
             {
                 itemWidth = ImGui.GetWindowWidth() - stringWidth - style.ItemSpacing.X * 2 - 24 - 32;
             }
-            bool ret = ScaleDrag3.Use(str, ref rf, ref sto, v_speed, itemWidth, isLinked);
+            bool ret = ScaleDrag3.Use(ref rf, ref sto, v_speed, itemWidth, isLinked);
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
             if (ImGui.Button(isLinked ? IconUtils.LINK : IconUtils.UNLINK))
             {
@@ -1544,9 +1728,9 @@ internal class PropertiesWindow(MainWindowContext window)
             return ret;
         }
 
-        public void Finish(ref Vector3 rf)
+        public void Finish(ref Vector3 rf, ISceneObj sco)
         {
-            ScaleDrag3.Finish(ref rf);
+            ScaleDrag3.Finish(ref rf, sco);
         }
     }
 
@@ -1590,8 +1774,8 @@ internal class PropertiesWindow(MainWindowContext window)
         if (ImGui.InputText("##" + str + "i", ref s, max, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, s);
+            return true;
         }
-
         return false;
     }
 
@@ -1605,6 +1789,7 @@ internal class PropertiesWindow(MainWindowContext window)
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+            return true;
         }
         return false;
     }
@@ -1618,6 +1803,7 @@ internal class PropertiesWindow(MainWindowContext window)
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+            return true;
         }
         return false;
     }
@@ -1631,6 +1817,7 @@ internal class PropertiesWindow(MainWindowContext window)
         if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+            return true;
         }
         return false;
     }
@@ -1643,6 +1830,7 @@ internal class PropertiesWindow(MainWindowContext window)
         if (ImGui.InputFloat("##" + str + "i", ref i, step, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
+            return true;
         }
 
         return false;
@@ -1654,7 +1842,43 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(name + IconUtils.TRASH + IconUtils.TRASH + IconUtils.TRASH, 1, 2));
     }
 
-    private bool InputSwitch(string str, ref int rf, int step, ref IStageSceneObj sco)
+    private bool InputFogLight(string str, int rf, int step, ref IStageSceneObj sco, bool isFog)
+    {
+        int i = rf;
+
+        string tt = isFog ? "Edit Fog" : "Edit Light Area";
+        var f = window.CurrentScene!.GetFog(rf);
+        var l = window.CurrentScene!.GetLightArea(rf);
+
+        bool disable = rf < 0 || (isFog ? (f == null) : (l == null));
+        if (disable)
+            ImGui.BeginDisabled();
+        if (ImGui.Button(str + " id##flbtn", new(ImGui.GetWindowWidth() / 3 - ImGui.GetStyle().ItemSpacing.X, default)))
+        {
+            if (isFog)
+                window.SetFogSelected(window.CurrentScene.Stage.StageFogs.IndexOf(f!));
+            else
+                window.SetLightSelected(rf);
+        }
+        if (disable)
+            ImGui.EndDisabled();
+
+        if (!disable && tt != "")
+            ImGui.SetItemTooltip(tt);
+
+        ImGui.SameLine();
+        ImGuiWidgets.SetPropertyWidth(str);
+        if (ImGui.InputInt("##" + str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            i = Math.Clamp(i, -1, 9999);
+            ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sco.StageObj.Properties, "Arg0", rf, i);
+            
+        }
+        if (tt != "")
+            ImGui.SetItemTooltip(tt);
+
+        return false;
+    }    private bool InputSwitch(string str, ref int rf, int step, ref IStageSceneObj sco)
     {
         int i = rf;
 

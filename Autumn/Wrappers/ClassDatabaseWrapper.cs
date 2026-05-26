@@ -43,7 +43,7 @@ internal static class ClassDatabaseWrapper
             if (s_DatabaseEntries is null || ReloadEntries)
             {
                 s_DatabaseEntries = new();
-                string path = Path.Join(Path.Join("Resources", "RedPepper-ClassDataBase"), "Data");
+                string path = Path.Join("Resources", "ClassDB");
 
                 foreach (string entryPath in Directory.EnumerateFiles(path))
                 {

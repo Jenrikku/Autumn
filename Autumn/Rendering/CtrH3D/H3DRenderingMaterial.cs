@@ -172,7 +172,8 @@ internal class H3DRenderingMaterial
         ShaderSource vertexShader = H3DShaders.VertexShader(FakeVtxCol);
         ShaderSource fragmentShader = H3DShaders.GetFragmentShader(
             material.Name,
-            material.MaterialParams
+            material.MaterialParams,
+            actor.Info?.ProjectionYOffset
         );
         Name = material.Name;
 
@@ -412,7 +413,7 @@ internal class H3DRenderingMaterial
                 Constant4Color = matParams.Constant4Color.ToVector4(),
                 Constant5Color = matParams.Constant5Color.ToVector4(),
                 CombBufferColor = matParams.TexEnvBufferColor.ToVector4(),
-                AlphaReference = matParams.AlphaTest.Reference / 225f,
+                AlphaReference = matParams.AlphaTest.Reference / 255f,
                 Light0 = new()
                 {
                     Ambient = new(0.1f, 0.1f, 0.1f, 1),
@@ -535,6 +536,7 @@ internal class H3DRenderingMaterial
             };
 
             uint sampler = SamplerHelper.CreateSampler2D(gl, wrapModeS, wrapModeT, magFilter, minFilter);
+            gl.SamplerParameter(sampler, SamplerParameterF.LodBias, -2.5f); // Editor option to improve rendering
 
             return new(sampler, texture);
 

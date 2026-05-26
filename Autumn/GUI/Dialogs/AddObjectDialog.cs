@@ -17,6 +17,7 @@ namespace Autumn.GUI.Dialogs;
 internal class AddObjectDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
 
     private string _name = "";
     private string _class = "";
@@ -512,7 +513,7 @@ internal class AddObjectDialog(MainWindowContext window)
                 ImGui.Text("Shape:");
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.CalcTextSize("Shape:").X - style.ItemSpacing.X * 2);
-                ImGui.Combo("##Shape1", ref _shape, ["Cube", "Sphere", "Cylinder"], 3);
+                ImGui.Combo("##Shape1", ref _shape, ["Cube (Base)", "Cube (Middle)", "Sphere", "Cylinder"], 4);
             }
             ImGui.EndChild();
         }
@@ -825,15 +826,17 @@ internal class AddObjectDialog(MainWindowContext window)
                 newRail.Properties.Add($"Arg{i}", _args[i]);
 
             Vector3 off = new(trans.X * 100, trans.Y * 100, trans.Z * 100);
+            RailPoint[] newRailPoints = new RailPoint[_points.Length];
             for (int i = 0; i < _points.Length; i++)
             {
-                _points[i] *= 200;
-                _points[i].Point0Trans += off;
-                _points[i].Point1Trans += off;
-                _points[i].Point2Trans += off;
+                newRailPoints[i] = _points[i].Clone(); 
+                newRailPoints[i] *= 200;
+                newRailPoints[i].Point0Trans += off;
+                newRailPoints[i].Point1Trans += off;
+                newRailPoints[i].Point2Trans += off;
                 for (int b = 0; b < 8; b++)
-                    _points[i].Properties.Add($"Arg{b}", -1);
-                newRail.Points.Add(_points[i]);
+                    newRailPoints[i].Properties.Add($"Arg{b}", -1);
+                newRail.Points.Add(newRailPoints[i]);
             }
 
             ChangeHandler.ChangeCreate(window, window.CurrentScene.History, newRail);

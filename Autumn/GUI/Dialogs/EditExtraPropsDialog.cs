@@ -12,6 +12,7 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
 {
 
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     private bool _isnew = false;
     private string _oname = "";
     private string _name = "NewProperty";

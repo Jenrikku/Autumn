@@ -17,6 +17,7 @@ internal static class SZSWrapper
         }
         catch
         {
+            Console.WriteLine($"File in {path} was not a valid szs file");
             return null;
         }
 

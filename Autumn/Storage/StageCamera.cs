@@ -439,9 +439,9 @@ internal class StageCamera
         dict.TryGetValue("X", out BYAMLNode x);
         dict.TryGetValue("Y", out BYAMLNode y);
         dict.TryGetValue("Z", out BYAMLNode z);
-        return new(float.Round(x?.GetValueAs<float>() ?? 1),
-        float.Round(y?.GetValueAs<float>() ?? 1),
-        float.Round(z?.GetValueAs<float>() ?? 1));
+        return new(float.Round(x?.GetValueAs<float>() ?? 1, 2),
+        float.Round(y?.GetValueAs<float>() ?? 1, 2),
+        float.Round(z?.GetValueAs<float>() ?? 1, 2));
     }
 
     public static Vector2? DictToVec2(Dictionary<string, BYAMLNode>? dict)

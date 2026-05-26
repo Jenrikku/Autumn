@@ -27,6 +27,7 @@ internal class MainWindowContext : WindowContext
 
     public SceneGL.GLWrappers.Framebuffer SceneFramebuffer { get; }
     public SceneGL.GLWrappers.Framebuffer CameraFramebuffer { get; }
+    public SceneGL.GLWrappers.Framebuffer ExtrasFrameBuffer { get; }
 
     public BackgroundManager BackgroundManager { get; } = new();
     public GLTaskScheduler GLTaskScheduler { get; } = new();
@@ -46,6 +47,7 @@ internal class MainWindowContext : WindowContext
     private readonly SettingsDialog _settingsDialog;
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
+    private readonly SaveReminderDialog _saveReminderDialog;
     #endregion
 
     #region Editor Dialogs
@@ -54,13 +56,17 @@ internal class MainWindowContext : WindowContext
     public readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
-    public bool IsDialogOpen = false;
+    public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
+                            || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen || _saveReminderDialog.IsOpen
+                            || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen || _welcomeDialog.IsOpen;
+    public bool FlyCamOn => _sceneWindow.FlyCam;
 
     #region Editor Windows 
     private readonly StageWindow _stageWindow;
     private readonly ObjectWindow _objectWindow;
     private readonly PropertiesWindow _propertiesWindow;
     private readonly SceneWindow _sceneWindow;
+    private readonly SearchWindow _searchObjDialog;
     private readonly WelcomeDialog _welcomeDialog;
     #endregion
 
@@ -90,6 +96,8 @@ internal class MainWindowContext : WindowContext
         _editCCNT = new(this);
         _shortcutsDialog = new(this);
         _DBEditorDialog = new(this);
+        _searchObjDialog = new(this);
+        _saveReminderDialog = new(this);
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -110,12 +118,18 @@ internal class MainWindowContext : WindowContext
             initialSize: null,
             depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
             SceneGL.PixelFormat.R8_G8_B8_A8_UNorm, // Regular color.
-            SceneGL.PixelFormat.R32_UInt // Used for object selection.
+            SceneGL.PixelFormat.R32_UInt, // Used for object selection.
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm // Regular color.
         );
         CameraFramebuffer = new(
             initialSize: null,
             depthAttachment: SceneGL.PixelFormat.D24_UNorm_S8_UInt,
             SceneGL.PixelFormat.R8_G8_B8_A8_UNorm // Regular color.
+        );
+        ExtrasFrameBuffer = new(
+            initialSize: null,
+            depthAttachment: null,
+            SceneGL.PixelFormat.R8_G8_B8_A8_UNorm  // final color
         );
 
         Window.Load += () =>
@@ -124,6 +138,8 @@ internal class MainWindowContext : WindowContext
             RailRenderer.Initialize(GL!);
             RelationLine.Initialize(GL!);
             ModelRenderer.Initialize(GL!, contextHandler.FSHandler);
+            TransparentWallRenderer.Initialize(GL!);
+            Canvas.CanvasRenderer.Initialize(GL!);
             _propertiesWindow.Initialize(windowManager);
 
             var cubeTex = Image.Load<Rgba32>(Path.Join("Resources", "OrientationCubeTex.png"));
@@ -235,7 +251,7 @@ internal class MainWindowContext : WindowContext
 
             if (!ContextHandler.IsProjectLoaded)
             {
-                if (!_welcomeDialog.IsOpened) RenderWelcomeScreen(barHeight);
+                if (!_welcomeDialog.IsOpen) RenderWelcomeScreen(barHeight);
             }
             else
             {
@@ -259,12 +275,14 @@ internal class MainWindowContext : WindowContext
             _shortcutsDialog.Render();
             _welcomeDialog.Render();
             _settingsDialog.Render();
+            _saveReminderDialog.Render();
 
             _miscParams.Render();
             _camParams.Render();
             _fogParams.Render();
             _lightParams.Render();
             _switchParams.Render();
+            _searchObjDialog.Render();
 
             if (_isFirstFrame)
             {
@@ -307,6 +325,8 @@ internal class MainWindowContext : WindowContext
                             );
                         scene.ResetCamera();
                         Scenes.Add(scene);
+                        CurrentScene = scene;
+                        SetSceneChange();
                         ImGui.SetWindowFocus("Objects");
                     }
                 );
@@ -333,6 +353,7 @@ internal class MainWindowContext : WindowContext
     public void OpenAddRailDialog() => _addObjectDialog.Open(2);
 
     public void OpenSettingsDialog() => _settingsDialog.Open();
+    public void OpenSearchDialog() => _searchObjDialog.IsOpen = true;
     public void OpenDbEntryDialog(ClassDatabaseWrapper.DatabaseEntry e) => _DBEditorDialog.Open(e);
 
     public void AddSceneMouseClickAction(Action<MainWindowContext, Vector4> action) =>
@@ -359,6 +380,7 @@ internal class MainWindowContext : WindowContext
     // public void CancelTransform() => _sceneWindow.CancelTransform = true;
     public void FinishTransform() => _sceneWindow.FinishTransform = true;
     public void MoveToPoint() => _sceneWindow.TranslateToPoint = true;
+    public void ToggleFlyCam() => _sceneWindow.FlyCam = !_sceneWindow.FlyCam;
     public void CameraToObject() => _sceneWindow.CamToObj = true;
     public void CameraToObject(ISceneObj obj) { _sceneWindow.CamToObj = true; _sceneWindow.CamSceneObj = obj; }
     public void AddRailPoint() => _sceneWindow.AddRailPoint = AddRailPointState.Add;
@@ -370,12 +392,39 @@ internal class MainWindowContext : WindowContext
         _switchParams.SelectedSwitch = i;
         ImGui.SetWindowFocus("Switches##SwitchWindow");
     }
+    public void SetFogSelected(int i)
+    {
+        _fogParams.IsOpen = true;
+        _fogParams.SelectedFog = i;
+        ImGui.SetWindowFocus("Fog##FogParams");
+    }
+    public void SetLightSelected(int i)
+    {
+        _lightParams.IsOpen = true;
+        _lightParams.ExternalLightSelect = i;
+        ImGui.SetWindowFocus("Lights##LightParams");
+    }
     public void SetCameraSelected(int i)
     {
         _camParams.IsOpen = true;
         CurrentScene!.SelectedCam = i;
         _camParams.SetSelectedChange();
         ImGui.SetWindowFocus("cameras");
+    }
+    public StageFog? GetSelectedFog()
+    {
+        if (!_fogParams.IsOpen) return null;
+        if (_fogParams.SelectedFog > 0)
+        {
+            if ( CurrentScene!.Stage.StageFogs.Count > _fogParams.SelectedFog)
+                return CurrentScene!.Stage.StageFogs[_fogParams.SelectedFog];
+        }
+        return CurrentScene!.MainStageFog;
+    }
+    public uint GetFogType()
+    {
+        if (!_fogParams.IsOpen) return 0;
+        else return (uint)CurrentScene!.MainStageFog.FogType;
     }
     public void UpdateCameraList()
     {
@@ -384,19 +433,36 @@ internal class MainWindowContext : WindowContext
     internal void SetupChildrenDialog(StageObj stageObj) => _editChildrenDialog.Open(stageObj);
     internal void SetupExtraPropsDialog(StageObj stageObj, string propName) => _editExtraPropsDialog.Open(stageObj, propName);
     internal void SetupExtraPropsDialogNew(StageObj stageObj) => _editExtraPropsDialog.New(stageObj);
-    internal void CloseCurrentScene()
+    internal void SetSceneChange() => _sceneWindow.ExternalSceneChange = true;
+    internal void OpenSaveReminder(Scene s) => _saveReminderDialog.Open(s);
+    internal void CloseStage(Scene s)
     {
-        int i = Scenes.IndexOf(CurrentScene!) - 1;
-        Scenes.Remove(CurrentScene!);
-        if (i < 0)
-            CurrentScene = null;
-        else
-            CurrentScene = Scenes[i];
+        if (ContextHandler.SystemSettings.SaveReminder && !s.IsSaved)
+        {
+            OpenSaveReminder(s);
+            return;
+        }
+        if (s == CurrentScene)
+        {
+            if (Scenes.IndexOf(s) > 0)
+            {
+                CurrentScene = Scenes[Scenes.IndexOf(s)-1];
+            }
+            else if (Scenes.Count > 1)
+            {
+               CurrentScene = Scenes[1];
+            }
+            else
+            {
+                CurrentScene = null;
+            }
+        }
+        SetSceneChange();
+        Scenes.Remove(s);
         if (Scenes.Count == 0)
         {
             ImGui.SetWindowFocus("Stages");
         }
-
     }
 
     /// <summary>
@@ -493,6 +559,8 @@ internal class MainWindowContext : WindowContext
                 _lightParams.IsOpen = true;
             if (ImGui.MenuItem("Edit Switches"))
                 _switchParams.IsOpen = true;
+            ImGui.Separator();
+            ImGuiWidgets.CommandMenuItem(CommandID.Search, ContextHandler.ActionHandler, this);
             ImGui.EndMenu();
         }
 
@@ -564,66 +632,15 @@ internal class MainWindowContext : WindowContext
             ImGui.EndMenu();
         }
         ImGui.SetCursorPos(c);
-        #region SceneTabs
         // Opened stages are displayed in tabs in the main menu bar.
-
-        ImGuiTabBarFlags barFlags = ImGuiTabBarFlags.AutoSelectNewTabs;
 
         if (ContextHandler.ProjectChanged)
         {
             CurrentScene = null;
             Scenes.Clear();
             ContextHandler.ProjectChanged = false;
+            ImGui.SetWindowFocus("Stages");
         }
-
-        if (Scenes.Count > 0 && ImGui.BeginTabBar("sceneTabs", barFlags))
-        {
-            for (int i = 0; i < Scenes.Count; i++)
-            {
-                ImGuiTabItemFlags flags = ImGuiTabItemFlags.NoPushId;
-
-                Scene scene = Scenes[i];
-
-                if (!scene.IsSaved)
-                    flags |= ImGuiTabItemFlags.UnsavedDocument;
-
-                bool opened = true;
-                string displayName = scene.Stage!.Name + scene.Stage.Scenario;
-
-                ImGui.PushID(displayName);
-
-                if (ImGui.BeginTabItem(displayName, ref opened, flags) && CurrentScene != scene)
-                    CurrentScene = scene;
-
-                ImGui.EndTabItem();
-                ImGui.SetItemTooltip(scene.Stage.UserPath);
-
-                ImGui.PopID();
-
-                // Remove the tab when it is closed.
-                // This also closes the stage.
-                if (!opened && Scenes.Remove(scene))
-                {
-                    // TO-DO: Check whether the stage is not saved.
-
-                    i--;
-
-                    // Set the scene to the one before if possible.
-                    if (i < 0)
-                        CurrentScene = null;
-                    else
-                        CurrentScene = Scenes[i];
-                    if (Scenes.Count == 0)
-                    {
-                        ImGui.SetWindowFocus("Stages");
-                    }
-                }
-            }
-
-            ImGui.EndTabBar();
-        }
-
-        #endregion
 
         ImGui.EndMainMenuBar();
 

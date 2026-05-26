@@ -562,11 +562,11 @@ internal class CameraParamsWindow(MainWindowContext window)
     bool CopyVec3Button(bool isCamera)
     {
         bool rb = false;
-        if (!isCamera && window.CurrentScene.SelectedObjects.Count() < 1)
+        if (!isCamera && window.CurrentScene.SelectedObjCount < 1)
             ImGui.BeginDisabled();
         rb = ImGui.Button(isCamera ? IconUtils.CAMERA : IconUtils.USER);
         ImGui.SetItemTooltip(isCamera ? "Copy Camera position" : "Copy selected object position");
-        if (!isCamera && window.CurrentScene.SelectedObjects.Count() < 1)
+        if (!isCamera && window.CurrentScene.SelectedObjCount < 1)
             ImGui.EndDisabled();
         return rb;
     }
@@ -885,7 +885,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
             window.CameraFramebuffer.Use(window.GL!);
             window.GL!.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
-            window.CurrentScene?.Render(window.GL, viewMatrix, projectionMatrix, camera.Rotation, camera.Eye);
+            window.CurrentScene?.Render(window, viewMatrix, projectionMatrix, camera.Rotation, camera.Eye);
             ImGui.End();
         }
     }

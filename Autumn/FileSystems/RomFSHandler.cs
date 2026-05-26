@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Autumn.Background;
 using Autumn.Enums;
+using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
@@ -32,12 +33,23 @@ internal partial class RomFSHandler
     public string Root { get; }
 
     private readonly string _stagesPath;
-    public string StagesPath { get { return _stagesPath; } }
     private readonly string _soundPath;
-    private readonly string _actorsPath;
-    private readonly string _ccntPath;
+    public readonly string _actorsPath;
+    public readonly string _ccntPath;
 
-    private readonly Dictionary<string, Actor> _cachedActors = new();
+    public string GetPath(FSPath p)
+    {
+        return p switch
+        {
+            FSPath.Stages => _stagesPath,
+            FSPath.Actors => _actorsPath,
+            FSPath.Sound => _soundPath,
+            FSPath.CCNT => _ccntPath,
+            _ => Root,
+        };
+    }
+
+    public readonly Dictionary<string, Actor> CachedActors = new();
     private readonly Dictionary<string, DateTime> _cachedActorsTimestamps = new();
 
     private ReadOnlyDictionary<string, string>? _creatorClassNameTable = null;
@@ -145,7 +157,7 @@ internal partial class RomFSHandler
     {
 
         Stage stage = new(initialize: false) { Name = name, Scenario = scenario };
-        stage.UserPath = dir+ Path.DirectorySeparatorChar + name + scenario;
+        stage.UserPath = dir + Path.DirectorySeparatorChar + name + scenario;
         (string, StageFileType)[] paths =
         [
             (Path.Join(dir, $"{name}Design{scenario}.szs"), StageFileType.Design),
@@ -427,13 +439,18 @@ internal partial class RomFSHandler
         return stage;
     }
 
-
-    public Actor ReadActor(string name, GLTaskScheduler scheduler)
+    /// <summary>
+    /// Called for actors where their model name is the same as the actor name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="scheduler"></param>
+    /// <returns>The actor if it's found, and an empty actor otherwise</returns>
+    public Actor ReadActorBasic(string name, GLTaskScheduler scheduler)
     {
         string path = Path.Join(_actorsPath, name + ".szs");
 
         // Return cached actor if valid (not modified externally)
-        if (_cachedActors.TryGetValue(path, out Actor? cachedActor))
+        if (CachedActors.TryGetValue(path, out Actor? cachedActor))
         {
             DateTime timestamp = File.GetLastWriteTime(path);
 
@@ -466,7 +483,7 @@ internal partial class RomFSHandler
             {
                 var lrt = act_lights.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>();
                 if (lrt!.ContainsKey("LightCalcType"))
-                    actor.InitLight.GetCalcType((string)lrt["LightCalcType"].Value!); 
+                    actor.InitLight.GetCalcType((string)lrt["LightCalcType"].Value!);
                 if (lrt!.ContainsKey("LightType"))
                     actor.InitLight.GetType((string)lrt["LightType"].Value!);
             }
@@ -502,7 +519,7 @@ internal partial class RomFSHandler
             [
                 model.MeshesLayer0, // Opaque layer
                 model.MeshesLayer1, // Translucent layer
-                model.MeshesLayer2, // Substractive layer
+                model.MeshesLayer2, // Subtractive layer
                 model.MeshesLayer3 // Additive layer
             ];
 
@@ -540,15 +557,312 @@ internal partial class RomFSHandler
                                 actor.AABB.BoundBox((H3DBoundingBox)mesh.MetaData[m].Values[0]!);
                         }
                     }
+                    //actor.AABB.Center += mesh.MeshCenter;
+                }
+            }
+            //actor.AABB.Center /= meshLists.Length;
+        }
+
+        // Cache the actor
+        if (!CachedActors.ContainsKey(path))
+        {
+            CachedActors.Add(path, actor);
+            _cachedActorsTimestamps.Add(path, File.GetLastWriteTime(path));
+        }
+        else // if we edited the actor between scenes
+        {
+            CachedActors[path] = actor;
+            _cachedActorsTimestamps[path] = File.GetLastWriteTime(path);
+        }
+
+        return actor;
+    }
+
+    /// <summary>
+    /// Called for actors where their model name differs from the actor name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="scheduler"></param>
+    /// <returns>The actor if it's found, and an empty actor otherwise</returns>
+    public Actor ReadKnownActor(string actorName, string baseModelName, string actorClass, GLTaskScheduler scheduler)
+    {
+        string path = Path.Join(_actorsPath, baseModelName + ".szs");
+        // Return cached actor if valid (not modified externally)
+        if (CachedActors.TryGetValue(actorName, out Actor? cachedActor))
+        {
+            return cachedActor;
+        }
+
+        Actor actor = new(actorName);
+
+        bool replacementVariants = ClassModifiersWrapper.ModifierEntries.ContainsKey(actorClass) && ClassModifiersWrapper.ModifierEntries[actorClass].Variants != null && ClassModifiersWrapper.ModifierEntries[actorClass].Variants!.ContainsKey(actorName);
+        bool replacementDefault = ClassModifiersWrapper.ModifierEntries.ContainsKey(actorClass) && ClassModifiersWrapper.ModifierEntries[actorClass].Default != null;
+        //ClassModifiersWrapper.ModifierEntries[actorClass].Variants[actorName].Value.HiddenMeshes        
+
+        // The actor will result in an empty model if the narc is null (not found or
+        // not a narc) or if the narc does not contain the properly-named cgfx file.
+
+        if (!File.Exists(path))
+            return actor;
+
+        NARCFileSystem? narc = SZSWrapper.ReadFile(path);
+
+        if (narc is null)
+            return actor;
+
+        bool found = narc.TryGetFile(baseModelName + ".bcmdl", out byte[] cgfx);
+
+        if (!found)
+            return actor;
+
+        actor.ReadActorInits(narc, s_byamlEncoding);
+
+        H3D h3D;
+
+        try
+        {
+            using MemoryStream stream = new(cgfx);
+            h3D = Gfx.OpenAsH3D(stream);
+        }
+        catch
+        {
+            Debug.Write($"The actor's cgfx could not be read ({actorName})", "Error");
+            return actor;
+        }
+
+        foreach (H3DTexture texture in h3D.Textures)
+        {
+            scheduler.EnqueueGLTask(gl => actor.AddTexture(gl, texture));
+        }
+
+        foreach (H3DLUT lut in h3D.LUTs)
+            foreach (H3DLUTSampler sampler in lut.Samplers)
+            {
+                scheduler.EnqueueGLTask(gl => actor.AddLUTTexture(gl, lut.Name, sampler));
+            }
+
+        List<string> hidden = new();
+        if (replacementVariants && ClassModifiersWrapper.ModifierEntries[actorClass].Variants![actorName]!.HiddenMeshes != null)
+        {
+            hidden = ClassModifiersWrapper.ModifierEntries[actorClass].Variants![actorName]!.HiddenMeshes!;
+        }
+        else if (replacementDefault && ClassModifiersWrapper.ModifierEntries[actorClass].Default!.Value.HiddenMeshes != null)
+        {
+            hidden = ClassModifiersWrapper.ModifierEntries[actorClass].Default!.Value.HiddenMeshes!;
+        }
+
+        foreach (H3DModel model in h3D.Models)
+        {
+            List<H3DMesh>[] meshLists =
+            [
+                model.MeshesLayer0, // Opaque layer
+                model.MeshesLayer1, // Translucent layer
+                model.MeshesLayer2, // Subtractive layer
+                model.MeshesLayer3 // Additive layer
+            ];
+
+
+            for (int i = 0; i < meshLists.Length; i++)
+            {
+
+                foreach (H3DMesh mesh in meshLists[i])
+                {
+                    if (hidden.Contains(mesh.Name)) continue;
+                    actor.ForceModelNotEmpty();
+                    // Obtain the mesh's material by its index.
+                    int matIdx = mesh.MaterialIndex;
+                    H3DMaterial material = model.Materials[matIdx];
+
+                    // Obtain submesh culling.
+                    int meshIdx = model.Meshes.IndexOf(mesh);
+
+                    H3DSubMeshCulling? subMeshCulling = null;
+
+                    if (model.SubMeshCullings.Count > meshIdx)
+                        subMeshCulling = model.SubMeshCullings[meshIdx];
+
+                    var skeleton = model.Skeleton;
+
+                    H3DMeshLayer meshLayer = (H3DMeshLayer)i;
+
+                    scheduler.EnqueueGLTask(gl =>
+                        actor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
+                    );
+
+                    if (mesh.MetaData is not null)
+                    {
+                        for (int m = 0; m < mesh.MetaData.Count; m++)
+                        {
+                            if (mesh.MetaData[m].Name == "OBBox")
+                            {
+                                actor.AABB.BoundBox((H3DBoundingBox)mesh.MetaData[m].Values[0]!);
+                                actor.AABB.Center += ((H3DBoundingBox)mesh.MetaData[m].Values[0]!).Center;
+                            }
+                        }
+                    }
+                    //actor.AABB.Center += mesh.MeshCenter;
+                }
+            }
+            //actor.AABB.Center /= meshLists.Length;
+        }
+
+        // Cache the actor
+        CachedActors.Add(actorName, actor);
+        return actor;
+    }
+
+    public void ReadActorExtras(string subactName, string path, ActorSceneObj actor, GLTaskScheduler scheduler)
+    {
+        NARCFileSystem? narc = SZSWrapper.ReadFile(path);
+        if (narc is null || (narc is not null && !narc.TryGetFile(subactName + ".bcmdl", out byte[] cgfx)))
+            return;
+        narc!.TryGetFile(subactName + ".bcmdl", out cgfx);
+        H3D h3D;
+
+        try
+        {
+            using MemoryStream stream = new(cgfx);
+            h3D = Gfx.OpenAsH3D(stream);
+        }
+        catch
+        {
+            Debug.Write($"The subactor's cgfx could not be read ({subactName})", "Error");
+            return;
+        }
+
+        Actor subActor = new(subactName);
+
+        subActor.ReadActorInits(narc, s_byamlEncoding);
+
+        foreach (H3DTexture texture in h3D.Textures)
+        {
+            scheduler.EnqueueGLTask(gl => subActor.AddTexture(gl, texture));
+        }
+
+        foreach (H3DLUT lut in h3D.LUTs)
+            foreach (H3DLUTSampler sampler in lut.Samplers)
+            {
+                scheduler.EnqueueGLTask(gl => subActor.AddLUTTexture(gl, lut.Name, sampler));
+            }
+
+        foreach (H3DModel model in h3D.Models)
+        {
+            List<H3DMesh>[] meshLists =
+            [
+                model.MeshesLayer0, // Opaque layer
+                model.MeshesLayer1, // Translucent layer
+                model.MeshesLayer2, // Subtractive layer
+                model.MeshesLayer3 // Additive layer
+            ];
+
+            for (int i = 0; i < meshLists.Length; i++)
+            {
+                foreach (H3DMesh mesh in meshLists[i])
+                {
+                    subActor.ForceModelNotEmpty();
+
+                    // Obtain the mesh's material by its index.
+                    int matIdx = mesh.MaterialIndex;
+                    H3DMaterial material = model.Materials[matIdx];
+
+                    //  Obtain submesh culling.
+                    int meshIdx = model.Meshes.IndexOf(mesh);
+
+                    H3DSubMeshCulling? subMeshCulling = null;
+
+                    if (model.SubMeshCullings.Count > meshIdx)
+                        subMeshCulling = model.SubMeshCullings[meshIdx];
+
+                    var skeleton = model.Skeleton;
+
+                    H3DMeshLayer meshLayer = (H3DMeshLayer)i;
+
+                    scheduler.EnqueueGLTask(gl =>
+                        subActor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
+                    );
                 }
             }
         }
 
-        // Cache the actor
-        _cachedActors.Add(path, actor);
-        _cachedActorsTimestamps.Add(path, File.GetLastWriteTime(path));
+        actor.SubActors.Add(subActor);
+        CachedActors.Add(subActor.Name, subActor);
 
-        return actor;
+    }
+    public Actor? ReadActorExtrasArg(string subActorName, string path, GLTaskScheduler scheduler)
+    {
+        Actor subActor = new(subActorName);
+        NARCFileSystem? narc = SZSWrapper.ReadFile(path);
+
+        if (narc is null || (narc is not null && !narc.TryGetFile(subActorName + ".bcmdl", out byte[] cgfx)))
+            return null;
+        narc!.TryGetFile(subActorName + ".bcmdl", out cgfx);
+        H3D h3D;
+
+        subActor.ReadActorInits(narc, s_byamlEncoding);
+
+        try
+        {
+            using MemoryStream stream = new(cgfx);
+            h3D = Gfx.OpenAsH3D(stream);
+        }
+        catch
+        {
+            Debug.Write($"The subactor's cgfx could not be read ({subActorName})", "Error");
+            return null;
+        }
+
+
+        foreach (H3DTexture texture in h3D.Textures)
+        {
+            scheduler.EnqueueGLTask(gl => subActor.AddTexture(gl, texture));
+        }
+
+        foreach (H3DLUT lut in h3D.LUTs)
+            foreach (H3DLUTSampler sampler in lut.Samplers)
+            {
+                scheduler.EnqueueGLTask(gl => subActor.AddLUTTexture(gl, lut.Name, sampler));
+            }
+
+        foreach (H3DModel model in h3D.Models)
+        {
+            List<H3DMesh>[] meshLists =
+            [
+                model.MeshesLayer0, // Opaque layer
+                    model.MeshesLayer1, // Translucent layer
+                    model.MeshesLayer2, // Subtractive layer
+                    model.MeshesLayer3 // Additive layer
+            ];
+
+            for (int i = 0; i < meshLists.Length; i++)
+            {
+                foreach (H3DMesh mesh in meshLists[i])
+                {
+                    subActor.ForceModelNotEmpty();
+
+                    // Obtain the mesh's material by its index.
+                    int matIdx = mesh.MaterialIndex;
+                    H3DMaterial material = model.Materials[matIdx];
+
+                    // Obtain submesh culling.
+                    int meshIdx = model.Meshes.IndexOf(mesh);
+
+                    H3DSubMeshCulling? subMeshCulling = null;
+
+                    if (model.SubMeshCullings.Count > meshIdx)
+                        subMeshCulling = model.SubMeshCullings[meshIdx];
+
+                    var skeleton = model.Skeleton;
+
+                    H3DMeshLayer meshLayer = (H3DMeshLayer)i;
+
+                    scheduler.EnqueueGLTask(gl =>
+                        subActor.AddMesh(gl, meshLayer, mesh, subMeshCulling, material, skeleton)
+                    );
+                }
+            }
+        }
+        CachedActors.Add(subActorName, subActor);
+        return subActor;
     }
 
     public ReadOnlyDictionary<string, string> ReadCreatorClassNameTable()
@@ -1435,7 +1749,7 @@ internal partial class RomFSHandler
 
             NARCFileSystem narcFS = new(new());
             byte[] binFile = BYAMLParser.Write(file);
-            SortedDictionary<string, byte[]> files = new(); 
+            SortedDictionary<string, byte[]> files = new();
             foreach (var (key, value) in st.EnumerateAdditionalFiles())
             {
                 files.Add(key, value);
@@ -1444,7 +1758,7 @@ internal partial class RomFSHandler
             {
                 var stageInfoBYML = MakeStageInfo(stage);
                 if (stageInfoBYML != null)
-                    files.Add("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));                   
+                    files.Add("StageInfo" + stage.Scenario + ".byml", BYAMLParser.Write((BYAML)stageInfoBYML));
                 if (stage.CameraParams.Cameras.Count > 0)
                     files.Add("CameraParam.byml", BYAMLParser.Write(MakeCameraParam(stage)));
             }

@@ -36,7 +36,7 @@ internal class GLTaskScheduler
         {
             if (!_glQueue.TryDequeue(out Action<GL>? glTask))
                 break;
-
+            if (glTask is null) { Console.WriteLine("GL TASK WAS NULL"); continue;}
             glTask(gl);
 
             if (Stopwatch.GetElapsedTime(startTime) >= delta)

@@ -114,9 +114,6 @@ internal class ObjectWindow(MainWindowContext window)
                     );
                 }
 
-                ImGui.PopStyleColor(4);
-                //ImGui.PopFont();
-
                 ImGui.TableSetColumnIndex(1);
 
                 ImGui.PushID("SceneObjSelectable" + obj.PickingId);
@@ -161,7 +158,7 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.SetItemTooltip(name);
 
                 if (
-                    window.CurrentScene.SelectedObjects.Count() <= 1
+                    window.CurrentScene.SelectedObjCount <= 1
                     && !lastKeyPressed
                     && selectedIndex != (int)obj.PickingId
                     && obj.Selected

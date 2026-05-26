@@ -11,9 +11,9 @@ internal class StageFog
     
     public enum FogTypes
     {
-        FOG_UPDATER_TYPE_LINEAR,
-        FOG_UPDATER_TYPE_EXPONENT,
-        FOG_UPDATER_TYPE_EXPONENT_SQUARE,
+        FOG_UPDATER_TYPE_LINEAR = 1,
+        FOG_UPDATER_TYPE_EXPONENT = 2,
+        FOG_UPDATER_TYPE_EXPONENT_SQUARE = 3,
     }
 
     public int InterpFrame = 0;

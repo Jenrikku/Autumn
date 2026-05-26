@@ -6,6 +6,7 @@ internal class AxisAlignedBoundingBox
 {
     public Vector3 Max = new(50, 50, 50);
     public Vector3 Min = new(-50, -50, -50);
+    public Vector3 Center = new(0,0,0);
 
     public AxisAlignedBoundingBox() { }
 
@@ -28,12 +29,12 @@ internal class AxisAlignedBoundingBox
 
     public static AxisAlignedBoundingBox operator *(AxisAlignedBoundingBox _aabb, float t)
     {
-        return new AxisAlignedBoundingBox(_aabb.Max * t, _aabb.Min * t);
+        return new AxisAlignedBoundingBox(_aabb.Max * t, _aabb.Min * t) { Center = _aabb.Center };
     }
 
     public static AxisAlignedBoundingBox operator *(AxisAlignedBoundingBox _aabb, Vector3 v)
     {
-        AxisAlignedBoundingBox rAABB = new(_aabb.Max, _aabb.Min);
+        AxisAlignedBoundingBox rAABB = new(_aabb.Max, _aabb.Min) { Center = _aabb.Center };
         rAABB.Max.X *= v.X;
         rAABB.Min.X *= v.X;
         rAABB.Max.Y *= v.Y;

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Silk.NET.OpenGL;
 using SPICA.Formats.CtrH3D.Model.Mesh;
 using SPICA.PICA.Commands;
@@ -18,6 +19,10 @@ internal class H3DRenderingMesh : IDisposable
 
     private bool _disposed = false;
 
+    public int Priority = 0;
+    public Vector3 Center = new();
+    public string Name;
+
     public unsafe H3DRenderingMesh(GL gl, H3DMesh mesh, H3DSubMeshCulling? subMeshCulling)
     {
         if (mesh.VertexStride <= 0)
@@ -27,7 +32,7 @@ internal class H3DRenderingMesh : IDisposable
 
         int vertexCount = mesh.RawBuffer.Length / mesh.VertexStride;
         int fixedAttributesOffset = mesh.RawBuffer.Length;
-
+        Name = mesh.Name;
         byte[] vertexBuffer;
 
         using (MemoryStream stream = new())
@@ -54,7 +59,7 @@ internal class H3DRenderingMesh : IDisposable
 
             vertexBuffer = stream.ToArray();
         }
-
+        Center = mesh.MeshCenter;
         //Debug.Assert(
         //    vertexBuffer.Length
         //        == fixedAttributesOffset + mesh.FixedAttributes.Count * 16 * vertexCount
@@ -74,6 +79,7 @@ internal class H3DRenderingMesh : IDisposable
 
         int offset = 0;
         uint stride = (uint)mesh.VertexStride;
+        Priority = mesh.Priority;
 
         foreach (PICAAttribute attribute in mesh.Attributes)
         {

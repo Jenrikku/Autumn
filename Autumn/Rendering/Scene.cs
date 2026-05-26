@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Autumn.Background;
+using Autumn.Context;
 using Autumn.Enums;
 using Autumn.FileSystems;
+using Autumn.GUI.Windows;
 using Autumn.History;
 using Autumn.Rendering.Area;
 using Autumn.Rendering.Rail;
@@ -25,6 +27,7 @@ internal class Scene
 
     private readonly List<ISceneObj> _selectedObjects = new();
     public IEnumerable<ISceneObj> SelectedObjects => _selectedObjects;
+    public int SelectedObjCount => _selectedObjects.Count;
 
     public ISceneObj? HoveringObject { get; private set; }
 
@@ -56,6 +59,12 @@ internal class Scene
     private Dictionary<StageFog, List<ISceneObj>> _stageFogList = new();
     private Dictionary<StageFog, int> _stageFogCount = new();
 
+    public List<ISceneObj> Opaque = new();
+    public List<ActorSceneObj> Translucent = new();
+    public List<ActorSceneObj> Subtractive = new();
+    public List<ActorSceneObj> Additive = new();
+    public List<ActorSceneObj> Shadows = new();
+
     public Scene(Stage stage, LayeredFSHandler fsHandler, GLTaskScheduler scheduler, ref string status)
     {
         Stage = stage;
@@ -64,12 +73,79 @@ internal class Scene
         GenerateFog();
     }
 
-    public void Render(GL gl, in Matrix4x4 view, in Matrix4x4 projection, in Quaternion cameraRot, in Vector3 cameraEye)
+    public void Render(MainWindowContext window, in Matrix4x4 view, in Matrix4x4 projection, in Quaternion cameraRot, in Vector3 cameraEye)
     {
         ModelRenderer.UpdateSceneParams(view, projection, cameraRot, cameraEye);
 
-        foreach (ISceneObj obj in EnumerateSceneObjs())
-            ModelRenderer.Draw(gl, obj, this);
+        var CCNT = window.ContextHandler.FSHandler!.ReadCreatorClassNameTable();
+
+        if (ModelRenderer.UseFullAlphaPipeline)
+        {
+            foreach (ISceneObj o in Opaque)
+            {
+                ModelRenderer.DrawLayer(window.GL!, o, this, H3DMeshLayer.Opaque);
+            }
+            if (!window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+                foreach (ActorSceneObj sh in Shadows)
+                {
+                    ModelRenderer.DrawLayer(window.GL!, sh, this, H3DMeshLayer.Opaque);
+                }
+
+            // Preemptively sort by distance
+            var ey = cameraEye * 100;
+            List<ActorSceneObj> l2 = Translucent.OrderBy(x => Vector3.Distance(x.StageObj.Translation, ey)).ToList();
+            l2.Reverse();
+            foreach (ISceneObj o in Translucent)
+            {
+                ModelRenderer.DrawLayer(window.GL!, o, this, H3DMeshLayer.Translucent);
+            }
+            foreach (ISceneObj o in Subtractive)
+            {
+                ModelRenderer.DrawLayer(window.GL!, o, this, H3DMeshLayer.Subtractive);
+            }
+            foreach (ISceneObj o in Additive)
+            {
+                ModelRenderer.DrawLayer(window.GL!, o, this, H3DMeshLayer.Additive);
+            }
+            if (window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+            foreach (ActorSceneObj sh in Shadows)
+            {
+                ModelRenderer.DrawShadow(window.GL!, sh.Actor, sh.Transform, sh.Selected, sh.PickingId, true);
+            }
+
+            List<ActorSceneObj> shsss = new();
+            foreach (ISceneObj o in EnumerateSceneObjs())
+            {
+                if (o is not ActorSceneObj || !o.IsVisible) continue;
+                if ((o as ActorSceneObj)!.StageObj.Parent != null) 
+                    ModelRenderer.DrawRelLines(window.GL!, (o as ActorSceneObj)!);
+                if (window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows && window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+                    if ((o as ActorSceneObj)!.Shadows.Count > 0)
+                    {
+                        shsss.Add((o as ActorSceneObj)!);
+                    }
+            }
+            if (window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows && window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
+            {
+                shsss = shsss.OrderBy(x => Vector3.Distance(x.StageObj.Translation, ey)).ToList();
+                shsss.Reverse();
+                foreach (ActorSceneObj o in shsss)
+                {
+                    for (int s = 0; s < o.Shadows.Count; s++)
+                    {
+                        ModelRenderer.DrawShadow(window.GL!, 
+                        o.Shadows[s], 
+                        o.GetTransform(o.Actor.InitShadow[s].Size, o.Actor.InitShadow[s].RotateOffset, o.Actor.InitShadow[s].Offset), 
+                        o.Selected, o.PickingId);
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach (ISceneObj obj in EnumerateSceneObjs())
+                ModelRenderer.Draw(window.GL!, obj, CCNT, this);
+        }
     }
 
     #region Object selection
@@ -118,6 +194,19 @@ internal class Scene
         }
     }
 
+    public void SelectAllObjects()
+    {
+        foreach (ISceneObj sceneObj in _stageSceneObjs)
+        {
+            sceneObj.Selected = true;
+            _selectedObjects.Add(sceneObj);
+        }
+        foreach (ISceneObj sceneObj in _railObjs)
+        {
+            sceneObj.Selected = true;
+            _selectedObjects.Add(sceneObj);
+        }
+    }
     public void SetSelectedObjects(IEnumerable<ISceneObj> objs)
     {
         UnselectAllObjects();
@@ -229,6 +318,15 @@ internal class Scene
             }
         }
         Stage.LightAreaNames.Add(_i, "[汎用]デフォルトライト");
+    }
+    public string? GetLightArea(int id)
+    {
+        Stage.LightAreaNames.TryGetValue(id, out string? ret);
+        return ret;
+    }
+    public StageFog? GetFog(int id)
+    {
+        return Stage.StageFogs.FirstOrDefault(x => x.AreaId == id);
     }
     public void AddFog(StageFog fog)
     {
@@ -563,6 +661,7 @@ internal class Scene
             CommonMaterialParameters matParams = new(color, new());
 
             BasicSceneObj areaSceneObj = new(stageObj, matParams, 20f, _lastPickingId);
+            Opaque.Add(areaSceneObj);
             AddSwitchFromStageObj(stageObj, areaSceneObj);
             _stageSceneObjs.Add(areaSceneObj);
             _pickableObjs.Add(_lastPickingId++, areaSceneObj);
@@ -574,6 +673,7 @@ internal class Scene
         {
             RailModel model = new(rail);
             RailSceneObj railSceneObj = new(rail, model, ref _lastPickingId);
+            Opaque.Add(railSceneObj);
 
             scheduler.EnqueueGLTask(model.Initialize);
 
@@ -592,23 +692,82 @@ internal class Scene
         )
             actorName = modelNameString;
 
-        fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? fallback);
+        fsHandler.ReadCreatorClassNameTable().TryGetValue(actorName, out string? actorClass);
 
         Actor actor;
-        if (fallback != null && ClassDatabaseWrapper.DatabaseEntries.ContainsKey(fallback) && ClassDatabaseWrapper.DatabaseEntries[fallback].ArchiveName != null)
-        {
-            actor = fsHandler.ReadActor(actorName, ClassDatabaseWrapper.DatabaseEntries[fallback].ArchiveName, fallback, scheduler);
-        }
-        else if (ClassDatabaseWrapper.DatabaseEntries.ContainsKey(actorName) && ClassDatabaseWrapper.DatabaseEntries[actorName].ArchiveName != null)
-            actor = fsHandler.ReadActor(actorName, ClassDatabaseWrapper.DatabaseEntries[actorName].ArchiveName, scheduler);
-        else
-            actor = fsHandler.ReadActor(actorName, fallback, scheduler);
+        actor = fsHandler.ReadActor(actorName, actorClass, scheduler);
 
         ActorSceneObj actorSceneObj = new(stageObj, actor, _lastPickingId);
+
+        if (actorClass != null && ClassModifiersWrapper.ModifierEntries.ContainsKey(actorClass)) 
+        {
+            fsHandler.ReadActorExtras(actorName, actorClass, actorSceneObj, scheduler);
+        
+            ClassModifiersWrapper.ModifierEntry? act = ClassModifiersWrapper.GetEntry(actorName, actorClass);
+            if (act is not null)
+            {
+                if (act.Value.Translation != null) 
+                    actorSceneObj.DeltaTranslation = act.Value.Translation.Value;
+                if (act.Value.Scale != null) 
+                    actorSceneObj.DeltaScale = act.Value.Scale.Value;
+                if (act.Value.Rotation != null) 
+                    actorSceneObj.DeltaRotation = act.Value.Rotation.Value;
+                if (act.Value.ExtraModels != null)
+                {
+                    foreach(Actor ac in actorSceneObj.SubActors)
+                    {
+                        actorSceneObj.SubActorTransforms.Add(new());
+                        if (act.Value.ExtraModels[ac.Name] != null)
+                        {
+                            if (act.Value.ExtraModels[ac.Name]!.Value.Translation != null) 
+                                actorSceneObj.SubActorTransforms[actorSceneObj.BaseSubActorCount].Translate = act.Value.ExtraModels[ac.Name]!.Value.Translation!.Value;
+                            if (act.Value.ExtraModels[ac.Name]!.Value.Scale != null) 
+                                actorSceneObj.SubActorTransforms[actorSceneObj.BaseSubActorCount].Scale = act.Value.ExtraModels[ac.Name]!.Value.Scale!.Value;
+                            if (act.Value.ExtraModels[ac.Name]!.Value.Rotation != null) 
+                                actorSceneObj.SubActorTransforms[actorSceneObj.BaseSubActorCount].Rotate = act.Value.ExtraModels[ac.Name]!.Value.Rotation!.Value;
+                        }
+                        actorSceneObj.BaseSubActorCount += 1;
+                    }
+                }
+
+                if (act.Value.Args != null)
+                foreach (string arg in act.Value.Args.Keys)
+                {
+                    if (stageObj.Properties.ContainsKey(arg))
+                    {
+                        actorSceneObj.UpdateActorFromArg(fsHandler, (ClassModifiersWrapper.ModifierEntry)act, arg, scheduler);
+                    }
+                }
+            }
+        }
+        if (stageObj.Name == "ShadowObj")
+        {
+            actor.IsShadowModel = true;
+        }
+        foreach (ActorShadow shadow in actor.InitShadow)
+        {
+            actorSceneObj.Shadows.Add( fsHandler.ReadActorBasic( shadow.GetShadowVolumeString(), scheduler));
+        }
+
+        scheduler.EnqueueGLTask( gl => 
+            {
+                if (actor.IsEmptyModel) Opaque.Add(actorSceneObj);
+                else if (actor.IsShadowModel) Shadows.Add(actorSceneObj);
+                else
+                {
+                    if (actor.CountMeshesLayer(H3DMeshLayer.Opaque) > 0) Opaque.Add(actorSceneObj);
+                    if (actor.CountMeshesLayer(H3DMeshLayer.Translucent) > 0) Translucent.Add(actorSceneObj);
+                    if (actor.CountMeshesLayer(H3DMeshLayer.Subtractive) > 0) { Subtractive.Add(actorSceneObj);}    // Translucent.Add(actorSceneObj); }
+                    if (actor.CountMeshesLayer(H3DMeshLayer.Additive) > 0) { Additive.Add(actorSceneObj);}          // Translucent.Add(actorSceneObj); }
+                }
+            }
+        );
+
         AddSwitchFromStageObj(stageObj, actorSceneObj);
 
         _stageSceneObjs.Add(actorSceneObj);
         _pickableObjs.Add(_lastPickingId++, actorSceneObj);
+        actorSceneObj.UpdateTransform();
     }
 
     #region Point Editing
@@ -752,6 +911,15 @@ internal class Scene
                 _railObjs.Remove(y);
                 break;
         }
+
+        if (Opaque.Contains(sceneObj)) Opaque.Remove(sceneObj);
+        if (sceneObj is ActorSceneObj)
+        {
+            if (Shadows.Contains(sceneObj)) Shadows.Remove((sceneObj as ActorSceneObj)!);
+            if (Translucent.Contains(sceneObj)) Translucent.Remove((sceneObj as ActorSceneObj)!);
+            if (Additive.Contains(sceneObj)) Additive.Remove((sceneObj as ActorSceneObj)!);
+            if (Subtractive.Contains(sceneObj)) Subtractive.Remove((sceneObj as ActorSceneObj)!);
+        }  
 
         _pickableObjs.Remove(sceneObj.PickingId);
     }

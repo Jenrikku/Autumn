@@ -15,6 +15,7 @@ internal class AddStageDialog
     private readonly MainWindowContext _window;
 
     private bool _isOpened = false;
+    public bool IsOpen => _isOpened;
     public void Open() => _isOpened = true;
     private string _name = string.Empty;
     private int _scenarioNo = 1;
@@ -294,10 +295,12 @@ internal class AddStageDialog
                                 ref manager.StatusMessageSecondary
                             );
 
-                        _window.Scenes.Add(scene);
 
                         Reset();
                         scene.ResetCamera();
+                        _window.Scenes.Add(scene);
+                        _window.CurrentScene = scene;
+                        _window.SetSceneChange();
                         ImGui.SetWindowFocus("Objects");
                     }
                 );
@@ -381,10 +384,12 @@ internal class AddStageDialog
                         ref manager.StatusMessageSecondary
                     );
 
-                _window.Scenes.Add(scene);
 
                 Reset();
                 scene.ResetCamera();
+                _window.Scenes.Add(scene);
+                _window.CurrentScene = scene;
+                _window.SetSceneChange();
                 ImGui.SetWindowFocus("Objects");
             }
         );

@@ -29,6 +29,7 @@ internal class FragmentShaderGenerator
     public const string DebugModeUniform = "u_DebugMode";
     public const string DebugLUTModeUniform = "u_DebugLUTMode";
     public const string CombBufferUniform = "u_CombBufferColor";
+    public float ProjectionYOffset = 300;
 
     private StringBuilder SB;
 
@@ -36,9 +37,13 @@ internal class FragmentShaderGenerator
 
     private bool[] HasTexColor;
 
-    public FragmentShaderGenerator(H3DMaterialParams Params)
+    public FragmentShaderGenerator(H3DMaterialParams prms, float? projYOff)
     {
-        this.Params = Params;
+        Params = prms;
+        if (projYOff != null)
+        {
+            ProjectionYOffset = float.Max(float.Abs(projYOff.Value), 10);
+        }
     }
 
     public string GetFragShader()
@@ -121,6 +126,7 @@ internal class FragmentShaderGenerator
         SB.AppendLine($"uniform int {DebugLUTModeUniform};");
         SB.AppendLine();
         SB.AppendLine("uniform uint uPickingId;");
+        SB.AppendLine("uniform uint uShadow;");
 
         SB.AppendLine();
         SB.AppendLine($"in vec4 {ShaderOutputRegName.QuatNormal};");
@@ -132,13 +138,21 @@ internal class FragmentShaderGenerator
         SB.AppendLine();
         SB.AppendLine("out vec4 Output;");
         SB.AppendLine("out uint oPickingId;");
+        SB.AppendLine("out vec4 oPostProc;");
         SB.AppendLine();
         SB.AppendLine("//SPICA auto-generated Fragment Shader");
         SB.AppendLine();
         SB.AppendLine("void main() {");
         SB.AppendLine();
         SB.AppendLine("    oPickingId = uPickingId;");
-
+        SB.AppendLine($"    oPostProc = vec4(({SelectionUniform}.a > 0.1 ? 1 : 0), (uShadow == 2u ? 0.2 : 0.0), uShadow == 1u ? 0.25 : 0.0, 1);");
+        SB.AppendLine("    if (uShadow != 0u)");
+        SB.AppendLine("    { ");
+        SB.AppendLine($"         Output = vec4({SelectionUniform}.a);");
+        // SB.AppendLine("         Output = vec3(0,0,0);");
+        SB.AppendLine("    }");
+        
+        SB.AppendLine("   else {");
         SB.AppendLine("    vec4 Previous;");
         SB.AppendLine("    vec4 DebugDist0;");
         SB.AppendLine("    vec4 DebugDist1;");
@@ -358,7 +372,7 @@ internal class FragmentShaderGenerator
             $"\t    Output.rgb = vec3({ShaderOutputRegName.TexCoord0}.x, {ShaderOutputRegName.TexCoord0}.y, 1.0).rgb;"
         );
 
-        SB.AppendLine($"\telse if ({DebugModeUniform} == 6)"); //Show uv pattern
+        SB.AppendLine($"\telse if ({DebugModeUniform} == 6)"); //Show uv pattern  
         SB.AppendLine(
             $"\t    Output.rgb = texture(UVTestPattern, {ShaderOutputRegName.TexCoord0}.xy).rgb;"
         );
@@ -408,7 +422,9 @@ internal class FragmentShaderGenerator
         {
             SB.AppendLine("Output.a = 1;");
         }
+
         
+        SB.AppendLine("}");
         SB.AppendLine("}");
 
         return SB.ToString();
@@ -622,14 +638,14 @@ internal class FragmentShaderGenerator
             Specular1Color += " * g";
 
         if ((Params.FragmentFlags & H3DFragmentFlags.IsLUTGeoFactorEnabled) != 0)
-            SB.AppendLine("\t\tfloat g = 1;");// ln / abs(dot(Half, Half));");
+            SB.AppendLine("\t\tfloat g = ln / abs(dot(Half, Half));");
 
         SB.AppendLine("\t\tvec4 Diffuse =");
         SB.AppendLine($"\t\t\t{AmbientUniform} * Lights[i].Ambient +");
         SB.AppendLine($"\t\t\t{DiffuseUniform} * Lights[i].Diffuse * clamp(ln, 0, 1);");
         SB.AppendLine(
             $"\t\tvec4 Specular = "
-                + $"{Specular0Color} * Lights[i].Specular0 * 1.6 + " // Make specular 0 stronger to be closer to original
+                + $"{Specular0Color} * Lights[i].Specular0 * 2 + " // Make specular 0 stronger to be closer to original
                 + $"{Specular1Color} * Lights[i].Specular1;"
         );
         SB.AppendLine($"\t\tFragPriColor.rgb += Diffuse.rgb * SpotAtt * DistAtt;");
@@ -756,7 +772,11 @@ internal class FragmentShaderGenerator
             case H3DTextureMappingType.CameraCubeEnvMap:
                 return $"texture(TextureCube, {TexCoord}.xyz)";
             case H3DTextureMappingType.ProjectionMap:
-                return $"textureProj(Textures[{Index}], {TexCoord}.xyz)";
+            {
+                Console.WriteLine("Contains Projection material");
+                return $"textureProj(Textures[{Index}], vec3({TexCoord}.x, {TexCoord}.y, ({TexCoord}.z+ {ProjectionYOffset} * 100) * 0.01))";
+                //return $"textureProj(Textures[{Index}], {TexCoord}.xyz)";
+            }
             default:
                 return $"texture(Textures[{Index}], {TexCoord}.xy)";
         }

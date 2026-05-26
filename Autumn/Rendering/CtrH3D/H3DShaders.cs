@@ -725,9 +725,9 @@ internal class H3DShaders
 			}
 			"""
 		);
-	public static ShaderSource GetFragmentShader(string name, H3DMaterialParams materialParams)
+	public static ShaderSource GetFragmentShader(string name, H3DMaterialParams materialParams, float? projYOff)
 	{
-		FragmentShaderGenerator generator = new(materialParams);
+		FragmentShaderGenerator generator = new(materialParams, projYOff);
 
 		return new(name + ".frag", ShaderType.FragmentShader, generator.GetFragShader());
 	}
