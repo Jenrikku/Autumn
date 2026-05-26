@@ -32,19 +32,19 @@ internal partial class RomFSHandler
 
     public string Root { get; }
 
-    private readonly string _stagesPath;
-    private readonly string _soundPath;
-    public readonly string _actorsPath;
-    public readonly string _ccntPath;
+    public readonly string StagesPath;
+    public readonly string SoundPath;
+    public readonly string ActorsPath;
+    public readonly string CCNTPath;
 
     public string GetPath(FSPath p)
     {
         return p switch
         {
-            FSPath.Stages => _stagesPath,
-            FSPath.Actors => _actorsPath,
-            FSPath.Sound => _soundPath,
-            FSPath.CCNT => _ccntPath,
+            FSPath.Stages => StagesPath,
+            FSPath.Actors => ActorsPath,
+            FSPath.Sound => SoundPath,
+            FSPath.CCNT => CCNTPath,
             _ => Root,
         };
     }
@@ -61,15 +61,15 @@ internal partial class RomFSHandler
     {
         Root = path;
 
-        _stagesPath = Path.Join(Root, "StageData");
-        _actorsPath = Path.Join(Root, "ObjectData");
-        _soundPath = Path.Join(Root, "SoundData");
-        _ccntPath = Path.Join(Root, "SystemData", "CreatorClassNameTable.szs");
+        StagesPath = Path.Join(Root, "StageData");
+        ActorsPath = Path.Join(Root, "ObjectData");
+        SoundPath = Path.Join(Root, "SoundData");
+        CCNTPath = Path.Join(Root, "SystemData", "CreatorClassNameTable.szs");
 
         // Only really used in ModFS
-        Directory.CreateDirectory(_stagesPath);
-        Directory.CreateDirectory(_actorsPath);
-        Directory.CreateDirectory(_soundPath);
+        Directory.CreateDirectory(StagesPath);
+        Directory.CreateDirectory(ActorsPath);
+        Directory.CreateDirectory(SoundPath);
         Directory.CreateDirectory(Path.Join(Root, "SystemData"));
     }
 
@@ -77,9 +77,9 @@ internal partial class RomFSHandler
     {
         string[] paths =
         [
-            Path.Join(_stagesPath, $"{name}Design{scenario}.szs"),
-            Path.Join(_stagesPath, $"{name}Map{scenario}.szs"),
-            Path.Join(_stagesPath, $"{name}Sound{scenario}.szs")
+            Path.Join(StagesPath, $"{name}Design{scenario}.szs"),
+            Path.Join(StagesPath, $"{name}Map{scenario}.szs"),
+            Path.Join(StagesPath, $"{name}Sound{scenario}.szs")
         ];
 
         foreach (string path in paths)
@@ -93,26 +93,26 @@ internal partial class RomFSHandler
 
     public bool ExistsActor(string name)
     {
-        string path = Path.Join(_actorsPath, name + ".szs");
+        string path = Path.Join(ActorsPath, name + ".szs");
         return File.Exists(path);
     }
 
-    public bool ExistsCreatorClassNameTable() => File.Exists(_ccntPath);
+    public bool ExistsCreatorClassNameTable() => File.Exists(CCNTPath);
 
-    public bool ExistsBgmTable() => File.Exists(Path.Join(_soundPath, "BgmTable.szs"));
+    public bool ExistsBgmTable() => File.Exists(Path.Join(SoundPath, "BgmTable.szs"));
 
-    public bool ExistsGSDT() => File.Exists(Path.Join(_actorsPath, "GameSystemDataTable.szs"));
-    public bool ExistsLightDataArea() => File.Exists(Path.Join(_actorsPath, "LightDataArea.szs"));
-    public bool ExistsShaders() => File.Exists(Path.Join(_actorsPath, "Shader.szs"));
+    public bool ExistsGSDT() => File.Exists(Path.Join(ActorsPath, "GameSystemDataTable.szs"));
+    public bool ExistsLightDataArea() => File.Exists(Path.Join(ActorsPath, "LightDataArea.szs"));
+    public bool ExistsShaders() => File.Exists(Path.Join(ActorsPath, "Shader.szs"));
 
     public IEnumerable<(string Name, byte Scenario)> EnumerateStages()
     {
-        if (!Directory.Exists(_stagesPath))
+        if (!Directory.Exists(StagesPath))
             yield break;
 
         HashSet<(string, byte)> stages = new();
 
-        foreach (string file in Directory.EnumerateFiles(_stagesPath))
+        foreach (string file in Directory.EnumerateFiles(StagesPath))
         {
             string fileName = Path.GetFileName(file);
 
@@ -150,7 +150,7 @@ internal partial class RomFSHandler
 
     public Stage ReadStage(string name, byte scenario)
     {
-        return ReadStageFull(_stagesPath, name, scenario);
+        return ReadStageFull(StagesPath, name, scenario);
     }
 
     private Stage ReadStageFull(string dir, string name, byte scenario)
@@ -447,7 +447,7 @@ internal partial class RomFSHandler
     /// <returns>The actor if it's found, and an empty actor otherwise</returns>
     public Actor ReadActorBasic(string name, GLTaskScheduler scheduler)
     {
-        string path = Path.Join(_actorsPath, name + ".szs");
+        string path = Path.Join(ActorsPath, name + ".szs");
 
         // Return cached actor if valid (not modified externally)
         if (CachedActors.TryGetValue(path, out Actor? cachedActor))
@@ -586,7 +586,7 @@ internal partial class RomFSHandler
     /// <returns>The actor if it's found, and an empty actor otherwise</returns>
     public Actor ReadKnownActor(string actorName, string baseModelName, string actorClass, GLTaskScheduler scheduler)
     {
-        string path = Path.Join(_actorsPath, baseModelName + ".szs");
+        string path = Path.Join(ActorsPath, baseModelName + ".szs");
         // Return cached actor if valid (not modified externally)
         if (CachedActors.TryGetValue(actorName, out Actor? cachedActor))
         {
@@ -869,7 +869,7 @@ internal partial class RomFSHandler
     {
         if (_creatorClassNameTable is null)
         {
-            _creatorClassNameTable = ReadAnyCreatorClassNameTable(_ccntPath);
+            _creatorClassNameTable = ReadAnyCreatorClassNameTable(CCNTPath);
         }
 
         return _creatorClassNameTable;
@@ -941,7 +941,7 @@ internal partial class RomFSHandler
             byte[] bin = BYAMLParser.Write(byml);
             narcFS.AddFileRoot("CreatorClassNameTable.byml", bin);
             byte[] compressedFile = Yaz0Wrapper.Compress(NARCParser.Write(narcFS.ToNARC()));
-            File.WriteAllBytes(_ccntPath, compressedFile);
+            File.WriteAllBytes(CCNTPath, compressedFile);
             _creatorClassNameTable = new(ccnt); // Replace old ccnt with edited one
         }
         catch
@@ -955,7 +955,7 @@ internal partial class RomFSHandler
     {
         if (_bgmTable is null)
         {
-            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(_soundPath, "BgmTable.szs"));
+            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(SoundPath, "BgmTable.szs"));
 
             _bgmTable = new();
 
@@ -1074,9 +1074,9 @@ internal partial class RomFSHandler
                 }
             }
 
-            if (Directory.Exists(Path.Join(_soundPath, "stream")))
+            if (Directory.Exists(Path.Join(SoundPath, "stream")))
             {
-                var fls = Directory.EnumerateFiles(Path.Join(_soundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x));
+                var fls = Directory.EnumerateFiles(Path.Join(SoundPath, "stream")).Select(x => Path.GetFileNameWithoutExtension(x));
                 foreach (string sng in fls)
                 {
                     if (!_bgmTable.BgmFiles.Contains(sng)) _bgmTable.BgmFiles.Add(sng);
@@ -1098,7 +1098,7 @@ internal partial class RomFSHandler
     {
         if (_GSDTable is null)
         {
-            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(_actorsPath, "GameSystemDataTable.szs"));
+            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(ActorsPath, "GameSystemDataTable.szs"));
 
             _GSDTable = new();
             if (narc is not null)
@@ -1167,7 +1167,7 @@ internal partial class RomFSHandler
     {
         if (_lightAreas == null)
         {
-            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(_actorsPath, "LightDataArea.szs"));
+            NARCFileSystem? narc = SZSWrapper.ReadFile(Path.Join(ActorsPath, "LightDataArea.szs"));
             _lightAreas = new();
             if (narc != null)
             {
@@ -1200,7 +1200,7 @@ internal partial class RomFSHandler
     }
     public NARCFileSystem GetShader()
     {
-        return SZSWrapper.ReadFile(Path.Join(_actorsPath, "Shader.szs"))!;
+        return SZSWrapper.ReadFile(Path.Join(ActorsPath, "Shader.szs"))!;
     }
     private static IEnumerable<StageObj> ProcessStageObjs(BYAML byaml, StageFileType fileType)
     {
@@ -1604,17 +1604,17 @@ internal partial class RomFSHandler
 
     public bool WriteStage(Stage stage, bool _useClassNames)
     {
-        Console.WriteLine(Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}"));
+        Console.WriteLine(Path.Join(StagesPath, $"{stage.Name}Design{stage.Scenario}"));
         int currentId = 0;
-        stage.UserPath = _stagesPath + Path.DirectorySeparatorChar + stage.Name + stage.Scenario;
+        stage.UserPath = StagesPath + Path.DirectorySeparatorChar + stage.Name + stage.Scenario;
         //bool saveBackup = true;
         // check objects in each stage type (map design sound), then on each type we check each Infos list
         Dictionary<StageFileType, string> paths =
             new()
             {
-                { StageFileType.Design, Path.Join(_stagesPath, $"{stage.Name}Design{stage.Scenario}.szs") },
-                { StageFileType.Map, Path.Join(_stagesPath, $"{stage.Name}Map{stage.Scenario}.szs") },
-                { StageFileType.Sound, Path.Join(_stagesPath, $"{stage.Name}Sound{stage.Scenario}.szs") }
+                { StageFileType.Design, Path.Join(StagesPath, $"{stage.Name}Design{stage.Scenario}.szs") },
+                { StageFileType.Map, Path.Join(StagesPath, $"{stage.Name}Map{stage.Scenario}.szs") },
+                { StageFileType.Sound, Path.Join(StagesPath, $"{stage.Name}Sound{stage.Scenario}.szs") }
             };
 
         // check design -> map -> sound
@@ -2180,7 +2180,7 @@ internal partial class RomFSHandler
     {
         if (bT is null) return false;
 
-        string tablePath = Path.Join(_soundPath, "BgmTable.szs");
+        string tablePath = Path.Join(SoundPath, "BgmTable.szs");
 
         Dictionary<string, BYAMLNode> dtop = new();
 

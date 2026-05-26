@@ -51,9 +51,9 @@ internal class MainWindowContext : WindowContext
     #endregion
 
     #region Editor Dialogs
-    public readonly EditChildrenDialog _editChildrenDialog;
-    public readonly EditExtraPropsDialog _editExtraPropsDialog;
-    public readonly EditCreatorClassNameTable _editCCNT;
+    private readonly EditChildrenDialog _editChildrenDialog;
+    private readonly EditExtraPropsDialog _editExtraPropsDialog;
+    private readonly EditCreatorClassNameTable _editCCNT;
     #endregion
 
     public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
