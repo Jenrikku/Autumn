@@ -65,35 +65,29 @@ internal class BackgroundManager
         if (!IsBusy)
             return false;
 
-        Predicate<BackgroundTask> predicate = (task) =>
-            task.Priority > BackgroundTaskPriority.Regular;
-
-        if (!force && _tasks.Find(predicate) is not null)
-            return false;
+        lock (_tasks)
+        {
+            if (!force && _tasks.Find(task => task.Priority >= BackgroundTaskPriority.High) is not null)
+                return false;
+        }
 
         _worker.CancelAsync();
         return true;
     }
 
     /// <param name="lowestPriority">Only the priorities equal or higher to this will be enumerated.</param>
-    public IEnumerable<BackgroundTask> GetRemainingTasks(
+    public List<BackgroundTask> GetRemainingTasks(
         BackgroundTaskPriority lowestPriority = default
     )
     {
-        // This is done using a for loop because _tasks may be changed by the background worker.
-
-        for (int i = 0; i < _tasks.Count; i++)
-        {
-            BackgroundTask task = _tasks[i];
-
-            if (task.Priority >= lowestPriority)
-                yield return task;
-        }
+        // Create a list rather than enumerating to minimize the time within the lock.
+        lock (_tasks)
+            return _tasks.FindAll(task => task.Priority >= lowestPriority);
     }
 
     private void BackgroundWork(object? sender, DoWorkEventArgs e)
     {
-        while (_tasks.Count > 0)
+        while (_tasks.Count > 0) // No lock needed: Only written to by this method
         {
             if (sender is BackgroundWorker worker && worker.CancellationPending)
             {
@@ -101,22 +95,21 @@ internal class BackgroundManager
                 break;
             }
 
-            BackgroundTask nextTask = _tasks[0];
+            BackgroundTask? nextTask;
 
+            // FIXME: Algorithm not optimal to be used within a lock.
             lock (_tasks)
-                foreach (BackgroundTask task in _tasks)
-                {
-                    if (task.Priority > nextTask.Priority)
-                        nextTask = task;
-
-                    if (nextTask.Priority == BackgroundTaskPriority.Highest)
-                        break;
-                }
+            {
+                nextTask = _tasks.Find(task => task.Priority == BackgroundTaskPriority.Highest);
+                nextTask ??= _tasks.Find(task => task.Priority == BackgroundTaskPriority.High);
+                nextTask ??= _tasks[0];
+            }
 
             StatusMessage = nextTask.Message;
             nextTask.Action.Invoke(this);
 
-            _tasks.RemoveAt(0);
+            lock(_tasks)
+                _tasks.RemoveAt(0);
         }
 
         StatusMessage = string.Empty;
