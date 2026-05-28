@@ -21,7 +21,6 @@ internal class SystemSettings
     public bool AlwaysPreviewStageLights;
     public string Theme = string.Empty;
     public int MouseSpeed;
-    public bool UseWASD;
     public bool UseMiddleMouse;
     public bool ZoomToMouse;
     public bool RememberLayout;
@@ -55,7 +54,6 @@ internal class SystemSettings
         AlwaysPreviewStageLights = true;
         Theme = "ImGui Dark";
         MouseSpeed = 20;
-        UseWASD = false;
         UseMiddleMouse = true;
         ZoomToMouse = false;
         RememberLayout = true;

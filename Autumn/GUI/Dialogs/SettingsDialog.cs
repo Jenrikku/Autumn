@@ -24,7 +24,6 @@ internal class SettingsDialog
     private bool _saveRem = false;
     private bool _rememberLayout = false;
     private bool _prevlightonload = false;
-    private bool _wasd = false;
     private bool _middleMovesCamera = false;
     private bool _zoomToMouse = false;
     private bool _enableVSync = true;
@@ -65,7 +64,6 @@ internal class SettingsDialog
     {
         _isOpened = true;
         _useClassNames = _window.ContextHandler.Settings.UseClassNames;
-        _wasd = _window.ContextHandler.SystemSettings.UseWASD;
         _dbEditor = _window.ContextHandler.SystemSettings.EnableDBEditor;
         _middleMovesCamera = _window.ContextHandler.SystemSettings.UseMiddleMouse;
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
@@ -97,7 +95,6 @@ internal class SettingsDialog
     {
         _useClassNames = false;
         _dbEditor = false;
-        _wasd = false;
         _middleMovesCamera = false;
         _enableVSync = true;
         _restoreNativeFileDialogs = false;
@@ -217,10 +214,6 @@ internal class SettingsDialog
 
             if (ImGui.BeginTabItem("Viewport"))
             {
-                ImGui.Checkbox("Use WASD to move the viewport camera", ref _wasd);
-                ImGui.SameLine();
-                ImGuiWidgets.HelpTooltip("Please be aware that this WILL interfere with other editor commands for now.");
-
                 ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
                 ImGui.Checkbox("Zoom to mouse", ref _zoomToMouse);
                 ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1, default);
@@ -378,7 +371,6 @@ internal class SettingsDialog
         {
             _window.ContextHandler.SetGlobalSetting("RomFSPath", _romfspath);
             _window.ContextHandler.SetProjectSetting("UseClassNames", _useClassNames);
-            _window.ContextHandler.SystemSettings.UseWASD = _wasd;
             _window.ContextHandler.SystemSettings.SaveReminder = _saveRem;
             _window.ContextHandler.SystemSettings.UseMiddleMouse = _middleMovesCamera;
             _window.ContextHandler.SystemSettings.EnableVSync = _enableVSync;

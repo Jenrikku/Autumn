@@ -61,7 +61,6 @@ internal class SceneWindow(MainWindowContext window)
     private ISceneObj? _pickObject;
 
     private ImGuiMouseButton _mouseMoveKey = ImGuiMouseButton.Right;
-    private ImGuiKey _scaleKey = ImGuiKey.S;
     private bool _isSceneHovered;
     private bool _isSceneWindowFocused;
 
@@ -273,9 +272,6 @@ internal class SceneWindow(MainWindowContext window)
 
         #region Input
 
-
-        _scaleKey = window.ContextHandler.SystemSettings.UseWASD ? ImGuiKey.F : ImGuiKey.S;
-
         Vector2 mousePos = ImGui.GetMousePos();
 
         _mouseMoveKey = window.ContextHandler.SystemSettings.UseMiddleMouse ? ImGuiMouseButton.Middle : ImGuiMouseButton.Right;
@@ -284,7 +280,7 @@ internal class SceneWindow(MainWindowContext window)
         {
             Vector2 delta = mousePos - _previousMousePos;
 
-            if (!ImGui.IsKeyDown(ImGuiKey.ModShift) || window.ContextHandler.SystemSettings.UseWASD)
+            if (!ImGui.IsKeyDown(ImGuiKey.ModShift))
             {
                 Vector3 right = Vector3.Transform(Vector3.UnitX, camera.Rotation);
                 camera.Rotation =
@@ -301,14 +297,11 @@ internal class SceneWindow(MainWindowContext window)
 
                 _persistentMouseDrag = true;
             }
-            else if (!window.ContextHandler.SystemSettings.UseWASD)
+            else if (delta != Vector2.Zero)
             {
-                if (delta != Vector2.Zero)
-                {
-                    delta *= 0.01f * window.ContextHandler.SystemSettings.MouseSpeed / 7;
-                    Vector3 right = Vector3.Transform(new Vector3(-delta.X, delta.Y, 0), camera.Rotation);
-                    camera.Eye += right;
-                }
+                delta *= 0.01f * window.ContextHandler.SystemSettings.MouseSpeed / 7;
+                Vector3 right = Vector3.Transform(new Vector3(-delta.X, delta.Y, 0), camera.Rotation);
+                camera.Eye += right;
             }
 
             ImGui.SetWindowFocus();
@@ -322,30 +315,28 @@ internal class SceneWindow(MainWindowContext window)
         // Camera Movement
         float camMoveSpeed = (float)(0.4 * deltaSeconds * 60);
         camMoveSpeed *= window.Keyboard!.IsKeyPressed(Key.ShiftRight) || window.Keyboard.IsKeyPressed(Key.ShiftLeft) ? 6 : 1;
-        if ((_isSceneHovered || _isSceneWindowFocused) && !ImGui.GetIO().WantTextInput)
+        if (FlyCam && (_isSceneHovered || _isSceneWindowFocused) && !ImGui.GetIO().WantTextInput)
         {
-            if (window.ContextHandler.SystemSettings.UseWASD || FlyCam)
+            if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
             {
-                if (!ImGui.IsKeyDown(ImGuiKey.ModCtrl) && !ImGui.IsKeyDown(ImGuiKey.ModSuper))
-                {
-                    if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
-                        camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
-                    if (window.Keyboard?.IsKeyPressed(Key.S) ?? false)
-                        camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
+                if (window.Keyboard?.IsKeyPressed(Key.W) ?? false)
+                    camera.Eye -= Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
+                if (window.Keyboard?.IsKeyPressed(Key.S) ?? false)
+                    camera.Eye += Vector3.Transform(Vector3.UnitZ * camMoveSpeed, camera.Rotation);
 
-                    if (window.Keyboard?.IsKeyPressed(Key.A) ?? false)
-                        camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
-                    if (window.Keyboard?.IsKeyPressed(Key.D) ?? false)
-                        camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
+                if (window.Keyboard?.IsKeyPressed(Key.A) ?? false)
+                    camera.Eye -= Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
+                if (window.Keyboard?.IsKeyPressed(Key.D) ?? false)
+                    camera.Eye += Vector3.Transform(Vector3.UnitX * camMoveSpeed, camera.Rotation);
 
-                    if (window.Keyboard?.IsKeyPressed(Key.Q) ?? false)
-                        camera.Eye -= Vector3.UnitY * camMoveSpeed;
-                    if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
-                        camera.Eye += Vector3.UnitY * camMoveSpeed;
-                }
-                if (FlyCam && (window.Keyboard?.IsKeyPressed(Key.Escape) ?? false))
-                    FlyCam = false;
+                if (window.Keyboard?.IsKeyPressed(Key.Q) ?? false)
+                    camera.Eye -= Vector3.UnitY * camMoveSpeed;
+                if (window.Keyboard?.IsKeyPressed(Key.E) ?? false)
+                    camera.Eye += Vector3.UnitY * camMoveSpeed;
             }
+                
+            if (FlyCam && (window.Keyboard?.IsKeyPressed(Key.Escape) ?? false))
+                FlyCam = false;
         }
 
             // if ((window.Keyboard?.IsKeyP ressed(Key.Space) ?? false) && window.CurrentScene.SelectedObjCount > 0){
