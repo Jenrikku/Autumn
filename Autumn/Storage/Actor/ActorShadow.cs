@@ -28,16 +28,16 @@ internal class ActorShadow
     // 7 Coin, CoinRing
     public enum VolumeType
     {
-        Cube = -1 | 7,
         Cone = 3,
         Pyramid = 4,
         Sphere = 5,
         Cylinder = 6,
+        Cube = 7,
         Block = 8,
         /// <summary>
         /// Gets the model from ModelArcName
         /// </summary>
-        ArchiveModel
+        ArchiveModel = 9
     }
     internal static string GetShadowVolumeString(VolumeType tp)
     {

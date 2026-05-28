@@ -476,18 +476,7 @@ internal partial class RomFSHandler
         if (!found)
             return actor;
 
-        if (narc.TryGetFile("InitLight.byml", out byte[] light))
-        {
-            BYAML act_lights = BYAMLParser.Read(light, s_byamlEncoding);
-            if (act_lights.RootNode.NodeType == BYAMLNodeType.Dictionary)
-            {
-                var lrt = act_lights.RootNode.GetValueAs<Dictionary<string, BYAMLNode>>();
-                if (lrt!.ContainsKey("LightCalcType"))
-                    actor.InitLight.GetCalcType((string)lrt["LightCalcType"].Value!);
-                if (lrt!.ContainsKey("LightType"))
-                    actor.InitLight.GetType((string)lrt["LightType"].Value!);
-            }
-        }
+        actor.ReadActorInits(narc, s_byamlEncoding);
 
         H3D h3D;
 
