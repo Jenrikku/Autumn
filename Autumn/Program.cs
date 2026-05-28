@@ -39,5 +39,3 @@ windowManager.Run(contextHandler.ActionHandler);
 
 contextHandler.SetCurrentProjectAsLastOpened();
 contextHandler.SaveSettings();
-if (contextHandler.SystemSettings.RememberLayout)
-    File.Copy(Path.Join("imgui.ini"), Path.Join(contextHandler.SettingsPath, "imgui.ini"), true);
