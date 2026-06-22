@@ -3,7 +3,7 @@ using Autumn.ActionSystem;
 using Autumn.Enums;
 using static Autumn.Utils.IconUtils;
 using Autumn.GUI.Windows;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using TinyFileDialogsSharp;
 
 namespace Autumn.GUI;

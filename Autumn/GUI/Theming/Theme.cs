@@ -1,5 +1,5 @@
 using System.Numerics;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Theming;
 
@@ -17,6 +17,6 @@ internal class Theme
     public unsafe void UpdateImGuiTheme()
     {
         if (!ImGuiStyle.HasValue) return;
-        *ImGui.GetStyle().NativePtr = ImGuiStyle.Value;
+        *ImGui.GetStyle().Handle = ImGuiStyle.Value;
     }
 }

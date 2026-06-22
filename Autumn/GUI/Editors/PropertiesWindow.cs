@@ -7,7 +7,7 @@ using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn;
 
@@ -204,7 +204,7 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.SetItemTooltip($"Jump to {(stageObj.Children.Count == 1 ? "child" : "children")}");
             }
             //ImGui.SetNextItemWidth(prevW + 200);
-            if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
+            if (ImGui.BeginChild("PropertiesReal", new Vector2(ImGui.GetContentRegionAvail().X, default)))
             {
                 if (ImGui.CollapsingHeader("General Info", ImGuiTreeNodeFlags.DefaultOpen))
                 {
@@ -449,7 +449,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 if (rf < 0)
                                                 {
                                                     rf = intBuf;
-                                                    ImGui.InputInt("##" + name, ref rf, 1, default);
+                                                    ImGui.InputInt("##" + name, ref rf, 1, (int)default);
                                                     if (intBuf != rf)
                                                     {
                                                         ChangeHandler.ChangeDictionaryValue(scn.History, stageObj.Properties, name, intBuf, rf);
@@ -488,7 +488,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 var rf = intBuf;
                                                 ImGui.SameLine();
                                                 ImGuiWidgets.SetPropertyWidth(aName);
-                                                ImGui.InputInt("##" + name + "i", ref rf, 1, default);
+                                                ImGui.InputInt("##" + name + "i", ref rf, 1, (int)default);
                                                 rf = int.Clamp(rf, argEntry.Min ?? -99999, argEntry.Max ?? 99999);
                                                 if (intBuf != rf)
                                                 {
@@ -602,7 +602,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         ImGuiTableFlags.RowBg
                                         | ImGuiTableFlags.BordersOuter
                                         | ImGuiTableFlags.BordersV
-                                        | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, 22 + (autoResize ? 34 * stageObj.Children.Count : 34 * 6) * window.ScalingFactor)))
+                                        | ImGuiTableFlags.ScrollY, new Vector2(ImGui.GetWindowWidth() - style.WindowPadding.X, 22 + (autoResize ? 34 * stageObj.Children.Count : 34 * 6) * window.ScalingFactor)))
                                     {
                                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                         ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -778,7 +778,7 @@ internal class PropertiesWindow(MainWindowContext window)
                             case object p when p is float:
                                 float flBuf = (float)(p ?? -1);
                                 float f = flBuf;
-                                if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
                                 {
                                     ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, flBuf, f);
                                 }
@@ -877,7 +877,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     }
                 }
                 
-                if (ImGui.BeginChild("PropertiesReal", new(ImGui.GetContentRegionAvail().X, default)))
+                if (ImGui.BeginChild("PropertiesReal", new Vector2(ImGui.GetContentRegionAvail().X, default)))
                 {
                     if (ImGui.CollapsingHeader("Rail Properties", ImGuiTreeNodeFlags.DefaultOpen))
                     {
@@ -911,7 +911,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         if (ImGui.CollapsingHeader("Rail Users", ImGuiTreeNodeFlags.DefaultOpen ))
                         {
                         if (ImGui.BeginTable("UserTable", 2,ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersH,
-                        new(ImGui.GetWindowWidth()-2, 100)))
+                            new Vector2(ImGui.GetWindowWidth()-2, 100)))
                         {
                             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                             ImGui.TableSetupColumn("User", ImGuiTableColumnFlags.WidthStretch);
@@ -973,7 +973,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 ImGuiTableFlags.RowBg
                                 | ImGuiTableFlags.BordersOuter
                                 | ImGuiTableFlags.BordersV
-                                | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
+                                | ImGuiTableFlags.ScrollY, new Vector2(ImGui.GetWindowWidth() - style.WindowPadding.X, (autoResize ? -1 : 250 * window.ScalingFactor - 2))))
                             {
                                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                 ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.WidthStretch, 0.15f);
@@ -1069,7 +1069,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 ImGuiTableFlags.RowBg
                                 | ImGuiTableFlags.BordersOuter
                                 | ImGuiTableFlags.BordersV
-                                | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - style.WindowPadding.X, -1)))
+                                | ImGuiTableFlags.ScrollY, new Vector2(ImGui.GetWindowWidth() - style.WindowPadding.X, -1)))
                             {
                                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                                 ImGui.TableSetupColumn("Find", ImGuiTableColumnFlags.None);
@@ -1184,7 +1184,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     case object p when p is float:
                                         float flBuf = (float)(p ?? -1);
                                         float f = flBuf;
-                                        if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                        if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
                                         {
                                             ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, flBuf, f);
                                         }
@@ -1518,7 +1518,7 @@ internal class PropertiesWindow(MainWindowContext window)
             itemWidth = itemWidth / 3 - style.ItemSpacing.X - 7;
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[0] & 0x7fffffff);
-            if (ImGui.BeginChild(RefString + "XTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(RefString + "XTest", new Vector2(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("X") / 2);
                 ImGui.Text("X");
@@ -1534,7 +1534,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[1] & 0x7fffffff);
-            if (ImGui.BeginChild(RefString + "YTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(RefString + "YTest", new Vector2(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Y") / 2);
                 ImGui.Text("Y");
@@ -1550,7 +1550,7 @@ internal class PropertiesWindow(MainWindowContext window)
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, s_axisColors[2] & 0x7fffffff);
-            if (ImGui.BeginChild(RefString + "ZTest", new(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
+            if (ImGui.BeginChild(RefString + "ZTest", new Vector2(20 * _window.ScalingFactor, 20 * _window.ScalingFactor + style.ItemSpacing.Y)))
             {
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Z") / 2);
                 ImGui.Text("Z");
@@ -1827,7 +1827,7 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str);
         ImGui.SameLine(default, ImGui.CalcTextSize(str).X);
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str).X - ImGui.GetStyle().ItemSpacing.X * 2);
-        if (ImGui.InputFloat("##" + str + "i", ref i, step, default, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputFloat("##" + str + "i", ref i, step, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
             return true;

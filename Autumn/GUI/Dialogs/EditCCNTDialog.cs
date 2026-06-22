@@ -6,7 +6,7 @@ using Autumn.FileSystems;
 using Autumn.Rendering;
 using Autumn.Rendering.CtrH3D;
 using Autumn.Storage;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Autumn.Wrappers;
 using Autumn.Utils;
 
@@ -81,7 +81,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
 
         dimensions = ImGui.GetWindowSize();
         var style = ImGui.GetStyle();
-        if (ImGui.BeginChild("LEFTSIDE", new(dimensions.X * 18 / 30, dimensions.Y)))
+        if (ImGui.BeginChild("LEFTSIDE", new Vector2(dimensions.X * 18 / 30, dimensions.Y)))
         {
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth());
             ImGui.InputTextWithHint("##SEARCHBOX", "Class or Object name", ref _search, 100);
@@ -89,7 +89,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
                                                     ImGuiTableFlags.RowBg
                                                     | ImGuiTableFlags.BordersOuter
                                                     | ImGuiTableFlags.BordersV
-                                                    | ImGuiTableFlags.ScrollY, new(ImGui.GetWindowWidth() - 1, ImGui.GetWindowHeight() - 95)))
+                                                    | ImGuiTableFlags.ScrollY, new Vector2(ImGui.GetWindowWidth() - 1, ImGui.GetWindowHeight() - 95)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -145,7 +145,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
 
         ClassDatabaseWrapper.DatabaseEntry? dbEntry = ClassDatabaseWrapper.DatabaseEntries.ContainsKey(_oclass) ? ClassDatabaseWrapper.DatabaseEntries[_oclass] : null;
 
-        if (ImGui.BeginChild("RIGHTSIDE", new(dimensions.X * 12 / 30, dimensions.Y)))
+        if (ImGui.BeginChild("RIGHTSIDE", new Vector2(dimensions.X * 12 / 30, dimensions.Y)))
         {
             ImGui.SetWindowFontScale(1.3f);
             if (string.IsNullOrEmpty(_name))
@@ -184,7 +184,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
             ImGui.BeginChild(
                 "##Description",
                 new Vector2(ImGui.GetWindowWidth() - style.ItemSpacing.X * 3, -95),
-                ImGuiChildFlags.Border
+                ImGuiChildFlags.Borders
             );
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             if (dbEntry == null || dbEntry.Value.Description == null)

@@ -3,7 +3,7 @@ using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Storage;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Editors;
 
@@ -26,7 +26,7 @@ internal class LightParamsWindow(MainWindowContext window)
                 | ImGuiTableFlags.ScrollY
                 | ImGuiTableFlags.Resizable;
 
-    private const ImGuiColorEditFlags _colorEditFlags = ImGuiColorEditFlags.DisplayRGB
+    private const ImGuiColorEditFlags _colorEditFlags = ImGuiColorEditFlags.DisplayRgb
                 | ImGuiColorEditFlags.NoSidePreview
                 | ImGuiColorEditFlags.PickerHueBar
                 | ImGuiColorEditFlags.Float
@@ -271,8 +271,7 @@ internal class LightParamsWindow(MainWindowContext window)
     {
         //ImGuiWidgets.TextHeader("Light Areas:");
         if (ImGui.BeginTable("LAreaSelect", 2, _stageTableFlags,
-
-        new(default, ImGui.GetWindowHeight() / 3.2f / window.ScalingFactor)))
+            new Vector2(default, ImGui.GetWindowHeight() / 3.2f / window.ScalingFactor)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Area Id", ImGuiTableColumnFlags.WidthStretch, 0.2f);

@@ -12,7 +12,7 @@ using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using SceneGL.GLHelpers;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;

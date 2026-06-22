@@ -4,7 +4,7 @@ using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Utils;
 using Autumn.Wrappers;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -112,7 +112,7 @@ internal class DatabaseEditor(MainWindowContext _window)
         }
         if (_argEdit)
             ImGui.BeginDisabled();
-        if (ImGui.BeginChild("LEFTSIDE", new(ImGui.GetContentRegionAvail().X * 18 / 30, ImGui.GetContentRegionAvail().Y - 30)))
+        if (ImGui.BeginChild("LEFTSIDE", new Vector2(ImGui.GetContentRegionAvail().X * 18 / 30, ImGui.GetContentRegionAvail().Y - 30)))
         {
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - style.ItemSpacing.X / 2);
             if (ImGui.InputTextWithHint("##SEARCHBOX", "Class or Documented name", ref _search, 100))
@@ -152,7 +152,7 @@ internal class DatabaseEditor(MainWindowContext _window)
             }
             if (ImGui.BeginTable("ClassTable", 2,
                                     _tableFlags,
-                                    new(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - (_isEditor ? 30 : 3))))
+                                    new Vector2(ImGui.GetWindowWidth() - 1, ImGui.GetContentRegionAvail().Y - (_isEditor ? 30 : 3))))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -244,7 +244,7 @@ internal class DatabaseEditor(MainWindowContext _window)
         ImGui.EndChild();
         ImGui.SameLine();
 
-        if (ImGui.BeginChild("RIGHTSIDE", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30)))
+        if (ImGui.BeginChild("RIGHTSIDE", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30)))
         {
             string hdr = string.IsNullOrEmpty(entry.ClassName) ? "No entry selected" : "Class: " + entry.ClassName;
             ImGuiWidgets.TextHeader(hdr, 1.4f);
@@ -370,7 +370,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             "ArgTable",
                             3,
                             _tableFlags,
-                            new(descriptionSize.X, descriptionSize.Y + (_isEditor ? (-23 - style.ItemSpacing.Y) : -1)))
+                            new Vector2(descriptionSize.X, descriptionSize.Y + (_isEditor ? (-23 - style.ItemSpacing.Y) : -1)))
                     )
                     {
                         bool isObj = entry.Type == null;
@@ -453,7 +453,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             "SwitchTable",
                             3,
                             _tableFlags,
-                            new(descriptionSize.X, descriptionSize.Y - 1))
+                            new Vector2(descriptionSize.X, descriptionSize.Y - 1))
                     )
                     {
                         ImGui.TableSetupScrollFreeze(0, 1);
@@ -543,7 +543,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                     ImGui.BeginChild(
                         "##Descriptionbox",
                         descriptionSize,
-                        ImGuiChildFlags.Border
+                        ImGuiChildFlags.Borders
                     );
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                     if (entry.Description == null)
@@ -829,7 +829,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                     }
                     int? removeAt = null;
                     if (ImGui.BeginTable("##enumvalues", 3, _tableFlags,
-                                        new(ImGui.GetContentRegionAvail().X, 150)))
+                                        new Vector2(ImGui.GetContentRegionAvail().X, 150)))
                     {
                         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
                         ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.9f);

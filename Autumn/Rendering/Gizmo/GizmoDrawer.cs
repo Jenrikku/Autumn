@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Autumn.GUI;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 // Based on: https://github.com/jupahe64/SceneGL/blob/master/SceneGL.Testing/GizmoDrawer.cs
 namespace Autumn.Rendering.Gizmo;

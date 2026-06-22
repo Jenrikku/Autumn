@@ -1,7 +1,7 @@
 ﻿using Autumn.ActionSystem;
 using Autumn.GUI.Theming;
 using Autumn.GUI.Windows;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Core.Contexts;
 
 namespace Autumn.GUI;

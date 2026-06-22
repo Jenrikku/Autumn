@@ -3,7 +3,7 @@ using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -106,7 +106,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                                                 | ImGuiTableFlags.Resizable
                                                 | ImGuiTableFlags.BordersOuter
                                                 | ImGuiTableFlags.BordersV
-                                                | ImGuiTableFlags.ScrollY, new(tableDimensions.X - 3, tableDimensions.Y - 30)))
+                                                | ImGuiTableFlags.ScrollY, new Vector2(tableDimensions.X - 3, tableDimensions.Y - 30)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -133,7 +133,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
                     bool contained = _selectedObjs[0].Contains(stageObj);
 
-                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.NoAutoClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
                     {
                         if (contained)
                             _selectedObjs[0].Remove(stageObj);
@@ -172,7 +172,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
         ImGui.SameLine(default, 5f);
 
         ImGui.SetCursorPosY(tablestart);
-        if (ImGui.BeginChild("MIDDLE", new(24, tableDimensions.Y - 24)))
+        if (ImGui.BeginChild("MIDDLE", new Vector2(24, tableDimensions.Y - 24)))
         {
             if (ImGuiWidgets.ArrowButton("r", ImGuiDir.Right, new(default, ImGui.GetWindowHeight() / 2 - ImGui.GetStyle().ItemSpacing.Y)))
             {
@@ -201,7 +201,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                                                     | ImGuiTableFlags.Resizable
                                                 | ImGuiTableFlags.BordersOuter
                                                 | ImGuiTableFlags.BordersV
-                                                | ImGuiTableFlags.ScrollY, new(tableDimensions.X - 2, tableDimensions.Y - 60)))
+                                                | ImGuiTableFlags.ScrollY, new Vector2(tableDimensions.X - 2, tableDimensions.Y - 60)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
@@ -217,7 +217,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
                     bool contained = _selectedObjs[1].Contains(stageObj);
 
-                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGui.Selectable(stageObj.Name, contained, ImGuiSelectableFlags.NoAutoClosePopups | ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
                     {
                         if (contained)
                             _selectedObjs[1].Remove(stageObj);

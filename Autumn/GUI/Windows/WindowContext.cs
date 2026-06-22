@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Autumn.Context;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Core;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
@@ -136,7 +136,7 @@ internal abstract class WindowContext
             unsafe
             {
                 // Set the settings file's path in imgui.
-                ImGui.GetIO().NativePtr->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
+                ImGui.GetIO().Handle->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
             }
 
             // If no imgui settings file exists or remember layout is set to false, load the default layout

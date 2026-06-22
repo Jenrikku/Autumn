@@ -5,7 +5,7 @@ using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Utils;
 using Autumn.Wrappers;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using TinyFileDialogsSharp;
 
 namespace Autumn.GUI.Dialogs;

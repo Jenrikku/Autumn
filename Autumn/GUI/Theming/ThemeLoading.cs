@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -97,7 +97,7 @@ internal static class ThemeLoader
 
         Theme theme = new();
 
-        ImGuiStyle* stylePtr = ImGui.GetStyle().NativePtr;
+        ImGuiStyle* stylePtr = ImGui.GetStyle().Handle;
         FieldInfo[] fields = typeof(ImGuiStyle).GetFields();
 
         foreach (var (key, val) in model)
@@ -163,7 +163,7 @@ internal static class ThemeLoader
             theme.AxisZColor = readColorByKey(extras, "AxisZColor");
         }
 
-        theme.ImGuiStyle = *ImGui.GetStyle().NativePtr;
+        theme.ImGuiStyle = *ImGui.GetStyle().Handle;
         return theme;
 
         static Vector4 readColorByKey(TomlTable table, string key)

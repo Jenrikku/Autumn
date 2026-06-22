@@ -5,7 +5,7 @@ using Autumn.GUI.Windows;
 using Autumn.Storage;
 using Autumn.Utils;
 using Autumn.Wrappers;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.OpenGL;
 
 namespace Autumn.GUI.Dialogs;
@@ -387,7 +387,7 @@ internal class AddObjectDialog(MainWindowContext window)
             ImGui.BeginChild(
                 "##Description",
                 new Vector2(pvw / 2 - style.ItemSpacing.X * 2, 82 + 34 * window.ScalingFactor),
-                ImGuiChildFlags.Border
+                ImGuiChildFlags.Borders
             );
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             if (description == "No Description")
@@ -577,7 +577,7 @@ internal class AddObjectDialog(MainWindowContext window)
             _selectedTab = 2;
         }
         //ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0,1,0,1));
-        if (ImGui.BeginChild("LEFT", new(pvw / 2, pvh - 80)))
+        if (ImGui.BeginChild("LEFT", new Vector2(pvw / 2, pvh - 80)))
         {
             Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2 - 10);
 
@@ -629,7 +629,7 @@ internal class AddObjectDialog(MainWindowContext window)
         ImGui.SetCursorPosX(v.X);
         ImGui.SetCursorPosY(v.Y + ts + 5);
         
-        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 35 - ImGui.GetCursorPosY()), ImGuiChildFlags.Border))
+        if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 35 - ImGui.GetCursorPosY()), ImGuiChildFlags.Borders))
         {
             float h = ImGui.GetContentRegionAvail().Y;
             int A = 10;
@@ -686,7 +686,7 @@ internal class AddObjectDialog(MainWindowContext window)
             ImGui.SetCursorPosY(h / 1.8f);
             ImGui.Text("Preview:");
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f3f3f3f);
-            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Border | ImGuiChildFlags.AlwaysAutoResize))
+            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysAutoResize))
             {
                 Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2);
                 Vector2 lpos = ImGui.GetCursorScreenPos() + rg;

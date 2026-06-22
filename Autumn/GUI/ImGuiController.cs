@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Input;
 using Silk.NET.Input.Extensions;
 using Silk.NET.Maths;
@@ -282,7 +282,7 @@ internal class ImGuiController : IDisposable
             >= Key.A and <= Key.Z => KeyToImGuiKeyShortcut(key, Key.A, ImGuiKey.A),
             >= Key.Number0
             and <= Key.Number9
-                => KeyToImGuiKeyShortcut(key, Key.Number0, ImGuiKey._0),
+                => KeyToImGuiKeyShortcut(key, Key.Number0, ImGuiKey.Key0),
             Key.ShiftLeft => ImGuiKey.LeftShift,
             Key.ShiftRight => ImGuiKey.RightShift,
             Key.ControlLeft => ImGuiKey.LeftCtrl,

@@ -3,7 +3,7 @@ using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Storage;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Editors;
 

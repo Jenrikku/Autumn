@@ -5,7 +5,7 @@ using Autumn.Rendering;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Editors;
 
@@ -121,7 +121,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
         ImGuiWidgets.TextHeader("Stage Cameras:");
         if (ImGui.BeginTable("CamSelect", 4, _stageTableFlags,
-                new(default, wh)))
+                new Vector2(default, wh)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Id", ImGuiTableColumnFlags.WidthStretch, 0.3f);
@@ -665,7 +665,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
     }
 
-    void CameraPreviewWindow(Scene scn)
+    unsafe void CameraPreviewWindow(Scene scn)
     {
         unsafe
         {
@@ -877,7 +877,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             window.CameraFramebuffer.Create(window.GL!);
 
             ImGui.Image(
-                new IntPtr(window.CameraFramebuffer.GetColorTexture(0)),
+                new ImTextureRef(texId: window.CameraFramebuffer.GetColorTexture(0)),
                 new Vector2(ww * r, ww),
                 new Vector2(0, 1),
                 new Vector2(1, 0)

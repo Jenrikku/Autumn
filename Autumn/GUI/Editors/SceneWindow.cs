@@ -5,7 +5,7 @@ using Autumn.Rendering;
 using Autumn.Rendering.Gizmo;
 using Autumn.Rendering.Storage;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 
@@ -253,7 +253,7 @@ internal class SceneWindow(MainWindowContext window)
         }
         Vector2 imPos = ImGui.GetCursorPos();
         ImGui.Image(
-            new IntPtr(window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? window.ExtrasFrameBuffer.GetColorTexture(0) : window.SceneFramebuffer.GetColorTexture(0)),
+            new ImTextureRef(texId: window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? window.ExtrasFrameBuffer.GetColorTexture(0) : window.SceneFramebuffer.GetColorTexture(0)),
             contentAvail,
             new Vector2(0, 1),
             new Vector2(1, 0)
@@ -1060,20 +1060,20 @@ internal class SceneWindow(MainWindowContext window)
     {
         var olpos = ImGui.GetCursorPos();
         ImGui.SetCursorScreenPos(upperRightCorner + new Vector2(_innerPadding.X, _innerPadding.Y + _cubeSize));
-        if (ImGui.BeginChild("OverlayGizmos", new (34 , 120)))
+        if (ImGui.BeginChild("OverlayGizmos", new Vector2(34, 120)))
         {
             var col = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
             col.W = 0.7f;
             ImGui.PushStyleColor(ImGuiCol.Button, col);
             _transformGizmo = window.ContextHandler.SystemSettings.LastGizmo;
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
-            if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._1, false)))
+            if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key1, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Translate ? TransformGizmo.None : TransformGizmo.Translate;
             ImGui.SetItemTooltip($"Move Gizmo {(_transformGizmo == TransformGizmo.Translate ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._2, false)))
+            if (ImGui.Button(IconUtils.ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key2, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Rotate ? TransformGizmo.None : TransformGizmo.Rotate;
             ImGui.SetItemTooltip($"Rotate Gizmo {(_transformGizmo == TransformGizmo.Rotate ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey._3, false)))
+            if (ImGui.Button(IconUtils.SCALE + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key3, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Scale ? TransformGizmo.None : TransformGizmo.Scale;
             window.ContextHandler.SystemSettings.LastGizmo = _transformGizmo;
             ImGui.SetItemTooltip($"Scale Gizmo {(_transformGizmo == TransformGizmo.Scale ? "ON" : "OFF")}");
@@ -2014,25 +2014,25 @@ internal class SceneWindow(MainWindowContext window)
         bool isPos = !_transformChangeString.Contains('-');
         string r = isPos ? _transformChangeString.Split('-')[0] : _transformChangeString.Split('-')[1];
 
-        if (ImGui.IsKeyPressed(ImGuiKey._0, false))
+        if (ImGui.IsKeyPressed(ImGuiKey.Key0, false))
             r += "0";
-        else if (ImGui.IsKeyPressed(ImGuiKey._1, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key1, false))
             r += "1";
-        else if (ImGui.IsKeyPressed(ImGuiKey._2, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key2, false))
             r += "2";
-        else if (ImGui.IsKeyPressed(ImGuiKey._3, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key3, false))
             r += "3";
-        else if (ImGui.IsKeyPressed(ImGuiKey._4, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key4, false))
             r += "4";
-        else if (ImGui.IsKeyPressed(ImGuiKey._5, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key5, false))
             r += "5";
-        else if (ImGui.IsKeyPressed(ImGuiKey._6, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key6, false))
             r += "6";
-        else if (ImGui.IsKeyPressed(ImGuiKey._7, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key7, false))
             r += "7";
-        else if (ImGui.IsKeyPressed(ImGuiKey._8, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key8, false))
             r += "8";
-        else if (ImGui.IsKeyPressed(ImGuiKey._9, false))
+        else if (ImGui.IsKeyPressed(ImGuiKey.Key9, false))
             r += "9";
         else if (ImGui.IsKeyPressed(ImGuiKey.Period) && !r.Contains('.'))
             r += ".";

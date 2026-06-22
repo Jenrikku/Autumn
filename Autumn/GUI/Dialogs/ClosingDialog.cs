@@ -1,7 +1,7 @@
 using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Dialogs;
 

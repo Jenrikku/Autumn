@@ -2,7 +2,7 @@ using System.Numerics;
 using Autumn.ActionSystem;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Input.Extensions;
 using Silk.NET.SDL;
 

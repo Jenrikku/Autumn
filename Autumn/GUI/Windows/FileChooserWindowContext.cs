@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Numerics;
 using Autumn.Context;
 using Autumn.Utils;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Windows;
 
@@ -269,7 +269,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                 ImGui.EndChild();
             }
 
-            if (ImGui.BeginChild("##Places", ImGui.GetContentRegionAvail() / new Vector2(4, 1), ImGuiChildFlags.Border))
+            if (ImGui.BeginChild("##Places", ImGui.GetContentRegionAvail() / new Vector2(4, 1), ImGuiChildFlags.Borders))
             {
                 if (ImGui.Selectable("Home"))
                     ChangeDirectory(Home);
@@ -330,7 +330,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                 Vector2 fileChooseSize = ImGui.GetContentRegionAvail();
                 fileChooseSize.Y -= _bottomPanelBaseHeight * ScalingFactor;
 
-                if (ImGui.BeginChild("##FileChoose", fileChooseSize, ImGuiChildFlags.Border))
+                if (ImGui.BeginChild("##FileChoose", fileChooseSize, ImGuiChildFlags.Borders))
                 {
                     RenderFileChoosePanel();
                     ImGui.EndChild();
