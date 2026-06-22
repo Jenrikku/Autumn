@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Libraries/">
+    <Project Path="Libraries/BYAMLSharp/BYAMLSharp/BYAMLSharp.csproj" />
+    <Project Path="Libraries/NARCSharp/NARCSharp/NARCSharp.csproj" />
+    <Project Path="Libraries/SceneGL/SceneGL/SceneGL.csproj" />
+    <Project Path="Libraries/SPICA/SPICA/SPICA.csproj" />
+    <Project Path="Libraries/tinyfiledialogs/src/TinyFileDialogsSharp.csproj" />
+  </Folder>
+  <Project Path="Autumn/Autumn.csproj" />
+</Solution>
