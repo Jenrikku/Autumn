@@ -355,7 +355,10 @@ internal class AddObjectDialog(MainWindowContext window)
             string description = dbEntry.Description ?? "No Description";
             if (dbEntry.DescriptionAdditional is not null)
                 description += $"\n{dbEntry.DescriptionAdditional}";
-            ImGui.SetWindowFontScale(1.3f);
+
+            ImGui.PushFont(null, 1.3f);
+
+            //ImGui.SetWindowFontScale(1.3f);
             if (!_useClassName)
             {
                 if (databaseHasEntry)
@@ -380,7 +383,7 @@ internal class AddObjectDialog(MainWindowContext window)
             }
             if (!_useClassName)
                 ImGui.SetItemTooltip(_name);
-            ImGui.SetWindowFontScale(1.0f);
+            ImGui.PopFont();
             ImGui.SameLine();
             ImGui.TextDisabled(_class);
 
@@ -622,10 +625,10 @@ internal class AddObjectDialog(MainWindowContext window)
         ImGui.SameLine();
 
         Vector2 v = ImGui.GetCursorPos();
-        ImGui.SetWindowFontScale(1.3f);
+        ImGui.PushFont(null, 1.3f);
         ImGui.Text(_railShapeDesc[_railShape]);
         float ts = ImGui.CalcTextSize(_railShapeDesc[_railShape]).Y;
-        ImGui.SetWindowFontScale(1.0f);
+        ImGui.PopFont();
         ImGui.SetCursorPosX(v.X);
         ImGui.SetCursorPosY(v.Y + ts + 5);
         

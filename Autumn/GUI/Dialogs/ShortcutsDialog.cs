@@ -94,13 +94,18 @@ internal class ShortcutsDialog(MainWindowContext window)
                         changingCommand = null;
                         break;
                     }
-                    window.ImGuiController!.TryMapKey(k, out ImGuiKey ik);
+
+                    ImGuiKey ik = WindowContext.MapImGuiKey(k);
+                    if (ik == ImGuiKey.None) continue;
                     if (ik == ImGuiKey.LeftCtrl || ik == ImGuiKey.RightCtrl) continue;
-                    if (ik == ImGuiKey.LeftShift|| ik == ImGuiKey.RightShift) continue;
-                    if (ik == ImGuiKey.LeftAlt  || ik == ImGuiKey.RightAlt) continue;
-                    window.ContextHandler.ActionHandler.SetShortcut(changingCommand!.Value, new Shortcut(ImGui.IsKeyDown(ImGuiKey.ModCtrl), 
-                                                                                        ImGui.IsKeyDown(ImGuiKey.ModShift), 
-                                                                                        ImGui.IsKeyDown(ImGuiKey.ModAlt), ik));
+                    if (ik == ImGuiKey.LeftShift || ik == ImGuiKey.RightShift) continue;
+                    if (ik == ImGuiKey.LeftAlt || ik == ImGuiKey.RightAlt) continue;
+
+                    window.ContextHandler.ActionHandler.SetShortcut(changingCommand!.Value,
+                        new Shortcut(ImGui.IsKeyDown(ImGuiKey.ModCtrl),
+                                                     ImGui.IsKeyDown(ImGuiKey.ModShift),
+                                                     ImGui.IsKeyDown(ImGuiKey.ModAlt), ik));
+
                     changingKey = false;
                     changingCommand = null;
                     break;

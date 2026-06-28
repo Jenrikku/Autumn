@@ -189,10 +189,7 @@ internal class MainWindowContext : WindowContext
 
         Window.Render += (deltaSeconds) =>
         {
-            if (ImGuiController is null)
-                return;
-
-            ImGuiController.MakeCurrent();
+            ImGuiMakeCurrentContext();
 
             if (_isFirstFrame)
             {
@@ -218,6 +215,8 @@ internal class MainWindowContext : WindowContext
                     _welcomeDialog.Open();
 
             }
+
+            ImGuiNewFrame();
 
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
 
@@ -295,7 +294,7 @@ internal class MainWindowContext : WindowContext
             GL!.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL!.Clear(ClearBufferMask.ColorBufferBit);
             GL!.Viewport(Window.FramebufferSize);
-            ImGuiController.Render();
+            ImGuiEndFrame();
         };
 
         Window.FileDrop += (paths) =>
@@ -697,7 +696,7 @@ internal class MainWindowContext : WindowContext
     /// <summary>
     /// Renders the screen that appears when no project has been loaded.
     /// </summary>
-    private void RenderWelcomeScreen(float barHeight)
+    private unsafe void RenderWelcomeScreen(float barHeight)
     {
         ImGuiWindowFlags windowFlags =
             ImGuiWindowFlags.NoBackground
@@ -722,14 +721,14 @@ internal class MainWindowContext : WindowContext
 
         if (ImGui.BeginChild("##Header", headerSize))
         {
-            ImGui.Image((nint)s_welcomeImage, new(128 * ScalingFactor));
+            ImGui.Image(new(texId: s_welcomeImage), new(128 * ScalingFactor));
             ImGui.SameLine();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20);
 
             if (ImGui.BeginChild("##Title"))
             {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 25);
-                ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 2.5f);
+                ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 45);
                 ImGui.Text("\t\tA 3DL stage editor");
                 ImGui.EndChild();
             }

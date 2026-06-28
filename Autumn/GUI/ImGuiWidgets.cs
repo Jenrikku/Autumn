@@ -93,7 +93,7 @@ internal static class ImGuiWidgets
             case ImGuiDir.Right:
                 str = ARROW_RIGHT + "##" + str;
                 break;
-            case ImGuiDir.COUNT:
+            case ImGuiDir.Count:
                 str = DOWN + "##" + str;
                 break;
         }
@@ -106,11 +106,11 @@ internal static class ImGuiWidgets
     /// <param name="str"></param>
     /// <param name="scale"></param>
     /// <param name="original"></param>
-    public static void TextHeader(string str, float scale = 1.2f, float original = 1.0f)
+    public static void TextHeader(string str, float scale = 1.2f)
     {
-        ImGui.SetWindowFontScale(scale);
+        ImGui.PushFont(null, scale);
         ImGui.Text(str);
-        ImGui.SetWindowFontScale(original);
+        ImGui.PopFont();
         ImGui.Separator();
     }
     public static float SetPropertyWidth(string str)
@@ -227,7 +227,7 @@ internal static class ImGuiWidgets
             ret = ImGui.IsItemActive();
 
             ImGui.SameLine(default, 0);
-            if (ArrowButton("arr" + str, ImGuiDir.COUNT))
+            if (ArrowButton("arr" + str, ImGuiDir.Count))
             {
                 arrowPressed = !arrowPressed;
                 wasHovering = arrowPressed;
@@ -254,7 +254,7 @@ internal static class ImGuiWidgets
                 ImGui.SetNextItemAllowOverlap();
                 ImGui.SetCursorPos(listpos);
                 ImGui.SetNextItemWidth(width);
-                if (ImGui.BeginChild(str, default))
+                if (ImGui.BeginChild(str))
                 {
                     bool activ = ImGui.ListBox("##CombostringsList" + str, ref t, comboStrings.ToArray(), comboStrings.Count);
 

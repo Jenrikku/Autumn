@@ -96,9 +96,9 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
         if (ImGui.BeginChild("LEFT", tableDimensions))
         {
-            ImGui.SetWindowFontScale(1.3f);
+            ImGui.PushFont(null, 1.3f);
             ImGui.Text("Scene objects:");
-            ImGui.SetWindowFontScale(1.0f);
+            ImGui.PopFont();
 
             tablestart += ImGui.GetCursorPosY();
             if (ImGui.BeginTable("ObjectTable", 2,
@@ -192,9 +192,9 @@ internal class EditChildrenDialog(MainWindowContext _window)
         bool moveb = false; // Id, Up(true) or Down(false)
         if (ImGui.BeginChild("RIGHT", tableDimensions))
         {
-            ImGui.SetWindowFontScale(1.3f);
+            ImGui.PushFont(null, 1.3f);
             ImGui.Text("Children:");
-            ImGui.SetWindowFontScale(1.0f);
+            ImGui.PopFont();
 
             if (ImGui.BeginTable("ChildrenTable", 2,
                                                     ImGuiTableFlags.RowBg

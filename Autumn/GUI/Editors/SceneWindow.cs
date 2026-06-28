@@ -869,7 +869,6 @@ internal class SceneWindow(MainWindowContext window)
     }
     private void ActionMenu(double deltaSeconds)
     {
-
         if (_isObjectOptionsEnabled)
         {
             string name = _pickObject switch
@@ -886,7 +885,7 @@ internal class SceneWindow(MainWindowContext window)
             float w = ImGui.CalcTextSize(name).X * 1.3f + 10;
             if (ImGui.BeginListBox("##SelectableListbox", new(w > 140 ? w : 140, 150)))
             {
-                ImGuiWidgets.TextHeader(name, 1.3f, 0.95f);
+                ImGuiWidgets.TextHeader(name, 1.3f);
 
                 if (_selCantParent)
                     ImGui.BeginDisabled();
@@ -947,7 +946,6 @@ internal class SceneWindow(MainWindowContext window)
 
                 }
                 ImGui.EndListBox();
-                ImGui.SetWindowFontScale(1f);
             }
             //ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetWindowPos() + mpos, ImGui.GetWindowPos() + _objectOptionsPos + new Vector2(w, 150), 0x7f7f7f7f);
             if (!ImGui.IsMouseHoveringRect(ImGui.GetWindowPos() + mpos, ImGui.GetWindowPos() + _objectOptionsPos + new Vector2(w, 150)))
@@ -981,20 +979,14 @@ internal class SceneWindow(MainWindowContext window)
 
         if (IsTranslationActive || IsScaleActive || IsRotationActive)
         {
-            ImGui.SetWindowFontScale(1.0f);
-
             ImGui.SetCursorPos(opos + new Vector2(8, -2));
             ImGui.Text(ActTransform.FullTransformString);
-            ImGui.SetWindowFontScale(1.0f);
             ImGui.SetCursorPos(opos);
         }
         else if (FlyCam)
         {
-            ImGui.SetWindowFontScale(1.0f);
-
             ImGui.SetCursorPos(opos + new Vector2(8, -2));
             ImGui.Text("Fly Cam Mode enabled, press Esc to exit.");
-            ImGui.SetWindowFontScale(1.0f);
             ImGui.SetCursorPos(opos);
         }
 

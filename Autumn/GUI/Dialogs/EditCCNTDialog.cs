@@ -147,12 +147,12 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
 
         if (ImGui.BeginChild("RIGHTSIDE", new Vector2(dimensions.X * 12 / 30, dimensions.Y)))
         {
-            ImGui.SetWindowFontScale(1.3f);
+            ImGui.PushFont(null, 1.3f);
             if (string.IsNullOrEmpty(_name))
                 ImGui.TextDisabled("No object selected");
             else
                 ImGui.Text(_name);
-            ImGui.SetWindowFontScale(1f);
+            ImGui.PopFont();
             ImGui.Separator();
             ImGui.Spacing();
             if (_oname == "")
@@ -174,12 +174,12 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
             var beginClass = ImGui.GetCursorPos();
 
             ImGui.SetCursorPos(beginChild);
-            ImGui.SetWindowFontScale(1.3f);
+            ImGui.PushFont(null, 1.3f);
             if (dbEntry == null || dbEntry.Value.Name == null)
                 ImGui.TextDisabled("Undocumented class");
             else
                 ImGui.Text(dbEntry.Value.Name);
-            ImGui.SetWindowFontScale(1f);
+            ImGui.PopFont();
 
             ImGui.BeginChild(
                 "##Description",

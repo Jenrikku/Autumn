@@ -216,7 +216,7 @@ internal class SettingsDialog
             {
                 ImGui.Checkbox("Use middle click instead of right click to move the camera", ref _middleMovesCamera);
                 ImGui.Checkbox("Zoom to mouse", ref _zoomToMouse);
-                ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1, default);
+                ImGui.InputInt("Camera Speed", ref _mouseSpeed, 1);
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("Recommended values: 20, 35");
                 _mouseSpeed = int.Clamp(_mouseSpeed, 10, 120);

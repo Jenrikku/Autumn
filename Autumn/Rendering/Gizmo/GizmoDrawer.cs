@@ -273,7 +273,7 @@ internal static class GizmoDrawer
         Vector3 edgeHit = Vector3.Zero;
         Vector3 faceHit = Vector3.Zero;
 
-        void CubeSide(Vector3 up, Vector3 forward, uint col, Vector2 uvOffset, in Matrix4x4 rotMtx)
+        unsafe void CubeSide(Vector3 up, Vector3 forward, uint col, Vector2 uvOffset, in Matrix4x4 rotMtx)
         {
             Matrix4x4 mtx =
                 Matrix4x4.CreateTranslation(new Vector3(0, 0, 1))
@@ -330,7 +330,7 @@ internal static class GizmoDrawer
                 if (s_orientationCubeTexture != IntPtr.Zero)
                 {
                     Drawlist.AddImageQuad(
-                        s_orientationCubeTexture,
+                        new(texId: s_orientationCubeTexture),
                         Transform(new Vector2(-1, 1)),
                         Transform(new Vector2(1, 1)),
                         Transform(new Vector2(1, -1)),

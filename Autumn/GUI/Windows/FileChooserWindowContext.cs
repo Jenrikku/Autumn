@@ -3,6 +3,7 @@ using System.Numerics;
 using Autumn.Context;
 using Autumn.Utils;
 using Hexa.NET.ImGui;
+using Hexa.NET.ImGui.Backends.GLFW;
 
 namespace Autumn.GUI.Windows;
 
@@ -111,10 +112,8 @@ internal abstract class FileChooserWindowContext : WindowContext
 
         Window.Render += (deltaSeconds) =>
         {
-            if (ImGuiController is null)
-                return;
-
-            ImGuiController.MakeCurrent();
+            ImGuiMakeCurrentContext();
+            ImGuiNewFrame();
 
             ImGuiViewportPtr viewport = ImGui.GetMainViewport();
 
@@ -390,7 +389,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             }
 
             GL!.Viewport(Window.FramebufferSize);
-            ImGuiController.Render();
+            ImGuiEndFrame();
         };
     }
 

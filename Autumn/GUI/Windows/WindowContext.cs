@@ -1,7 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Autumn.Context;
 using Hexa.NET.ImGui;
+using Hexa.NET.ImGui.Backends.GLFW;
+using Hexa.NET.ImGui.Backends.OpenGL3;
 using Silk.NET.Core;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
@@ -18,9 +20,14 @@ namespace Autumn.GUI.Windows;
 /// <seealso cref="WindowManager" />
 internal abstract class WindowContext
 {
-    public List<ImFontPtr> FontPointers { get; set; } = new();
+    private static readonly List<ImFontPtr> s_fontPointers = new(2);
+
+    public static ImFontPtr RegularFont => s_fontPointers[0];
+    public static ImFontPtr IconFont => s_fontPointers[1];
+
     public IWindow Window { get; protected set; }
-    public ImGuiController? ImGuiController { get; protected set; }
+    public GLFWwindowPtr WindowNative { get; protected set; } // From Hexa
+    public ImGuiContextPtr ImGuiContext { get; protected set; }
 
     public GL? GL { get; protected set; }
 
@@ -103,21 +110,29 @@ internal abstract class WindowContext
 
             #endregion
 
-            // Set scaling factor:
             unsafe
             {
-                Glfw glfw = Glfw.GetApi();
-                Silk.NET.GLFW.Monitor* monitor = glfw.GetPrimaryMonitor();
-
-                glfw.GetMonitorContentScale(monitor, out _scalingFactor, out _);
+                nint? glfwWin = Window.Native?.Glfw;
+                Debug.Assert(glfwWin.HasValue);
+                WindowNative = (GLFWwindow*)glfwWin.Value;
             }
 
-            ImGuiController = new(GL, Window, InputContext, SetFont);
+            ImGuiContext = ImGui.CreateContext();
+            ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
+
+            ImGuiImplGLFW.InitForOpenGL(WindowNative, true);
+            _scalingFactor = ImGuiImplGLFW.GetContentScaleForWindow(WindowNative);
+
+            ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
+            ImGuiImplOpenGL3.Init("#version 330");
+
+            if (s_fontPointers.Count == 0) LoadFonts();
+
             WindowManager.GlobalTheme.UpdateImGuiTheme();
 
             var win32 = Window.Native?.Win32;
 
-            if (win32 is not null)
+            if (win32.HasValue)
                 WindowsColorMode.Init(win32.Value.Hwnd);
 
             // Prevent window from freezing when resizing or moving:
@@ -157,7 +172,7 @@ internal abstract class WindowContext
             GL.DepthFunc(DepthFunction.Lequal);
         };
 
-        Window.Render += delta =>
+        Window.Update += delta =>
         {
             if (_themeChanged)
             {
@@ -165,8 +180,6 @@ internal abstract class WindowContext
                 _themeChanged = false;
             }
         };
-
-        Window.Update += delta => ImGuiController?.Update((float)delta);
 
         Window.FocusChanged += focused => IsFocused = focused;
 
@@ -186,6 +199,23 @@ internal abstract class WindowContext
         };
     }
 
+    ~WindowContext()
+    {
+        ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
+        ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
+
+        ImGuiImplOpenGL3.Shutdown();
+        ImGuiImplOpenGL3.SetCurrentContext(null);
+        ImGuiImplGLFW.Shutdown();
+        ImGuiImplGLFW.SetCurrentContext(null);
+
+        ImGui.DestroyContext(ImGuiContext);
+        GL?.Dispose();
+
+        InputContext?.Dispose();
+        Window?.Dispose();
+    }
+
     /// <summary>
     /// A method that is meant to be overriden in order to make any operations
     /// before the window gets closed.
@@ -195,36 +225,117 @@ internal abstract class WindowContext
 
     public void RefreshTheme() => _themeChanged = true;
 
-    private void SetFont()
+    protected void ImGuiMakeCurrentContext() => ImGui.SetCurrentContext(ImGuiContext);
+
+    protected void ImGuiNewFrame()
+    {
+        ImGuiImplOpenGL3.NewFrame();
+        ImGuiImplGLFW.NewFrame();
+        ImGui.NewFrame();
+    }
+
+    protected void ImGuiEndFrame()
+    {
+        ImGui.Render();
+        ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
+    }
+
+    public static ImGuiKey MapImGuiKey(Silk.NET.Input.Key key)
+    {
+        static ImGuiKey KeyToImGuiKeyShortcut(Key keyToConvert, Key startKey1, ImGuiKey startKey2)
+        {
+            int changeFromStart1 = (int)keyToConvert - (int)startKey1;
+            return startKey2 + changeFromStart1;
+        }
+
+        if (Key.A <= key && key <= Key.Z)
+        {
+            Glfw glfw = Glfw.GetApi();
+
+            int glfwKey = (int)Silk.NET.GLFW.Keys.A + (key - Key.A);
+            int scanCode = glfw.GetKeyScancode(glfwKey);
+            char keyNameChar = glfw.GetKeyName(glfwKey, scanCode)[0];
+
+            key = Key.A + (char.ToLower(keyNameChar) - 'a');
+        }
+
+        return key switch
+        {
+            >= Key.F1 and <= Key.F24 => KeyToImGuiKeyShortcut(key, Key.F1, ImGuiKey.F1),
+            >= Key.Keypad0
+            and <= Key.Keypad9
+                => KeyToImGuiKeyShortcut(key, Key.Keypad0, ImGuiKey.Keypad0),
+            >= Key.A and <= Key.Z => KeyToImGuiKeyShortcut(key, Key.A, ImGuiKey.A),
+            >= Key.Number0
+            and <= Key.Number9
+                => KeyToImGuiKeyShortcut(key, Key.Number0, ImGuiKey.Key0),
+            Key.ShiftLeft => ImGuiKey.LeftShift,
+            Key.ShiftRight => ImGuiKey.RightShift,
+            Key.ControlLeft => ImGuiKey.LeftCtrl,
+            Key.ControlRight => ImGuiKey.RightCtrl,
+            Key.AltLeft => ImGuiKey.LeftAlt,
+            Key.AltRight => ImGuiKey.RightAlt,
+            Key.SuperLeft => ImGuiKey.LeftCtrl,
+            Key.SuperRight => ImGuiKey.RightCtrl,
+            Key.Menu => ImGuiKey.Menu,
+            Key.Up => ImGuiKey.UpArrow,
+            Key.Down => ImGuiKey.DownArrow,
+            Key.Left => ImGuiKey.LeftArrow,
+            Key.Right => ImGuiKey.RightArrow,
+            Key.Enter => ImGuiKey.Enter,
+            Key.Escape => ImGuiKey.Escape,
+            Key.Space => ImGuiKey.Space,
+            Key.Tab => ImGuiKey.Tab,
+            Key.Backspace => ImGuiKey.Backspace,
+            Key.Insert => ImGuiKey.Insert,
+            Key.Delete => ImGuiKey.Delete,
+            Key.PageUp => ImGuiKey.PageUp,
+            Key.PageDown => ImGuiKey.PageDown,
+            Key.Home => ImGuiKey.Home,
+            Key.End => ImGuiKey.End,
+            Key.CapsLock => ImGuiKey.CapsLock,
+            Key.ScrollLock => ImGuiKey.ScrollLock,
+            Key.PrintScreen => ImGuiKey.PrintScreen,
+            Key.Pause => ImGuiKey.Pause,
+            Key.NumLock => ImGuiKey.NumLock,
+            Key.KeypadDivide => ImGuiKey.KeypadDivide,
+            Key.KeypadMultiply => ImGuiKey.KeypadMultiply,
+            Key.KeypadSubtract => ImGuiKey.KeypadSubtract,
+            Key.KeypadAdd => ImGuiKey.KeypadAdd,
+            Key.KeypadDecimal => ImGuiKey.KeypadDecimal,
+            Key.KeypadEnter => ImGuiKey.KeypadEnter,
+            Key.GraveAccent => ImGuiKey.GraveAccent,
+            Key.Minus => ImGuiKey.Minus,
+            Key.Equal => ImGuiKey.Equal,
+            Key.LeftBracket => ImGuiKey.LeftBracket,
+            Key.RightBracket => ImGuiKey.RightBracket,
+            Key.Semicolon => ImGuiKey.Semicolon,
+            Key.Apostrophe => ImGuiKey.Apostrophe,
+            Key.Comma => ImGuiKey.Comma,
+            Key.Period => ImGuiKey.Period,
+            Key.Slash => ImGuiKey.Slash,
+            Key.BackSlash => ImGuiKey.Backslash,
+            _ => ImGuiKey.None
+        };
+    }
+
+    private unsafe static void LoadFonts()
     {
         var io = ImGui.GetIO();
 
-        const float sizeScalar = 2f; // Render a higher quality font texture for when we want to size up the font
-        FontPointers.Add(io.Fonts.AddFontFromFileTTF(
+        s_fontPointers.Add(io.Fonts.AddFontFromFileTTF(
                 Path.Join("Resources", "NotoSansJP-Regular.ttf"),
-                size_pixels: 18 * _scalingFactor * sizeScalar,
-                null,
-                io.Fonts.GetGlyphRangesJapanese()
+                18
             )
         );
+           
+        ImFontConfig* cfg = ImGui.ImFontConfig();
+        cfg->MergeMode = 1;
 
-        FontPointers[0].Scale = 1 / sizeScalar;
-
-        unsafe
-        {                
-            ImFontConfig* cfg = ImGuiNative.ImFontConfig_ImFontConfig();
-            cfg->MergeMode = 1;
-            char[] ch = [(char)0xe005, (char)0xf8ff, (char)0];
-            fixed (char* glypths = &ch[0])
-            {
-                FontPointers.Add(io.Fonts.AddFontFromFileTTF(
-                        Path.Join("Resources", "fa-solid-900.ttf"),
-                        size_pixels: 18 * _scalingFactor * sizeScalar,
-                        font_cfg: cfg,
-                        (nint)glypths
-                        ));
-            }
-            FontPointers[1].Scale = 1 / sizeScalar;
-        }
+        s_fontPointers.Add(io.Fonts.AddFontFromFileTTF(
+                Path.Join("Resources", "fa-solid-900.ttf"),
+                18,
+                cfg
+            ));
     }
 }

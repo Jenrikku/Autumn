@@ -1371,11 +1371,11 @@ internal class PropertiesWindow(MainWindowContext window)
 
     float SetTitle(string title, string? tooltip)
     {
-        ImGui.SetWindowFontScale(1.20f);
+        ImGui.PushFont(null, 1.20f);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
         float r = ImGui.GetCursorPosY();
         ImGui.Text(title);
-        ImGui.SetWindowFontScale(1.0f);
+        ImGui.PopFont();
         if (tooltip != null) ImGui.SetItemTooltip(tooltip);
         ImGui.Separator();
         //Child begins after this
