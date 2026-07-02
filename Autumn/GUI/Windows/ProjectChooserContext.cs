@@ -41,15 +41,15 @@ internal class ProjectChooserContext : FileChooserWindowContext
 
     protected override void RenderFileChoosePanel()
     {
-        if (!ImGui.BeginTable("FileChoose", 2, FileChooseFlags))
+        if (!ImGui.BeginTable("##FileChooseTable", 2, FileChooseFlags))
             return;
 
-        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
-
         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-        ImGui.TableSetupColumn(" Name");
-        ImGui.TableSetupColumn(" Modified Date");
+        ImGui.TableSetupColumn("Name");
+        ImGui.TableSetupColumn("Modified Date");
         ImGui.TableHeadersRow();
+
+        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
 
         foreach (FileSystemInfo info in DirectoryEntries)
         {

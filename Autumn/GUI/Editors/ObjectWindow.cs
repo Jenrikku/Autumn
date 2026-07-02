@@ -60,7 +60,7 @@ internal class ObjectWindow(MainWindowContext window)
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.Combo(
-            "",
+            "##ObjectCategoryCombo",
             ref _objectFilterCurrent,
             [
                 "All Objects",
@@ -155,6 +155,7 @@ internal class ObjectWindow(MainWindowContext window)
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) doubleclick = true;
                 }
 
+                ImGui.PopID();
                 ImGui.SetItemTooltip(name);
 
                 if (

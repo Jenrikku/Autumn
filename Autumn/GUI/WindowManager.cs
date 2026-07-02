@@ -53,9 +53,7 @@ internal class WindowManager
         if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
             SharedContext = _contexts[0].Window.GLContext;
 
-        context.Window.DoEvents();
-        context.Window.Reset();
-        context.InputContext?.Dispose();
+        context.Reset();
     }
 
     public void RemoveAt(int index)
@@ -67,9 +65,7 @@ internal class WindowManager
         if (context.Window.GLContext == SharedContext && _contexts.Count > 0)
             SharedContext = _contexts[0].Window.GLContext;
 
-        context.Window.DoEvents();
-        context.Window.Reset();
-        context.InputContext?.Dispose(); // Broken on DEBUG windows builds, not an issue for RELEASE versions or any other OS
+        context.Reset();
     }
 
     public void Run(ActionHandler actionHandler)

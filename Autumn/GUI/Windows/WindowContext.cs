@@ -20,11 +20,6 @@ namespace Autumn.GUI.Windows;
 /// <seealso cref="WindowManager" />
 internal abstract class WindowContext
 {
-    private static readonly List<ImFontPtr> s_fontPointers = new(2);
-
-    public static ImFontPtr RegularFont => s_fontPointers[0];
-    public static ImFontPtr IconFont => s_fontPointers[1];
-
     public IWindow Window { get; protected set; }
     public GLFWwindowPtr WindowNative { get; protected set; } // From Hexa
     public ImGuiContextPtr ImGuiContext { get; protected set; }
@@ -118,15 +113,15 @@ internal abstract class WindowContext
             }
 
             ImGuiContext = ImGui.CreateContext();
-            ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
 
+            ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
             ImGuiImplGLFW.InitForOpenGL(WindowNative, true);
             _scalingFactor = ImGuiImplGLFW.GetContentScaleForWindow(WindowNative);
 
             ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
             ImGuiImplOpenGL3.Init("#version 330");
 
-            if (s_fontPointers.Count == 0) LoadFonts();
+            ImGuiAddFonts();
 
             WindowManager.GlobalTheme.UpdateImGuiTheme();
 
@@ -199,21 +194,20 @@ internal abstract class WindowContext
         };
     }
 
-    ~WindowContext()
+    public void Reset()
     {
-        ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
-        ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
+        Window.DoEvents();
+        Window.Reset();
 
-        ImGuiImplOpenGL3.Shutdown();
-        ImGuiImplOpenGL3.SetCurrentContext(null);
+        ImGui.SetCurrentContext(ImGuiContext);
+        ImGui.GetFont().Destroy();
+
+        ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
         ImGuiImplGLFW.Shutdown();
         ImGuiImplGLFW.SetCurrentContext(null);
 
-        ImGui.DestroyContext(ImGuiContext);
         GL?.Dispose();
-
         InputContext?.Dispose();
-        Window?.Dispose();
     }
 
     /// <summary>
@@ -225,7 +219,12 @@ internal abstract class WindowContext
 
     public void RefreshTheme() => _themeChanged = true;
 
-    protected void ImGuiMakeCurrentContext() => ImGui.SetCurrentContext(ImGuiContext);
+    protected void ImGuiMakeCurrentContext()
+    {
+        ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
+        ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
+        ImGui.SetCurrentContext(ImGuiContext);
+    }
 
     protected void ImGuiNewFrame()
     {
@@ -319,23 +318,26 @@ internal abstract class WindowContext
         };
     }
 
-    private unsafe static void LoadFonts()
+    // FIXME: Fonts are read from disk every time a window is opened.
+    // Potentially move font reading and managing into WindowManager.
+    private unsafe void ImGuiAddFonts()
     {
+        ImGui.SetCurrentContext(ImGuiContext);
+
         var io = ImGui.GetIO();
 
-        s_fontPointers.Add(io.Fonts.AddFontFromFileTTF(
-                Path.Join("Resources", "NotoSansJP-Regular.ttf"),
-                18
-            )
+        io.Fonts.AddFontFromFileTTF(
+            Path.Join("Resources", "NotoSansJP-Regular.ttf"),
+            18
         );
-           
+
         ImFontConfig* cfg = ImGui.ImFontConfig();
         cfg->MergeMode = 1;
 
-        s_fontPointers.Add(io.Fonts.AddFontFromFileTTF(
-                Path.Join("Resources", "fa-solid-900.ttf"),
-                18,
-                cfg
-            ));
+        io.Fonts.AddFontFromFileTTF(
+            Path.Join("Resources", "fa-solid-900.ttf"),
+            18,
+            cfg
+        );
     }
 }

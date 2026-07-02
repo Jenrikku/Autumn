@@ -17,6 +17,7 @@ internal class StageWindow
         | ImGuiTableFlags.RowBg
         | ImGuiTableFlags.BordersOuter
         | ImGuiTableFlags.BordersV
+        | ImGuiTableFlags.SizingStretchSame
         | ImGuiTableFlags.Resizable;
 
     int currentItem = 0;

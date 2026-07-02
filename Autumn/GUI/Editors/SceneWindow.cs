@@ -861,8 +861,9 @@ internal class SceneWindow(MainWindowContext window)
                 ImGui.End();
                 return;
             }
-            ImGui.EndChild();
         }
+
+        ImGui.EndChild();
         ImGui.PopStyleVar();
 
         ImGui.End();
@@ -990,12 +991,10 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.SetCursorPos(opos);
         }
 
-        //ImGui.PushFont(window.FontPointers[1]);
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
         float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6*11 +12;
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
-
 
         if (ImGui.Button(IconUtils.USER))
         {
@@ -1045,7 +1044,6 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.SetItemTooltip($"Pipeline {(ModelRenderer.UseFullAlphaPipeline ? "ON": "OFF")}");
 
         ImGui.PopStyleVar(2);
-        //ImGui.PopFont();
         ImGui.SetCursorPos(opos);
     }
     private void GizmoButtons(Vector2 upperRightCorner)
@@ -1069,10 +1067,11 @@ internal class SceneWindow(MainWindowContext window)
                 _transformGizmo = _transformGizmo == TransformGizmo.Scale ? TransformGizmo.None : TransformGizmo.Scale;
             window.ContextHandler.SystemSettings.LastGizmo = _transformGizmo;
             ImGui.SetItemTooltip($"Scale Gizmo {(_transformGizmo == TransformGizmo.Scale ? "ON" : "OFF")}");
-            ImGui.EndChild();
             ImGui.PopStyleVar();
             ImGui.PopStyleColor();
         }
+
+        ImGui.EndChild();
         ImGui.SetCursorPos(olpos);
     }
     private bool TabsPanel()

@@ -213,7 +213,6 @@ internal class MainWindowContext : WindowContext
 
                 if (!ContextHandler.SystemSettings.SkipWelcomeDialog)
                     _welcomeDialog.Open();
-
             }
 
             ImGuiNewFrame();
@@ -730,11 +729,12 @@ internal class MainWindowContext : WindowContext
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 25);
                 ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 45);
                 ImGui.Text("\t\tA 3DL stage editor");
-                ImGui.EndChild();
             }
 
             ImGui.EndChild();
         }
+
+        ImGui.EndChild();
 
         Vector2 recentSize = ImGui.GetContentRegionAvail();
         recentSize.Y -= Math.Max(recentSize.Y / 8, 35);
@@ -780,9 +780,9 @@ internal class MainWindowContext : WindowContext
 
                 ImGui.EndTable();
             }
-
-            ImGui.EndChild();
         }
+
+        ImGui.EndChild();
 
         if (ImGui.BeginChild("##Buttons", ImGui.GetContentRegionAvail()))
         {
@@ -799,10 +799,9 @@ internal class MainWindowContext : WindowContext
 
             if (ImGui.Button(IconUtils.PLUS + "    New Project", buttonSize))
                 ContextHandler.ActionHandler.ExecuteAction(CommandID.NewProject, this);
-
-            ImGui.EndChild();
         }
 
+        ImGui.EndChild();
         ImGui.End();
 
         float windowPosY = ImGui.GetWindowViewport().Size.Y - footerSizeY;

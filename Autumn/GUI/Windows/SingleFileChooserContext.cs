@@ -23,15 +23,15 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
     protected override unsafe void RenderFileChoosePanel()
     {
-        if (!ImGui.BeginTable("FileChoose", 3, _fileChooseFlags))
+        if (!ImGui.BeginTable("##FileChooseTable", 3, _fileChooseFlags))
             return;
 
         UpdateFileSortByTable(ImGui.TableGetSortSpecs());
 
         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-        ImGui.TableSetupColumn(" Name");
-        ImGui.TableSetupColumn(" Size");
-        ImGui.TableSetupColumn(" Modified Date");
+        ImGui.TableSetupColumn("Name");
+        ImGui.TableSetupColumn("Size");
+        ImGui.TableSetupColumn("Modified Date");
         ImGui.TableHeadersRow();
 
         foreach (FileSystemInfo info in DirectoryEntries)

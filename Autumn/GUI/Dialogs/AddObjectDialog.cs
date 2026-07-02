@@ -619,9 +619,9 @@ internal class AddObjectDialog(MainWindowContext window)
                 _railClosed = true;
             }
             ImGui.GetWindowDrawList().AddRect(lpos, lpos2, ImGui.GetColorU32(ImGuiCol.Text), 0, ImDrawFlags.None, 3);
-
-            ImGui.EndChild();
         }
+
+        ImGui.EndChild();
         ImGui.SameLine();
 
         Vector2 v = ImGui.GetCursorPos();
@@ -703,7 +703,7 @@ internal class AddObjectDialog(MainWindowContext window)
                     case 2:
                         if (_railType == 1)
                             ImGui.GetWindowDrawList().AddCircle(lpos, rg.X / 3.5f, ImGui.GetColorU32(ImGuiCol.Text), default, 3);
-                        ImGui.GetWindowDrawList().AddNgon(lpos, rg.X / 3.5f,(_railType == 1 ? 0x4fffffff : 0xffffffff) & ImGui.GetColorU32(ImGuiCol.Text), _railShape == 1 ? 4 : _railPointCount, 3);
+                        ImGui.GetWindowDrawList().AddNgon(lpos, rg.X / 3.5f, (_railType == 1 ? 0x4fffffff : 0xffffffff) & ImGui.GetColorU32(ImGuiCol.Text), _railShape == 1 ? 4 : _railPointCount, 3);
                         //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
                         break;
 
@@ -714,15 +714,15 @@ internal class AddObjectDialog(MainWindowContext window)
                         //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
                         break;
                 }
-                
-                ImGui.EndChild();
-            }
-            ImGui.PopStyleColor();
 
+                ImGui.PopStyleColor();
+            }
+
+            ImGui.EndChild();
             ImGui.EndChild();
         }
         //ImGui.PopStyleColor();
-        if (String.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
+        if (string.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
         if (ImGui.Button("Add", new(-1)))
         {
             RailPoint[] sent = _railShape switch
@@ -738,7 +738,7 @@ internal class AddObjectDialog(MainWindowContext window)
             _isOpened = false;
             ImGui.CloseCurrentPopup();
         }
-        if (String.IsNullOrWhiteSpace(_name)) { ImGui.SetItemTooltip("Please set a name for the rail"); ImGui.EndDisabled(); }
+        if (string.IsNullOrWhiteSpace(_name)) { ImGui.SetItemTooltip("Please set a name for the rail"); ImGui.EndDisabled(); }
     }
 
     private void ResetArgs(ClassDatabaseWrapper.DatabaseEntry? dbEntry)

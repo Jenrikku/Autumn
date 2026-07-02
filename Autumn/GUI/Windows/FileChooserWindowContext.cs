@@ -170,7 +170,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 5);
 
-                ImGui.InputTextWithHint("", "Search...", ref SearchString, 1024);
+                ImGui.InputTextWithHint("##SearchBar", "Search...", ref SearchString, 1024);
 
                 ImGui.EndChild();
             }
@@ -193,7 +193,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                     ImGui.SetNextItemWidth(width);
 
                     bool modified = ImGuiWidgets.InputTextRedWhenInvalid(
-                        "",
+                        "##PathBuffer",
                         ref _inputPathBuffer,
                         4096,
                         _inputPathInvalid
@@ -318,10 +318,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                     if (ImGui.Selectable(drive.Name))
                         ChangeDirectory(drive.RootDirectory.FullName);
                 }
-
-                ImGui.EndChild();
             }
 
+            ImGui.EndChild();
             ImGui.SameLine();
 
             if (ImGui.BeginChild("##Main", ImGui.GetContentRegionAvail()))
@@ -330,10 +329,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                 fileChooseSize.Y -= _bottomPanelBaseHeight * ScalingFactor;
 
                 if (ImGui.BeginChild("##FileChoose", fileChooseSize, ImGuiChildFlags.Borders))
-                {
                     RenderFileChoosePanel();
-                    ImGui.EndChild();
-                }
+
+                ImGui.EndChild();
 
                 if (ImGui.BeginChild("##Bottom", ImGui.GetContentRegionAvail()))
                 {
@@ -342,7 +340,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                     ImGui.SetNextItemWidth(width);
 
                     bool modified = ImGui.InputText(
-                        "",
+                        "##SelectedFile",
                         ref SelectedFile,
                         4096
                     );
@@ -387,6 +385,9 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                 ImGui.EndChild();
             }
+
+            ImGui.EndChild();
+            ImGui.End();
 
             GL!.Viewport(Window.FramebufferSize);
             ImGuiEndFrame();
