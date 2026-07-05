@@ -106,6 +106,7 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
 
+                ImGui.PushID(obj.GetHashCode());
                 if (ImGuiWidgets.HoverButton(obj.IsVisible ? IconUtils.EYE_OPEN : IconUtils.EYE_CLOSED, new(ImGui.GetColumnWidth(), 30))) // Hide / Show
                 {
                     ChangeHandler.ChangePropertyValue(
@@ -116,6 +117,7 @@ internal class ObjectWindow(MainWindowContext window)
                         !obj.IsVisible
                     );
                 }
+                ImGui.PopID();
 
                 ImGui.TableSetColumnIndex(1);
 

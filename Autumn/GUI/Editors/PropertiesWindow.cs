@@ -351,7 +351,9 @@ internal class PropertiesWindow(MainWindowContext window)
                             int shp = (int)stageObj.Properties["ShapeModelNo"]!;
                             if (shp < 0 || shp > 3)
                             {
-                                if (ImGui.InputInt("##ShapeModelNoInt", ref shp, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
+                                ImGui.InputInt("##ShapeModelNoInt", ref shp, 1);
+
+                                if (ImGui.IsItemDeactivatedAfterEdit())
                                 {
                                     ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, stageObj.Properties, "ShapeModelNo", stageObj.Properties["ShapeModelNo"], shp);
                                 }
@@ -774,34 +776,32 @@ internal class PropertiesWindow(MainWindowContext window)
                             case object p when p is int:
                                 int intBuf = (int)(p ?? -1);
                                 int i = intBuf;
-                                if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
-                                {
+                                ImGui.InputInt("##" + name + "i", ref i, 1);
+                                if (ImGui.IsItemDeactivatedAfterEdit())
                                     ChangeHandler.ChangeDictionaryValue(scn?.History!, stageObj.Properties, name, intBuf, i);
-                                }
+
                                 break;
                             case object p when p is float:
                                 float flBuf = (float)(p ?? -1);
                                 float f = flBuf;
-                                if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
-                                {
+                                ImGui.InputFloat("##" + name + "i", ref f, 1);
+                                if (ImGui.IsItemDeactivatedAfterEdit())
                                     ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, flBuf, f);
-                                }
+
                                 break;
                             case object p when p is string:
                                 string strBuf = (string)(p ?? string.Empty);
                                 string s = strBuf;
                                 if (ImGui.InputText("##" + name + "i", ref s, 128, ImGuiInputTextFlags.EnterReturnsTrue))
-                                {
                                     ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, strBuf, s);
-                                }
+
                                 break;
                             case object p when p is bool:
                                 bool bl = (bool)(p ?? false);
                                 bool b = bl;
                                 if (ImGui.Checkbox("##" + name + "i", ref b))
-                                {
                                     ChangeHandler.ChangeDictionaryValue(scn!.History, stageObj.Properties, name, bl, b);
-                                }
+
                                 break;
 
                             default:
@@ -820,8 +820,6 @@ internal class PropertiesWindow(MainWindowContext window)
                     ImGui.PopItemWidth();
                     ImGui.EndChild();
                 }
-
-                ImGui.PopStyleColor();
             }
             ImGui.EndChild();
             }
@@ -1180,34 +1178,34 @@ internal class PropertiesWindow(MainWindowContext window)
                                     case object p when p is int:
                                         int intBuf = (int)(p ?? -1);
                                         int i = intBuf;
-                                        if (ImGui.InputInt("##" + name + "i", ref i, 1, default, ImGuiInputTextFlags.EnterReturnsTrue))
-                                        {
+                                        ImGui.InputInt("##" + name + "i", ref i, 1);
+                                        
+                                        if (ImGui.IsItemDeactivatedAfterEdit())
                                             ChangeHandler.ChangeDictionaryValue(scn?.History!, railObj.Properties, name, intBuf, i);
-                                        }
+
                                         break;
                                     case object p when p is float:
                                         float flBuf = (float)(p ?? -1);
                                         float f = flBuf;
-                                        if (ImGui.InputFloat("##" + name + "i", ref f, 1, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
-                                        {
+                                        ImGui.InputFloat("##" + name + "i", ref f, 1);
+                                        
+                                        if (ImGui.IsItemDeactivatedAfterEdit())
                                             ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, flBuf, f);
-                                        }
+
                                         break;
                                     case object p when p is string:
                                         string strBuf = (string)(p ?? string.Empty);
                                         string st = strBuf;
                                         if (ImGui.InputText("##" + name + "i", ref st, 128, ImGuiInputTextFlags.EnterReturnsTrue))
-                                        {
                                             ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, strBuf, st);
-                                        }
+
                                         break;
                                     case object p when p is bool:
                                         bool bl = (bool)(p ?? false);
                                         bool b = bl;
                                         if (ImGui.Checkbox("##" + name + "i", ref b))
-                                        {
                                             ChangeHandler.ChangeDictionaryValue(scn!.History, railObj.Properties, name, bl, b);
-                                        }
+
                                         break;
 
                                     default:
@@ -1745,9 +1743,11 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
+
         if (ImGui.InputTextWithHint("##" + str + "i", hint, ref s, max, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, sto, str, rf, s);
+            return true;
         }
 
         return false;
@@ -1760,9 +1760,13 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputInt("##" + str + "i", ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ChangeHandler.ChangeFieldValue(window.CurrentScene?.History!, sto, str, rf, i);
+            return true;
         }
 
         return false;
@@ -1775,6 +1779,7 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
+
         if (ImGui.InputText("##" + str + "i", ref s, max, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, s);
@@ -1790,7 +1795,10 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputInt("##" + str + "i", ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
             return true;
@@ -1804,11 +1812,15 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputInt("##" + str + "i", ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
             return true;
         }
+
         return false;
     }
     private bool InputIntProperties(string str, ref int rf, int step, ref RailPoint sto)
@@ -1818,7 +1830,10 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputInt("##" + str + "i", ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputInt("##" + str + "i", ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
             return true;
@@ -1831,7 +1846,10 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.Text(str);
         ImGui.SameLine(default, ImGui.CalcTextSize(str).X);
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.CalcTextSize(str).X - ImGui.GetStyle().ItemSpacing.X * 2);
-        if (ImGui.InputFloat("##" + str + "i", ref i, step, default, "", ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputFloat("##" + str + "i", ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sto.Properties, str, rf, i);
             return true;
@@ -1872,12 +1890,14 @@ internal class PropertiesWindow(MainWindowContext window)
 
         ImGui.SameLine();
         ImGuiWidgets.SetPropertyWidth(str);
-        if (ImGui.InputInt("##" + str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputInt("##" + str, ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             i = Math.Clamp(i, -1, 9999);
             ChangeHandler.ChangeDictionaryValue(window.CurrentScene!.History, sco.StageObj.Properties, "Arg0", rf, i);
-            
         }
+
         if (tt != "")
             ImGui.SetItemTooltip(tt);
 
@@ -1912,13 +1932,17 @@ internal class PropertiesWindow(MainWindowContext window)
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() * 2 / 3 - ImGui.GetStyle().ItemSpacing.X * 2);
-        if (ImGui.InputInt("##" + str, ref i, step, default, ImGuiInputTextFlags.EnterReturnsTrue))
+
+        ImGui.InputInt("##" + str, ref i, step);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             i = Math.Clamp(i, -1, 9999);
-            window.CurrentScene.ChangeSwitch(i, rf, sco);
+            window.CurrentScene?.ChangeSwitch(i, rf, sco);
             rf = i;
             //ChangeHandler.ChangeSwitch(window.CurrentScene.History, sto, str, rf, i);
         }
+
         if (tt != "")
             ImGui.SetItemTooltip(tt);
 
