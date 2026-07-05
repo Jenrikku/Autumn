@@ -89,7 +89,8 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
                                                     ImGuiTableFlags.RowBg
                                                     | ImGuiTableFlags.BordersOuter
                                                     | ImGuiTableFlags.BordersV
-                                                    | ImGuiTableFlags.ScrollY, new Vector2(ImGui.GetWindowWidth() - 1, ImGui.GetWindowHeight() - 95)))
+                                                    | ImGuiTableFlags.ScrollY
+                                                    | ImGuiTableFlags.SizingStretchProp, new Vector2(ImGui.GetWindowWidth() - 1, ImGui.GetWindowHeight() - 95)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.

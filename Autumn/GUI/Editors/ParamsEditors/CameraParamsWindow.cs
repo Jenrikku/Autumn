@@ -16,7 +16,8 @@ internal class CameraParamsWindow(MainWindowContext window)
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
-                | ImGuiTableFlags.Resizable;
+                | ImGuiTableFlags.Resizable
+                | ImGuiTableFlags.SizingStretchProp;
 
     ImGuiWidgets.InputComboBox UserNameCombo = new();
     private List<string> UserNames = ["CameraArea",

@@ -16,7 +16,8 @@ internal class SwitchesWindow(MainWindowContext window)
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
-                | ImGuiTableFlags.Resizable;
+                | ImGuiTableFlags.Resizable
+                | ImGuiTableFlags.SizingStretchProp;
     ImGuiWindowClass windowClass = new() { DockNodeFlagsOverrideSet = ImGuiDockNodeFlags.NoDockingOverCentralNode | ImGuiWidgets.NO_WINDOW_MENU_BUTTON}; // | ImGuiDockNodeFlags.NoUndocking };
     public void Render()
     {

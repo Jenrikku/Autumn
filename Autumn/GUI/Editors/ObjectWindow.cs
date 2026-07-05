@@ -16,7 +16,8 @@ internal class ObjectWindow(MainWindowContext window)
         | ImGuiTableFlags.RowBg
         | ImGuiTableFlags.BordersOuter
         | ImGuiTableFlags.BordersV
-        | ImGuiTableFlags.Resizable;
+        | ImGuiTableFlags.Resizable
+        | ImGuiTableFlags.SizingStretchProp;
 
     private bool IsChildArea(StageObj stageObj)
     {
@@ -84,9 +85,9 @@ internal class ObjectWindow(MainWindowContext window)
         if (ImGui.BeginTable("objectTable", 3, _objectTableFlags))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-            ImGui.TableSetupColumn("Visible", ImGuiTableColumnFlags.WidthFixed, 0.15f);
-            ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.WidthStretch, 0.50f);
-            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 0.10f);
+            ImGui.TableSetupColumn("Visible", ImGuiTableColumnFlags.NoResize, 0.13f);
+            ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.None, 0.50f);
+            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.20f);
             ImGui.TableHeadersRow();
             int listId = 0;
 

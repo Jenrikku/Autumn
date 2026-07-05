@@ -50,7 +50,8 @@ internal class AddObjectDialog(MainWindowContext window)
         | ImGuiTableFlags.RowBg
         | ImGuiTableFlags.BordersOuter
         | ImGuiTableFlags.BordersV
-        | ImGuiTableFlags.Resizable;
+        | ImGuiTableFlags.Resizable
+        | ImGuiTableFlags.SizingStretchProp;
 
     private int _selectedTab = -1;
     private bool _useClassName = false;
@@ -689,7 +690,8 @@ internal class AddObjectDialog(MainWindowContext window)
             ImGui.SetCursorPosY(h / 1.8f);
             ImGui.Text("Preview:");
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0x6f3f3f3f);
-            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysAutoResize))
+            ImGui.SetNextWindowSize(ImGui.GetContentRegionAvail());
+            if (ImGui.BeginChild("Showcase", default, ImGuiChildFlags.Borders))
             {
                 Vector2 rg = new(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y / 2);
                 Vector2 lpos = ImGui.GetCursorScreenPos() + rg;

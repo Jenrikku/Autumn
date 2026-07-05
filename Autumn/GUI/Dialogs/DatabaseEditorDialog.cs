@@ -30,7 +30,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                                 | ImGuiTableFlags.BordersOuter
                                 | ImGuiTableFlags.BordersV
                                 | ImGuiTableFlags.ScrollY
-                                | ImGuiTableFlags.Resizable;
+                                | ImGuiTableFlags.Resizable
+                                | ImGuiTableFlags.SizingStretchProp;
 
     bool _editClassName = false;
     bool _editArgCanOverwrite = false;

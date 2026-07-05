@@ -24,7 +24,8 @@ internal class LightParamsWindow(MainWindowContext window)
     private const ImGuiTableFlags _stageTableFlags = ImGuiTableFlags.RowBg
                 | ImGuiTableFlags.BordersOuter
                 | ImGuiTableFlags.ScrollY
-                | ImGuiTableFlags.Resizable;
+                | ImGuiTableFlags.Resizable
+                | ImGuiTableFlags.SizingStretchProp;
 
     private const ImGuiColorEditFlags _colorEditFlags = ImGuiColorEditFlags.DisplayRgb
                 | ImGuiColorEditFlags.NoSidePreview

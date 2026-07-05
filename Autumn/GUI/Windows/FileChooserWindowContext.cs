@@ -136,35 +136,39 @@ internal abstract class FileChooserWindowContext : WindowContext
                 )
             )
             {
-                if (_historyIndex <= 0)
+                bool backDisabled = _historyIndex <= 0,
+                     forwardDisabled = _historyIndex == _history.Count - 1,
+                     upDisabled = string.IsNullOrEmpty(_parentDirectory);
+
+                if (backDisabled)
                     ImGui.BeginDisabled();
 
                 if (ImGui.ArrowButton("Back", ImGuiDir.Left))
                     ChangeDirectory(_history[--_historyIndex], updateHistory: false);
 
-                if (_historyIndex <= 0)
+                if (backDisabled)
                     ImGui.EndDisabled();
 
                 ImGui.SameLine();
 
-                if (_historyIndex == _history.Count - 1)
+                if (forwardDisabled)
                     ImGui.BeginDisabled();
 
                 if (ImGui.ArrowButton("Forward", ImGuiDir.Right))
                     ChangeDirectory(_history[++_historyIndex], updateHistory: false);
 
-                if (_historyIndex == _history.Count - 1)
+                if (forwardDisabled)
                     ImGui.EndDisabled();
 
                 ImGui.SameLine();
 
-                if (string.IsNullOrEmpty(_parentDirectory))
+                if (upDisabled)
                     ImGui.BeginDisabled();
 
                 if (ImGui.ArrowButton("Up", ImGuiDir.Up))
                     ChangeDirectory(_parentDirectory);
 
-                if (string.IsNullOrEmpty(_parentDirectory))
+                if (upDisabled)
                     ImGui.EndDisabled();
 
                 ImGui.SameLine();
