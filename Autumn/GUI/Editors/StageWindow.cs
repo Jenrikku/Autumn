@@ -58,8 +58,12 @@ internal class StageWindow
             fixed (ImGuiWindowClass* tmp = &windowClass)
                 ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
+
         if (!ImGui.Begin("Stages"))
+        {
+            ImGui.End();
             return;
+        }
 
         if (ImGui.Button(IconUtils.PLUS))
         {

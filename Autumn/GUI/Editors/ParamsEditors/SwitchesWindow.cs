@@ -31,7 +31,11 @@ internal class SwitchesWindow(MainWindowContext window)
         }
 
         if (!ImGui.Begin("Switches##SwitchWindow", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        {
+            ImGui.End();
             return;
+        }
+
         if (window.CurrentScene == null)
         {
             ImGui.TextDisabled("Please load a stage first");

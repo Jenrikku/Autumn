@@ -1,4 +1,3 @@
-using System.Numerics;
 using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Autumn.Rendering.Storage;
@@ -42,8 +41,12 @@ internal class ObjectWindow(MainWindowContext window)
             fixed (ImGuiWindowClass* tmp = &windowClass)
                 ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
+
         if (!ImGui.Begin("Objects"))
+        {
+            ImGui.End();
             return;
+        }
 
         if (window.CurrentScene is null)
         {

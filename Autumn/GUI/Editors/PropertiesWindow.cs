@@ -65,7 +65,11 @@ internal class PropertiesWindow(MainWindowContext window)
         ImGui.PopStyleColor(3);
 
         if (!begun)
+        {
+            ImGui.End();
             return;
+        }
+
         if (window.CurrentScene is null)
         {
             ImGui.TextDisabled("Please open a stage.");

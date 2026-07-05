@@ -59,7 +59,11 @@ internal class SearchWindow
         }
 
         if (!ImGui.Begin("Search##SearchWindow", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        {
+            ImGui.End();
             return;
+        }
+
         if (window.CurrentScene == null)
         {
             ImGui.TextDisabled("Please load a stage first");

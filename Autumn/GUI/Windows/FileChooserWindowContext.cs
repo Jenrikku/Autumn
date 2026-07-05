@@ -3,7 +3,6 @@ using System.Numerics;
 using Autumn.Context;
 using Autumn.Utils;
 using Hexa.NET.ImGui;
-using Hexa.NET.ImGui.Backends.GLFW;
 
 namespace Autumn.GUI.Windows;
 
@@ -121,7 +120,10 @@ internal abstract class FileChooserWindowContext : WindowContext
             ImGui.SetNextWindowSize(viewport.Size);
 
             if (!ImGui.Begin("##FileChooser", _mainWindowFlags))
+            {
+                ImGui.End();
                 return;
+            }
 
             bool inputtedPathThisFrame = false; // Minor tweak to prevent enter being catched in the same frame
 
@@ -171,9 +173,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 5);
 
                 ImGui.InputTextWithHint("##SearchBar", "Search...", ref SearchString, 1024);
-
-                ImGui.EndChild();
             }
+
+            ImGui.EndChild();
 
             if (
                 ImGui.BeginChild(
@@ -264,9 +266,9 @@ internal abstract class FileChooserWindowContext : WindowContext
                     ImGui.Text(">");
                     ImGui.SameLine();
                 }
-
-                ImGui.EndChild();
             }
+
+            ImGui.EndChild();
 
             if (ImGui.BeginChild("##Places", ImGui.GetContentRegionAvail() / new Vector2(4, 1), ImGuiChildFlags.Borders))
             {

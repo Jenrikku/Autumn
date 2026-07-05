@@ -24,9 +24,13 @@ internal class MiscParamsWindow(MainWindowContext window)
             fixed (ImGuiWindowClass* tmp = &windowClass)
             ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
-        
+
         if (!ImGui.Begin("General##MiscParams", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
-        return;
+        {
+            ImGui.End();
+            return;
+        }
+
         if (window.CurrentScene == null)
         {
             ImGui.TextDisabled("Please load a stage first");

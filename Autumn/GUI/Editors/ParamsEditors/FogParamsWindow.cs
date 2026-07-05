@@ -36,7 +36,11 @@ internal class FogParamsWindow(MainWindowContext window)
         }
         
         if (!ImGui.Begin("Fog##FogParams", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
-        return;
+        {
+            ImGui.End();
+            return;
+        }
+
         if (window.CurrentScene == null)
         {
             ImGui.TextDisabled("Please load a stage first");

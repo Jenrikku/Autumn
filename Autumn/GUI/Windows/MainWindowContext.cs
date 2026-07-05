@@ -661,6 +661,7 @@ internal class MainWindowContext : WindowContext
         if (!beginStatusBar)
         {
             ImGui.PopStyleVar();
+            ImGui.End();
             return;
         }
 
@@ -714,7 +715,10 @@ internal class MainWindowContext : WindowContext
         ImGui.SetNextWindowSize(windowSize);
 
         if (!ImGui.Begin("##Welcome", windowFlags))
+        {
+            ImGui.End();
             return;
+        }
 
         Vector2 headerSize = windowSize with { Y = Math.Min(128 * ScalingFactor, windowSize.Y) };
 
@@ -807,10 +811,10 @@ internal class MainWindowContext : WindowContext
         float windowPosY = ImGui.GetWindowViewport().Size.Y - footerSizeY;
         ImGui.SetNextWindowPos(new(ImGui.GetWindowViewport().GetCenter().X, windowPosY), ImGuiCond.Always, new(0.5f, 0.5f));
 
-        if (!ImGui.Begin("##WelcomeFooter", windowFlags | ImGuiWindowFlags.AlwaysAutoResize))
-            return;
-
-        ImGui.Checkbox("Always open last project when possible", ref ContextHandler.SystemSettings.OpenLastProject);
+        if (ImGui.Begin("##WelcomeFooter", windowFlags | ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            ImGui.Checkbox("Always open last project when possible", ref ContextHandler.SystemSettings.OpenLastProject);
+        }
 
         ImGui.End();
     }

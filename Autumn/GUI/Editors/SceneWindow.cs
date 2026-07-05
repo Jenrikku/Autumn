@@ -211,6 +211,7 @@ internal class SceneWindow(MainWindowContext window)
             if (sceneReady)
                 ImGui.PopStyleVar();
             ImGui.PopStyleColor(3);
+            ImGui.End();
             return;
         }
         ImGui.PopStyleColor(3);

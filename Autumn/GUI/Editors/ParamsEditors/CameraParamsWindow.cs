@@ -93,8 +93,12 @@ internal class CameraParamsWindow(MainWindowContext window)
             fixed (ImGuiWindowClass* tmp = &windowClass)
                 ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
+
         if (!ImGui.Begin("Cameras", ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.UnsavedDocument))
+        {
+            ImGui.End();
             return;
+        }
 
         if (window.CurrentScene == null)
         {
@@ -686,7 +690,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.98f, 0.89f, 0.4f, 1));
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.79f, 0.50f, 0, 1));
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 20);
-            
+
             // Camera controls
 
             // if (currcam.Rotator != null && currcam.Rotator.IsEnable != null && currcam.Rotator.IsEnable == false)
@@ -738,7 +742,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             ImGui.PopStyleColor(4);
             ImGui.PopStyleVar();
             ImGui.SameLine();
-            
+
             ImGui.Text("Reference:");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
@@ -751,18 +755,18 @@ internal class CameraParamsWindow(MainWindowContext window)
                 case 1:
 
                     var selobj = scn.SelectedObjects.FirstOrDefault();
-                    if (selobj != null) 
+                    if (selobj != null)
                         switch (selobj)
                         {
                             case ISceneObj x when selobj is IStageSceneObj a:
-                            pos = a.StageObj.Translation * mul;
-                            break;
+                                pos = a.StageObj.Translation * mul;
+                                break;
                             case ISceneObj x when selobj is RailSceneObj a:
-                            pos = a.RailObj.Points[0].Point0Trans * mul;
-                            break;
+                                pos = a.RailObj.Points[0].Point0Trans * mul;
+                                break;
                             case ISceneObj x when selobj is RailPointSceneObj a:
-                            pos = a.RailPoint.Point0Trans * mul;
-                            break;
+                                pos = a.RailPoint.Point0Trans * mul;
+                                break;
                         }
                     break;
                 case 2:
@@ -886,7 +890,8 @@ internal class CameraParamsWindow(MainWindowContext window)
             window.CameraFramebuffer.Use(window.GL!);
             window.GL!.Clear(Silk.NET.OpenGL.ClearBufferMask.ColorBufferBit | Silk.NET.OpenGL.ClearBufferMask.DepthBufferBit);
             window.CurrentScene?.Render(window, viewMatrix, projectionMatrix, camera.Rotation, camera.Eye);
-            ImGui.End();
         }
+
+        ImGui.End();
     }
 }
