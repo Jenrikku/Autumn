@@ -633,6 +633,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                     child.PickingId, !window.Keyboard?.IsCtrlPressed() ?? true);
                                                 window.CameraToObject(child);
                                             }
+                                            ImGui.PopID();
 
                                             ImGui.TableSetColumnIndex(3);
 
@@ -645,6 +646,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                                 var child = scn.GetSceneObjFromStageObj(ch);
                                                 window.CameraToObject(child);
                                             }
+                                            ImGui.PopID();
 
                                             ImGui.TableSetColumnIndex(1);
                                             ImGui.PushID("SceneChildUnlink" + cidx);
@@ -652,6 +654,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                             {
                                                 remch = ch;
                                             }
+                                            ImGui.PopID();
 
                                             cidx++;
                                         }
@@ -933,6 +936,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                     window.CameraToObject(railSceneOwners[b]);
                                 }
+                                ImGui.PopID();
                                 ImGui.TableSetColumnIndex(1);
                                 ImGui.Text(railSceneOwners[b].StageObj.Type.ToString());
                             }
@@ -947,6 +951,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 {
                                     window.SetCameraSelected(scn!.Stage.CameraParams.Cameras.IndexOf(railCameraOwners[b]!));
                                 }
+                                ImGui.PopID();
                                 ImGui.TableSetColumnIndex(1);
                                 ImGui.Text("Camera");
                             }
@@ -999,31 +1004,35 @@ internal class PropertiesWindow(MainWindowContext window)
                                             !window.Keyboard?.IsCtrlPressed() ?? true);
                                         window.CameraToObject(point);
                                     }
+                                    ImGui.PopID();
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("ScenePointView" + cidx);
                                     if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         window.CameraToObject(railSceneObj.RailPoints[cidx]);
                                     }
+                                    ImGui.PopID();
 
                                     ImGui.TableSetColumnIndex(2);
                                     if (cidx == 0) ImGui.BeginDisabled();
                                     ImGui.PushID("ScenePointUP" + cidx);
                                     if (ImGuiWidgets.HoverButton(IconUtils.ARROW_UP, new(ImGui.GetColumnWidth(), 30), cidx == 0))
                                     {
-                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) > 0) 
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) > 0)
                                             delay = railSceneObj.RailPoints[cidx];
                                         n = true;
                                     }
+                                    ImGui.PopID();
                                     if (cidx == 0) ImGui.EndDisabled();
                                     ImGui.TableSetColumnIndex(3);
                                     if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.BeginDisabled();
                                     ImGui.PushID("ScenePointDOWN" + cidx);
                                     if (ImGuiWidgets.HoverButton(IconUtils.ARROW_DOWN, new(ImGui.GetColumnWidth(), 30), cidx == railSceneObj.RailPoints.Count - 1))
                                     {
-                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) < railSceneObj.RailPoints.Count - 1) 
+                                        if (railSceneObj.RailPoints.IndexOf(railSceneObj.RailPoints[cidx]) < railSceneObj.RailPoints.Count - 1)
                                             delay = railSceneObj.RailPoints[cidx];
                                     }
+                                    ImGui.PopID();
                                     if (cidx == railSceneObj.RailPoints.Count - 1) ImGui.EndDisabled();
 
                                     cidx++;
@@ -1089,6 +1098,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
                                         window.CameraToObject(hndl!);
                                     }
+                                    ImGui.PopID();
 
                                     ImGui.TableSetColumnIndex(1);
                                     ImGui.PushID("SceneHandleSelectable" + cc);
@@ -1101,6 +1111,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                         );
                                         window.CameraToObject(hndl!);
                                     }
+                                    ImGui.PopID();
                                 }
                                 ImGui.EndTable();
                             }
