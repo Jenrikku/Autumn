@@ -143,16 +143,21 @@ internal abstract class WindowContext
                 Window.DoRender();
             };
 
+            ImGuiIOPtr imguiIO = ImGui.GetIO();
+
             unsafe
             {
                 // Set the settings file's path in imgui.
-                ImGui.GetIO().Handle->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
+                imguiIO.Handle->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
             }
 
             // If no imgui settings file exists or remember layout is set to false, load the default layout
             if (!ContextHandler.SystemSettings.RememberLayout || !File.Exists(ImguiSettingsFile))
             {
-                ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+                imguiIO.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+                imguiIO.ConfigDragClickToInputText = true;
+                imguiIO.ConfigWindowsMoveFromTitleBarOnly = true;
+                imguiIO.ConfigWindowsResizeFromEdges = false;
 
                 // Load the default imgui settings file.
                 ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));

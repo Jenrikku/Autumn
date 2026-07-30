@@ -193,11 +193,6 @@ internal class MainWindowContext : WindowContext
 
             if (_isFirstFrame)
             {
-                ImGuiIOPtr io = ImGui.GetIO();
-
-                io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-                io.ConfigWindowsMoveFromTitleBarOnly = true;
-
                 // Fix docking settings not loading properly:
                 ImGui.LoadIniSettingsFromDisk(ImguiSettingsFile);
 
