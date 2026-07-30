@@ -106,12 +106,13 @@ internal class EditChildrenDialog(MainWindowContext _window)
                                                 | ImGuiTableFlags.Resizable
                                                 | ImGuiTableFlags.BordersOuter
                                                 | ImGuiTableFlags.BordersV
-                                                | ImGuiTableFlags.ScrollY, new Vector2(tableDimensions.X - 3, tableDimensions.Y - 30)))
+                                                | ImGuiTableFlags.ScrollY
+                                                | ImGuiTableFlags.SizingStretchProp, new Vector2(tableDimensions.X - 3, tableDimensions.Y - 30)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.None, 0.60f);
-                ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.40f);
+                ImGui.TableSetupColumn("Object", 0.60f);
+                ImGui.TableSetupColumn("Type", 0.40f);
                 ImGui.TableHeadersRow();
 
                 foreach (IStageSceneObj obj in _sceneObjs)
@@ -157,6 +158,8 @@ internal class EditChildrenDialog(MainWindowContext _window)
                         ImGui.EndTooltip();
                     }
 
+                    ImGui.PopID();
+
                     ImGui.TableSetColumnIndex(1);
                     ImGui.Text(stageObj.Type.ToString());
                     i++;
@@ -197,16 +200,17 @@ internal class EditChildrenDialog(MainWindowContext _window)
             ImGui.PopFont();
 
             if (ImGui.BeginTable("ChildrenTable", 2,
-                                                    ImGuiTableFlags.RowBg
-                                                    | ImGuiTableFlags.Resizable
+                                                ImGuiTableFlags.RowBg
+                                                | ImGuiTableFlags.Resizable
                                                 | ImGuiTableFlags.BordersOuter
                                                 | ImGuiTableFlags.BordersV
-                                                | ImGuiTableFlags.ScrollY, new Vector2(tableDimensions.X - 2, tableDimensions.Y - 60)))
+                                                | ImGuiTableFlags.ScrollY
+                                                | ImGuiTableFlags.SizingStretchProp, new Vector2(tableDimensions.X - 2, tableDimensions.Y - 60)))
             {
                 int i = 0;
                 ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
-                ImGui.TableSetupColumn("Object", ImGuiTableColumnFlags.None, 0.60f);
-                ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.None, 0.40f);
+                ImGui.TableSetupColumn("Object", 0.60f);
+                ImGui.TableSetupColumn("Type", 0.40f);
                 ImGui.TableHeadersRow();
 
                 foreach (StageObj stageObj in _newChildren)
@@ -260,6 +264,8 @@ internal class EditChildrenDialog(MainWindowContext _window)
                             }
                         }
                     }
+
+                    ImGui.PopID();
 
                     ImGui.TableSetColumnIndex(1);
                     ImGui.Text(stageObj.Type.ToString());

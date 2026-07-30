@@ -190,8 +190,12 @@ internal class DatabaseEditor(MainWindowContext _window)
                 }
                 ImGui.EndTable();
             }
-            if (entry.ClassName == null)
+
+            bool disabled = entry.ClassName == null;
+
+            if (disabled)
                 ImGui.BeginDisabled();
+
             if (entry.ClassName != null)
             {
                 if (!ImGui.GetIO().WantTextInput)
@@ -223,8 +227,10 @@ internal class DatabaseEditor(MainWindowContext _window)
                     RemoveEntry(entry.ClassName!);
                 }
             }
-            if (entry.ClassName == null)
+
+            if (disabled)
                 ImGui.EndDisabled();
+
             if (_isEditor)
             {
                 ImGui.SameLine(default, ImGui.GetStyle().ItemSpacing.X / 2);
@@ -250,11 +256,14 @@ internal class DatabaseEditor(MainWindowContext _window)
             string hdr = string.IsNullOrEmpty(entry.ClassName) ? "No entry selected" : "Class: " + entry.ClassName;
             ImGuiWidgets.TextHeader(hdr, 1.4f);
             ImGui.Spacing();
+
+            bool disabled1 = string.IsNullOrEmpty(entry.ClassName), disabled2 = !_editClassName;
+
             if (_isEditor)
             {
-                if (string.IsNullOrEmpty(entry.ClassName))
+                if (disabled1)
                     ImGui.BeginDisabled();
-                if (!_editClassName)
+                if (disabled2)
                     ImGui.BeginDisabled();
                 ImGui.Text("Class Name:");
                 ImGui.SameLine();
@@ -265,7 +274,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                 {
                     UpdateClassEntry(className != "" ? className : null!);
                 }
-                if (!_editClassName)
+                if (disabled2)
                     ImGui.EndDisabled();
                 ImGui.SameLine(default, 0);
                 if (ImGui.Button(IconUtils.PENCIL))
@@ -426,7 +435,9 @@ internal class DatabaseEditor(MainWindowContext _window)
                         ImGui.EndTable();
                         if (_isEditor)
                         {
-                            if (_argsel < 0 || entry.Args == null)
+                            disabled2 = _argsel < 0 || entry.Args == null;
+
+                            if (disabled2)
                                 ImGui.BeginDisabled();
                             if (ImGui.Button("Remove ARG", new(ImGui.GetContentRegionAvail().X / 2, default)))
                             {
@@ -434,7 +445,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                                 _argsel = -1;
                                 update = true;
                             }
-                            if (_argsel < 0 || entry.Args == null)
+                            if (disabled2)
                                 ImGui.EndDisabled();
                             ImGui.SameLine(default, style.ItemSpacing.X / 2);
                             if (ImGui.Button("Add ARG", new(ImGui.GetContentRegionAvail().X, default)))
@@ -494,7 +505,9 @@ internal class DatabaseEditor(MainWindowContext _window)
                             ImGui.TableSetColumnIndex(2);
                             if (_isEditor)
                             {
-                                if (swi == 0)
+                                disabled2 = swi == 0;
+
+                                if (disabled2)
                                     ImGui.BeginDisabled();
                                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
                                 if (ImGui.InputText($"##swDesc{swn}", ref swDescription, 128))
@@ -504,7 +517,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                                 if (!string.IsNullOrWhiteSpace(swDescription))
                                     ImGui.SetItemTooltip(swDescription);
 
-                                if (swi == 0)
+                                if (disabled2)
                                     ImGui.EndDisabled();
 
                                 if (swUpdate)
@@ -557,7 +570,8 @@ internal class DatabaseEditor(MainWindowContext _window)
                 }
                 ImGui.EndTabBar();
             }
-            if (string.IsNullOrEmpty(entry.ClassName))
+
+            if (_isEditor && disabled1)
                 ImGui.EndDisabled();
         }
         if (update && entry.ClassName != null) UpdateEntry();
@@ -864,13 +878,16 @@ internal class DatabaseEditor(MainWindowContext _window)
                     {
                         _editEnumValues.Remove((int)removeAt);
                     }
-                    if (_editEnumValues.ContainsKey(_editEnVal))
+
+                    bool disabled = _editEnumValues.ContainsKey(_editEnVal);
+
+                    if (disabled)
                         ImGui.BeginDisabled();
                     if (ImGui.Button("Add", new(ImGui.GetContentRegionAvail().X, 25)))
                     {
                         _editEnumValues[_editEnVal] = _editEnNm;
                     }
-                    if (_editEnumValues.ContainsKey(_editEnVal))
+                    if (disabled)
                         ImGui.EndDisabled();
 
                     ImGui.Text("Name:");

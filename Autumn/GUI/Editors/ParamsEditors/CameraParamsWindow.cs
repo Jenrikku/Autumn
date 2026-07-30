@@ -169,7 +169,9 @@ internal class CameraParamsWindow(MainWindowContext window)
             ImGuiWidgets.TextHeader(scn.Stage.CameraParams.Cameras[selectedcam].CameraName());
         }
 
-        if (selectedcam < 0)
+        bool disabled = selectedcam < 0;
+
+        if (disabled)
             ImGui.BeginDisabled();
         if (ImGui.Button(IconUtils.MINUS + "## remcam", new Vector2(ImGui.GetContentRegionAvail().X / 3, default)))
         {
@@ -187,8 +189,9 @@ internal class CameraParamsWindow(MainWindowContext window)
         }
         ImGui.SetItemTooltip("Duplicate Camera");
 
-        if (selectedcam < 0)
+        if (disabled)
             ImGui.EndDisabled();
+
         ImGui.SameLine(0, style.ItemInnerSpacing.X);
         if (ImGui.Button(IconUtils.PLUS + "## addcam", new Vector2(ImGui.GetContentRegionAvail().X, default)))
         {
@@ -280,11 +283,16 @@ internal class CameraParamsWindow(MainWindowContext window)
                             }
                             else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
                         }
+                        
                         ImGui.SameLine(0, style.ItemInnerSpacing.X);
-                        if (rfr2 == 0) ImGui.BeginDisabled();
+                        
+                        disabled = rfr2 == 0;
+
+                        if (disabled) ImGui.BeginDisabled();
+                        
                         if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
                         {
-                            if (rfr2 == 0)
+                            if (disabled)
                             {
                                 window.OpenAddRailDialog();
                             }
@@ -297,7 +305,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                                 window.CameraToObject(rail!);
                             }
                         }
-                        if (rfr2 == 0) ImGui.EndDisabled();
+                        if (disabled) ImGui.EndDisabled();
                     }
                     else CheckField(Camfield, scn, skip);
                 }
@@ -459,7 +467,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         float rval = val ?? -1f;
-        if (val is null)
+        bool disabled = val is null;
+        if (disabled)
             ImGui.BeginDisabled();
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str, padding: padding));
         if (ImGui.InputFloat("##" + str, ref rval, step) && val != null)
@@ -469,7 +478,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             val = rval;
             return true;
         }
-        if (val is null)
+        if (disabled)
             ImGui.EndDisabled();
         return false;
     }
@@ -483,7 +492,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         float rval = val ?? -1f;
-        if (val is null)
+        bool disabled = val is null;
+        if (disabled)
             ImGui.BeginDisabled();
         ImGuiWidgets.SetPropertyWidthGen(str, padding: padding);
         if (ImGui.DragFloat("##" + str, ref rval, step) && val != null)
@@ -493,7 +503,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             val = rval;
             return true;
         }
-        if (val is null)
+        if (disabled)
             ImGui.EndDisabled();
         return false;
     }
@@ -507,7 +517,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         Vector3 rval = val ?? Vector3.Zero;
-        if (val is null)
+        bool disabled = val is null;
+        if (disabled)
             ImGui.BeginDisabled();
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str, padding: 40));
         if (ImGui.DragFloat3("##" + str, ref rval) && val != null)
@@ -515,7 +526,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             val = rval;
             return true;
         }
-        if (val is null)
+        if (disabled)
             ImGui.EndDisabled();
         return false;
     }
@@ -529,7 +540,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         Vector2 rval = val ?? Vector2.Zero;
-        if (val is null)
+        bool disabled = val is null;
+        if (disabled)
             ImGui.BeginDisabled();
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str, padding: 40));
         if (ImGui.DragFloat2("##" + str, ref rval) && val != null)
@@ -537,7 +549,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             val = rval;
             return true;
         }
-        if (val is null)
+        if (disabled)
             ImGui.EndDisabled();
         return false;
     }
@@ -546,7 +558,8 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.Text(str + ":");
         ImGui.SameLine();
         int rval = val ?? -1;
-        if (val is null)
+        bool disabled = val is null;
+        if (disabled)
             ImGui.BeginDisabled();
         ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(str) - 40);
         if (ImGui.InputInt("##" + str, ref rval, step) && val != null)
@@ -554,7 +567,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             val = rval;
             return true;
         }
-        if (val is null)
+        if (disabled)
             ImGui.EndDisabled();
         ImGui.SameLine();
         if (ImGui.Button((val is null ? IconUtils.PLUS : IconUtils.MINUS) + "##" + str + "btn"))
@@ -566,13 +579,17 @@ internal class CameraParamsWindow(MainWindowContext window)
 
     bool CopyVec3Button(bool isCamera)
     {
-        bool rb = false;
-        if (!isCamera && window.CurrentScene.SelectedObjCount < 1)
+        bool disabled = !isCamera && window.CurrentScene?.SelectedObjCount < 1;
+
+        if (disabled)
             ImGui.BeginDisabled();
-        rb = ImGui.Button(isCamera ? IconUtils.CAMERA : IconUtils.USER);
+
+        bool rb = ImGui.Button(isCamera ? IconUtils.CAMERA : IconUtils.USER);
         ImGui.SetItemTooltip(isCamera ? "Copy Camera position" : "Copy selected object position");
-        if (!isCamera && window.CurrentScene.SelectedObjCount < 1)
+
+        if (disabled)
             ImGui.EndDisabled();
+
         return rb;
     }
 
@@ -698,7 +715,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             // {
             //    disrot = true; // This doesn't actually seem to do anything, the only time the rotator is disabled is on AngleMax = 0
             // }
-            ImGui.BeginDisabled(disrot);
+            if (disrot) ImGui.BeginDisabled();
             ImGui.Button(IconUtils.ARROW_LEFT);
             if (ImGui.IsItemActive())
             {
@@ -730,7 +747,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             ImGui.SetItemTooltip("Preview dashing camera");
             ImGui.SameLine();
 
-            ImGui.BeginDisabled(disrot);
+            if (disrot) ImGui.BeginDisabled();
             ImGui.Button(IconUtils.ARROW_RIGHT);
             if (ImGui.IsItemActive())
             {
