@@ -198,14 +198,16 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.PushStyleColor(ImGuiCol.Button, 0x00000000);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0x00000000);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0x00000000);
+
         if (sceneReady)
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
 
         unsafe
         {
             fixed (ImGuiWindowClass* tmp = &windowClass)
-            ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
+                ImGui.SetNextWindowClass(new ImGuiWindowClassPtr(tmp));
         }
+
         if (!ImGui.Begin("Scene", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (sceneReady)
@@ -214,6 +216,7 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.End();
             return;
         }
+
         ImGui.PopStyleColor(3);
 
         if (!window.ContextHandler.IsProjectLoaded)
@@ -864,8 +867,8 @@ internal class SceneWindow(MainWindowContext window)
             }
         }
 
-        ImGui.EndChild();
         ImGui.PopStyleVar();
+        ImGui.EndChild();
 
         ImGui.End();
     }

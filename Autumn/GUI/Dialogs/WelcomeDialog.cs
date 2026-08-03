@@ -210,9 +210,9 @@ internal class WelcomeDialog
             _window.ContextHandler.SystemSettings.SkipWelcomeDialog = true;
         }
 
-        ImGui.End();
+        ImGui.PopStyleVar();
+        ImGui.PopStyleVar();
 
-        ImGui.PopStyleVar();
-        ImGui.PopStyleVar();
+        ImGui.End();
     }
 }

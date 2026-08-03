@@ -684,8 +684,8 @@ internal class MainWindowContext : WindowContext
             ImGui.Text("Click anywhere to place the object, Shift Click to keep adding the same object.");
         }
 
-        ImGui.End();
         ImGui.PopStyleVar();
+        ImGui.End();
     }
 
     /// <summary>

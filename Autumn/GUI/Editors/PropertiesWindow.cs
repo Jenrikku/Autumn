@@ -1536,13 +1536,13 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("X") / 2);
                 ImGui.Text("X");
             }
-            ImGui.EndChild();
             ImGui.PopStyleColor();
+            ImGui.EndChild();
             ImGui.SameLine(default, 0);
+
             ImGui.SetNextItemWidth(itemWidth);
             if (DragFloatX.Use(RefString + "X", ref refVec3.X, style, v_speed, false))
                 validate = true;
-
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
@@ -1552,13 +1552,13 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Y") / 2);
                 ImGui.Text("Y");
             }
-            ImGui.EndChild();
             ImGui.PopStyleColor();
+            ImGui.EndChild();
             ImGui.SameLine(default, 0);
+
             ImGui.SetNextItemWidth(itemWidth);
             if (DragFloatY.Use(RefString + "Y", ref refVec3.Y, style, v_speed, false))
                 validate = true;
-
 
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
 
@@ -1568,15 +1568,13 @@ internal class PropertiesWindow(MainWindowContext window)
                 ImGui.SetCursorPos(ImGui.GetWindowSize() / 2 - ImGui.CalcTextSize("Z") / 2);
                 ImGui.Text("Z");
             }
-            ImGui.EndChild();
             ImGui.PopStyleColor();
+            ImGui.EndChild();
             ImGui.SameLine(default, 0);
 
             ImGui.SetNextItemWidth(itemWidth);
             if (DragFloatZ.Use(RefString + "Z", ref refVec3.Z, style, v_speed, false))
                 validate = true;
-
-
 
             var rV = new Vector3(DragFloatX.reference, DragFloatY.reference, DragFloatZ.reference);
             if (rV != rf)

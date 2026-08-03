@@ -632,7 +632,7 @@ internal class AddObjectDialog(MainWindowContext window)
         ImGuiWidgets.ResetFontScale();
         ImGui.SetCursorPosX(v.X);
         ImGui.SetCursorPosY(v.Y + ts + 5);
-        
+
         if (ImGui.BeginChild("RIGHT", new(pvw / 2 - 25, pvh - 35 - ImGui.GetCursorPosY()), ImGuiChildFlags.Borders))
         {
             float h = ImGui.GetContentRegionAvail().Y;
@@ -716,13 +716,15 @@ internal class AddObjectDialog(MainWindowContext window)
                         //ImGui.GetWindowDrawList().AddNgonFilled(lpos, 6, 0xff0000ff, 4);
                         break;
                 }
-
-                ImGui.PopStyleColor();
             }
 
-            ImGui.EndChild();
+            ImGui.PopStyleColor();
+
             ImGui.EndChild();
         }
+
+        ImGui.EndChild();
+
         //ImGui.PopStyleColor();
         if (string.IsNullOrWhiteSpace(_name)) ImGui.BeginDisabled();
         if (ImGui.Button("Add", new(-1)))
