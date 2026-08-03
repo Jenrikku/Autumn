@@ -994,15 +994,21 @@ internal class SceneWindow(MainWindowContext window)
 
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6*11 +12;
+        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6 * 5;
+        #if DEBUG
+        buttons += 6 * 4;
+        #endif
         ImGui.SetCursorPos(new Vector2(contentAvail.X - buttons, opos.Y - 3f));
 
+        #if DEBUG
         if (ImGui.Button(IconUtils.USER))
         {
             window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess = !window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess;
         }
         ImGui.SetItemTooltip($"Post Processing {(window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? "ON" : "OFF")}");
         ImGui.SameLine();
+        #endif
+
 
         if (ImGui.Button(IconUtils.GRID))
         {
@@ -1036,13 +1042,6 @@ internal class SceneWindow(MainWindowContext window)
             ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
         ImGui.SetItemTooltip($"CameraArea visibility {(ModelRenderer.VisibleCameraAreas ? "ON" : "OFF")}");
-        ImGui.SameLine();
-
-        if (ImGui.Button("A"))
-        {
-            ModelRenderer.UseFullAlphaPipeline = !ModelRenderer.UseFullAlphaPipeline;
-        }
-        ImGui.SetItemTooltip($"Pipeline {(ModelRenderer.UseFullAlphaPipeline ? "ON": "OFF")}");
 
         ImGui.PopStyleVar(2);
         ImGui.SetCursorPos(opos);
