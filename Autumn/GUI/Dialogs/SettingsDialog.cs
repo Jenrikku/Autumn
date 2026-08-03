@@ -37,6 +37,7 @@ internal class SettingsDialog
     private bool EXPERIMENTAL_PostProcess = true;
     private bool EXPERIMENTAL_SelectionOutline = true;
     private bool EXPERIMENTAL_ActorShadows = true;
+    private bool EXPERIMENTAL_AlphaPipeline = true;
 
     private string[] compressionLevels = Enum.GetNames(typeof(Yaz0Wrapper.CompressionLevel));
     private int _oldTheme = 0;
@@ -82,6 +83,7 @@ internal class SettingsDialog
         _gizmoPos = (int)_window.ContextHandler.SystemSettings.GizmoPosition;
         _saveRem = _window.ContextHandler.SystemSettings.SaveReminder;
         EXPERIMENTAL_PostProcess = _window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess;
+        EXPERIMENTAL_AlphaPipeline = ModelRenderer.UseFullAlphaPipeline;
         EXPERIMENTAL_SelectionOutline = _window.ContextHandler.SystemSettings.EXPERIMENTAL_SelectionOutline;
         EXPERIMENTAL_ActorShadows = _window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows;
 
@@ -285,6 +287,8 @@ internal class SettingsDialog
             #if DEBUG
             if (ImGui.BeginTabItem("EXPERIMENTAL"))
             {
+                ImGui.Checkbox("Enable alpha pipeline", ref EXPERIMENTAL_AlphaPipeline);
+                ImGui.SetItemTooltip("Changes the way the viewport is rendered so that transparent objects are rendered last and in a more game-accurate order.");
                 ImGui.Checkbox("Enable post processing effects", ref EXPERIMENTAL_PostProcess);
                 ImGui.SetItemTooltip("Changes the way the viewport is rendered to enable shadows like the ones ingame and outlines for selected objects.");
                 if (!EXPERIMENTAL_PostProcess) ImGui.BeginDisabled();
@@ -388,6 +392,7 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.ShowHoverInfo = (Enums.HoverInfoMode)_hoverInfo;
             _window.ContextHandler.SystemSettings.GizmoPosition = (Enums.GizmoPosition)_gizmoPos;
             
+            ModelRenderer.UseFullAlphaPipeline = EXPERIMENTAL_AlphaPipeline;
             _window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess = EXPERIMENTAL_PostProcess;
             _window.ContextHandler.SystemSettings.EXPERIMENTAL_SelectionOutline = EXPERIMENTAL_SelectionOutline;
             _window.ContextHandler.SystemSettings.EXPERIMENTAL_ActorShadows = EXPERIMENTAL_ActorShadows;

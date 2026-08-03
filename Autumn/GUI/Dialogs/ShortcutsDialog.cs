@@ -80,6 +80,7 @@ internal class ShortcutsDialog(MainWindowContext window)
                     ImGui.EndTabItem();
                 }
             }
+            ImGui.EndTabBar();
         }
         if (changingKey)
         {
@@ -153,7 +154,7 @@ internal class ShortcutsDialog(MainWindowContext window)
         {
             window.ContextHandler.ActionHandler.SetShortcut(command, null);
         }
-        ImGui.SetItemTooltip(act.Command.DisplayName);
+        ImGui.SetItemTooltip("Left click to assign\r\nMiddle click to remove assignment");
         ImGui.PopStyleVar();
     }
 }

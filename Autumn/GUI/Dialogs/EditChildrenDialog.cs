@@ -89,16 +89,18 @@ internal class EditChildrenDialog(MainWindowContext _window)
             return;
 
         dimensions = ImGui.GetWindowSize();
-
-        ImGui.InputText("SEARCHBOX", ref _search, 100);
-        Vector2 tableDimensions = new(dimensions.X / 2 - 27, dimensions.Y - 96);
+        var avail = ImGui.GetContentRegionAvail();
+        ImGui.SetNextItemWidth(avail.X);
+        ImGui.InputTextWithHint("##SEARCHBOX", "Object name to search", ref _search, 100);
+        avail = ImGui.GetContentRegionAvail();
+        Vector2 tableDimensions = new(avail.X / 2 - 19, avail.Y - 30);
         float tablestart = ImGui.GetCursorPosY();
 
         if (ImGui.BeginChild("LEFT", tableDimensions))
         {
-            ImGui.PushFont(null, 1.3f);
+            ImGuiWidgets.SetFontScale(1.3f);
             ImGui.Text("Scene objects:");
-            ImGui.PopFont();
+            ImGuiWidgets.ResetFontScale();
 
             tablestart += ImGui.GetCursorPosY();
             if (ImGui.BeginTable("ObjectTable", 2,
@@ -195,9 +197,9 @@ internal class EditChildrenDialog(MainWindowContext _window)
         bool moveb = false; // Id, Up(true) or Down(false)
         if (ImGui.BeginChild("RIGHT", tableDimensions))
         {
-            ImGui.PushFont(null, 1.3f);
+            ImGuiWidgets.SetFontScale(1.3f);
             ImGui.Text("Children:");
-            ImGui.PopFont();
+            ImGuiWidgets.ResetFontScale();
 
             if (ImGui.BeginTable("ChildrenTable", 2,
                                                 ImGuiTableFlags.RowBg
@@ -276,7 +278,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
             }
 
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2);
-            if (ImGuiWidgets.ArrowButton("upbt", ImGuiDir.Up, new(ImGui.GetWindowWidth() / 2, -1)))
+            if (ImGuiWidgets.ArrowButton("upbt", ImGuiDir.Up, new(avail.X / 4 - ImGui.GetStyle().ItemSpacing.X * 2, -1)))
             {
                 foreach (StageObj s in _selectedObjs[1])
                 {
@@ -287,7 +289,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
                 moveb = true;
             }
             ImGui.SameLine();
-            if (ImGuiWidgets.ArrowButton("dwbt", ImGuiDir.Down, new(ImGui.GetWindowWidth() / 2, -1)))
+            if (ImGuiWidgets.ArrowButton("dwbt", ImGuiDir.Down, new(avail.X / 4 - ImGui.GetStyle().ItemSpacing.X * 2, -1)))
             {
                 foreach (StageObj s in _selectedObjs[1])
                 {
@@ -320,8 +322,8 @@ internal class EditChildrenDialog(MainWindowContext _window)
 
         //ImGui.TextColored(new Vector4(1, 0, 0, 1), dimensions.X+", "+ dimensions.Y);
         //ImGui.SameLine();
-        ImGui.SetCursorPosX(dimensions.X - 90);
-        ImGui.SetCursorPosY(dimensions.Y - ImGui.GetTextLineHeight() - 14);
+        ImGui.SetCursorPosX(avail.X - 80);
+        ImGui.SetCursorPosY(avail.Y + 34);
 
         if (ImGui.Button("Ok", new(80, 0)))
         {

@@ -256,6 +256,7 @@ internal class SearchWindow
                         ch.PickingId, !window.Keyboard?.IsCtrlPressed() ?? true);
                     window.CameraToObject(ch);
                 }
+                ImGui.PopID();
 
                 ImGui.TableSetColumnIndex(2);
 
@@ -267,6 +268,7 @@ internal class SearchWindow
                 {
                     window.CameraToObject(ch);
                 }
+                ImGui.PopID();
 
                 cidx++;
             }

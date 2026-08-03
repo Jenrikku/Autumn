@@ -12,6 +12,20 @@ internal static class ImGuiWidgets
 {
     public const ImGuiDockNodeFlags NO_TAB_BAR = (ImGuiDockNodeFlags)0x1000;
     public const ImGuiDockNodeFlags NO_WINDOW_MENU_BUTTON = (ImGuiDockNodeFlags)(1 << 14);
+    public const float FONT_SIZE = 18;
+    public static void SetFontScale(float scale = 1.0f)
+    {
+        ImGui.PushFont(null, FONT_SIZE * scale);
+    }
+    /// <summary>
+    /// Must be called after SetFontScale
+    /// </summary>
+    public static void ResetFontScale()
+    {
+        ImGui.PopFont();
+    }
+
+
     public static void DirectoryPathSelector(
         ref string input,
         ref bool isValidPath,
@@ -108,9 +122,9 @@ internal static class ImGuiWidgets
     /// <param name="original"></param>
     public static void TextHeader(string str, float scale = 1.2f)
     {
-        ImGui.PushFont(null, scale);
+        SetFontScale(scale);
         ImGui.Text(str);
-        ImGui.PopFont();
+        ResetFontScale();
         ImGui.Separator();
     }
     public static float SetPropertyWidth(string str)

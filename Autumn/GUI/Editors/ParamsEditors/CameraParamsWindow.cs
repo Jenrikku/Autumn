@@ -639,7 +639,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                 else if (CamField.FieldType == typeof(Vector3?))
                 {
                     ImGuiWidgets.PrePropertyWidthName(CamField.Name, ratioA, ratioB);
-                    ImGui.DragFloat3("##fv3", ref fakev3);
+                    ImGui.DragFloat3("##fv3" + CamField.Name, ref fakev3);
                 }
 
                 ImGui.EndDisabled();
