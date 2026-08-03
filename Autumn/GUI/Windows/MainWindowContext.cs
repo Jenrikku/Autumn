@@ -726,7 +726,7 @@ internal class MainWindowContext : WindowContext
             if (ImGui.BeginChild("##Title"))
             {
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 25);
-                ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 45);
+                ImGuiWidgets.TextHeader("Welcome to Autumn!", scale: 2.5f);
                 ImGui.Text("\t\tA 3DL stage editor");
             }
 
