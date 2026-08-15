@@ -26,13 +26,13 @@ internal class SingleFileChooserContext : FileChooserWindowContext
         if (!ImGui.BeginTable("##FileChooseTable", 3, _fileChooseFlags))
             return;
 
-        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
-
         ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
         ImGui.TableSetupColumn("Name");
         ImGui.TableSetupColumn("Size");
         ImGui.TableSetupColumn("Modified Date");
         ImGui.TableHeadersRow();
+
+        UpdateFileSortByTable(ImGui.TableGetSortSpecs());
 
         foreach (FileSystemInfo info in DirectoryEntries)
         {

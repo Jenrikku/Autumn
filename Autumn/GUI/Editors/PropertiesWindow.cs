@@ -897,17 +897,24 @@ internal class PropertiesWindow(MainWindowContext window)
                         {
                             ChangeHandler.ChangeFieldValue(scn?.History!, railObj, "Name", railObj.Name, s);
                         }
+                        s = railObj.Layer;
                         ImGuiWidgets.PrePropertyWidthName("Layer");
-                        ImGui.InputTextWithHint("##layername", "", ref railObj.Layer, 128, ImGuiInputTextFlags.EnterReturnsTrue);
+                        if (ImGui.InputTextWithHint("##layername", "", ref s, 128, ImGuiInputTextFlags.EnterReturnsTrue))
+                        {
+                            ChangeHandler.ChangeFieldValue(scn?.History!, railObj, "Layer", railObj.Layer, s);
+                        }
                         ImGuiWidgets.PrePropertyWidthName("Closed loop");
-                        if (ImGui.Checkbox("##CLOSED", ref railObj.Closed))
-                            railSceneObj.UpdateModelTmp();
+
+                        bool clsd = railObj.Closed;
+                        if (ImGui.Checkbox("##CLOSED", ref clsd))
+                        {
+                            ChangeHandler.ChangeFieldValue(scn?.History!, railObj, "Closed", railObj.Closed, clsd, railSceneObj.UpdateModelTmp);
+                        }
                         int pointtyp = railObj.PointType == RailPointType.Bezier ? 1 : 0;
                         ImGuiWidgets.PrePropertyWidthName("Curve type");
                         if (ImGui.Combo("##Type", ref pointtyp, ["Linear", "Bezier"], 2))
                         {
-                            railObj.PointType = pointtyp == 0 ? RailPointType.Linear : RailPointType.Bezier; 
-                            railSceneObj.UpdateModelTmp();
+                            ChangeHandler.ChangeFieldValue(scn?.History!, railObj, "PointType", railObj.PointType, pointtyp == 0 ? RailPointType.Linear : RailPointType.Bezier, railSceneObj.UpdateModelTmp);
                         }
                         ImGui.SetItemTooltip("Determines whether this rail will save with handles in the point positions or not. \r\nThis option is destructive after saving.");
                         // ImGui.Text($"Center X: {railSceneObj.Center.X}");

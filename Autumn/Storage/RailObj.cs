@@ -4,7 +4,7 @@ namespace Autumn.Storage;
 
 internal class RailObj : StageObj
 {
-    public RailPointType PointType { get; set; }
+    public RailPointType PointType = RailPointType.Bezier;
 
     public int RailNo = 0; // set during read and save ONLY, not user-editable
 
