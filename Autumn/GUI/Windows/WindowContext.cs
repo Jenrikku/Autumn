@@ -151,14 +151,14 @@ internal abstract class WindowContext
                 imguiIO.Handle->IniFilename = (byte*)Marshal.StringToCoTaskMemUTF8(ImguiSettingsFile);
             }
 
+            imguiIO.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+            imguiIO.ConfigDragClickToInputText = true;
+            imguiIO.ConfigWindowsMoveFromTitleBarOnly = true;
+            imguiIO.ConfigWindowsResizeFromEdges = false;
+
             // If no imgui settings file exists or remember layout is set to false, load the default layout
             if (!ContextHandler.SystemSettings.RememberLayout || !File.Exists(ImguiSettingsFile))
             {
-                imguiIO.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-                imguiIO.ConfigDragClickToInputText = true;
-                imguiIO.ConfigWindowsMoveFromTitleBarOnly = true;
-                imguiIO.ConfigWindowsResizeFromEdges = false;
-
                 // Load the default imgui settings file.
                 ImGui.LoadIniSettingsFromDisk(Path.Join("Resources", "DefaultLayout.ini"));
             }
