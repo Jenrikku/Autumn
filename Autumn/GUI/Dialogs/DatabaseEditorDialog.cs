@@ -70,6 +70,7 @@ internal class DatabaseEditor(MainWindowContext _window)
         _modifiedEntries.Clear();
         _search = "";
     }
+    bool _beginArgEdit = false;
     public void Render()
     {
         if (!_isOpened)
@@ -420,6 +421,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                                 {
                                     SetArgs(false);
                                     _argEdit = true;
+                                    _beginArgEdit = true;
                                 }
                             }
                             if (!string.IsNullOrWhiteSpace(argDescription))
@@ -452,6 +454,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                             {
                                 SetArgs();
                                 _argEdit = true;
+                                _beginArgEdit = true;
                                 update = true;
                             }
                         }
@@ -571,7 +574,7 @@ internal class DatabaseEditor(MainWindowContext _window)
                 ImGui.EndTabBar();
             }
 
-            if (_isEditor && disabled1)
+            if (disabled1)
                 ImGui.EndDisabled();
         }
         if (update && entry.ClassName != null) UpdateEntry();
@@ -615,8 +618,11 @@ internal class DatabaseEditor(MainWindowContext _window)
                 return;
             }
         }
-        if (_argEdit)
+        if (_argEdit && !_beginArgEdit)
+        {
             ImGui.EndDisabled();
+        }
+        _beginArgEdit = false;
         ImGui.EndPopup();
     }
 

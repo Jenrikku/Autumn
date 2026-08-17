@@ -94,7 +94,7 @@ internal static class ChangeHandler
     }
 
     // See method above.
-    public static bool ChangeFieldValue<T1, T2>(ChangeHistory history, T1 obj, string name, T2 prior, T2 final)
+    public static bool ChangeFieldValue<T1, T2>(ChangeHistory history, T1 obj, string name, T2 prior, T2 final, Action? act = null)
         where T1 : notnull
     {
         FieldInfo? field = obj.GetType().GetField(name);
@@ -102,7 +102,17 @@ internal static class ChangeHandler
         if (field is null || !field.FieldType.IsAssignableFrom(typeof(T2)))
             return false;
 
-        Change change = new(Undo: () => field.SetValue(obj, prior), Redo: () => field.SetValue(obj, final));
+        Change change = new(
+            Undo: () => 
+                {
+                    field.SetValue(obj, prior);
+                    act?.Invoke();
+                }, 
+            Redo: () => 
+                {
+                    field.SetValue(obj, final);
+                    act?.Invoke();
+                });
 
         change.Redo();
         history.Add(change);
