@@ -49,8 +49,12 @@ internal abstract class FileChooserWindowContext : WindowContext
     private bool _inputtingPath = false;
     private bool _inputPathInvalid = false;
     private string _inputPathBuffer = "";
+    private string _selectedPathBuffer = ""; // Used instead of SelectedPath to keep case in case-insensitive environments.
 
     private bool _isPathValid = true;
+
+    private bool _isCurrentDirCaseInsensitiveChecked = false;
+    private bool _isCurrentDirCaseInsensitive = false;
 
     /// <summary>
     /// Error that shows when the path is invalid.
@@ -317,7 +321,8 @@ internal abstract class FileChooserWindowContext : WindowContext
                         drive.DriveType == DriveType.Ram
                         || drive.DriveType == DriveType.Unknown
                         || drive.Name == "/"
-                        || drive.Name.StartsWith("/sys")
+                        || drive.Name.StartsWith("/sys/")
+                        || drive.Name.StartsWith("/proc/sys/")
                     )
                         continue;
 
@@ -347,17 +352,29 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     bool modified = ImGui.InputText(
                         "##SelectedFile",
-                        ref SelectedFile,
+                        ref _selectedPathBuffer,
                         4096
                     );
 
                     bool enterPressed = !_inputtingPath && !inputtedPathThisFrame && ImGui.IsKeyPressed(ImGuiKey.Enter);
                     inputtedPathThisFrame = false;
 
-                    if ((SelectedFileChanged || modified) && !enterPressed)
+                    if (SelectedFileChanged)
+                    {
+                        _selectedPathBuffer = SelectedFile;
+                        modified = true;
+                        SelectedFileChanged = false;
+                    }
+
+                    if (modified && !enterPressed)
                     {
                         PathError = string.Empty;
-                        SelectedFileChanged = false;
+
+                        if (IsCurrentDirCaseInsensitive())
+                            SelectedFile = _selectedPathBuffer.ToLower();
+                        else
+                            SelectedFile = _selectedPathBuffer;
+
                         _isPathValid = IsTargetValid();
                     }
 
@@ -400,6 +417,23 @@ internal abstract class FileChooserWindowContext : WindowContext
         };
     }
 
+    /// <returns>True if the file system of the current directory is case-insensitive</returns>
+    protected bool IsCurrentDirCaseInsensitive()
+    {
+        if (_isCurrentDirCaseInsensitiveChecked) return _isCurrentDirCaseInsensitive;
+
+        _isCurrentDirCaseInsensitiveChecked = true;
+        _isCurrentDirCaseInsensitive = false;
+
+        if (!Directory.Exists(CurrentDirectory)) return false;
+
+        string? path = Directory.EnumerateFileSystemEntries(CurrentDirectory).FirstOrDefault();
+        if (string.IsNullOrEmpty(path)) path = CurrentDirectory;
+
+        _isCurrentDirCaseInsensitive = Path.Exists(path.ToLower()) && Path.Exists(path.ToUpper());
+        return _isCurrentDirCaseInsensitive;
+    }
+
     protected abstract void RenderFileChoosePanel();
 
     /// <summary>
@@ -436,6 +470,8 @@ internal abstract class FileChooserWindowContext : WindowContext
 
         CurrentDirectory = directory;
         _parentDirectory = Directory.GetParent(directory)?.FullName ?? string.Empty;
+
+        _isCurrentDirCaseInsensitiveChecked = false;
 
         if (updateHistory)
         {

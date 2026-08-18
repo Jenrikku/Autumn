@@ -29,12 +29,15 @@ internal class ProjectChooserContext : FileChooserWindowContext
         {
             IsDirRomFS.Clear();
 
+            bool caseInsensitive = IsCurrentDirCaseInsensitive();
+
             foreach (var entry in DirectoryEntries)
             {
                 if (entry is not DirectoryInfo dir)
                     continue;
 
-                IsDirRomFS.Add(entry.Name, IsRomFS(entry.FullName));
+                string name = caseInsensitive ? entry.Name.ToLower() : entry.Name;
+                IsDirRomFS.Add(name, IsRomFS(entry.FullName));
             }
         };
     }

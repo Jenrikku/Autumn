@@ -1,5 +1,4 @@
 using Autumn.Context;
-using Hexa.NET.ImGui;
 
 namespace Autumn.GUI.Windows;
 
@@ -61,5 +60,9 @@ internal class ProjectCreateChooserContext : ProjectChooserContext
         ChangeDirectory(path);
     }
 
-    protected override bool IsDisabled(string name) => IsDirRomFS[name];
+    protected override bool IsDisabled(string name)
+    {
+        if (IsCurrentDirCaseInsensitive()) name = name.ToLower();
+        return IsDirRomFS[name];
+    }
 }
