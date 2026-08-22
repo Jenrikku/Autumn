@@ -3,7 +3,7 @@
 	url = https://github.com/Jenrikku/NARCSharp.git
 [submodule "Libraries/SceneGL"]
 	path = Libraries/SceneGL
-	url = https://github.com/jupahe64/SceneGL
+	url = https://github.com/Jenrikku/SceneGL.git
 [submodule "Libraries/SPICA"]
 	path = Libraries/SPICA
 	url = https://github.com/Jenrikku/SPICA.git
