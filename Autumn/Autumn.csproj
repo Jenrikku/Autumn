@@ -13,13 +13,13 @@
     <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
     <PackageReference Include="Hexa.NET.ImGui.Backends" Version="1.0.18" />
     <PackageReference Include="Hexa.NET.ImGui.Backends.GLFW" Version="1.0.18" />
-    <PackageReference Include="SharpYaml" Version="2.1.1" />
-    <PackageReference Include="Silk.NET.Input" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.Input.Extensions" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.OpenGL" Version="2.21.0" />
-    <PackageReference Include="Silk.NET.Windowing" Version="2.21.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="SharpYaml" Version="2.1.5" />
+    <PackageReference Include="Silk.NET.Input" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.Input.Extensions" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.23.0" />
+    <PackageReference Include="Silk.NET.Windowing" Version="2.23.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.11" />
     <PackageReference Include="Tomlyn" Version="0.20.0" />
   </ItemGroup>
 
@@ -32,28 +32,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <DBFiles Include="$(MSBuildProjectDirectory)\Resources\RedPepper-ClassDataBase\Data\*"/>
-    <ModifierFiles Include="$(MSBuildProjectDirectory)\Resources\Autumn-ClassModifiers\Modifiers\*"/>
-    <Icons Include="$(MSBuildProjectDirectory)\Resources\Icons\*"/>
-    <Themes Include="$(MSBuildProjectDirectory)\Resources\Themes\*"/>
+    <DBFiles Include="$(MSBuildProjectDirectory)\Resources\RedPepper-ClassDataBase\Data\*" />
+    <ModifierFiles Include="$(MSBuildProjectDirectory)\Resources\Autumn-ClassModifiers\Modifiers\*" />
+    <Icons Include="$(MSBuildProjectDirectory)\Resources\Icons\*" />
+    <Themes Include="$(MSBuildProjectDirectory)\Resources\Themes\*" />
   </ItemGroup>
 
   <Target Name="CopyTasksBuild" AfterTargets="Build">
-    <Copy SourceFiles="@(ModifierFiles)" DestinationFolder="$(OutDir)\Resources\Modifiers\" SkipUnchangedFiles="true"/>
-    <Copy SourceFiles="@(DBFiles)" DestinationFolder="$(OutDir)\Resources\ClassDB\" SkipUnchangedFiles="True"/>
-    <Copy SourceFiles="@(Icons)" DestinationFolder="$(OutDir)\Resources\Icons\" SkipUnchangedFiles="True"/>
-    <Copy SourceFiles="@(Themes)" DestinationFolder="$(OutDir)\Resources\Themes\" SkipUnchangedFiles="True"/>
+    <Copy SourceFiles="@(ModifierFiles)" DestinationFolder="$(OutDir)\Resources\Modifiers\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(DBFiles)" DestinationFolder="$(OutDir)\Resources\ClassDB\" SkipUnchangedFiles="True" />
+    <Copy SourceFiles="@(Icons)" DestinationFolder="$(OutDir)\Resources\Icons\" SkipUnchangedFiles="True" />
+    <Copy SourceFiles="@(Themes)" DestinationFolder="$(OutDir)\Resources\Themes\" SkipUnchangedFiles="True" />
   </Target>
 
   <Target Name="CopyTasksPublish" AfterTargets="Publish">
-    <Copy SourceFiles="@(ModifierFiles)" DestinationFolder="$(PublishDir)\Resources\Modifiers\" SkipUnchangedFiles="true"/>
-    <Copy SourceFiles="@(DBFiles)" DestinationFolder="$(PublishDir)\Resources\ClassDB\" SkipUnchangedFiles="True"/>
-    <Copy SourceFiles="@(Icons)" DestinationFolder="$(PublishDir)\Resources\Icons\" SkipUnchangedFiles="True"/>
-    <Copy SourceFiles="@(Themes)" DestinationFolder="$(PublishDir)\Resources\Themes\" SkipUnchangedFiles="True"/>
+    <Copy SourceFiles="@(ModifierFiles)" DestinationFolder="$(PublishDir)\Resources\Modifiers\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(DBFiles)" DestinationFolder="$(PublishDir)\Resources\ClassDB\" SkipUnchangedFiles="True" />
+    <Copy SourceFiles="@(Icons)" DestinationFolder="$(PublishDir)\Resources\Icons\" SkipUnchangedFiles="True" />
+    <Copy SourceFiles="@(Themes)" DestinationFolder="$(PublishDir)\Resources\Themes\" SkipUnchangedFiles="True" />
   </Target>
 
   <ItemGroup>
-    <Content Include="$(MSBuildProjectDirectory)\Resources\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" DestinationFolder="Resources"/>
+    <Content Include="$(MSBuildProjectDirectory)\Resources\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" DestinationFolder="Resources" />
   </ItemGroup>
 
 </Project>

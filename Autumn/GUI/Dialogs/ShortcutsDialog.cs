@@ -4,7 +4,6 @@ using Autumn.Enums;
 using Autumn.GUI.Windows;
 using Hexa.NET.ImGui;
 using Silk.NET.Input.Extensions;
-using Silk.NET.SDL;
 
 namespace Autumn.GUI.Dialogs;
 
