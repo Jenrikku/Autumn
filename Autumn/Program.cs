@@ -7,6 +7,13 @@ using Autumn.GUI.Windows;
 // See System.Text.Encoding.CodePages package.
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+// Fix not finding config path on linux if it does not yet exist:
+if (OperatingSystem.IsLinux())
+{
+    string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    Directory.CreateDirectory(Path.Join(home, ".config"));
+}
+
 // Get Autumn's config path.
 string configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 configPath = Path.Join(configPath, "autumn");
