@@ -182,6 +182,10 @@ internal class ContextHandler
     {
         if (!_globalSettings.TryAdd(key, value))
             _globalSettings[key] = value;
+
+        // Allow RomFS to be properly changed without needing a restart
+        if (key == nameof(LayeredSettings.RomFSPath) && value is string v)
+            FSHandler.OriginalFS = new(v);
     }
 
     public void SetProjectSetting(string key, object? value)
@@ -193,6 +197,10 @@ internal class ContextHandler
 
         if (!settings.TryAdd(key, value))
             settings[key] = value;
+
+        // Allow RomFS to be properly changed without needing a restart
+        if (key == nameof(LayeredSettings.RomFSPath) && value is string v)
+            FSHandler.OriginalFS = new(v);
     }
 
     /// <summary>

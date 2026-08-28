@@ -53,15 +53,11 @@ internal class AddStageDialog
         _skipOk = false;
     }
 
-    bool _noReference = false;
-
     public void Render()
     {
-        if (_window.ContextHandler.FSHandler.OriginalFS == null)
-            _noReference = true;
-
         if (!_isOpened)
             return;
+
         if (ImGui.IsKeyPressed(ImGuiKey.Escape))
         {
             Reset();
@@ -84,7 +80,8 @@ internal class AddStageDialog
             )
         )
             return;
-        if (_noReference) RenderNoRomfs();
+
+        if (_window.ContextHandler.FSHandler.OriginalFS is null) RenderNoRomfs();
         else RenderWithRomfs();
     }
 

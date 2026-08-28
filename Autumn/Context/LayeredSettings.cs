@@ -4,8 +4,8 @@ internal class LayeredSettings(params Dictionary<string, object?>[] settings)
 {
     #region Setting definition
 
-    public bool UseClassNames => GetSetting<bool>("UseClassNames");
-    public string? RomFSPath => GetSetting<string>("RomFSPath");
+    public bool UseClassNames => GetSetting<bool>(nameof(UseClassNames));
+    public string? RomFSPath => GetSetting<string>(nameof(RomFSPath));
 
     #endregion
 
