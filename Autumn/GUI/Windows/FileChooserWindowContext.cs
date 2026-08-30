@@ -61,6 +61,8 @@ internal abstract class FileChooserWindowContext : WindowContext
     /// </summary>
     protected string PathError = string.Empty;
 
+    protected WindowContext? ParentWindowContext = null;
+
     /// <summary>
     /// Variable that is used to tell that the SelectedFile was changed externally.
     /// </summary>
@@ -86,15 +88,33 @@ internal abstract class FileChooserWindowContext : WindowContext
 
     protected event Action? DirectoryUpdated;
 
+    public FileChooserWindowContext(WindowContext parent)
+        : this(parent.ContextHandler, parent.WindowManager)
+    {
+        ParentWindowContext = parent;
+    }
+
     public FileChooserWindowContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {
-        SuccessCallback += _ => Window.Close();
-        CancelCallback += Window.Close;
         Drives = DriveInfo.GetDrives();
+
+        SuccessCallback += _ =>
+        {
+            ParentWindowContext?.Disabled = false;
+            Window.Close();
+        };
+
+        CancelCallback += () =>
+        {
+            ParentWindowContext?.Disabled = false;
+            Window.Close();
+        };
 
         Window.Load += () =>
         {
+            ParentWindowContext?.Disabled = true;
+
             Window.Title = Title;
             Window.Size = new(640, 480);
 

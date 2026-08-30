@@ -214,7 +214,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
             if (ImGui.Button("Merge Objects from another database", new(ImGui.GetWindowWidth() - style.ItemSpacing.X * 2 - 8, default)))
             {
 
-                SingleFileChooserContext fileChooserContext = new(_window.ContextHandler, _window.WindowManager);
+                SingleFileChooserContext fileChooserContext = new(_window);
                 fileChooserContext.Title = "Autumn: Select CCNT to merge from";
                 _window.WindowManager.Add(fileChooserContext);
 

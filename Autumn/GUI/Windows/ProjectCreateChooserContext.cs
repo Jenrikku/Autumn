@@ -4,6 +4,8 @@ namespace Autumn.GUI.Windows;
 
 internal class ProjectCreateChooserContext : ProjectChooserContext
 {
+    public ProjectCreateChooserContext(WindowContext parent) : base(parent) { }
+
     public ProjectCreateChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager) { }
 

@@ -20,6 +20,12 @@ internal class ProjectChooserContext : FileChooserWindowContext
     /// </summary>
     protected readonly Dictionary<string, bool> IsDirRomFS = new();
 
+    public ProjectChooserContext(WindowContext parent)
+        : this(parent.ContextHandler, parent.WindowManager)
+    {
+        ParentWindowContext = parent;
+    }
+
     public ProjectChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {

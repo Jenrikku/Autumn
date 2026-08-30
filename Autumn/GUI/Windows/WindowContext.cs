@@ -32,6 +32,9 @@ internal abstract class WindowContext
 
     public bool IsFocused { get; private set; } = true;
 
+    // Prevents the user to interact with the window when true.
+    public bool Disabled { get; set; } = false;
+
     public ContextHandler ContextHandler { get; }
     public WindowManager WindowManager { get; }
 
@@ -47,6 +50,7 @@ internal abstract class WindowContext
     private static RawImage[]? s_iconCache;
 
     private bool _themeChanged = false;
+    private bool _currentFrameDisabled = false; // Prevents issues when changing Disabled property mid-frame.
 
     public WindowContext(ContextHandler contextHandler, WindowManager windowManager)
     {
@@ -236,10 +240,24 @@ internal abstract class WindowContext
         ImGuiImplOpenGL3.NewFrame();
         ImGuiImplGLFW.NewFrame();
         ImGui.NewFrame();
+
+        _currentFrameDisabled = Disabled;
+
+        if (_currentFrameDisabled) // Do not use Disable property here as a race condition may happen.
+            ImGui.BeginDisabled();
     }
 
     protected void ImGuiEndFrame()
     {
+        if (_currentFrameDisabled)
+        {
+            ImGui.EndDisabled();
+
+            var drawList = ImGui.GetForegroundDrawList();
+            var max = ImGui.GetMainViewport().Size;
+            ImGui.AddRectFilled(drawList, new(0), max, ImGui.GetColorU32(ImGuiCol.ModalWindowDimBg));
+        }
+
         ImGui.Render();
         ImGuiImplOpenGL3.RenderDrawData(ImGui.GetDrawData());
     }

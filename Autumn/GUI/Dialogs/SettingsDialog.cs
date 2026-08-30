@@ -167,7 +167,7 @@ internal class SettingsDialog
                 ImGui.SameLine();
                 if (ImGui.Button(IconUtils.FOLDER))
                 {
-                    SingleFileChooserContext fileChooser = new(_window.ContextHandler, _window.WindowManager);
+                    SingleFileChooserContext fileChooser = new(_window);
                     fileChooser.SuccessCallback += result =>
                     {
                         if (!ThemeLoader.IsValidTomlFile(result[0])) return;
@@ -241,7 +241,7 @@ internal class SettingsDialog
                 {
                     if (!_window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                     {
-                        ProjectChooserContext projectChooser = new(_window.ContextHandler, _window.WindowManager);
+                        ProjectChooserContext projectChooser = new(_window);
                         projectChooser.Title = "Autumn: Select Base ROMFS folder";
                         _window.WindowManager.Add(projectChooser);
 

@@ -113,7 +113,7 @@ internal class ActionHandler
             {
                 if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                 {
-                    ProjectCreateChooserContext projectChooser = new(window.ContextHandler, window.WindowManager);
+                    ProjectCreateChooserContext projectChooser = new(window);
                     window.WindowManager.Add(projectChooser);
 
                     projectChooser.SuccessCallback += result =>
@@ -175,7 +175,7 @@ internal class ActionHandler
             {
                 if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
                 {
-                    ProjectChooserContext projectChooser = new(window.ContextHandler, window.WindowManager);
+                    ProjectChooserContext projectChooser = new(window);
                     projectChooser.Title = "Autumn: Open Project";
                     window.WindowManager.Add(projectChooser);
 

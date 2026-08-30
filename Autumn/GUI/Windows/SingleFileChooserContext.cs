@@ -15,6 +15,12 @@ internal class SingleFileChooserContext : FileChooserWindowContext
     private const ImGuiSelectableFlags _fileSelectableFlags =
         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.AllowDoubleClick;
 
+    public SingleFileChooserContext(WindowContext parent)
+        : this(parent.ContextHandler, parent.WindowManager)
+    {
+        ParentWindowContext = parent;
+    }
+
     public SingleFileChooserContext(ContextHandler contextHandler, WindowManager windowManager)
         : base(contextHandler, windowManager)
     {
