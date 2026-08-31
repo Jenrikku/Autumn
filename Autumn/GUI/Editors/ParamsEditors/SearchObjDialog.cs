@@ -264,7 +264,7 @@ internal class SearchWindow
 
                 ImGui.TableSetColumnIndex(0);
                 ImGui.PushID("SearchView" + cidx);
-                if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                if (ImGuiWidgets.HoverButton(IconUtils.MAGNIFYING_GLASS, new(ImGui.GetColumnWidth(), 30)))
                 {
                     window.CameraToObject(ch);
                 }

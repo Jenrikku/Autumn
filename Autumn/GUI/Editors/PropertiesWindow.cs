@@ -578,7 +578,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 string pName = stageObj.Parent is not null ? stageObj.Parent.Name : "No parent";
                                 if (stageObj.Parent == null)
                                     ImGui.BeginDisabled();
-                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.UNLINK).X * 1.65f * window.ScalingFactor, default)))
+                                if (ImGui.Button(pName, new(ImGuiWidgets.SetPropertyWidth("Parent") - ImGui.CalcTextSize(IconUtils.LINK_SLASH).X * 1.65f * window.ScalingFactor, default)))
                                 {
                                     var p = scn!.GetSceneObjFromStageObj(stageObj.Parent!);
                                     ChangeHandler.ToggleObjectSelection( window, scn.History, p.PickingId,
@@ -587,7 +587,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 }
 
                                 ImGui.SameLine(default, style.ItemSpacing.X / 2);
-                                if (ImGui.Button(IconUtils.UNLINK + "##" + pName))
+                                if (ImGui.Button(IconUtils.LINK_SLASH + "##" + pName))
                                 {
                                     ChangeHandler.ChangeUnlinkChild(window, window.CurrentScene.History, stageObj);
                                 }
@@ -641,7 +641,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.TableSetColumnIndex(0);
                                             ImGui.PushID("SceneChildView" + cidx);
-                                            if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.MAGNIFYING_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 var child = scn.GetSceneObjFromStageObj(ch);
                                                 window.CameraToObject(child);
@@ -650,7 +650,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                             ImGui.TableSetColumnIndex(1);
                                             ImGui.PushID("SceneChildUnlink" + cidx);
-                                            if (ImGuiWidgets.HoverButton(IconUtils.UNLINK, new(ImGui.GetColumnWidth(), 30)))
+                                            if (ImGuiWidgets.HoverButton(IconUtils.LINK_SLASH, new(ImGui.GetColumnWidth(), 30)))
                                             {
                                                 remch = ch;
                                             }
@@ -762,7 +762,7 @@ internal class PropertiesWindow(MainWindowContext window)
                         }
                         if (name.Contains("Arg") || name == "Priority" || name == "ShapeModelNo") continue;
 
-                        if (ImGui.Button(IconUtils.TRASH + "##rmp" + name))
+                        if (ImGui.Button(IconUtils.TRASH_CAN + "##rmp" + name))
                         {
                             stageObj.Properties.Remove(name);
                             continue;
@@ -1014,7 +1014,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                     ImGui.PopID();
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("ScenePointView" + cidx);
-                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAGNIFYING_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         window.CameraToObject(railSceneObj.RailPoints[cidx]);
                                     }
@@ -1100,7 +1100,7 @@ internal class PropertiesWindow(MainWindowContext window)
 
                                     ImGui.TableSetColumnIndex(0);
                                     ImGui.PushID("SceneHandleView" + cc);
-                                    if (ImGuiWidgets.HoverButton(IconUtils.MAG_GLASS, new(ImGui.GetColumnWidth(), 30)))
+                                    if (ImGuiWidgets.HoverButton(IconUtils.MAGNIFYING_GLASS, new(ImGui.GetColumnWidth(), 30)))
                                     {
                                         var hndl = cc == 0 ? (sceneObj as RailPointSceneObj)!.Handle1 : (sceneObj as RailPointSceneObj)!.Handle2;
                                         window.CameraToObject(hndl!);
@@ -1179,7 +1179,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 }
                                 if (name.Contains("Arg") || name == "Priority" || name == "ShapeModelNo") continue;
 
-                                if (ImGui.Button(IconUtils.TRASH + "##rmp" + name))
+                                if (ImGui.Button(IconUtils.TRASH_CAN + "##rmp" + name))
                                 {
                                     railObj.Properties.Remove(name);
                                     continue;
@@ -1739,7 +1739,7 @@ internal class PropertiesWindow(MainWindowContext window)
             }
             bool ret = ScaleDrag3.Use(ref rf, ref sto, v_speed, itemWidth, isLinked);
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button(isLinked ? IconUtils.LINK : IconUtils.UNLINK))
+            if (ImGui.Button(isLinked ? IconUtils.LINK : IconUtils.LINK_SLASH))
             {
                 isLinked = !isLinked;
             }
@@ -1882,7 +1882,7 @@ internal class PropertiesWindow(MainWindowContext window)
     {
         ImGui.Text(name+":");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(name + IconUtils.TRASH + IconUtils.TRASH + IconUtils.TRASH, 1, 2));
+        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen(name + IconUtils.TRASH_CAN + IconUtils.TRASH_CAN + IconUtils.TRASH_CAN, 1, 2));
     }
 
     private bool InputFogLight(string str, int rf, int step, ref IStageSceneObj sco, bool isFog)

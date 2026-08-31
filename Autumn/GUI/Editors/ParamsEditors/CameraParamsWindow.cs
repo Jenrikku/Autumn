@@ -182,7 +182,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
 
         ImGui.SameLine(0, style.ItemInnerSpacing.X);
-        if (ImGui.Button(IconUtils.PASTE + "## dupecam", new Vector2(ImGui.GetContentRegionAvail().X / 2, default)))
+        if (ImGui.Button(IconUtils.COPY + "## dupecam", new Vector2(ImGui.GetContentRegionAvail().X / 2, default)))
         {
             scn.Stage.CameraParams.AddCamera(new(scn.Stage.CameraParams.Cameras[selectedcam]));
             window.UpdateCameraList();
@@ -584,7 +584,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         if (disabled)
             ImGui.BeginDisabled();
 
-        bool rb = ImGui.Button(isCamera ? IconUtils.CAMERA : IconUtils.USER);
+        bool rb = ImGui.Button(isCamera ? IconUtils.VIDEO : IconUtils.USER);
         ImGui.SetItemTooltip(isCamera ? "Copy Camera position" : "Copy selected object position");
 
         if (disabled)
@@ -730,7 +730,7 @@ internal class CameraParamsWindow(MainWindowContext window)
             float dashangle = 0;
             float dashdistance = 0;
 
-            ImGui.Button(IconUtils.DASH);
+            ImGui.Button(IconUtils.PERSON_RUNNING);
             if (ImGui.IsItemActive())
             {
                 if (currcam.DashAngleTuner == null)

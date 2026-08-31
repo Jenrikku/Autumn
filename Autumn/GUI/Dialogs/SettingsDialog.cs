@@ -190,7 +190,7 @@ internal class SettingsDialog
 
                 if (isReadOnly) ImGui.BeginDisabled();
 
-                if (ImGui.Button(IconUtils.TRASH))
+                if (ImGui.Button(IconUtils.TRASH_CAN))
                 {
                     string? themePath = ThemeLoader.GetThemeFullPathByName(_availableThemes[_selectedTheme], _window.ContextHandler.SettingsPath);
                     if (themePath is not null)

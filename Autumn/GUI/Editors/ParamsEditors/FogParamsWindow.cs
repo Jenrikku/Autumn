@@ -108,7 +108,7 @@ internal class FogParamsWindow(MainWindowContext window)
             if (_disabled)
                 ImGui.EndDisabled();
             ImGui.SameLine(default, style.ItemSpacing.X / 2);
-            if (ImGui.Button(IconUtils.PASTE, new(w / 3 - style.ItemSpacing.X / 3, default)))
+            if (ImGui.Button(IconUtils.COPY, new(w / 3 - style.ItemSpacing.X / 3, default)))
             {
                 scn.DuplicateFog(SelectedFog);
                 SelectedFog = scn.CountFogs() - 1;

@@ -108,7 +108,7 @@ internal class ObjectWindow(MainWindowContext window)
                 ImGui.TableSetColumnIndex(0);
 
                 ImGui.PushID(obj.GetHashCode());
-                if (ImGuiWidgets.HoverButton(obj.IsVisible ? IconUtils.EYE_OPEN : IconUtils.EYE_CLOSED, new(ImGui.GetColumnWidth(), 30))) // Hide / Show
+                if (ImGuiWidgets.HoverButton(obj.IsVisible ? IconUtils.EYE : IconUtils.EYE_SLASH, new(ImGui.GetColumnWidth(), 30))) // Hide / Show
                 {
                     ChangeHandler.ChangePropertyValue(
                         window.CurrentScene.History,

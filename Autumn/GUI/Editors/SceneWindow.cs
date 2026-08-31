@@ -997,7 +997,7 @@ internal class SceneWindow(MainWindowContext window)
 
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.GRID).X*6 + 6 * 5;
+        float buttons = ImGui.CalcTextSize(IconUtils.CHESS_BOARD).X*6 + 6 * 5;
         #if DEBUG
         buttons += 6 * 4;
         #endif
@@ -1013,34 +1013,34 @@ internal class SceneWindow(MainWindowContext window)
         #endif
 
 
-        if (ImGui.Button(IconUtils.GRID))
+        if (ImGui.Button(IconUtils.CHESS_BOARD))
         {
             ModelRenderer.VisibleGrid = !ModelRenderer.VisibleGrid;
         }
         ImGui.SetItemTooltip($"Grid visibility {(ModelRenderer.VisibleGrid ? "ON" : "OFF")}");
         ImGui.SameLine();
 
-        if (ImGui.Button(IconUtils.TRANSPARENT))
+        if (ImGui.Button(IconUtils.BORDER_TOP_LEFT))
         {
             ModelRenderer.VisibleTransparentWall = !ModelRenderer.VisibleTransparentWall;
         }
         ImGui.SetItemTooltip($"Transparent walls visibility {(ModelRenderer.VisibleTransparentWall ? "ON" : "OFF")}");
         ImGui.SameLine();
         
-        if (ImGui.Button(IconUtils.PATH))
+        if (ImGui.Button(IconUtils.DIAGRAM_PROJECT))
         {
             ModelRenderer.VisibleRails = !ModelRenderer.VisibleRails;
         }
         ImGui.SetItemTooltip($"Rails visibility {(ModelRenderer.VisibleRails ? "ON" : "OFF")}");
         ImGui.SameLine();
 
-        if (ImGui.Button(IconUtils.AREA))
+        if (ImGui.Button(IconUtils.EXPAND))
         {
             ModelRenderer.VisibleAreas = !ModelRenderer.VisibleAreas;
         }
         ImGui.SetItemTooltip($"Area visibility {(ModelRenderer.VisibleAreas ? "ON" : "OFF")}");
         ImGui.SameLine();
-        if (ImGui.Button(IconUtils.CAMERA))
+        if (ImGui.Button(IconUtils.VIDEO))
         {
             ModelRenderer.VisibleCameraAreas = !ModelRenderer.VisibleCameraAreas;
         }
@@ -1060,13 +1060,13 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.PushStyleColor(ImGuiCol.Button, col);
             _transformGizmo = window.ContextHandler.SystemSettings.LastGizmo;
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 30);
-            if (ImGui.Button(IconUtils.MOVE + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key1, false)))
+            if (ImGui.Button(IconUtils.UP_DOWN_LEFT_RIGHT + "##movegizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key1, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Translate ? TransformGizmo.None : TransformGizmo.Translate;
             ImGui.SetItemTooltip($"Move Gizmo {(_transformGizmo == TransformGizmo.Translate ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key2, false)))
+            if (ImGui.Button(IconUtils.ARROWS_ROTATE + "##rotategizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key2, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Rotate ? TransformGizmo.None : TransformGizmo.Rotate;
             ImGui.SetItemTooltip($"Rotate Gizmo {(_transformGizmo == TransformGizmo.Rotate ? "ON" : "OFF")}");
-            if (ImGui.Button(IconUtils.SCALE + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key3, false)))
+            if (ImGui.Button(IconUtils.UP_RIGHT_AND_DOWN_LEFT_FROM_CENTER + "##sclgizmo", new Vector2(30)) || (!IsTransformActive && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Key3, false)))
                 _transformGizmo = _transformGizmo == TransformGizmo.Scale ? TransformGizmo.None : TransformGizmo.Scale;
             window.ContextHandler.SystemSettings.LastGizmo = _transformGizmo;
             ImGui.SetItemTooltip($"Scale Gizmo {(_transformGizmo == TransformGizmo.Scale ? "ON" : "OFF")}");

@@ -109,7 +109,7 @@ internal static class ImGuiWidgets
                 str = ARROW_RIGHT + "##" + str;
                 break;
             case ImGuiDir.Count:
-                str = DOWN + "##" + str;
+                str = CHEVRON_DOWN + "##" + str;
                 break;
         }
         return ImGui.Button(str, size ?? default);
