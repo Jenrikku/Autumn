@@ -647,8 +647,10 @@ internal class MainWindowContext : WindowContext
     private void RenderStatusBar(float height, Vector2 viewportSize)
     {
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0));
-        ImGui.SetNextWindowPos(new(0, viewportSize.Y - height), ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new(viewportSize.X, height));
+
+        float borderSize = ImGui.GetStyle().WindowBorderSize;
+        ImGui.SetNextWindowPos(new(-borderSize, viewportSize.Y - height), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new(viewportSize.X + borderSize * 2, height));
 
         ImGuiWindowFlags flags =
             ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs;
