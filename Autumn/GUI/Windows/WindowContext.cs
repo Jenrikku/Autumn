@@ -358,7 +358,7 @@ internal abstract class WindowContext
         cfg->MergeMode = 1;
 
         io.Fonts.AddFontFromFileTTF(
-            Path.Join("Resources", "fa-solid-900.ttf"),
+            Path.Join("Resources", "fa-solid-900.otf"),
             18,
             cfg
         );
