@@ -59,7 +59,9 @@ internal class SingleFileChooserContext : FileChooserWindowContext
 
             ImGui.TableSetColumnIndex(0);
 
-            if (ImGui.Selectable(info.Name, false, _fileSelectableFlags))
+            string displayName = (info is DirectoryInfo ? IconUtils.FOLDER : IconUtils.FILE) + "  " + info.Name;
+
+            if (ImGui.Selectable(displayName, false, _fileSelectableFlags))
             {
                 if (info is DirectoryInfo dir && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                 {

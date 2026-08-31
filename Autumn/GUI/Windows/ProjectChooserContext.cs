@@ -1,4 +1,5 @@
 using Autumn.Context;
+using Autumn.Utils;
 using Autumn.Wrappers;
 using Hexa.NET.ImGui;
 
@@ -77,7 +78,9 @@ internal class ProjectChooserContext : FileChooserWindowContext
             if (IsDisabled(dir.Name))
                 flags |= ImGuiSelectableFlags.Disabled;
 
-            if (ImGui.Selectable(dir.Name, false, flags))
+            string displayName = (IsDirRomFS[dir.Name] ? IconUtils.GEAR : IconUtils.FOLDER) + "  " + dir.Name;
+
+            if (ImGui.Selectable(displayName, false, flags))
             {
                 SelectedFile = dir.Name;
                 SelectedFileChanged = true;

@@ -233,7 +233,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SameLine();
 
-                    if (ImGui.Button("Ok", new(buttonWidth, 0)) || ImGui.IsKeyPressed(ImGuiKey.Enter))
+                    if (ImGui.Button(IconUtils.CHECK, new(buttonWidth, 0)) || ImGui.IsKeyPressed(ImGuiKey.Enter))
                     {
                         if (Directory.Exists(_inputPathBuffer))
                         {
@@ -250,7 +250,7 @@ internal abstract class FileChooserWindowContext : WindowContext
 
                     ImGui.SameLine();
 
-                    if (ImGui.Button("X", new(buttonWidth, 0)))
+                    if (ImGui.Button(IconUtils.XMARK, new(buttonWidth, 0)))
                     {
                         _inputtingPath = false;
                         _inputPathInvalid = false;
@@ -300,40 +300,42 @@ internal abstract class FileChooserWindowContext : WindowContext
 
             if (ImGui.BeginChild("##Places", ImGui.GetContentRegionAvail() / new Vector2(4, 1), ImGuiChildFlags.Borders))
             {
-                if (ImGui.Selectable("Home"))
+                if (ImGui.Selectable(IconUtils.HOUSE_CHIMNEY + "  Home"))
                     ChangeDirectory(Home);
 
-                if (ImGui.Selectable("Documents"))
+                if (ImGui.Selectable(IconUtils.BOOK_OPEN + "  Documents"))
                 {
                     string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                     ChangeDirectory(dir);
                 }
 
-                if (ImGui.Selectable("Pictures"))
+                if (ImGui.Selectable(IconUtils.IMAGES + "  Pictures"))
                 {
                     string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
                     ChangeDirectory(dir);
                 }
 
-                if (ImGui.Selectable("Music"))
+                if (ImGui.Selectable(IconUtils.MUSIC + "  Music"))
                 {
                     string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
                     ChangeDirectory(dir);
                 }
 
-                if (ImGui.Selectable("Videos"))
+                if (ImGui.Selectable(IconUtils.VIDEO + "  Videos"))
                 {
                     string dir = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
                     ChangeDirectory(dir);
                 }
 
-                if (ImGui.Selectable("Desktop"))
+                if (ImGui.Selectable(IconUtils.DESKTOP + "  Desktop"))
                 {
                     string dir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                     ChangeDirectory(dir);
                 }
 
+                ImGui.Spacing();
                 ImGui.Separator();
+                ImGui.Spacing();
 
                 foreach (DriveInfo drive in Drives)
                 {
@@ -346,7 +348,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                     )
                         continue;
 
-                    if (ImGui.Selectable(drive.Name))
+                    if (ImGui.Selectable(IconUtils.HARD_DRIVE + "  " + drive.Name))
                         ChangeDirectory(drive.RootDirectory.FullName);
                 }
             }
