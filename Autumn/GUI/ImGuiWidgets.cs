@@ -381,4 +381,9 @@ internal static class ImGuiWidgets
         return r;
     }
 
+    public static void SameLineNoSpacing()
+    {
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() - ImGui.GetStyle().ItemSpacing.X);
+    }
 }

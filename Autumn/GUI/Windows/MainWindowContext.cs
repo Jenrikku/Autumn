@@ -48,6 +48,7 @@ internal class MainWindowContext : WindowContext
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
     private readonly SaveReminderDialog _saveReminderDialog;
+    private readonly AboutDialog _aboutDialog;
     #endregion
 
     #region Editor Dialogs
@@ -98,6 +99,7 @@ internal class MainWindowContext : WindowContext
         _DBEditorDialog = new(this);
         _searchObjDialog = new(this);
         _saveReminderDialog = new(this);
+        _aboutDialog = new();
 
         // Initialize editors:
         _stageWindow = new(this);
@@ -269,6 +271,7 @@ internal class MainWindowContext : WindowContext
             _welcomeDialog.Render();
             _settingsDialog.Render();
             _saveReminderDialog.Render();
+            _aboutDialog.Render();
 
             _miscParams.Render();
             _camParams.Render();
@@ -619,9 +622,8 @@ internal class MainWindowContext : WindowContext
             if (ImGui.MenuItem("Shortcuts"))
                 _shortcutsDialog.Open();
             if (ImGui.MenuItem("About"))
-            {
+                _aboutDialog.Open();
 
-            }
             ImGui.EndMenu();
         }
         ImGui.SetCursorPos(c);
