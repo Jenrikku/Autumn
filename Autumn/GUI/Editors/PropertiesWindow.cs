@@ -270,7 +270,6 @@ internal class PropertiesWindow(MainWindowContext window)
                     InputText("Layer", ref stageObj.Layer, 30, ref stageObj);
                     if (stageObj.Type != StageObjType.Start)
                     {
-                        InputInt("ViewId", ref stageObj.ViewId, 1, ref stageObj);
                         ImGui.Text("Camera:"); ImGui.SameLine();
                         for (int cs = 1; cs < cameraStrings.Length; cs++)
                         {
@@ -311,7 +310,8 @@ internal class PropertiesWindow(MainWindowContext window)
                             }
                         }
 
-                        InputInt("ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
+                        InputInt("View Id", "ViewId", ref stageObj.ViewId, 1, ref stageObj);
+                        InputInt("Clipping Id","ClippingGroupId", ref stageObj.ClippingGroupId, 1, ref stageObj);
                     }
                     if (stageObj.Type == StageObjType.Area || stageObj.Type == StageObjType.CameraArea || stageObj.Type == StageObjType.AreaChild)
                     {
@@ -1251,7 +1251,7 @@ internal class PropertiesWindow(MainWindowContext window)
             SetTitle("Multiple objects", null);
             bool propertyChanged = false;
             propertyChanged = InputText("Layer", ref multiselector.Layer, 30, ref multiselector);
-            propertyChanged = InputInt("ViewId", ref multiselector.ViewId, 1, ref multiselector);
+            propertyChanged = InputInt("View Id", "ViewId", ref multiselector.ViewId, 1, ref multiselector);
             ImGui.Text("Camera:"); ImGui.SameLine();
             var cameraslinks = scn.Stage.CameraParams.Cameras.Where(x => x.Category == StageCamera.CameraCategory.Object).ToList();
             string[] cameraStrings = new string[cameraslinks.Count + 1];
@@ -1296,7 +1296,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     window.SetCameraSelected(scn.Stage.CameraParams.Cameras.IndexOf(cm!));
                 }
             }
-            propertyChanged = InputInt("ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
+            propertyChanged = InputInt("Clipping Id", "ClippingGroupId", ref multiselector.ClippingGroupId, 1, ref multiselector);
 
 
             if (ImGui.CollapsingHeader("Object Transform", ImGuiTreeNodeFlags.DefaultOpen))
@@ -1769,13 +1769,13 @@ internal class PropertiesWindow(MainWindowContext window)
         return false;
     }
 
-    private bool InputInt(string str, ref int rf, int step, ref StageObj sto)
+    private bool InputInt(string lbl, string str, ref int rf, int step, ref StageObj sto)
     {
         int i = rf;
 
-        ImGui.Text(str + ":");
+        ImGui.Text(lbl + ":");
         ImGui.SameLine();
-        ImGuiWidgets.SetPropertyWidth(str);
+        ImGuiWidgets.SetPropertyWidth(lbl);
 
         ImGui.InputInt("##" + str + "i", ref i, step);
 
