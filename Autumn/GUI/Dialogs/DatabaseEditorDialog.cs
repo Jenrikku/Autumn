@@ -931,9 +931,8 @@ internal class DatabaseEditor(MainWindowContext _window)
             }
             if (!canSave)
                 ImGui.EndDisabled();
-
+            ImGui.EndPopup();
         }
-        ImGui.End();
     }
 
 
