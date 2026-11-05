@@ -80,7 +80,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         {"InterpoleFrame" , "Frames to interpolate"},
         {"LimitBoxMax" , "Max Box Limit"},
         {"LimitBoxMin" , "Min Box Limit"},
-        {"SideDegree" , "Side Degree"},
+        {"SideDegree" , "Side Angle"},
         {"SideOffset" , "Side Offset"},
         {"UpOffset" , "Up Offset"},
         {"CameraPos" , "Camera Position"},
@@ -188,6 +188,15 @@ internal class CameraParamsWindow(MainWindowContext window)
             }
             ImGui.EndTable();
         }
+        if (selectedchange)
+        {
+            users.Clear();
+            foreach (IStageSceneObj s in window.CurrentScene.EnumerateStageSceneObjs().Where(x => x.StageObj.CameraId == scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId && CameraParams.GetObjectCategory(x.StageObj) == scn.Stage.CameraParams.Cameras[selectedcam].Category))
+            {
+                users.Add(s);
+            }
+            selectedchange = false;
+        }
 
         if (selectedcam != scn.SelectedCam) selectedcam = scn.SelectedCam; // idx in list vs UserGroupId
 
@@ -236,221 +245,211 @@ internal class CameraParamsWindow(MainWindowContext window)
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
                 if (ImGui.BeginTabItem("Camera"))
                 {
-            ImGuiWidgets.PrePropertyWidthName("Id");
-            ImGui.InputInt("##Id", ref scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId, 1);
+                    ImGuiWidgets.PrePropertyWidthName("Id");
+                    ImGui.InputInt("##Id", ref scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId, 1);
 
-            var op = ImGui.GetCursorPosX();
-            ImGui.Text("User Name:");
-            ImGui.SameLine();
-            UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - ImGui.GetStyle().WindowPadding.X - 7);
-            //ImGui.InputText("##UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, 128);
-            ImGui.SetCursorPosX(op);
-            var cls = Enum.GetNames<StageCamera.CameraClass>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString());
-            var cat = Enum.GetNames<StageCamera.CameraCategory>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Category.ToString());
+                    var op = ImGui.GetCursorPosX();
+                    ImGui.Text("User Name:");
+                    ImGui.SameLine();
+                    UserNameCombo.Use("UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, UserNames, ImGuiWidgets.SetPropertyWidthGen("UserName") - ImGui.GetStyle().WindowPadding.X - 7);
+                    //ImGui.InputText("##UserName", ref scn.Stage.CameraParams.Cameras[selectedcam].UserName, 128);
+                    ImGui.SetCursorPosX(op);
+                    var cls = Enum.GetNames<StageCamera.CameraClass>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString());
+                    var cat = Enum.GetNames<StageCamera.CameraCategory>().ToList().IndexOf(scn.Stage.CameraParams.Cameras[selectedcam].Category.ToString());
 
-            ImGuiWidgets.PrePropertyWidthName("Class");
-            if (ImGui.Combo("##ClassCombo", ref cls, Enum.GetNames<StageCamera.CameraClass>(), Enum.GetNames<StageCamera.CameraClass>().Length))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].Class = Enum.Parse<StageCamera.CameraClass>(Enum.GetNames<StageCamera.CameraClass>().ToList()[cls]);
-            }
-
-            ImGuiWidgets.PrePropertyWidthName("Category");
-            if (ImGui.Combo("##CategoryCombo", ref cat, Enum.GetNames<StageCamera.CameraCategory>(), 4))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].Category = Enum.Parse<StageCamera.CameraCategory>(Enum.GetNames<StageCamera.CameraCategory>().ToList()[cat]);
-                window.UpdateCameraList();
-            }
-
-            List<FieldInfo> renderAfter = [];
-            List<FieldInfo> renderGen = [];
-            
-            foreach (var CamField in StageCameraFields)
-            {
-                if (!StageCamera.SpecialProperties.ContainsKey(CamField.Name))
-                {
-                    renderGen.Add(CamField);
-                }
-                else if (StageCamera.SpecialProperties.ContainsKey(CamField.Name) && StageCamera.SpecialProperties[CamField.Name].Contains(scn.Stage.CameraParams.Cameras[selectedcam].Class))
-                {
-                    renderAfter.Add(CamField);
-                }
-            }
-            if (ImGui.CollapsingHeader("General Properties", ImGuiTreeNodeFlags.DefaultOpen))
-            {
-                bool skip = false;
-                for (int i = 0; i < renderGen.Count; i++)
-                {
-                    CheckField(renderGen[i], scn, skip);
-                }
-            }
-
-            if (renderAfter.Count > 0)
-            {
-            if (ImGui.CollapsingHeader(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString() + " Class Properties##SecondaryProperties", ImGuiTreeNodeFlags.DefaultOpen))
-            {
-                foreach (var Camfield in renderAfter)
-                {
-                    bool skip = false;
-                    if (Camfield.Name == "Rail") 
+                    ImGuiWidgets.PrePropertyWidthName("Class");
+                    if (ImGui.Combo("##ClassCombo", ref cls, Enum.GetNames<StageCamera.CameraClass>(), Enum.GetNames<StageCamera.CameraClass>().Length))
                     {
-                        ImGui.Text("Rail:"); ImGui.SameLine();
-                        RailObj? rl = (RailObj?)Camfield.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
-                        var rails = window.CurrentScene!.EnumerateRailSceneObjs();
-                        string[] railStrings = new string[rails.Count() + 1];
-                        int bbbb = 1;
-                        railStrings[0] = "No Rail selected";
-                        foreach (RailSceneObj rail in rails)
-                        {
-                            railStrings[bbbb] = rail.RailObj.Name;
-                            bbbb += 1;
-                        }
-                        int rfrail = 0;
-                        if (rl is not null)
-                        {
-                            var rals = rails.FirstOrDefault(x => x.RailObj.Name == rl.Name); // In case the rail gets deleted
-                            if (rals != null)
-                                rfrail = rails.ToList().IndexOf(rals) + 1;
-                        }
-                        int rfr2 = rfrail;
-                        ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 15);
-                        ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
-                        if (rfr2 != rfrail)
-                        {
-                            if (rfr2 > 0)
-                            {
-                                scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = rails.ElementAt(rfr2 - 1).RailObj;
-                            }
-                            else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
-                        }
-                        
-                        ImGui.SameLine(0, style.ItemInnerSpacing.X);
-                        
-                        disabled = rfr2 == 0;
-
-                        if (disabled) ImGui.BeginDisabled();
-                        
-                        if (ImGui.Button(IconUtils.PENCIL +"##railaddedit"))
-                        {
-                            if (disabled)
-                            {
-                                window.OpenAddRailDialog();
-                            }
-                            else
-                            {
-                                var rail = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
-                                
-                                ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, rail!.PickingId,
-                                    !window.Keyboard?.IsCtrlPressed() ?? true);
-                                window.CameraToObject(rail!);
-                            }
-                        }
-                        if (disabled) ImGui.EndDisabled();
+                        scn.Stage.CameraParams.Cameras[selectedcam].Class = Enum.Parse<StageCamera.CameraClass>(Enum.GetNames<StageCamera.CameraClass>().ToList()[cls]);
                     }
-                    else CheckField(Camfield, scn, skip);
-                }
-            }
-            }
 
-            if (ImGui.CollapsingHeader("Special Properties", ImGuiTreeNodeFlags.DefaultOpen))
-            {
+                    ImGuiWidgets.PrePropertyWidthName("Category");
+                    if (ImGui.Combo("##CategoryCombo", ref cat, Enum.GetNames<StageCamera.CameraCategory>(), 4))
+                    {
+                        scn.Stage.CameraParams.Cameras[selectedcam].Category = Enum.Parse<StageCamera.CameraCategory>(Enum.GetNames<StageCamera.CameraCategory>().ToList()[cat]);
+                        window.UpdateCameraList();
+                    }
 
-            bool dt = scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner != null;
+                    List<FieldInfo> renderAfter = [];
+                    List<FieldInfo> renderGen = [];
 
-            if (ImGui.Checkbox("Modify Dash Angle##DATt", ref dt))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner = dt ? new() : null;
-            }
-            if (dt)
-            {
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild("dat", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
-                InputFloat("Max Angle", ref scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner!.AddAngleMax, 1, -360, 360);
-                InputFloat("Max Zoom Offset", ref scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner!.ZoomOutOffsetMax, 1, min: -10000);
-                ImGui.EndChild();
-            }
+                    foreach (var CamField in StageCameraFields)
+                    {
+                        if (!StageCamera.SpecialProperties.ContainsKey(CamField.Name))
+                        {
+                            renderGen.Add(CamField);
+                        }
+                        else if (StageCamera.SpecialProperties.ContainsKey(CamField.Name) && StageCamera.SpecialProperties[CamField.Name].Contains(scn.Stage.CameraParams.Cameras[selectedcam].Class))
+                        {
+                            renderAfter.Add(CamField);
+                        }
+                    }
+                    if (ImGui.CollapsingHeader("General Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+                        bool skip = false;
+                        for (int i = 0; i < renderGen.Count; i++)
+                        {
+                            CheckField(renderGen[i], scn, skip);
+                        }
+                    }
 
-            bool vo = scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter != null;
+                    if (renderAfter.Count > 0)
+                    {
+                        if (ImGui.CollapsingHeader(scn.Stage.CameraParams.Cameras[selectedcam].Class.ToString() + " Class Properties##SecondaryProperties", ImGuiTreeNodeFlags.DefaultOpen))
+                        {
+                            foreach (var Camfield in renderAfter)
+                            {
+                                bool skip = false;
+                                if (Camfield.Name == "Rail")
+                                {
+                                    ImGui.Text("Rail:"); ImGui.SameLine();
+                                    RailObj? rl = (RailObj?)Camfield.GetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties);
+                                    var rails = window.CurrentScene!.EnumerateRailSceneObjs();
+                                    string[] railStrings = new string[rails.Count() + 1];
+                                    int bbbb = 1;
+                                    railStrings[0] = "No Rail selected";
+                                    foreach (RailSceneObj rail in rails)
+                                    {
+                                        railStrings[bbbb] = rail.RailObj.Name;
+                                        bbbb += 1;
+                                    }
+                                    int rfrail = 0;
+                                    if (rl is not null)
+                                    {
+                                        var rals = rails.FirstOrDefault(x => x.RailObj.Name == rl.Name); // In case the rail gets deleted
+                                        if (rals != null)
+                                            rfrail = rails.ToList().IndexOf(rals) + 1;
+                                    }
+                                    int rfr2 = rfrail;
+                                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 15);
+                                    ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
+                                    if (rfr2 != rfrail)
+                                    {
+                                        if (rfr2 > 0)
+                                        {
+                                            scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = rails.ElementAt(rfr2 - 1).RailObj;
+                                        }
+                                        else scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail = null;
+                                    }
 
-            if (ImGui.Checkbox("Velocity Offsetter##Voffs", ref vo))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter = vo ? new() : null;
-            }
-            if (vo)
-            {
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild("vot", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
-                InputFloat("Max Offset (1D)", ref scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter!.MaxOffset, 1);
-                InputFloat2("Max Offset (2D)", ref scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter!.MaxOffsetAxisTwo);
-                ImGui.EndChild();
-            }
+                                    ImGui.SameLine(0, style.ItemInnerSpacing.X);
 
-            bool va = scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber != null;
+                                    disabled = rfr2 == 0;
 
-            if (ImGui.Checkbox("Vertical Absorber##Vabs", ref va))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber = va ? new() : null;
-            }
-            if (va)
-            {
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild("vab", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
-                ImGui.Checkbox("Disable", ref scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber!.IsInvalidate);
-                ImGui.EndChild();
-            }
+                                    if (disabled) ImGui.BeginDisabled();
 
-            bool rt = scn.Stage.CameraParams.Cameras[selectedcam].Rotator != null;
+                                    if (ImGui.Button(IconUtils.PENCIL + "##railaddedit"))
+                                    {
+                                        if (disabled)
+                                        {
+                                            window.OpenAddRailDialog();
+                                        }
+                                        else
+                                        {
+                                            var rail = window.CurrentScene.GetRailSceneObj(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties.Rail!);
 
-            if (ImGui.Checkbox("Rotator##rtt", ref rt))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].Rotator = rt ? new() : null;
-            }
-            if (rt)
-            {
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild("rttts", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
-                InputFloat("Max Angle", ref scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.AngleMax, 1, -360, 360);
-                bool b = scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable != null ? (bool)scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable! : false;
-                ImGui.Checkbox("Enabled", ref b);
-                scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable = b;
-                ImGui.EndChild();
-            }
+                                            ChangeHandler.ToggleObjectSelection(window, window.CurrentScene.History, rail!.PickingId,
+                                                !window.Keyboard?.IsCtrlPressed() ?? true);
+                                            window.CameraToObject(rail!);
+                                        }
+                                    }
+                                    if (disabled) ImGui.EndDisabled();
+                                }
+                                else CheckField(Camfield, scn, skip);
+                            }
+                        }
+                    }
+
+                    if (ImGui.CollapsingHeader("Special Properties", ImGuiTreeNodeFlags.DefaultOpen))
+                    {
+
+                        bool dt = scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner != null;
+
+                        if (ImGui.Checkbox("Modify Dash Angle##DATt", ref dt))
+                        {
+                            scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner = dt ? new() : null;
+                        }
+                        if (dt)
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("dat", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                            InputFloat("Max Angle", ref scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner!.AddAngleMax, 1, -360, 360);
+                            InputFloat("Max Zoom Offset", ref scn.Stage.CameraParams.Cameras[selectedcam].DashAngleTuner!.ZoomOutOffsetMax, 1, min: -10000);
+                            ImGui.EndChild();
+                        }
+
+                        bool vo = scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter != null;
+
+                        if (ImGui.Checkbox("Velocity Offsetter##Voffs", ref vo))
+                        {
+                            scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter = vo ? new() : null;
+                        }
+                        if (vo)
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("vot", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                            InputFloat("Max Offset (1D)", ref scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter!.MaxOffset, 1);
+                            InputFloat2("Max Offset (2D)", ref scn.Stage.CameraParams.Cameras[selectedcam].VelocityOffsetter!.MaxOffsetAxisTwo);
+                            ImGui.EndChild();
+                        }
+
+                        bool va = scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber != null;
+
+                        if (ImGui.Checkbox("Vertical Absorber##Vabs", ref va))
+                        {
+                            scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber = va ? new() : null;
+                        }
+                        if (va)
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("vab", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                            ImGui.Checkbox("Disable", ref scn.Stage.CameraParams.Cameras[selectedcam].VerticalAbsorber!.IsInvalidate);
+                            ImGui.EndChild();
+                        }
+
+                        bool rt = scn.Stage.CameraParams.Cameras[selectedcam].Rotator != null;
+
+                        if (ImGui.Checkbox("Rotator##rtt", ref rt))
+                        {
+                            scn.Stage.CameraParams.Cameras[selectedcam].Rotator = rt ? new() : null;
+                        }
+                        if (rt)
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("rttts", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                            InputFloat("Max Angle", ref scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.AngleMax, 1, -360, 360);
+                            bool b = scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable != null ? (bool)scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable! : false;
+                            ImGui.Checkbox("Enabled", ref b);
+                            scn.Stage.CameraParams.Cameras[selectedcam].Rotator!.IsEnable = b;
+                            ImGui.EndChild();
+                        }
 
 
-            bool hasVisParam = scn.Stage.CameraParams.Cameras[selectedcam].VisionParam is not null;
-            if (ImGui.Checkbox("Vision Params##vpss", ref hasVisParam))
-            {
-                scn.Stage.CameraParams.Cameras[selectedcam].VisionParam = hasVisParam ? new() : null;
+                        bool hasVisParam = scn.Stage.CameraParams.Cameras[selectedcam].VisionParam is not null;
+                        if (ImGui.Checkbox("Vision Params##vpss", ref hasVisParam))
+                        {
+                            scn.Stage.CameraParams.Cameras[selectedcam].VisionParam = hasVisParam ? new() : null;
 
-            }
-            if (hasVisParam)
-            {
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
-                ImGui.BeginChild("vp", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
+                        }
+                        if (hasVisParam)
+                        {
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - style.ItemSpacing.Y);
+                            ImGui.BeginChild("vp", default, ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.FrameStyle);
 
-                DragFloat("Camera 3D Depth", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f);
-                DragFloat("Camera 3D Distance", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.StereovisionDistance, 10, reset_val: 350);
-                DragFloat("Camera FOV", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45);
+                            DragFloat("Camera 3D Depth", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.StereovisionDepth, 0.01f, 0, 1, reset_val: 0.8f);
+                            DragFloat("Camera 3D Distance", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.StereovisionDistance, 10, reset_val: 350);
+                            DragFloat("Camera FOV", ref scn.Stage.CameraParams.Cameras[selectedcam].VisionParam!.FovyDegree, 0.1f, 0.1f, 179.9f, reset_val: 45);
 
-                ImGui.EndChild();
-            }
-            }
-            CameraPreviewWindow(scn);
-                ImGui.EndTabItem();
+                            ImGui.EndChild();
+                        }
+                    }
+                    CameraPreviewWindow(scn);
+                    ImGui.EndTabItem();
                 }
 
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                if (ImGui.BeginTabItem("Users"))
+                if (ImGui.BeginTabItem($"Users ({users.Count})###CameraUsers", ImGuiTabItemFlags.NoPushId))
                 {
-                    if (selectedchange)
-                    {
-                        users.Clear();
-                        foreach (IStageSceneObj s in window.CurrentScene.EnumerateStageSceneObjs().Where(x => x.StageObj.CameraId == scn.Stage.CameraParams.Cameras[selectedcam].UserGroupId && CameraParams.GetObjectCategory(x.StageObj) == scn.Stage.CameraParams.Cameras[selectedcam].Category))
-                        {
-                            users.Add(s);
-                        }
-                        selectedchange = false;
-                    }
-
                     if (ImGui.BeginTable("Usertable", 1, _stageTableFlags, new Vector2(ImGui.GetContentRegionAvail().X, -1)))
                     {
 
@@ -475,8 +474,7 @@ internal class CameraParamsWindow(MainWindowContext window)
 
                     ImGui.EndTabItem();
                 }
-            
-            ImGui.EndTabBar();
+                ImGui.EndTabBar();
             }
         }
         ImGui.End();
@@ -652,7 +650,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                 ImGui.BeginDisabled();
                 if (CamField.FieldType == typeof(float?))
                 {
-                    ImGuiWidgets.InputFloat(Fname ?? CamField.Name, ref fakefl, 1, ratioA, ratioB);
+                    ImGuiWidgets.DragFloat(Fname ?? CamField.Name, ref fakefl, 1, ratioA, ratioB);
                 }
                 else if (CamField.FieldType == typeof(int?))
                 {
@@ -685,7 +683,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         switch (val)
         {
             case float f:
-                ImGuiWidgets.InputFloat(Fname ?? CamField.Name, ref f, 5, ratioA, ratioB);
+                ImGuiWidgets.DragFloat(Fname ?? CamField.Name, ref f, 0.5f, ratioA, ratioB);
                 if (skip) break;
                 CamField.SetValue(scn.Stage.CameraParams.Cameras[selectedcam].CamProperties, f);
                 break;

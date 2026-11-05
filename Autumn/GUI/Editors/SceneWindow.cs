@@ -235,7 +235,7 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.End();
             return;
         }
-        ImGui.SetCursorPosY(26 * window.ScalingFactor);
+        ImGui.SetCursorPosY((ImGui.GetCursorScreenPos().Y - ImGui.GetWindowPos().Y + 26) * window.ScalingFactor);
 
         Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 26 * window.ScalingFactor);
         aspectRatio = contentAvail.X / contentAvail.Y;

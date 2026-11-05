@@ -599,7 +599,7 @@ internal class PropertiesWindow(MainWindowContext window)
                                 if (stageObj.Children != null && stageObj.Children.Any())
                                 {
                                     ImGui.SameLine();
-                                    if (ImGui.Button("Edit children", new Vector2(ImGuiWidgets.SetPropertyWidth("Parent:"), default)))
+                                    if (ImGui.Button($"Edit children ({stageObj.Children.Count})##EditChildren", new Vector2(ImGuiWidgets.SetPropertyWidth("Parent:"), default)))
                                     {
                                         window.SetupChildrenDialog(stageObj);
                                     }

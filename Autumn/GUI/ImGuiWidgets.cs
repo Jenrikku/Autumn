@@ -296,15 +296,6 @@ internal static class ImGuiWidgets
             return ret;
         }
     }
-
-    public static bool DragFloat(string str, ref float rf, float v_speed = 1)
-    {
-        ImGui.Text(str + ":");
-        ImGui.SameLine();
-        SetPropertyWidthGen(str + ":");
-        return ImGui.DragFloat("##" + str, ref rf, v_speed);
-
-    }
     public static bool DragInt(string str, ref int rf, float v_speed = 1)
     {
         ImGui.Text(str + ":");
@@ -326,6 +317,20 @@ internal static class ImGuiWidgets
         ImGui.SameLine();
         SetPropertyWidthGen(str + ":", ratioA, ratioB);
         return ImGui.InputFloat("##" + str, ref rf, step);
+    }
+    public static bool DragInt(string str, ref int rf, int step = 1, int ratioA = 2, int ratioB = 3)
+    {
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
+        return ImGui.DragInt("##" + str, ref rf, step);
+    }
+    public static bool DragFloat(string str, ref float rf, float step = 1, int ratioA = 2, int ratioB = 3)
+    {
+        ImGui.Text(str + ":");
+        ImGui.SameLine();
+        SetPropertyWidthGen(str + ":", ratioA, ratioB);
+        return ImGui.DragFloat("##" + str, ref rf, step);
     }
 
     internal static bool InputText(string str, ref string rf, uint max)
