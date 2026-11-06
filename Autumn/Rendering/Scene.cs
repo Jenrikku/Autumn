@@ -19,6 +19,7 @@ namespace Autumn.Rendering;
 internal class Scene
 {
     public Stage Stage { get; }
+    public string DisplayName => Stage.Name + Stage.Scenario;
 
     public bool IsSaved { get; set; } = false;
     public uint SaveUndoCount { get; set; } = 0;

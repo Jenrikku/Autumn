@@ -50,7 +50,7 @@ internal class ClosingDialog(MainWindowContext window)
         ImGui.Spacing();
 
         BackgroundTaskPriority lowestPriority = BackgroundTaskPriority.High;
-        var tasks = window.BackgroundManager.GetRemainingTasks(lowestPriority);
+        var tasks = window.BackgroundManager.EnumerateRemainingTasks(lowestPriority);
 
         foreach (var (message, _, _) in tasks)
         {

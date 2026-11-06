@@ -14,7 +14,7 @@ internal class SaveReminderDialog(MainWindowContext window)
 {
     private bool _isOpened = false;
     public bool IsOpen => _isOpened;
-    Scene _closingScene;
+    Scene? _closingScene;
 
     public void Open(Scene closingScene)
     {

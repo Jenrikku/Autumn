@@ -76,13 +76,13 @@ internal class BackgroundManager
     }
 
     /// <param name="lowestPriority">Only the priorities equal or higher to this will be enumerated.</param>
-    public List<BackgroundTask> GetRemainingTasks(
+    public IEnumerable<BackgroundTask> EnumerateRemainingTasks(
         BackgroundTaskPriority lowestPriority = default
     )
     {
         // Create a list rather than enumerating to minimize the time within the lock.
         lock (_tasks)
-            return _tasks.FindAll(task => task.Priority >= lowestPriority);
+            return _tasks.Where(task => task.Priority >= lowestPriority);
     }
 
     private void BackgroundWork(object? sender, DoWorkEventArgs e)
