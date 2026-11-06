@@ -48,6 +48,7 @@ internal class MainWindowContext : WindowContext
     private readonly ShortcutsDialog _shortcutsDialog;
     private readonly DatabaseEditor _DBEditorDialog;
     private readonly SaveReminderDialog _saveReminderDialog;
+    private readonly UnsavedStagesDialog _unsavedStagesDialog;
     private readonly AboutDialog _aboutDialog;
     #endregion
 
@@ -59,7 +60,8 @@ internal class MainWindowContext : WindowContext
 
     public bool IsDialogOpen => _addStageDialog.IsOpen || _addObjectDialog.IsOpen || _DBEditorDialog.IsOpen
                             || _editExtraPropsDialog.IsOpen || _settingsDialog.IsOpen || _editChildrenDialog.IsOpen || _saveReminderDialog.IsOpen
-                            || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen || _welcomeDialog.IsOpen;
+                            || _unsavedStagesDialog.IsOpen || _shortcutsDialog.IsOpen || _editCCNT.IsOpen || _closingDialog.IsOpen
+                            || _welcomeDialog.IsOpen || _aboutDialog.IsOpen;
     public bool FlyCamOn => _sceneWindow.FlyCam;
 
     #region Editor Windows 
@@ -99,6 +101,7 @@ internal class MainWindowContext : WindowContext
         _DBEditorDialog = new(this);
         _searchObjDialog = new(this);
         _saveReminderDialog = new(this);
+        _unsavedStagesDialog = new(this);
         _aboutDialog = new();
 
         // Initialize editors:
@@ -271,6 +274,7 @@ internal class MainWindowContext : WindowContext
             _welcomeDialog.Render();
             _settingsDialog.Render();
             _saveReminderDialog.Render();
+            _unsavedStagesDialog.Render();
             _aboutDialog.Render();
 
             _miscParams.Render();
@@ -339,7 +343,17 @@ internal class MainWindowContext : WindowContext
             return false;
         }
 
-        // The window is only closed if all tasks have finished.
+        if (HasUnsavedStages())
+        {
+            _unsavedStagesDialog.Open();
+            return false;
+        }
+
+        /*
+         * The window is only closed if:
+         *  - All background tasks have finished.
+         *  - All stages have been saved or discarded.
+         */
         return true;
     }
 
@@ -461,6 +475,8 @@ internal class MainWindowContext : WindowContext
         }
     }
 
+    internal bool HasUnsavedStages() => Scenes.Find(x => !x.IsSaved) is not null;
+
     /// <summary>
     /// Renders the main menu bar seen at the very top of the window.
     /// </summary>
@@ -577,7 +593,7 @@ internal class MainWindowContext : WindowContext
             ImGui.Separator();
             if (ImGui.MenuItem("Object Database"))
                 _DBEditorDialog.Open();
-            
+
             ImGui.EndMenu();
         }
 
