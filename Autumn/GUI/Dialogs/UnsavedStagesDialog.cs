@@ -90,7 +90,7 @@ internal class UnsavedStagesDialog(MainWindowContext window)
 
         ImGui.EndChild();
 
-        ImGui.TextDisabled("You may select more than one file at once"u8);
+        ImGui.TextDisabled("You may select more than one stage at once"u8);
 
         Vector2 buttonSize = new(50, 0);
         ImGui.SetCursorPosX(dimensions.X - buttonSize.X * 3 - style.ItemSpacing.X * 2 - ImGui.GetStyle().WindowPadding.X);
