@@ -235,9 +235,9 @@ internal class SceneWindow(MainWindowContext window)
             ImGui.End();
             return;
         }
-        ImGui.SetCursorPosY((ImGui.GetCursorScreenPos().Y - ImGui.GetWindowPos().Y + 26) * window.ScalingFactor);
+        ImGui.SetCursorPosY(ImGui.GetCursorScreenPos().Y - ImGui.GetWindowPos().Y + 26);
 
-        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 26 * window.ScalingFactor);
+        Vector2 contentAvail = ImGui.GetContentRegionAvail() - new Vector2(0, 26);
         aspectRatio = contentAvail.X / contentAvail.Y;
         Vector2 sceneWindowRegionMin = ImGui.GetCursorScreenPos();
         Vector2 sceneWindowRegionMax = ImGui.GetCursorScreenPos() + contentAvail;
@@ -855,7 +855,7 @@ internal class SceneWindow(MainWindowContext window)
         ImGui.SetCursorPos(TPos);
 
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.UnitX * 2);
-        if (ImGui.BeginChild("TabsChild", new Vector2(-1, 25 * window.ScalingFactor), ImGuiChildFlags.AlwaysUseWindowPadding))
+        if (ImGui.BeginChild("TabsChild", new Vector2(-1, 25), ImGuiChildFlags.AlwaysUseWindowPadding))
         {
             if (!TabsPanel())
             {

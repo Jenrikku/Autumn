@@ -52,7 +52,7 @@ internal class SwitchesWindow(MainWindowContext window)
         var sw = scn.GetSwitches();
 
         if (ImGui.BeginTable("SwitchSelect", 2, _stageTableFlags,
-            new Vector2(default, ImGui.GetWindowHeight() / 2.6f / window.ScalingFactor)))
+            new Vector2(default, ImGui.GetWindowHeight() / 2.6f)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Switch", ImGuiTableColumnFlags.WidthStretch, 0.4f);

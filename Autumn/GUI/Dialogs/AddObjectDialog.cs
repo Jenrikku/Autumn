@@ -175,7 +175,7 @@ internal class AddObjectDialog(MainWindowContext window)
                 "ClassTable",
                 2,
                 _newObjectClassTableFlags,
-                new Vector2(pvw / 2 - style.ItemSpacing.X, pvh - 188 + 35 * window.ScalingFactor)
+                new Vector2(pvw / 2 - style.ItemSpacing.X, pvh - 188 + 35)
             )
         )
         {
@@ -352,7 +352,7 @@ internal class AddObjectDialog(MainWindowContext window)
         ImGui.EndTable();
         ImGui.SameLine();
         {
-            ImGui.BeginChild("##Desc_Args", new Vector2(pvw / 2 - style.ItemSpacing.X, pvh - 185 + 33 * window.ScalingFactor));
+            ImGui.BeginChild("##Desc_Args", new Vector2(pvw / 2 - style.ItemSpacing.X, pvh - 185 + 33));
             string description = dbEntry.Description ?? "No Description";
             if (dbEntry.DescriptionAdditional is not null)
                 description += $"\n{dbEntry.DescriptionAdditional}";
@@ -390,7 +390,7 @@ internal class AddObjectDialog(MainWindowContext window)
 
             ImGui.BeginChild(
                 "##Description",
-                new Vector2(pvw / 2 - style.ItemSpacing.X * 2, 82 + 34 * window.ScalingFactor),
+                new Vector2(pvw / 2 - style.ItemSpacing.X * 2, 82 + 34),
                 ImGuiChildFlags.Borders
             );
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
@@ -401,7 +401,7 @@ internal class AddObjectDialog(MainWindowContext window)
             ImGui.EndChild();
             if (ImGui.BeginTabBar("argswitch"))
             {
-                Vector2 table = new Vector2(pvw / 2 - style.ItemSpacing.X * 2 - 4, pvh - (isArea ? 355 : 300) / window.ScalingFactor - 28);
+                Vector2 table = new Vector2(pvw / 2 - style.ItemSpacing.X * 2 - 4, pvh - (isArea ? 355 : 300) - 28);
                 if (ImGui.BeginTabItem("Args"))
                 {
                     if (

@@ -216,7 +216,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             {
                 if (_inputtingPath)
                 {
-                    float buttonWidth = 30 * ScalingFactor;
+                    float buttonWidth = 30;
                     float width = ImGui.GetContentRegionAvail().X;
                     width -= buttonWidth * 2 + ImGui.GetStyle().CellPadding.X * 4;
 
@@ -359,7 +359,7 @@ internal abstract class FileChooserWindowContext : WindowContext
             if (ImGui.BeginChild("##Main", ImGui.GetContentRegionAvail()))
             {
                 Vector2 fileChooseSize = ImGui.GetContentRegionAvail();
-                fileChooseSize.Y -= _bottomPanelBaseHeight * ScalingFactor;
+                fileChooseSize.Y -= _bottomPanelBaseHeight;
 
                 if (ImGui.BeginChild("##FileChoose", fileChooseSize, ImGuiChildFlags.Borders))
                     RenderFileChoosePanel();
@@ -400,7 +400,7 @@ internal abstract class FileChooserWindowContext : WindowContext
                         _isPathValid = IsTargetValid();
                     }
 
-                    float buttonWidth = 60 * ScalingFactor;
+                    float buttonWidth = 60;
                     Vector2 buttonSize = new(buttonWidth, 0);
 
                     if (!string.IsNullOrEmpty(PathError))

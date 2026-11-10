@@ -43,7 +43,7 @@ internal class EditCreatorClassNameTable(MainWindowContext _window)
     /// </summary>
     public void Reset()
     {
-        dimensions = new Vector2(742, 520) * _window.ScalingFactor;
+        dimensions = new Vector2(742, 520);
         _tmpCCNT = new();
         _isOpened = false;
         _search = "";

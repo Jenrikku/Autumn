@@ -65,7 +65,7 @@ internal class DatabaseEditor(MainWindowContext _window)
     }
     public void Reset()
     {
-        dimensions = new Vector2(742, 520) * _window.ScalingFactor;
+        dimensions = new Vector2(742, 520);
         entry = new();
         _modifiedEntries.Clear();
         _search = "";

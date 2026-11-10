@@ -721,11 +721,11 @@ internal class MainWindowContext : WindowContext
 
         ImGui.SetNextWindowPos(ImGui.GetWindowViewport().GetCenter(), ImGuiCond.Always, new(0.5f, 0.5f));
 
-        float footerSizeY = barHeight + ImGui.GetStyle().WindowPadding.Y + 20 * ScalingFactor;
+        float footerSizeY = barHeight + ImGui.GetStyle().WindowPadding.Y + 20;
 
-        Vector2 windowSize = ImGui.GetWindowViewport().Size - new Vector2(0, barHeight * 2f + footerSizeY + 10 * ScalingFactor);
-        windowSize.X = Math.Min(700 * ScalingFactor, windowSize.X);
-        windowSize.Y = Math.Min(512 * ScalingFactor, windowSize.Y);
+        Vector2 windowSize = ImGui.GetWindowViewport().Size - new Vector2(0, barHeight * 2f + footerSizeY + 10);
+        windowSize.X = Math.Min(700, windowSize.X);
+        windowSize.Y = Math.Min(512, windowSize.Y);
 
         ImGui.SetNextWindowSize(windowSize);
 
@@ -735,11 +735,11 @@ internal class MainWindowContext : WindowContext
             return;
         }
 
-        Vector2 headerSize = windowSize with { Y = Math.Min(128 * ScalingFactor, windowSize.Y) };
+        Vector2 headerSize = windowSize with { Y = Math.Min(128, windowSize.Y) };
 
         if (ImGui.BeginChild("##Header", headerSize))
         {
-            ImGui.Image(new(texId: s_welcomeImage), new(128 * ScalingFactor));
+            ImGui.Image(new(texId: s_welcomeImage), new(128));
             ImGui.SameLine();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 20);
 

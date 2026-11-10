@@ -67,7 +67,7 @@ internal class AddStageDialog
 
         ImGui.OpenPopup("Add New Stage");
 
-        Vector2 dimensions = new(450 * _window.ScalingFactor, 0);
+        Vector2 dimensions = new(450, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
         ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new(0.5f, 0.5f));
@@ -235,7 +235,7 @@ internal class AddStageDialog
         #region Bottom bar
 
 
-        float okButtonWidth = 50 * _window.ScalingFactor;
+        float okButtonWidth = 50;
 
         bool _disable = false;
 
@@ -328,7 +328,7 @@ internal class AddStageDialog
         ImGuiStylePtr style = ImGui.GetStyle();
 
 
-        float scenarioFieldWidth = 80 * _window.ScalingFactor;
+        float scenarioFieldWidth = 80;
 
         ImGui.SetNextItemWidth(contentAvail.X - scenarioFieldWidth - style.ItemSpacing.X);
         if (ImGui.InputTextWithHint("##name", "Name", ref _name, 100))

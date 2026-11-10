@@ -56,7 +56,6 @@ internal class SettingsDialog
     public SettingsDialog(MainWindowContext window)
     {
         Reset();
-        dimensions *= window.ScalingFactor;
         _window = window;
         _useClassNames = window.ContextHandler.Settings.UseClassNames;
     }
@@ -136,7 +135,7 @@ internal class SettingsDialog
         ImGui.SetNextWindowPos(
             ImGui.GetMainViewport().GetCenter(),
             ImGuiCond.Appearing,
-            new(0.5f * _window.ScalingFactor, 0.5f)
+            new(0.5f, 0.5f)
         );
 
         if (

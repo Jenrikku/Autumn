@@ -214,8 +214,8 @@ internal class SearchWindow
         int obj = 0;
         ImGui.SeparatorText("Search results:");
         float autoResize = -1;
-        if (ImGui.GetContentRegionAvail().Y < 220 * window.ScalingFactor) 
-            autoResize = 220 * window.ScalingFactor;
+        if (ImGui.GetContentRegionAvail().Y < 220) 
+            autoResize = 220;
         if (ImGui.BeginTable("searchTable", 3,
             ImGuiTableFlags.RowBg
             | ImGuiTableFlags.BordersOuter

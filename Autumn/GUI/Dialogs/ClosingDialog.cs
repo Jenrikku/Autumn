@@ -23,7 +23,7 @@ internal class ClosingDialog(MainWindowContext window)
 
         ImGui.OpenPopup("##ClosingDialog");
 
-        Vector2 dimensions = new(450 * window.ScalingFactor, 0);
+        Vector2 dimensions = new(450, 0);
         ImGui.SetNextWindowSize(dimensions, ImGuiCond.Always);
 
         ImGui.SetNextWindowPos(
@@ -60,7 +60,7 @@ internal class ClosingDialog(MainWindowContext window)
                 ImGui.BulletText(message);
         }
 
-        Vector2 buttonSize = new(50 * window.ScalingFactor, 0);
+        Vector2 buttonSize = new(50, 0);
         ImGui.SetCursorPosX(dimensions.X - buttonSize.X - ImGui.GetStyle().WindowPadding.X);
 
         if (ImGui.Button("Cancel", buttonSize))

@@ -47,7 +47,7 @@ internal class EditChildrenDialog(MainWindowContext _window)
     /// </summary>
     public void Reset()
     {
-        dimensions = new Vector2(800, 450) * _window.ScalingFactor;
+        dimensions = new Vector2(800, 450);
         _name = string.Empty;
         _parent = null;
         _oldChildren = new();

@@ -150,7 +150,7 @@ internal class CameraParamsWindow(MainWindowContext window)
         ImGui.NewLine();
         ImGui.Separator();
 
-        float wh = ImGui.GetWindowHeight() / 5.1f / window.ScalingFactor;
+        float wh = ImGui.GetWindowHeight() / 5.1f;
         wh = wh < 180 ? 180 : wh;
 
         ImGuiWidgets.TextHeader("Stage Cameras:");
@@ -321,7 +321,7 @@ internal class CameraParamsWindow(MainWindowContext window)
                                             rfrail = rails.ToList().IndexOf(rals) + 1;
                                     }
                                     int rfr2 = rfrail;
-                                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f * window.ScalingFactor - 15);
+                                    ImGui.SetNextItemWidth(ImGuiWidgets.SetPropertyWidthGen("Rail") - ImGui.CalcTextSize(IconUtils.PENCIL).X * 1.65f - 15);
                                     ImGui.Combo("##Railselector", ref rfr2, railStrings, rails.Count() + 1);
                                     if (rfr2 != rfrail)
                                     {

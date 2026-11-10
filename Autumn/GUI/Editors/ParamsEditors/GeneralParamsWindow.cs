@@ -72,7 +72,7 @@ internal class MiscParamsWindow(MainWindowContext window)
             }
             else if (scn.Stage.DefaultBgm is null)
             {
-                ImGui.SetNextItemWidth(prevW - 16 * window.ScalingFactor);
+                ImGui.SetNextItemWidth(prevW - 16);
                 ImGui.TextDisabled("This Stage isn't present in the Default Bgm List");
             }
             ImGui.Text("Music Types:");

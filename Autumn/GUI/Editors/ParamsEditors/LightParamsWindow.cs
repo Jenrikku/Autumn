@@ -276,7 +276,7 @@ internal class LightParamsWindow(MainWindowContext window)
     {
         //ImGuiWidgets.TextHeader("Light Areas:");
         if (ImGui.BeginTable("LAreaSelect", 2, _stageTableFlags,
-            new Vector2(default, ImGui.GetWindowHeight() / 3.2f / window.ScalingFactor)))
+            new Vector2(default, ImGui.GetWindowHeight() / 3.2f)))
         {
             ImGui.TableSetupScrollFreeze(0, 1); // Makes top row always visible.
             ImGui.TableSetupColumn("Area Id", ImGuiTableColumnFlags.WidthStretch, 0.2f);

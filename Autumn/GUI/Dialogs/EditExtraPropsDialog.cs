@@ -74,7 +74,7 @@ internal class EditExtraPropsDialog(MainWindowContext _window)
     /// </summary>
     public void Reset()
     {
-        dimensions = new Vector2(340, 170) * _window.ScalingFactor;
+        dimensions = new Vector2(340, 170);
         _name = "NewProperty";
         _oname = "NewProperty";
         _value = -1f;

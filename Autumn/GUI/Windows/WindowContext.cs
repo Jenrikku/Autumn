@@ -39,6 +39,11 @@ internal abstract class WindowContext
     public WindowManager WindowManager { get; }
 
     private float _scalingFactor = 1;
+
+    /// <summary>
+    /// Scaling factor of the window.
+    /// Must NOT be used with ImGui as it already does the scaling itself.
+    /// </summary>
     public float ScalingFactor => _scalingFactor;
 
     /// <summary>
