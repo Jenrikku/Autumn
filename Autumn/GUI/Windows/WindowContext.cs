@@ -125,7 +125,6 @@ internal abstract class WindowContext
 
             ImGuiImplGLFW.SetCurrentContext(ImGuiContext);
             ImGuiImplGLFW.InitForOpenGL(WindowNative, true);
-            _scalingFactor = ImGuiImplGLFW.GetContentScaleForWindow(WindowNative);
 
             ImGuiImplOpenGL3.SetCurrentContext(ImGuiContext);
             ImGuiImplOpenGL3.Init("#version 330");
@@ -188,6 +187,8 @@ internal abstract class WindowContext
                 WindowManager.GlobalTheme.UpdateImGuiTheme();
                 _themeChanged = false;
             }
+
+            _scalingFactor = ImGuiImplGLFW.GetContentScaleForWindow(WindowNative);
         };
 
         Window.FocusChanged += focused => IsFocused = focused;

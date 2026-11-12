@@ -248,16 +248,16 @@ internal class SceneWindow(MainWindowContext window)
             return;
         }
 
-        window.SceneFramebuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
+        window.SceneFramebuffer.SetSize((uint)(contentAvail.X * window.ScalingFactor), (uint)(contentAvail.Y * window.ScalingFactor));
         window.SceneFramebuffer.Create(window.GL!);
         if (window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess)
         {
-            window.ExtrasFrameBuffer.SetSize((uint)contentAvail.X, (uint)contentAvail.Y);
+            window.ExtrasFrameBuffer.SetSize((uint)(contentAvail.X * window.ScalingFactor), (uint)(contentAvail.Y * window.ScalingFactor));
             window.ExtrasFrameBuffer.Create(window.GL!);
         }
-        Vector2 imPos = ImGui.GetCursorPos();
+        ImTextureRef texture = new(texId: window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? window.ExtrasFrameBuffer.GetColorTexture(0) : window.SceneFramebuffer.GetColorTexture(0));
         ImGui.Image(
-            new ImTextureRef(texId: window.ContextHandler.SystemSettings.EXPERIMENTAL_PostProcess ? window.ExtrasFrameBuffer.GetColorTexture(0) : window.SceneFramebuffer.GetColorTexture(0)),
+            texture,
             contentAvail,
             new Vector2(0, 1),
             new Vector2(1, 0)
