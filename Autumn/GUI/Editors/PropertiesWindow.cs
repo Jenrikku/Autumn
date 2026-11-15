@@ -1424,7 +1424,13 @@ internal class PropertiesWindow(MainWindowContext window)
             }
 
             min = ImGui.GetCursorPos() + ImGui.GetWindowPos();
+            if (((isEditing || isDragging) && ImGui.IsKeyPressed(ImGuiKey.Escape, false)))
+            {
+                ImGuiP.ClearActiveID();
+            }
+            
             ImGui.DragFloat(isSingle ? str : "##" + str, ref reference, v_speed, default, default, "%.2f"); // C printf formatting
+            
             max = min + ImGui.GetItemRectSize();
 
             if (ImGui.IsItemActive() && ImGui.IsItemFocused() && !ImGui.IsMouseDragging(ImGuiMouseButton.Left) && isFinished)
@@ -1432,14 +1438,15 @@ internal class PropertiesWindow(MainWindowContext window)
                 isEditing = true;
                 isFinished = false;
             }
-            else if (ImGui.IsMouseDragging(ImGuiMouseButton.Left) && ImGui.IsItemActive() && ImGui.IsItemFocused() ) 
+            else if (ImGui.IsMouseDragging(ImGuiMouseButton.Left) && ImGui.IsItemActive() && ImGui.IsItemFocused()
+                        && !ImGui.GetIO().WantTextInput && !ImGui.IsKeyDown(ImGuiKey.Tab)) 
             {
                 isDragging = true;
                 isFinished = false;
             }
             if (isDragging)
             {
-                if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+                if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) || ImGui.IsKeyPressed(ImGuiKey.Tab))
                 {
                     Complete(ref rf);
                     return true;
@@ -1453,7 +1460,7 @@ internal class PropertiesWindow(MainWindowContext window)
                     return true;
                 }
             }
-            if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+            if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
             {
                 Reset(ref rf);
                 return true;
@@ -1603,41 +1610,17 @@ internal class PropertiesWindow(MainWindowContext window)
                     }
                 }
                 var tmprf = rf;
-
-                if (sto is IStageSceneObj stageSceneObj)
-                {
-                    switch (RefString)
-                    {
-                        case "Position":
-                        case "Translation":
-                            stageSceneObj.StageObj.Translation = rV;
-                            stageSceneObj.UpdateTransform();
-                            break;
-
-                        case "Rotation":
-                            stageSceneObj.StageObj.Rotation = rV;
-                            stageSceneObj.UpdateTransform();
-                            break;
-
-                        case "Scale":
-                            stageSceneObj.StageObj.Scale = rV;
-                            stageSceneObj.UpdateTransform();
-                            break;
-                    }
-                }
-                else if (sto is RailPointSceneObj rps && RefString == "Position")
-                {
-                    rps.RailPoint.Point0Trans = rV;
-                    rps.UpdateModel();
-                }
-                else if (sto is RailHandleSceneObj rhs && RefString == "Position")
-                {
-                    rhs.Offset = rV;
-                    rhs.UpdateTransform();
-                }
+                SetTransforms(sto, rV);
             }
             if (validate)
             {
+                if (ImGui.IsKeyPressed(ImGuiKey.Escape))
+                {
+                    SetTransforms(sto, baseValue);
+                    isActive = false;
+                    return true;
+                }
+
                 if (linked)
                 {
                     if (refVec3.X != rf.X)
@@ -1681,6 +1664,41 @@ internal class PropertiesWindow(MainWindowContext window)
             }
 
             return false;
+        }
+
+        public void SetTransforms(ISceneObj sto, Vector3 rV)
+        {
+            if (sto is IStageSceneObj stageSceneObj)
+            {
+                switch (RefString)
+                {
+                    case "Position":
+                    case "Translation":
+                        stageSceneObj.StageObj.Translation = rV;
+                        stageSceneObj.UpdateTransform();
+                        break;
+
+                    case "Rotation":
+                        stageSceneObj.StageObj.Rotation = rV;
+                        stageSceneObj.UpdateTransform();
+                        break;
+
+                    case "Scale":
+                        stageSceneObj.StageObj.Scale = rV;
+                        stageSceneObj.UpdateTransform();
+                        break;
+                }
+            }
+            else if (sto is RailPointSceneObj rps && RefString == "Position")
+            {
+                rps.RailPoint.Point0Trans = rV;
+                rps.UpdateModel();
+            }
+            else if (sto is RailHandleSceneObj rhs && RefString == "Position")
+            {
+                rhs.Offset = rV;
+                rhs.UpdateTransform();
+            }
         }
 
         public void Finish(ref Vector3 rf, ISceneObj sto)
