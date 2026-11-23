@@ -6,7 +6,6 @@ using Autumn.Rendering;
 using Autumn.Utils;
 using Autumn.Wrappers;
 using Hexa.NET.ImGui;
-using TinyFileDialogsSharp;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -27,7 +26,6 @@ internal class SettingsDialog
     private bool _middleMovesCamera = false;
     private bool _zoomToMouse = false;
     private bool _enableVSync = true;
-    private bool _restoreNativeFileDialogs = false;
     private int _compLevel = 1;
     private bool _loadLast = true;
     private bool[] _visibleDefaults = [false, true, true, true, false]; // Areas, CameraAreas, Rails, Grid, Transparentwall
@@ -69,7 +67,6 @@ internal class SettingsDialog
         _mouseSpeed = _window.ContextHandler.SystemSettings.MouseSpeed;
         _zoomToMouse = _window.ContextHandler.SystemSettings.ZoomToMouse;
         _enableVSync = _window.ContextHandler.SystemSettings.EnableVSync;
-        _restoreNativeFileDialogs = _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs;
         _compLevel = Array.IndexOf(Enum.GetValues<Yaz0Wrapper.CompressionLevel>(), _window.ContextHandler.SystemSettings.Yaz0Compression);
         _window.ContextHandler.SystemSettings.VisibleDefaults.CopyTo(_visibleDefaults, 0);
         _loadLast = _window.ContextHandler.SystemSettings.OpenLastProject;
@@ -98,7 +95,6 @@ internal class SettingsDialog
         _dbEditor = false;
         _middleMovesCamera = false;
         _enableVSync = true;
-        _restoreNativeFileDialogs = false;
         _compLevel = 1;
         _oldTheme = 0;
         _selectedTheme = 0;
@@ -230,7 +226,6 @@ internal class SettingsDialog
                 ImGui.Checkbox("Use ClassNames", ref _useClassNames);
                 ImGui.Checkbox("Warn the user when trying to close an unsaved stage", ref _saveRem);
                 ImGui.Checkbox("Enable Database Editor", ref _dbEditor);
-                ImGui.Checkbox("Restore Native File Dialogs", ref _restoreNativeFileDialogs);
                 ImGui.Checkbox("Enable VSync", ref _enableVSync);
                 ImGui.SameLine();
                 ImGuiWidgets.HelpTooltip("This option requires restarting the editor");
@@ -238,24 +233,14 @@ internal class SettingsDialog
                 string rfs = _romfspath;
                 if (ImGui.Button(IconUtils.FOLDER))
                 {
-                    if (!_window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
-                    {
-                        ProjectChooserContext projectChooser = new(_window);
-                        projectChooser.Title = "Autumn: Select Base ROMFS folder";
-                        _window.WindowManager.Add(projectChooser);
+                    ProjectChooserContext projectChooser = new(_window);
+                    projectChooser.Title = "Autumn: Select Base ROMFS folder";
+                    _window.WindowManager.Add(projectChooser);
 
-                        projectChooser.SuccessCallback += result =>
-                        {
-                            _romfspath = result[0];
-                        };
-                    }
-                    else
+                    projectChooser.SuccessCallback += result =>
                     {
-                        if (TinyFileDialogs.SelectFolderDialog(out string? dialogOutput, "Select the folder containing the RomFS"))
-                        {
-                            _romfspath = dialogOutput;
-                        }
-                    }
+                        _romfspath = result[0];
+                    };
                 }
                 ImGui.SameLine(default, ImGui.GetStyle().ItemInnerSpacing.X);
                 ImGuiWidgets.InputTextRedWhenInvalid("Base ROMFS Path", ref rfs, 128, !_romfsIsValidPath, "Path to ROMFS folder");
@@ -380,7 +365,6 @@ internal class SettingsDialog
             _window.ContextHandler.SystemSettings.MouseSpeed = _mouseSpeed;
             _window.ContextHandler.SystemSettings.ZoomToMouse = _zoomToMouse;
             _window.ContextHandler.SystemSettings.EnableDBEditor = _dbEditor;
-            _window.ContextHandler.SystemSettings.RestoreNativeFileDialogs = _restoreNativeFileDialogs;
             _window.ContextHandler.SystemSettings.Yaz0Compression = Enum.GetValues<Yaz0Wrapper.CompressionLevel>()[_compLevel];
             Yaz0Wrapper.Level = _window.ContextHandler.SystemSettings.Yaz0Compression;
             _visibleDefaults.CopyTo(_window.ContextHandler.SystemSettings.VisibleDefaults, 0);

@@ -2,7 +2,6 @@ using System.Numerics;
 using Autumn.GUI.Windows;
 using Autumn.Utils;
 using Hexa.NET.ImGui;
-using TinyFileDialogsSharp;
 
 namespace Autumn.GUI.Dialogs;
 
@@ -94,43 +93,32 @@ internal class WelcomeDialog
                 ImGui.SetCursorPosY(pathInputY);
 
                 float x = ImGui.GetCursorPosX();
-                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 60 - 20);
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 39);
 
                 if (ImGuiWidgets.InputTextRedWhenInvalid("##Inputred", ref _romfsInput, 512, !_romfsIsValidPath))
                     _romfsIsValidPath = Directory.Exists(_romfsInput);
 
-                ImGui.SameLine();
+                ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
 
-                if (ImGui.Button(IconUtils.FOLDER+ "##foldering", new(50, 0)))
+                if (ImGui.Button(IconUtils.FOLDER+ "##foldering", new(35, 0)))
                 {
-                    if (!_window.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                    ProjectChooserContext projectChooser = new(_window);
+                    projectChooser.Title = "Autumn: Select Base ROMFS folder";
+                    _window.WindowManager.Add(projectChooser);
+                    projectChooser.SuccessCallback += result =>
                     {
-                        ProjectChooserContext projectChooser = new(_window);
-                        projectChooser.Title = "Autumn: Select Base ROMFS folder";
-                        _window.WindowManager.Add(projectChooser);
-                        projectChooser.SuccessCallback += result =>
-                        {
-                            _romfsInput = result[0];
-                            _romfsIsValidPath = Directory.Exists(_romfsInput);
-                        };
-                    }
-                    else
-                    {
-                        if (TinyFileDialogs.SelectFolderDialog(out string? dialogOutput, "Select the folder containing the RomFS"))
-                        {
-                            _romfsInput = dialogOutput;
-                            _romfsIsValidPath = Directory.Exists(_romfsInput);
-                        }
-                    }
+                        _romfsInput = result[0];
+                        _romfsIsValidPath = Directory.Exists(_romfsInput);
+                    };
                 }
 
-                if (!_romfsIsValidPath && !string.IsNullOrEmpty(_romfsInput))
+                if (!_romfsIsValidPath)
                 {
                     ImGui.SetCursorPosX(x);
 
                     ImGui.TextColored(
                         new Vector4(0.8549f, 0.7254f, 0.2078f, 1),
-                        "The path does not exist."
+                        !string.IsNullOrEmpty(_romfsInput) ? "The path does not exist." : "You have not specified a path for the RomFS."
                     );
                 }
 
@@ -141,37 +129,13 @@ internal class WelcomeDialog
 
                 ImGui.SetCursorPosY(buttonsRowY);
                 ImGui.SetCursorPosX(secondButtonX);
-
+                if (!_romfsIsValidPath || string.IsNullOrEmpty(_romfsInput)) ImGui.BeginDisabled();
                 if (ImGui.Button("Continue", new(80, 0)))
                 {
-                    if (string.IsNullOrEmpty(_romfsInput))
-                    {
-                        MessageBoxButton result = TinyFileDialogs.MessageBox(
-                            "Warning",
-                            "You have not specified a path for the RomFS."
-                                + " This will disable many features from Autumn.\n\n"
-                                + "Do you wish to continue anyways?",
-                            DialogType.YesNo,
-                            MessageIconType.Warning,
-                            MessageBoxButton.NoCancel
-                        );
-
-                        if (result != MessageBoxButton.OkYes)
-                            break;
-                    }
-                    else if (!_romfsIsValidPath)
-                    {
-                        TinyFileDialogs.MessageBox(
-                            "Error",
-                            "The specified path does not exist.",
-                            iconType: MessageIconType.Error
-                        );
-
-                        break;
-                    }
-
                     _currentPage++;
                 }
+                if (!_romfsIsValidPath || string.IsNullOrEmpty(_romfsInput)) ImGui.EndDisabled();
+
 
                 break;
 

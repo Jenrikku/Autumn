@@ -4,7 +4,6 @@ using Autumn.GUI.Windows;
 using Autumn.Rendering;
 using Autumn.Rendering.Storage;
 using Autumn.Storage;
-using TinyFileDialogsSharp;
 using Hexa.NET.ImGui;
 
 namespace Autumn.ActionSystem;
@@ -111,59 +110,14 @@ internal class ActionHandler
             displayName: "New Project",
             action: window =>
             {
-                if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                ProjectCreateChooserContext projectChooser = new(window);
+                window.WindowManager.Add(projectChooser);
+
+                projectChooser.SuccessCallback += result =>
                 {
-                    ProjectCreateChooserContext projectChooser = new(window);
-                    window.WindowManager.Add(projectChooser);
-
-                    projectChooser.SuccessCallback += result =>
-                    {
-                        window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                        window.ContextHandler.NewProject(result[0]);
-                    };
-
-                    return;
-                }
-
-                bool isEmpty = false;
-                string? output;
-
-                do
-                {
-                    bool success = TinyFileDialogs.SelectFolderDialog(
-                        out output,
-                        title: "Select where to save the new Autumn project",
-                        defaultPath: window?.ContextHandler.SystemSettings.LastProjectOpenPath
-                    );
-
-                    if (!success)
-                        return; // Process cancelled by the user.
-
-                    if (!Directory.Exists(output))
-                    {
-                        TinyFileDialogs.MessageBox(
-                            message: "The directory does not exist.",
-                            dialogType: DialogType.Ok,
-                            iconType: MessageIconType.Error
-                        );
-
-                        continue;
-                    }
-
-                    isEmpty = !Directory.EnumerateFileSystemEntries(output!).Any();
-
-                    if (!isEmpty)
-                    {
-                        TinyFileDialogs.MessageBox(
-                            message: "The directory for the new project must be empty.",
-                            dialogType: DialogType.Ok,
-                            iconType: MessageIconType.Info
-                        );
-                    }
-                } while (!isEmpty);
-
-                window!.ContextHandler.SystemSettings.LastProjectOpenPath = output!;
-                window.ContextHandler.NewProject(output!);
+                    window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
+                    window.ContextHandler.NewProject(result[0]);
+                };
             },
             enabled: window => window is not null
         );
@@ -173,47 +127,17 @@ internal class ActionHandler
             displayName: "Open Project",
             action: window =>
             {
-                if (!window!.ContextHandler.SystemSettings.RestoreNativeFileDialogs)
+                
+                ProjectChooserContext projectChooser = new(window);
+                projectChooser.Title = "Autumn: Open Project";
+                window.WindowManager.Add(projectChooser);
+
+                projectChooser.SuccessCallback += result =>
                 {
-                    ProjectChooserContext projectChooser = new(window);
-                    projectChooser.Title = "Autumn: Open Project";
-                    window.WindowManager.Add(projectChooser);
+                    window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
+                    window.ContextHandler.OpenProject(result[0]);
+                };
 
-                    projectChooser.SuccessCallback += result =>
-                    {
-                        window.ContextHandler.SystemSettings.LastProjectOpenPath = result[0];
-                        window.ContextHandler.OpenProject(result[0]);
-                    };
-
-                    ImGui.SetWindowFocus("Stages");
-                    return;
-                }
-
-                string? output;
-
-                do
-                {
-                    bool success = TinyFileDialogs.SelectFolderDialog(
-                        out output,
-                        title: "Select the Autumn project directory",
-                        defaultPath: window?.ContextHandler.SystemSettings.LastProjectOpenPath
-                    );
-
-                    if (!success)
-                        return;
-
-                    if (Directory.Exists(output))
-                        break;
-
-                    TinyFileDialogs.MessageBox(
-                        message: "The directory does not exist.",
-                        dialogType: DialogType.Ok,
-                        iconType: MessageIconType.Error
-                    );
-                } while (true);
-
-                window!.ContextHandler.SystemSettings.LastProjectOpenPath = output;
-                window.ContextHandler.OpenProject(output);
                 ImGui.SetWindowFocus("Stages");
             },
             enabled: window => true

@@ -14,7 +14,6 @@ internal class SystemSettings
     public readonly List<string> RecentlyOpenedPaths = new();
     public string LastProjectOpenPath = string.Empty; // File chooser
     public string LastOpenedProject = string.Empty;
-    public bool RestoreNativeFileDialogs;
     public bool SkipWelcomeDialog;
     public bool OpenLastProject;
     public bool EnableVSync;
@@ -47,7 +46,6 @@ internal class SystemSettings
 
     public void Reset()
     {
-        RestoreNativeFileDialogs = false;
         SkipWelcomeDialog = false;
         OpenLastProject = true;
         EnableVSync = true;
