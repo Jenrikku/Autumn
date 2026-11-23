@@ -13,17 +13,14 @@ jobs:
     strategy:
       matrix:
         runtime: [osx-arm64, osx-x64, linux-x64, linux-arm64, win-x64]
-      fail-fast: false
-      max-parallel: 1
 
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v7
-
-    - name: Git Submodule Update
-      run: git submodule update --init --recursive
+      with:
+        submodules: true
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
