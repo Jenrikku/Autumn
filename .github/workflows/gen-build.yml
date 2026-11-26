@@ -3,9 +3,28 @@
 
 # Builds and uploads artifacts of the latest commit
 
-name: Generate build
+name: Generate build and release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      do-release:
+        description: 'Make a release'
+        type: boolean
+      tag-name:
+        description: 'Tag name'
+        type: string
+      release-name:
+        description: 'Release name'
+        type: string
+      is-prerelease:
+        description: 'Is Pre-release'
+        type: boolean
+      is-draft:
+        description: 'Set release to be a draft'
+        type: boolean
+
+run-name: Build ${{ case(inputs.do-release, format('& Release {0}', inputs.release-name), '') }}
 
 jobs:
   build:
@@ -36,5 +55,30 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ matrix.runtime }}
+        name: Autumn-${{ inputs.tag-name }}-${{ matrix.runtime }}.zip
         path: Autumn/bin/Release/net10.0/${{ matrix.runtime }}/publish
+        archive: true
+
+  release:
+    needs: build
+    if: inputs.do-release
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
+      with:
+        skip-decompress: true
+        merge-multiple: true
+
+    - name: Create release
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ inputs.tag-name }}
+        name: ${{ inputs.release-name }}
+        prerelease: ${{ inputs.is-prerelease }}
+        draft: ${{ inputs.is-draft }}
+        files: '*'
+        fail_on_unmatched_files: true
