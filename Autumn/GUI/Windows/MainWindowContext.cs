@@ -335,8 +335,16 @@ internal class MainWindowContext : WindowContext
         };
     }
 
+    public bool ForceClose = false;
+    /// <summary> 
+    /// The window is only closed if: <br/>
+    ///  - All background tasks have finished.<br/>
+    ///  - All stages have been saved or discarded.
+    /// </summary>
+    /// <returns></returns>
     public override bool Close()
     {
+        if (ForceClose) return true;
         if (BackgroundManager.IsBusy)
         {
             _closingDialog.Open();
@@ -349,11 +357,6 @@ internal class MainWindowContext : WindowContext
             return false;
         }
 
-        /*
-         * The window is only closed if:
-         *  - All background tasks have finished.
-         *  - All stages have been saved or discarded.
-         */
         return true;
     }
 

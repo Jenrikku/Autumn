@@ -35,7 +35,7 @@ internal class AboutDialog
         )
             return;
 
-        ImGui.Text("Autumn: A 3DL stage editor. Pre-Beta version."u8);
+        ImGui.Text("Autumn: A 3DL stage editor. Beta version."u8);
         ImGui.Text("Licensed under "u8);
         ImGuiWidgets.SameLineNoSpacing();
         ImGui.TextLinkOpenURL("GPL-3.0"u8, "https://www.gnu.org/licenses/gpl-3.0.html"u8);

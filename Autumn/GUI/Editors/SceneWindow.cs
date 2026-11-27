@@ -997,7 +997,7 @@ internal class SceneWindow(MainWindowContext window)
 
         ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(1, default));
-        float buttons = ImGui.CalcTextSize(IconUtils.CHESS_BOARD).X*6 + 6 * 5;
+        float buttons = ImGui.CalcTextSize(IconUtils.CHESS_BOARD).X*6 + 6 * 6;
         #if DEBUG
         buttons += 6 * 4;
         #endif
