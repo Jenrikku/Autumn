@@ -34,6 +34,9 @@ internal class ShortcutsDialog(MainWindowContext window)
         if (!_isOpened)
             return;
 
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape) && !changingKey)
+            _isOpened = false;
+
         ImGui.OpenPopup("Autumn Shortcuts");
 
         Vector2 dimensions = new(450, 300);

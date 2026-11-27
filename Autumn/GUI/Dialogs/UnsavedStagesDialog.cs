@@ -34,6 +34,9 @@ internal class UnsavedStagesDialog(MainWindowContext window)
         if (!_isOpened)
             return;
 
+        if (ImGui.IsKeyPressed(ImGuiKey.Escape) && !ImGui.GetIO().WantTextInput) 
+            _isOpened = false;
+
         ImGui.OpenPopup("##UnsavedStagesDialog");
 
         Vector2 dimensions = new(450, 0);
